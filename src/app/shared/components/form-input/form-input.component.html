@@ -1,0 +1,33 @@
+<fieldset class="flex flex-col gap-2">
+  @if (label() !== null) {
+    <label appLabel>{{ label() }}</label>
+  }
+  <div class="relative">
+    <input
+      appInput
+      [type]="resolvedType()"
+      [attr.aria-invalid]="shouldShowError"
+      [attr.aria-describedby]="shouldShowError ? name() + '-error' : null"
+      [placeholder]="placeholder()"
+      [formControlName]="name()"
+      [class.pr-10]="isPasswordType()"
+    />
+    @if (isPasswordType()) {
+      <button
+        type="button"
+        class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+        [attr.aria-label]="showPassword() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+        (click)="togglePasswordVisibility()"
+      >
+        @if (showPassword()) {
+          <lucide-icon [img]="icons.EyeOff" size="18"></lucide-icon>
+        } @else {
+          <lucide-icon [img]="icons.Eye" size="18"></lucide-icon>
+        }
+      </button>
+    }
+  </div>
+  @if (shouldShowError) {
+    <span [id]="name() + '-error'" class="text-destructive text-sm" role="alert">{{ errorMessage }}</span>
+  }
+</fieldset>

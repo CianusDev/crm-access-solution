@@ -54,6 +54,7 @@ export class AuthService {
       }),
       switchMap((res) => this.fetchCurrentUser(res.user.id)),
       catchError((err) => {
+        console.error('Login error:', err);
         this.currentUser.set(null);
         let errorMessage = DEFAULT_ERROR_MESSAGE;
 
