@@ -35,7 +35,6 @@ export type ButtonSize = NonNullable<VariantProps<typeof buttonVariants>['size']
 
 @Directive({
   selector: 'button[appButton], a[appButton]', // Sélecteur pour les éléments bouton et lien
-  standalone: true,
   host: {
     '[class]': 'hostClasses()', // Classes dynamiques basées sur les variantes
     '[attr.disabled]': 'isDisabled()', // Attribut désactivé basé sur l'état

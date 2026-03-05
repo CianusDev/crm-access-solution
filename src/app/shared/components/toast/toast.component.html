@@ -1,0 +1,30 @@
+@if (show() || closing()) {
+  <div
+    class="flex items-start gap-3 w-sm p-4 rounded-xl border border-border shadow-lg pointer-events-auto"
+    [class.animate-fade-in]="!closing()"
+    [class.animate-fade-out]="closing()"
+    (animationend)="closing() ? onFadeOutDone() : null"
+    role="alert"
+    [ngClass]="[getTypeClass(), getBgClass()]"
+  >
+    <lucide-icon
+      [img]="getIcon()"
+      size="20"
+      class="shrink-0 mt-0.5"
+      aria-hidden="true"
+    />
+    <div class="flex-1">
+      @if (title()) {
+        <p class="font-semibold text-sm">{{ title() }}</p>
+      }
+      <span class="text-sm">{{ message() }}</span>
+    </div>
+    <button
+      class="shrink-0 text-muted-foreground hover:text-foreground cursor-pointer focus:outline-none"
+      (click)="close()"
+      aria-label="Fermer la notification"
+    >
+      <lucide-icon [img]="icons.X" size="16" aria-hidden="true" />
+    </button>
+  </div>
+}

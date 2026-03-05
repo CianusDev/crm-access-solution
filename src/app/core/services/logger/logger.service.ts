@@ -17,7 +17,6 @@ export class LoggerService {
   private logLevel: LogLevel;
 
   constructor() {
-    // Utiliser la configuration de l'environnement
     this.logLevel = this.getLogLevelFromString(environment.logLevel);
   }
 
@@ -31,32 +30,55 @@ export class LoggerService {
         return LogLevel.Warn;
       case 'error':
         return LogLevel.Error;
+      case 'none':
+        return LogLevel.None;
       default:
         return LogLevel.Info;
     }
   }
 
+  private formatMessage(level: string, message: string): string {
+    const timestamp = new Date().toISOString();
+    return `[${timestamp}] [${level}]: ${message}`;
+  }
+
   debug({ message, data }: LogEntry): void {
     if (this.logLevel <= LogLevel.Debug) {
-      console.debug(`[DEBUG]:${message}`, data);
+      if (data !== undefined) {
+        console.debug(this.formatMessage('DEBUG', message), data);
+      } else {
+        console.debug(this.formatMessage('DEBUG', message));
+      }
     }
   }
 
   info({ message, data }: LogEntry): void {
     if (this.logLevel <= LogLevel.Info) {
-      console.debug(`[INFO]:${message}`, data);
+      if (data !== undefined) {
+        console.info(this.formatMessage('INFO', message), data);
+      } else {
+        console.info(this.formatMessage('INFO', message));
+      }
     }
   }
 
   warn({ message, data }: LogEntry): void {
     if (this.logLevel <= LogLevel.Warn) {
-      console.debug(`[WARN]:${message}`, data);
+      if (data !== undefined) {
+        console.warn(this.formatMessage('WARN', message), data);
+      } else {
+        console.warn(this.formatMessage('WARN', message));
+      }
     }
   }
 
   error({ message, data }: LogEntry): void {
     if (this.logLevel <= LogLevel.Error) {
-      console.debug(`[ERROR]:${message}`, data);
+      if (data !== undefined) {
+        console.error(this.formatMessage('ERROR', message), data);
+      } else {
+        console.error(this.formatMessage('ERROR', message));
+      }
     }
   }
 }

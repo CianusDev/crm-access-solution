@@ -2,11 +2,7 @@ import { environment } from 'src/environments/environment';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
-
-interface ApiErrorBody {
-  status: number;
-  message: string;
-}
+import { ApiErrorBody } from './api.interface';
 
 @Injectable({
   providedIn: 'root',

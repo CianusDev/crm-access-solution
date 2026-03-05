@@ -5,6 +5,7 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { catchError, Observable, switchMap, tap, throwError } from 'rxjs';
 import { ApiService } from '../api/api.service';
 import { LocalStorageService } from '../local-storage/local-storage.service';
+import { LoggerService } from '../logger/logger.service';
 import { LoginResponse } from './auth.interface';
 
 const DEFAULT_ERROR_MESSAGE = 'Une erreur est survenue. Veuillez réessayer.';
@@ -15,6 +16,7 @@ const DEFAULT_ERROR_MESSAGE = 'Une erreur est survenue. Veuillez réessayer.';
 export class AuthService {
   private apiService = inject(ApiService);
   private localStorageService = inject(LocalStorageService);
+  private logger = inject(LoggerService);
 
   currentUser = signal<User | null>(null);
   isAuthenticated = computed(() => !!this.currentUser() && !!this.getToken());
@@ -29,7 +31,18 @@ export class AuthService {
 
     if (token && userId) {
       this.fetchCurrentUser(userId).subscribe({
-        error: () => this.logout(),
+        error: (err) => {
+          this.logger.error({
+            message: 'initializeAuth failed',
+            data: { status: err.status, error: err.message },
+          });
+
+          // Only logout if the token is truly invalid (401)
+          // For other errors (network, 500, etc.), keep the session alive
+          if (err.status === 401) {
+            this.logout();
+          }
+        },
       });
     }
   }
@@ -39,9 +52,9 @@ export class AuthService {
       tap((user) => {
         this.currentUser.set(user);
       }),
-      catchError(() => {
+      catchError((err) => {
         this.currentUser.set(null);
-        return throwError(() => new Error('Impossible de récupérer les informations utilisateur.'));
+        return throwError(() => err);
       }),
     );
   }
@@ -54,7 +67,6 @@ export class AuthService {
       }),
       switchMap((res) => this.fetchCurrentUser(res.user.id)),
       catchError((err) => {
-        console.error('Login error:', err);
         this.currentUser.set(null);
         let errorMessage = DEFAULT_ERROR_MESSAGE;
 
@@ -66,7 +78,7 @@ export class AuthService {
           errorMessage = 'Erreur serveur. Merci de réessayer plus tard.';
         }
 
-        return throwError(() => new Error(errorMessage));
+        return throwError(() => ({ status: err.status, message: errorMessage }));
       }),
     );
   }
