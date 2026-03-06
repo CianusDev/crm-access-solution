@@ -17,7 +17,7 @@
           class="flex items-center gap-2 p-2 h-full hover:bg-accent cursor-pointer px-4 rounded-md"
         >
           <div class="text-right">
-            <p class="text-sm font-semibold">Abgo Emma</p>
+            <p class="text-sm font-semibold">{{ userRaw()?.nom }} {{ userRaw()?.prenom }}</p>
             <p class="text-xs text-muted-foreground">Administrateur</p>
           </div>
           <app-avatar />

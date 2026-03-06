@@ -1,95 +1,116 @@
-    <aside
-      class="h-full border-r border-border bg-sidebar flex flex-col overflow-hidden transition-all duration-300 ease-in-out"
-      [class]="isCollapsed() ? 'w-16' : 'w-xs'"
-      (mouseenter)="hovered.set(true)"
-      (mouseleave)="hovered.set(false)"
+<aside
+  class="h-full border-r border-border bg-background flex flex-col overflow-hidden transition-all duration-300 ease-in-out"
+  [class]="isCollapsed() ? 'w-16' : 'w-xs'"
+  (mouseenter)="hovered.set(true)"
+  (mouseleave)="hovered.set(false)"
+>
+  <!-- Header -->
+  <div
+    class="flex items-center h-16 py-3 gap-2 transition-all duration-300"
+    [class]="isCollapsed() ? 'px-3 justify-center' : 'px-6 justify-between'"
+  >
+    <a
+      routerLink="/app/home"
+      class="overflow-hidden transition-all duration-300 ease-in-out"
+      [class]="isCollapsed() ? 'w-0 opacity-0' : 'w-auto opacity-100'"
     >
-      <!-- Header -->
-      <div
-        class="flex items-center h-16 py-3 gap-2 transition-all duration-300"
-        [class]="isCollapsed() ? 'px-3 justify-center' : 'px-6 justify-between'"
-      >
-        <a
-          routerLink="/app/home"
-          class="overflow-hidden transition-all duration-300 ease-in-out"
-          [class]="isCollapsed() ? 'w-0 opacity-0' : 'flex-1 opacity-100'"
-        >
-          <img
-            ngSrc="/assets/images/logo-h-black.png"
-            alt="Logo"
-            width="176"
-            height="176"
-            priority
-            class="w-full object-left h-10 object-contain"
-          />
-        </a>
+      <img
+        ngSrc="/assets/images/logo-h-black.png"
+        alt="Logo"
+        width="176"
+        height="176"
+        priority
+        class="w-auto object-left h-10 object-contain"
+      />
+    </a>
 
-        <button
-          (click)="toggleCollapsed()"
-          class="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-          [attr.aria-label]="collapsed() ? 'Déplier le menu' : 'Réduire le menu'"
-          [attr.aria-expanded]="!collapsed()"
-        >
-          <lucide-icon [img]="collapsed() ? panelOpen : panelClose" size="18" aria-hidden="true" />
-        </button>
-      </div>
+    <button
+      (click)="toggleCollapsed()"
+      class="shrink-0 rounded-md cursor-pointer p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+      [attr.aria-label]="collapsed() ? 'Déplier le menu' : 'Réduire le menu'"
+      [attr.aria-expanded]="!collapsed()"
+    >
+      <lucide-icon [img]="collapsed() ? panelOpen : panelClose" size="18" aria-hidden="true" />
+    </button>
+  </div>
 
-      <!-- Nav -->
-      <nav
-        class="flex-1 w-full py-4 px-2 flex flex-col gap-4 overflow-y-auto"
-        aria-label="Menu principal"
-      >
-        @for (group of groups(); track group.label) {
-          <div role="group" [attr.aria-label]="group.label">
-            <div class="relative h-5 mb-1">
-              <p
-                class="absolute inset-0 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden"
-                [class]="isCollapsed() ? 'opacity-0 w-0' : 'opacity-100 w-full'"
-              >
-                {{ group.label }}
-              </p>
-              <div
-                class="absolute inset-0 flex justify-center transition-all duration-300 ease-in-out"
-                [class]="isCollapsed() ? 'opacity-100' : 'opacity-0'"
-              >
+  <!-- Nav -->
+  <nav
+    class="flex-1 w-full py-4 px-2 flex flex-col gap-2 overflow-y-auto"
+    aria-label="Menu principal"
+  >
+    @for (group of groups(); track group.label) {
+      <div role="group" [attr.aria-label]="group.label" class="group">
+        <!-- Accordion header -->
+        <div class="relative h-8">
+          <button
+            type="button"
+            (click)="toggleGroup($index)"
+            class="w-full flex items-center cursor-pointer px-4 py-2 transition-all duration-200 ease-in-out  rounded-md"
+            [attr.aria-expanded]="isGroupOpen($index)"
+          >
+            <span
+              class="text-xs font-semibold uppercase tracking-wider text-muted-foreground overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out"
+              [class]="isCollapsed() ? 'sr-only' : 'block'"
+            >
+              {{ group.label }}
+            </span>
+
+            <div class="ml-auto flex items-center gap-2">
+              <div class="flex items-center justify-center" [class]="isCollapsed() ? 'opacity-100' : 'opacity-0'">
                 <lucide-icon
                   [img]="group.icon ?? moreIcon"
                   size="14"
                   class="text-muted-foreground"
                   aria-hidden="true"
-                />
+                ></lucide-icon>
               </div>
-            </div>
 
-            <ul class="flex flex-col gap-0.5">
-              @for (item of group.items; track item.label) {
-                <li>
-                  <a
-                    [routerLink]="item.href"
-                    routerLinkActive="bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
-                    [title]="isCollapsed() ? item.label : ''"
-                    class="flex w-full items-center rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    [class]="isCollapsed() ? 'justify-center' : 'gap-3'"
-                  >
-                    @if (item.icon) {
-                      <lucide-icon
-                        [img]="item.icon"
-                        size="18"
-                        aria-hidden="true"
-                        class="shrink-0"
-                      />
-                    }
-                    <span
-                      class="overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out"
-                      [class]="isCollapsed() ? 'w-0 opacity-0' : 'flex-1 opacity-100'"
-                    >
-                      {{ item.label }}
-                    </span>
-                  </a>
-                </li>
-              }
-            </ul>
-          </div>
-        }
-      </nav>
-    </aside>
+              <lucide-icon
+                [img]="chevron"
+                size="14"
+                [class]="chevronClass($index) + ' text-muted-foreground'"
+                aria-hidden="true"
+              ></lucide-icon>
+            </div>
+          </button>
+        </div>
+
+        <!-- Items: only rendered/visible when group is open (accordion) -->
+        <ul
+          class="flex flex-col gap-0.5 overflow-hidden transition-[max-height,opacity] duration-200 ease-in-out"
+          [style.max-height.px]="isGroupOpen($index) ? group.items.length * 44 : 0"
+          [style.opacity]="isGroupOpen($index) ? 1 : 0"
+          [attr.aria-hidden]="!isGroupOpen($index)"
+        >
+          @for (item of group.items; track item.label) {
+            <li>
+              <a
+                [routerLink]="item.href"
+                routerLinkActive="bg-sidebar-primary/5 text-sidebar-primary font-semibold"
+                [title]="isCollapsed() ? item.label : ''"
+                class="flex w-full items-center rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                [class]="isCollapsed() ? 'justify-center' : 'gap-3'"
+              >
+                @if (item.icon) {
+                  <lucide-icon
+                    [img]="item.icon"
+                    size="18"
+                    aria-hidden="true"
+                    class="shrink-0"
+                  />
+                }
+                <span
+                  class="overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out"
+                  [class]="isCollapsed() ? 'w-0 opacity-0' : 'flex-1 opacity-100'"
+                >
+                  {{ item.label }}
+                </span>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  </nav>
+</aside>

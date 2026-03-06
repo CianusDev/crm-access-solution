@@ -2,7 +2,9 @@ import { Routes } from '@angular/router';
 import { authRoutes } from './features/auth/auth.route';
 import { NotFound } from './shared/components/not-found/not-found.component';
 import { authGuard } from './core/guards/auth.guard';
-import { MainLayout } from './shared/layouts/main-layout/main-layout';
+import { MainLayout } from './shared/layouts/main-layout/main-layout.component';
+import { currentUserResolver } from './shared/layouts/main-layout/main-layout.resolver';
+import { RouteLoaderComponent } from './shared/layouts/route-loader/route-loader.component';
 
 export const routes: Routes = [
   {
@@ -13,17 +15,31 @@ export const routes: Routes = [
   authRoutes,
   {
     path: 'app',
-    canActivateChild: [authGuard],
-    component: MainLayout,
+    component: RouteLoaderComponent,
     children: [
       {
         path: '',
-        pathMatch: 'full',
-        redirectTo: 'home',
-      },
-      {
-        path: 'home',
-        loadComponent: () => import('./features/home/home.component').then((m) => m.Home),
+        canActivateChild: [authGuard],
+        resolve: {
+          currentUser: currentUserResolver,
+        },
+        component: MainLayout,
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            redirectTo: 'home',
+          },
+          {
+            path: 'home',
+            loadComponent: () => import('./features/home/home.component').then((m) => m.Home),
+          },
+          {
+            path: 'ui',
+            loadComponent: () =>
+              import('./features/ui/pages/ui.component').then((m) => m.UiComponent),
+          },
+        ],
       },
     ],
   },

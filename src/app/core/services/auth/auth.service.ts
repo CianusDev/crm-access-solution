@@ -6,9 +6,8 @@ import { catchError, Observable, switchMap, tap, throwError } from 'rxjs';
 import { ApiService } from '../api/api.service';
 import { LocalStorageService } from '../local-storage/local-storage.service';
 import { LoggerService } from '../logger/logger.service';
-import { LoginResponse } from './auth.interface';
-
-const DEFAULT_ERROR_MESSAGE = 'Une erreur est survenue. Veuillez réessayer.';
+import { CurrentUserResponse, LoginResponse } from './auth.interface';
+import { DEFAULT_ERROR_MESSAGE } from '@/core/constants/error-messages';
 
 @Injectable({
   providedIn: 'root',
@@ -29,7 +28,7 @@ export class AuthService {
     const token = this.getToken();
     const userId = this.localStorageService.getState<number>(USER_ID);
 
-    if (token && userId) {
+    if (token && userId != null) {
       this.fetchCurrentUser(userId).subscribe({
         error: (err) => {
           this.logger.error({
@@ -47,10 +46,14 @@ export class AuthService {
     }
   }
 
-  fetchCurrentUser(id: number): Observable<User> {
-    return this.apiService.get<User>('/users/show_user/' + id).pipe(
+  fetchCurrentUser(id: number): Observable<CurrentUserResponse> {
+    return this.apiService.get<CurrentUserResponse>('/users/show_user/' + id).pipe(
       tap((user) => {
-        this.currentUser.set(user);
+        this.logger.info({
+          message: 'fetchCurrentUser success',
+          data: { user: user.data },
+        });
+        this.currentUser.set(user.data);
       }),
       catchError((err) => {
         this.currentUser.set(null);
@@ -59,7 +62,7 @@ export class AuthService {
     );
   }
 
-  login(data: LoginDto): Observable<User> {
+  login(data: LoginDto): Observable<CurrentUserResponse> {
     return this.apiService.post<LoginResponse>('/login', data).pipe(
       tap((res) => {
         this.localStorageService.setState(TOKEN, res.token);
@@ -68,6 +71,8 @@ export class AuthService {
       switchMap((res) => this.fetchCurrentUser(res.user.id)),
       catchError((err) => {
         this.currentUser.set(null);
+        this.localStorageService.removeState(TOKEN);
+        this.localStorageService.removeState(USER_ID);
         let errorMessage = DEFAULT_ERROR_MESSAGE;
 
         if (err.status === 401) {

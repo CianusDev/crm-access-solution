@@ -1,1 +1,1 @@
-const DEFAULT_ERROR_MESSAGE = 'Une erreur est survenue. Veuillez réessayer plus tard.';
+export const DEFAULT_ERROR_MESSAGE = 'Une erreur est survenue. Veuillez réessayer.';
