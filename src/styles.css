@@ -165,3 +165,74 @@
     font-family: var(--font-mono);
   }
 }
+
+/* Dropdown & popover animations */
+@layer utilities {
+  .animate-in {
+    animation-duration: 150ms;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    animation-fill-mode: both;
+  }
+
+  .fade-in-0 {
+    animation-name: fade-in;
+    --tw-enter-opacity: 0;
+  }
+
+  .zoom-in-95 {
+    animation-name: zoom-in;
+    --tw-enter-scale: 0.95;
+  }
+
+  .animate-out {
+    animation-duration: 100ms;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    animation-fill-mode: both;
+  }
+
+  .fade-out-0 {
+    animation-name: fade-out;
+    --tw-exit-opacity: 0;
+  }
+
+  .zoom-out-95 {
+    animation-name: zoom-out;
+    --tw-exit-scale: 0.95;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: var(--tw-enter-opacity, 0);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: var(--tw-exit-opacity, 0);
+  }
+}
+
+@keyframes zoom-in {
+  from {
+    transform: scale(var(--tw-enter-scale, 0.95));
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes zoom-out {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(var(--tw-exit-scale, 0.95));
+  }
+}

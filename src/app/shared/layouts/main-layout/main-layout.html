@@ -1,9 +1,32 @@
-<main class="h-svh w-full flex">
+<main class="h-svh w-full bg-sidebar flex">
+  <!--Sidebar-->
   <app-sidebar />
-  <section class="w-full">
-    <nav class="w-full px-6 py-3 border-b border-border">
-      <h2 appH2>Tableau de bord</h2>
+  <!--Content for MainLayout-->
+  <section class="w-full h-full flex-1 flex-col">
+    <!--Header for MainLayout-->
+    <nav class="w-full flex items-center bg-background px-6 py-4 h-16 border-b border-border">
+      <!--search Bar -->
+      <div class="flex items-center flex-1 h-full gap-4">
+        <lucide-icon [img]="icons.search" />
+        <input type="text" class="h-full outline-0" placeholder="Rechercher..." />
+      </div>
+      <!--user Menu-->
+      <app-dropdown [items]="menuItems" align="end" ariaLabel="Options utilisateur">
+        <button
+          dropdownTrigger
+          class="flex items-center gap-2 p-2 h-full hover:bg-accent cursor-pointer px-4 rounded-md"
+        >
+          <div class="text-right">
+            <p class="text-sm font-semibold">Abgo Emma</p>
+            <p class="text-xs text-muted-foreground">Administrateur</p>
+          </div>
+          <app-avatar />
+        </button>
+      </app-dropdown>
     </nav>
-    <router-outlet />
+    <!--Content for MainLayout-->
+    <section class="w-full h-[calc(100svh-4rem)] p-6 overflow-y-auto">
+      <router-outlet />
+    </section>
   </section>
 </main>

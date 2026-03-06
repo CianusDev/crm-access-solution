@@ -1,0 +1,10 @@
+    @for (toast of toastService.getToasts(); track toast.id) {
+      <app-toast
+        [title]="toast.title ?? null"
+        [message]="toast.message"
+        [type]="toast.type"
+        [duration]="toast.duration ?? 30000"
+        [show]="true"
+        (closed)="toastService.remove(toast.id)"
+      />
+    }

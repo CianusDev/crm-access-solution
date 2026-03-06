@@ -5,18 +5,7 @@ import { ToastService } from '@/core/services/toast/toast.service';
 @Component({
   selector: 'app-toast-container',
   imports: [Toast],
-  template: `
-    @for (toast of toastService.getToasts(); track toast.id) {
-      <app-toast
-        [title]="toast.title ?? null"
-        [message]="toast.message"
-        [type]="toast.type"
-        [duration]="toast.duration ?? 30000"
-        [show]="true"
-        (closed)="toastService.remove(toast.id)"
-      />
-    }
-  `,
+  templateUrl: './toast-container.component.html',
   styles: [
     `
       :host {

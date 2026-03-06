@@ -94,6 +94,6 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
-    return this.isAuthenticated();
+    return !!this.getToken();
   }
 }

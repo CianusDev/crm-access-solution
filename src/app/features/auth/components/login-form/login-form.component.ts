@@ -4,6 +4,7 @@ import { LoggerService } from '@/core/services/logger/logger.service';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { ButtonComponent } from '@/shared/components/button/button.component';
 import { FormInput } from '@/shared/components/form-input/form-input.component';
+import { Logo } from '@/shared/components/logo/logo.component';
 import { H2Directive } from '@/shared/directives/ui/h2/h2';
 import { ChangeDetectionStrategy, Component, inject, OnDestroy, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -12,7 +13,7 @@ import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-login-form',
-  imports: [H2Directive, ButtonComponent, FormInput, ReactiveFormsModule],
+  imports: [H2Directive, ButtonComponent, FormInput, ReactiveFormsModule, Logo],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login-form.component.html',
 })
