@@ -1,31 +1,93 @@
 <main class="h-svh w-full bg-sidebar flex">
-  <!--Sidebar-->
-  <app-sidebar />
-  <!--Content for MainLayout-->
+  <!-- Sidebar -->
+  <app-sidebar></app-sidebar>
+  <!-- Content for MainLayout -->
   <section class="w-full h-full flex-1 flex-col">
-    <!--Header for MainLayout-->
+    <!-- Header for MainLayout -->
     <nav class="w-full flex items-center bg-background px-6 py-4 h-16 border-b border-border">
-      <!--search Bar -->
+      <!-- Search area: keep the results dropdown positioned relative to this container -->
       <div class="flex items-center flex-1 h-full gap-4">
-        <lucide-icon [img]="icons.search" />
-        <input type="text" class="h-full outline-0" placeholder="Rechercher..." />
+        <div class="relative w-full max-w-lg">
+          <div class="flex items-center gap-3">
+            <lucide-icon [img]="icons.search" />
+            <input
+              type="text"
+              class="h-10 w-full rounded px-3 border border-transparent focus:outline-none bg-transparent"
+              placeholder="Rechercher..."
+              [value]="searchQuery()"
+              (input)="searchQuery.set($event.target.value)"
+              aria-label="Rechercher dans le menu"
+            />
+          </div>
+
+          <!-- Backdrop: when search is open, capture outside clicks to close -->
+          @if (searchQuery()) {
+            <div
+              class="fixed inset-0 z-40"
+              (click)="searchQuery.set('')"
+              aria-hidden="true"
+            ></div>
+          }
+
+          <!-- Search results dropdown: absolutely positioned relative to the input wrapper -->
+          @if (searchQuery()) {
+            <div
+              animate.enter="fade-in-0"
+              animate.leave="fade-out-0"
+              class="absolute left-0 top-full mt-4 w-full z-50">
+              <div
+                class="bg-background p-2 shadow-xl rounded-lg border border-border transition-all duration-200 ease-in-out overflow-auto"
+                role="listbox"
+                aria-label="Résultats de la recherche"
+                (click)="$event.stopPropagation()"
+              >
+                @for (item of filteredSidebarItems(); track item.label) {
+                  <div class="py-1" role="group" aria-label="{{ item.label }}">
+                    <div class="text-sm font-medium px-2 text-muted-foreground">{{ item.label }}</div>
+
+                    @for (subItem of item.items; track subItem.label) {
+                      <div class="pl-4 mt-1">
+                        <a
+                          [routerLink]="subItem.href"
+                          class="block p-1 px-2 rounded-lg hover:bg-accent transition-colors"
+                          role="option"
+                          (click)="searchQuery.set('')"
+                        >
+                          <lucide-icon [img]="subItem.icon" class="inline-block w-4 h-4 mr-2" />
+                          {{ subItem.label }}
+                        </a>
+                      </div>
+                    }
+                  </div>
+                } @empty {
+                  <div class="p-2">
+                    <p class="text-sm text-muted-foreground">Aucun résultat trouvé.</p>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
       </div>
-      <!--user Menu-->
+
+      <!-- User menu -->
       <app-dropdown [items]="menuItems" align="end" ariaLabel="Options utilisateur">
         <button
           dropdownTrigger
           class="flex items-center gap-2 p-2 h-full hover:bg-accent cursor-pointer px-4 rounded-md"
         >
           <div class="text-right">
-            <p class="text-sm font-semibold">{{ userRaw()?.nom }} {{ userRaw()?.prenom }}</p>
+            <p class="text-sm font-semibold">{{ user()?.nom }} {{ user()?.prenom }}</p>
             <p class="text-xs text-muted-foreground">Administrateur</p>
           </div>
           <app-avatar />
         </button>
       </app-dropdown>
     </nav>
-    <!--Content for MainLayout-->
+
+    <!-- Main content -->
     <section class="w-full h-[calc(100svh-4rem)] p-6 overflow-y-auto">
+      <app-breadcrumb [items]="breadcrumbItems" />
       <router-outlet />
     </section>
   </section>

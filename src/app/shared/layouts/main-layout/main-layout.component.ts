@@ -1,66 +1,176 @@
-import { AuthService } from '@/core/services/auth/auth.service';
 import { Avatar } from '@/shared/components/avatar/avatar.component';
 import { Dropdown, DropdownItem } from '@/shared/components/dropdown';
 import { Sidebar } from '@/shared/components/sidebar/sidebar.component';
 
-import { ChangeDetectionStrategy, Component, inject, effect, input, computed } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { DEFAULT_MENU } from '@/core/constants/sidebar-menu';
 import type { User } from '@/core/models/user.model';
-import { of } from 'rxjs';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  inject,
+  NgZone,
+  signal,
+  ElementRef,
+  OnInit,
+  OnDestroy,
+} from '@angular/core';
+import { Router, RouterLink, RouterOutlet, NavigationEnd, ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import {
   BellIcon,
+  Home,
   LogOut,
   LucideAngularModule,
   SearchIcon,
   User as UserIcon,
 } from 'lucide-angular';
+import { Breadcrumb } from '@/shared/components/breadcrumb/breadcrumb.component';
+import { BreadcrumbItem } from '@/shared/components/breadcrumb/breadcrumb.interface';
 
 @Component({
   selector: 'app-main-layout',
-  imports: [RouterOutlet, Sidebar, LucideAngularModule, Avatar, Dropdown],
+  imports: [RouterOutlet, Sidebar, LucideAngularModule, Avatar, Dropdown, RouterLink, Breadcrumb],
   templateUrl: './main-layout.component.html',
+  styleUrls: ['./main-layout.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MainLayout {
+export class MainLayout implements OnInit, OnDestroy {
+  breadcrumbItems: BreadcrumbItem[] = [];
+  // Signaux et entrées
+  readonly user = input<User | null>(null, { alias: 'currentUser' });
+  readonly searchQuery = signal('');
+  readonly filteredSidebarItems = computed(() => {
+    const q = this.searchQuery().trim().toLowerCase();
+    return q
+      ? DEFAULT_MENU.filter((group) => group.items.some((i) => i.label.toLowerCase().includes(q)))
+      : DEFAULT_MENU;
+  });
+
+  // Router & breadcrumb
+  private readonly router = inject(Router);
+  private readonly activatedRoute = inject(ActivatedRoute);
+  private routerSub?: Subscription;
+
+  // Icônes et menu
+  readonly icons = { search: SearchIcon, bell: BellIcon };
   readonly menuItems: DropdownItem[] = [
     { label: 'Mon profil', icon: UserIcon, action: () => this.goToProfile() },
     { separator: true, label: '' },
     { label: 'Déconnexion', icon: LogOut, action: () => this.logout() },
   ];
-  readonly icons = {
-    search: SearchIcon,
-    bell: BellIcon,
+
+  // Injection de l'élément hôte et de la zone Angular
+  private readonly hostEl = inject(ElementRef<HTMLElement>);
+  private readonly ngZone = inject(NgZone);
+
+  // Gestionnaires d'événements conservés en tant que propriétés pour pouvoir être supprimés de manière fiable
+  private readonly _onDocumentClick = (event: MouseEvent) => {
+    if (!this.searchQuery()) return;
+
+    const target = event.target as Element | null;
+    if (!target) return;
+
+    // Si le clic est sur un résultat de recherche (role="option"), fermer le menu déroulant
+    if (target.closest('[role="option"]')) {
+      this.ngZone.run(() => this.searchQuery.set(''));
+      return;
+    }
+
+    // Si le clic est en dehors du composant hôte, fermer le menu déroulant
+    if (!this.hostEl.nativeElement.contains(target)) {
+      this.ngZone.run(() => this.searchQuery.set(''));
+    }
   };
 
-  // Raw input coming from the route resolver (User | null)
-  readonly userRaw = input<User | null>(null, {
-    alias: 'currentUser',
-  });
+  private readonly _onDocumentKeydown = (event: KeyboardEvent) => {
+    if (!this.searchQuery()) return;
+    if (event.key === 'Escape') {
+      this.ngZone.run(() => this.searchQuery.set(''));
+    }
+  };
 
-  /**
-   * Keep the existing template usage `user()?.nom | async` working without changing the template:
-   * we expose `user()` as an object where `nom` is an Observable<string>.
-   * That makes `user()?.nom | async` valid while keeping the `user` signal typed.
-   */
-  readonly user = computed(() => {
-    const u = this.userRaw();
-    if (!u) return null;
-    return u;
-    // return {
-    //   ...u,
-    //   nom: of(u.nom),
-    // } as unknown as User & { nom: import('rxjs').Observable<string> };
-  });
+  ngOnInit(): void {
+    // Enregistrer les écouteurs globaux en dehors d'Angular pour éviter des cycles de détection de changement inutiles.
+    this.ngZone.runOutsideAngular(() => {
+      document.addEventListener('click', this._onDocumentClick, true);
+      document.addEventListener('keydown', this._onDocumentKeydown, true);
+    });
 
-  goToProfile() {
-    // Navigate to profile page
+    // Breadcrumbs: subscribe to navigation events and update on init
+    this.routerSub = this.router.events
+      .pipe(filter((e) => e instanceof NavigationEnd))
+      .subscribe(() => {
+        this.ngZone.run(() => this.updateBreadcrumbs(this.router.url));
+      });
+
+    // Initial breadcrumbs
+    this.updateBreadcrumbs(this.router.url);
   }
 
-  goToSettings() {
-    // Navigate to settings page
+  ngOnDestroy(): void {
+    document.removeEventListener('click', this._onDocumentClick, true);
+    document.removeEventListener('keydown', this._onDocumentKeydown, true);
+    if (this.routerSub) {
+      this.routerSub.unsubscribe();
+    }
   }
 
-  logout() {
-    // Perform logout action
+  private updateBreadcrumbs(url: string): void {
+    const normalize = (s: string) =>
+      (s || '').split('?')[0].split('#')[0].replace(/\/+$/, '') || '/';
+
+    const current = normalize(url);
+
+    // Find the best (longest) matching href from DEFAULT_MENU
+    let bestGroup: any = null;
+    let bestItem: any = null;
+    let bestLen = -1;
+
+    for (const group of DEFAULT_MENU) {
+      for (const item of group.items) {
+        const href = normalize(item.href || '');
+        if (!href) continue;
+
+        // Exact match or prefix match (so /app/products/123 matches /app/products)
+        if (current === href || current.startsWith(href + '/') || current.startsWith(href)) {
+          if (href.length > bestLen) {
+            bestLen = href.length;
+            bestGroup = group;
+            bestItem = item;
+          }
+        }
+      }
+    }
+
+    const crumbs: BreadcrumbItem[] = [{ label: 'Accueil', link: '/app', icon: Home }];
+    if (bestGroup) {
+      crumbs.push({ label: bestGroup.label });
+    }
+    if (bestItem) {
+      crumbs.push({ label: bestItem.label, link: bestItem.href, icon: bestItem.icon });
+    }
+
+    this.breadcrumbItems = crumbs;
+  }
+
+  // Appelé par le template lorsqu'un résultat de recherche est explicitement cliqué (optionnel)
+  onSearchItemClick(): void {
+    this.searchQuery.set('');
+  }
+
+  // Actions de remplacement
+  goToProfile(): void {
+    // naviguer vers le profil
+  }
+
+  goToSettings(): void {
+    // naviguer vers les paramètres
+  }
+
+  logout(): void {
+    // effectuer la déconnexion
   }
 }

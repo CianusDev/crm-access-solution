@@ -7,7 +7,7 @@ export const guestGuard: CanActivateFn = () => {
   const router = inject(Router);
 
   if (authService.isLoggedIn()) {
-    return router.createUrlTree(['/app/home']);
+    return router.createUrlTree(['/app/power-bi/dashboard']);
   }
 
   return true;

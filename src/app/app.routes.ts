@@ -28,16 +28,28 @@ export const routes: Routes = [
           {
             path: '',
             pathMatch: 'full',
-            redirectTo: 'home',
+            redirectTo: 'power-bi',
           },
+          // {
+          //   path: 'home',
+          //   loadComponent: () => import('./features/home/home.component').then((m) => m.Home),
+          // },
           {
-            path: 'home',
-            loadComponent: () => import('./features/home/home.component').then((m) => m.Home),
-          },
-          {
-            path: 'ui',
-            loadComponent: () =>
-              import('./features/ui/pages/ui.component').then((m) => m.UiComponent),
+            path: 'power-bi',
+            children: [
+              {
+                path: '',
+                pathMatch: 'full',
+                redirectTo: 'dashboard',
+              },
+              {
+                path: 'dashboard',
+                loadComponent: () =>
+                  import('./features/power-bi/pages/dashboard/dashboard-power-bi.component').then(
+                    (m) => m.DashboardPowerBi,
+                  ),
+              },
+            ],
           },
         ],
       },

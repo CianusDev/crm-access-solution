@@ -8,5 +8,6 @@ export interface SidebarItem {
 
 export interface SidebarGroup {
   readonly label: string;
+  readonly icon?: LucideIconData;
   readonly items: SidebarItem[];
 }

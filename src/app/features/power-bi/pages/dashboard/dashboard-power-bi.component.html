@@ -1,0 +1,25 @@
+    <div class="pt-4 w-full">
+      <app-tabs defaultTab="CORA">
+
+        <app-tab label="CORA" [icon]="UsersIcon">
+            <app-iframe
+              [src]="powerBiLinks.cora | safeUrl:'resource'"></app-iframe>
+        </app-tab>
+
+        <app-tab label="CREDIT" [icon]="CreditCardIcon">
+          <app-iframe
+            [src]="powerBiLinks.credit | safeUrl:'resource'"></app-iframe>
+        </app-tab>
+
+        <app-tab label="EPARGNE" [icon]="LandmarkIcon">
+          <app-iframe
+            [src]="powerBiLinks.epargne | safeUrl:'resource'"></app-iframe>
+        </app-tab>
+
+        <app-tab label="GP/GPJ" [icon]="ChartNoAxesCombinedIcon">
+          <app-iframe
+            [src]="powerBiLinks.rapport | safeUrl:'resource'"></app-iframe>
+        </app-tab>
+
+      </app-tabs>
+    </div>

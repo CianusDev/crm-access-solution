@@ -1,3 +1,7 @@
+import { SIDEBAR_STORAGE_KEY } from '@/core/constants/local-storage-key';
+import { DEFAULT_MENU } from '@/core/constants/sidebar-menu';
+import { LocalStorageService } from '@/core/services/local-storage/local-storage.service';
+import { isPlatformBrowser, NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -8,77 +12,29 @@ import {
   PLATFORM_ID,
   signal,
 } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { Router, RouterLink, RouterLinkActive, NavigationEnd, Event } from '@angular/router';
-import { NgOptimizedImage } from '@angular/common';
-import { LucideAngularModule } from 'lucide-angular';
+import { Event, NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import {
-  LayoutDashboard,
-  Package,
-  FolderTree,
-  ShoppingCart,
-  Users,
-  Settings,
-  FileText,
+  ChevronDown,
+  Ellipsis,
+  LucideAngularModule,
   PanelLeftClose,
   PanelLeftOpen,
-  Ellipsis,
-  ChevronDown,
 } from 'lucide-angular';
-import { LucideIconData } from 'lucide-angular';
-import { SIDEBAR_STORAGE_KEY } from '@/core/constants/local-storage-key';
-import { LocalStorageService } from '@/core/services/local-storage/local-storage.service';
 import type { Subscription } from 'rxjs';
+import { SidebarGroup } from './sidebar.interface';
 
 /**
  * Sidebar simplifié avec comportement accordéon.
  *sidebar Sideba interfceexport
 
  /**
-  * Sidebar simplifié avec comportement accordéon.
+  * - Sidebar simplifié avec comportement accordéon.
   * - Simple et robuste, pas de mesure DOM.
   * - Persiste l'état réduit et le dernier groupe ouvert (optionnel).
   * - Synchronise le groupe ouvert avec la route courante.
   * - Accordéon : un seul groupe ouvert à la fois.
   * - Ouverture/fermeture via CSS uniquement, pas de calcul JS de hauteur.
   */
-export interface SidebarItem {
-  readonly label: string;
-  readonly href: string;
-  readonly icon?: LucideIconData;
-}
-
-export interface SidebarGroup {
-  readonly label: string;
-  readonly icon?: LucideIconData;
-  readonly items: SidebarItem[];
-}
-
-const DEFAULT_MENU: SidebarGroup[] = [
-  {
-    label: 'Power Bi',
-    icon: Ellipsis,
-    items: [{ label: 'Tableau de bord', href: '/app/home', icon: LayoutDashboard }],
-  },
-  {
-    label: 'Gestion',
-    icon: Ellipsis,
-    items: [
-      { label: 'Produits', href: '/app/products', icon: Package },
-      { label: 'Catégories', href: '/app/categories', icon: FolderTree },
-      { label: 'Commandes', href: '/app/orders', icon: ShoppingCart },
-      { label: 'Clients', href: '/app/clients', icon: Users },
-    ],
-  },
-  {
-    label: 'Système',
-    icon: Ellipsis,
-    items: [
-      { label: 'Rapports', href: '/app/reports', icon: FileText },
-      { label: 'Paramètres', href: '/app/settings', icon: Settings },
-    ],
-  },
-];
 
 @Component({
   selector: 'app-sidebar',
@@ -180,6 +136,9 @@ export class Sidebar implements OnDestroy {
   }
 
   chevronClass(index: number): string {
+    if (this.isCollapsed()) {
+      return 'hidden';
+    }
     return this.isGroupOpen(index)
       ? 'transform rotate-180 transition-transform duration-200'
       : 'transform rotate-0 transition-transform duration-200';
