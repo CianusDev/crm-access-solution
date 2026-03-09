@@ -8,6 +8,7 @@ import { LocalStorageService } from '../local-storage/local-storage.service';
 import { LoggerService } from '../logger/logger.service';
 import { CurrentUserResponse, LoginResponse } from './auth.interface';
 import { DEFAULT_ERROR_MESSAGE } from '@/core/constants/error-messages';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root',
@@ -16,6 +17,7 @@ export class AuthService {
   private apiService = inject(ApiService);
   private localStorageService = inject(LocalStorageService);
   private logger = inject(LoggerService);
+  private router = inject(Router);
 
   currentUser = signal<User | null>(null);
   isAuthenticated = computed(() => !!this.currentUser() && !!this.getToken());
@@ -92,6 +94,7 @@ export class AuthService {
     this.currentUser.set(null);
     this.localStorageService.removeState(TOKEN);
     this.localStorageService.removeState(USER_ID);
+    this.router.navigate(['/auth/login']);
   }
 
   getToken(): string | null {

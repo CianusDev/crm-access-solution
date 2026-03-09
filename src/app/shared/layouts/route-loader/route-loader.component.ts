@@ -1,81 +1,64 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnDestroy, signal } from '@angular/core';
 import {
-  Router,
   Event,
-  NavigationStart,
-  NavigationEnd,
   NavigationCancel,
+  NavigationEnd,
   NavigationError,
-  ResolveStart,
+  NavigationStart,
   ResolveEnd,
-  RouterOutlet,
+  ResolveStart,
+  Router,
 } from '@angular/router';
-import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs';
-import { Logo } from '@/shared/components/logo/logo.component';
 import { LoaderCircleIcon, LucideAngularModule } from 'lucide-angular';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-route-loader',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="relative min-h-screen">
-      <router-outlet></router-outlet>
+    @if (loading()) {
       <div
-        *ngIf="loading()"
-        class="fixed inset-0 z-50 flex items-center justify-center"
+        class="absolute h-full w-full inset-0 z-50 bg-background  flex items-center justify-center"
         aria-live="polite"
         aria-busy="true"
       >
-        <lucide-angular [img]="loaderIcon" class="size-16 text-primary animate-spin" />
+        <lucide-icon [img]="loaderIcon" class="size-16 text-primary animate-spin" />
       </div>
-    </div>
+    }
   `,
 })
 export class RouteLoaderComponent implements OnDestroy {
-  loading = signal(false);
   readonly loaderIcon = LoaderCircleIcon;
+  loading = signal(false);
   private sub: Subscription;
 
   constructor(private router: Router) {
+    // S'abonner aux événements du routeur pour afficher ou masquer le loader global lors de la navigation ou de la résolution
     this.sub = this.router.events.subscribe((ev: Event) => this.onRouterEvent(ev));
   }
 
   private onRouterEvent(ev: Event) {
-    // Logs de débogage pour aider à comprendre pourquoi le loader pourrait ne pas apparaître.
-    // Ces logs affichent les événements du routeur reçus par ce gestionnaire et les décisions prises.
-    // try {
-    //   console.debug(
-    //     '[RouteLoader] router event received:',
-    //     (ev && (ev as any).constructor?.name) || typeof ev,
-    //     ev,
-    //   );
-    // } catch {
-    //   // Évite de lancer une exception si l'accès à la console est restreint dans certains environnements.
-    // }
+    try {
+      // Afficher le loader au début d'une navigation ou lorsqu'un resolver commence
+      if (ev instanceof NavigationStart || ev instanceof ResolveStart) {
+        this.loading.set(true);
+        return;
+      }
 
-    if (ev instanceof NavigationStart || ev instanceof ResolveStart) {
-      try {
-        console.debug('[RouteLoader] démarrage navigation/résolution -> afficher le loader', ev);
-      } catch {}
-      this.loading.set(true);
-      return;
-    }
-
-    if (
-      ev instanceof ResolveEnd ||
-      ev instanceof NavigationEnd ||
-      ev instanceof NavigationCancel ||
-      ev instanceof NavigationError
-    ) {
-      try {
-        console.debug(
-          '[RouteLoader] fin/annulation/erreur navigation/résolution -> cacher le loader',
-          ev,
-        );
-      } catch {}
+      // Masquer le loader lorsque la navigation ou le resolver se termine, est annulé ou rencontre une erreur
+      if (
+        ev instanceof ResolveEnd ||
+        ev instanceof NavigationEnd ||
+        ev instanceof NavigationCancel ||
+        ev instanceof NavigationError
+      ) {
+        this.loading.set(false);
+      }
+    } catch {
+      // Ignorer toute erreur inattendue pour ne pas interrompre le flux du routeur
       this.loading.set(false);
     }
   }

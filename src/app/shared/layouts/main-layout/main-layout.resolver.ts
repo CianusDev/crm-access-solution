@@ -37,7 +37,7 @@ export const currentUserResolver: ResolveFn<User | null> = (): Observable<User |
       // fetchCurrentUser retourne la réponse HTTP (qui contient `.data`).
       // Mappe vers l'objet utilisateur réel. Si la forme de la réponse diffère,
       // on revient au signal du service (qui est mis à jour dans le tap du fetch).
-      map((res: any) => {
+      map((res) => {
         const maybeUser = res && (res.data ?? res);
         return (maybeUser as User) ?? (authService.currentUser() as User | null);
       }),

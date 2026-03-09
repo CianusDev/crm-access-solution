@@ -52,9 +52,9 @@ import { BreadcrumbItem } from './breadcrumb.interface';
                   class="flex items-center gap-1.5 px-1 py-0.5 font-medium text-zinc-900"
                   aria-current="page"
                 >
-                  <!-- @if ('icon' in item && item.icon) {
+                  @if ('icon' in item && item.icon) {
                     <lucide-icon [img]="item.icon" [size]="14" />
-                  } -->
+                  }
                   {{ item.label }}
                 </span>
               }

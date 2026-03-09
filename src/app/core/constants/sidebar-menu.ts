@@ -17,17 +17,17 @@ export const DEFAULT_MENU: SidebarGroup[] = [
     items: [{ label: 'Tableau de bord', href: '/app/power-bi/dashboard', icon: LayoutDashboard }],
   },
   {
-    label: 'Gestion',
+    label: 'Reseau de CORA',
     icon: Ellipsis,
     items: [
-      { label: 'Produits', href: '/app/products', icon: Package },
+      { label: 'Tableau de bord', href: '/app/cora/dashboard', icon: LayoutDashboard },
       { label: 'Catégories', href: '/app/categories', icon: FolderTree },
       { label: 'Commandes', href: '/app/orders', icon: ShoppingCart },
       { label: 'Clients', href: '/app/clients', icon: Users },
     ],
   },
   {
-    label: 'Système',
+    label: 'Avance sur cheque',
     icon: Ellipsis,
     items: [
       { label: 'Rapports', href: '/app/reports', icon: FileText },

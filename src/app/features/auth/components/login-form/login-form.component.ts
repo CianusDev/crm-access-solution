@@ -45,7 +45,7 @@ export class LoginForm implements OnDestroy {
         next: (user) => {
           this.logger.info({ message: 'Login successful', data: { user } });
           this.isLoading.set(false);
-          this.router.navigate(['/ui']);
+          this.router.navigate(['/app']);
         },
         error: (err: ApiErrorBody) => {
           this.logger.debug({ message: 'Error callback reached', data: { err } });

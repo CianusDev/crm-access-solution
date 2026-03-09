@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { ApiErrorBody } from './api.interface';
+import { DEFAULT_ERROR_MESSAGE } from '@/core/constants/error-messages';
 
 @Injectable({
   providedIn: 'root',
@@ -24,7 +25,7 @@ export class ApiService {
       if (body['status'] && typeof body['status'] === 'number' && body['status'] >= 400) {
         throw {
           status: body['status'],
-          message: body['message'] ?? 'Une erreur est survenue.',
+          message: body['message'] ?? DEFAULT_ERROR_MESSAGE,
         } as ApiErrorBody;
       }
 

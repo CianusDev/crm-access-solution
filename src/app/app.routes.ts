@@ -5,6 +5,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { MainLayout } from './shared/layouts/main-layout/main-layout.component';
 import { currentUserResolver } from './shared/layouts/main-layout/main-layout.resolver';
 import { RouteLoaderComponent } from './shared/layouts/route-loader/route-loader.component';
+import { coraRoutes } from './features/cora/cora.route';
 
 export const routes: Routes = [
   {
@@ -15,7 +16,7 @@ export const routes: Routes = [
   authRoutes,
   {
     path: 'app',
-    component: RouteLoaderComponent,
+    // component: RouteLoaderComponent,
     children: [
       {
         path: '',
@@ -28,12 +29,12 @@ export const routes: Routes = [
           {
             path: '',
             pathMatch: 'full',
-            redirectTo: 'power-bi',
+            redirectTo: 'home',
           },
-          // {
-          //   path: 'home',
-          //   loadComponent: () => import('./features/home/home.component').then((m) => m.Home),
-          // },
+          {
+            path: 'home',
+            loadComponent: () => import('./features/home/home.component').then((m) => m.Home),
+          },
           {
             path: 'power-bi',
             children: [
@@ -51,6 +52,7 @@ export const routes: Routes = [
               },
             ],
           },
+          coraRoutes,
         ],
       },
     ],

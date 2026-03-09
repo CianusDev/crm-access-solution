@@ -4,21 +4,21 @@ import { Sidebar } from '@/shared/components/sidebar/sidebar.component';
 
 import { DEFAULT_MENU } from '@/core/constants/sidebar-menu';
 import type { User } from '@/core/models/user.model';
+import { Breadcrumb } from '@/shared/components/breadcrumb/breadcrumb.component';
+import { BreadcrumbItem } from '@/shared/components/breadcrumb/breadcrumb.interface';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  input,
-  inject,
-  NgZone,
-  signal,
   ElementRef,
-  OnInit,
+  inject,
+  input,
+  NgZone,
   OnDestroy,
+  OnInit,
+  signal,
 } from '@angular/core';
-import { Router, RouterLink, RouterOutlet, NavigationEnd, ActivatedRoute } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { filter } from 'rxjs/operators';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import {
   BellIcon,
   Home,
@@ -27,12 +27,23 @@ import {
   SearchIcon,
   User as UserIcon,
 } from 'lucide-angular';
-import { Breadcrumb } from '@/shared/components/breadcrumb/breadcrumb.component';
-import { BreadcrumbItem } from '@/shared/components/breadcrumb/breadcrumb.interface';
+import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
+import { AuthService } from '@/core/services/auth/auth.service';
+import { RouteLoaderComponent } from '../route-loader/route-loader.component';
 
 @Component({
   selector: 'app-main-layout',
-  imports: [RouterOutlet, Sidebar, LucideAngularModule, Avatar, Dropdown, RouterLink, Breadcrumb],
+  imports: [
+    RouterOutlet,
+    Sidebar,
+    LucideAngularModule,
+    Avatar,
+    Dropdown,
+    RouterLink,
+    Breadcrumb,
+    RouteLoaderComponent,
+  ],
   templateUrl: './main-layout.component.html',
   styleUrls: ['./main-layout.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -51,7 +62,6 @@ export class MainLayout implements OnInit, OnDestroy {
 
   // Router & breadcrumb
   private readonly router = inject(Router);
-  private readonly activatedRoute = inject(ActivatedRoute);
   private routerSub?: Subscription;
 
   // Icônes et menu
@@ -65,6 +75,7 @@ export class MainLayout implements OnInit, OnDestroy {
   // Injection de l'élément hôte et de la zone Angular
   private readonly hostEl = inject(ElementRef<HTMLElement>);
   private readonly ngZone = inject(NgZone);
+  private readonly authService = inject(AuthService);
 
   // Gestionnaires d'événements conservés en tant que propriétés pour pouvoir être supprimés de manière fiable
   private readonly _onDocumentClick = (event: MouseEvent) => {
@@ -171,6 +182,6 @@ export class MainLayout implements OnInit, OnDestroy {
   }
 
   logout(): void {
-    // effectuer la déconnexion
+    this.authService.logout();
   }
 }

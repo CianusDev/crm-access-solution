@@ -86,9 +86,10 @@
     </nav>
 
     <!-- Main content -->
-    <section class="w-full h-[calc(100svh-4rem)] p-6 overflow-y-auto">
+    <section class="w-full h-[calc(100svh-4rem)] relative p-6 overflow-y-auto">
       <app-breadcrumb [items]="breadcrumbItems" />
-      <router-outlet />
+      <router-outlet></router-outlet>
+      <app-route-loader></app-route-loader>
     </section>
   </section>
 </main>
