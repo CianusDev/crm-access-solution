@@ -2,7 +2,7 @@ import { ApiService } from '@/core/services/api/api.service';
 import { inject, Injectable } from '@angular/core';
 import { catchError, forkJoin, map, throwError } from 'rxjs';
 import { CoraFormData, CreateCoraDto } from '../../interfaces/create-cora-dto.interface';
-import { Cora, CoraFiltre, Gestionnaire, ListCoraData } from '../../interfaces/cora.interface';
+import { AgentCoraDetail, AgentEnAttente, Cora, CoraFiltre, Gestionnaire, ListCoraData } from '../../interfaces/cora.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -42,6 +42,27 @@ export class CoraService {
         .get<{ data: Gestionnaire[] }>(this.endpoint + '/all_gestionnaires')
         .pipe(map((res) => res.data)),
     }).pipe(
+      catchError((err) => throwError(() => ({ status: err.status, message: err.message }))),
+    );
+  }
+
+  getCoraById(id: number) {
+    return this.apiService.get<{ cora: Cora }>(this.endpoint + '/show_cora/' + id).pipe(
+      map((res) => res.cora),
+      catchError((err) => throwError(() => ({ status: err.status, message: err.message }))),
+    );
+  }
+
+  getAgentById(id: number) {
+    return this.apiService.post<{ agent: AgentCoraDetail }>(this.endpoint + '/show_agent', { agent: id }).pipe(
+      map((res) => res.agent),
+      catchError((err) => throwError(() => ({ status: err.status, message: err.message }))),
+    );
+  }
+
+  getAgentsEnAttente() {
+    return this.apiService.get<{ agents: AgentEnAttente[] }>(this.endpoint + '/agent_attente').pipe(
+      map((res) => res.agents),
       catchError((err) => throwError(() => ({ status: err.status, message: err.message }))),
     );
   }

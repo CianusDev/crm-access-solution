@@ -1,0 +1,294 @@
+@let a = agent();
+
+<div class="pt-4 flex flex-col gap-6">
+
+  <!-- Back + title -->
+  <div class="flex items-center gap-3">
+    <button appButton variant="ghost" size="icon" type="button" (click)="goBack()">
+      <lucide-icon [img]="ArrowLeftIcon" [size]="18" />
+    </button>
+    <div>
+      <h1 class="text-2xl font-bold text-foreground">Détail Agent</h1>
+      <p class="text-sm text-muted-foreground font-mono">{{ a?.reference }}</p>
+    </div>
+  </div>
+
+  @if (a) {
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+      <!-- ── Left panel ────────────────────────────────────────────────── -->
+      <div class="flex flex-col gap-4">
+
+        <!-- Identity card -->
+        <app-card>
+          <app-card-content class="!pt-6">
+            <div class="flex flex-col items-center gap-2 text-center">
+              <div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary">
+                {{ initiales() }}
+              </div>
+              <div>
+                <h2 class="font-bold text-foreground">{{ a.cora?.designation ?? '—' }}</h2>
+                <p class="text-sm text-muted-foreground">{{ a.nomPrenom }}</p>
+              </div>
+              <div class="flex gap-2 flex-wrap justify-center">
+                <app-badge [variant]="typeBadgeVariant(a.typeUser)">{{ typeLabel(a.typeUser) }}</app-badge>
+                <app-badge [variant]="statutVariant(a.statut)">{{ statutLabel(a.statut) }}</app-badge>
+              </div>
+              @if (a.cora?.perfect) {
+                <span class="inline-flex rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                  N.Perfect : {{ a.cora?.perfect }}
+                </span>
+              }
+              @if (a.pmobile) {
+                <span class="inline-flex rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-medium text-orange-700">
+                  N.P-Mobile : {{ a.pmobile }}
+                </span>
+              }
+            </div>
+
+            <div class="divide-y divide-border text-sm">
+              <div class="flex items-start gap-2 py-2">
+                <lucide-icon [img]="PhoneIcon" [size]="14" class="mt-0.5 shrink-0 text-muted-foreground" />
+                <div>
+                  <p class="text-xs text-muted-foreground">Contact</p>
+                  <p class="font-medium text-foreground">
+                    {{ a.mobile ? '0' + a.mobile : '—' }}{{ a.fixe ? ' | ' + a.fixe : '' }}
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-start gap-2 py-2">
+                <lucide-icon [img]="MapPinIcon" [size]="14" class="mt-0.5 shrink-0 text-muted-foreground" />
+                <div>
+                  <p class="text-xs text-muted-foreground">Localisation</p>
+                  <p class="font-medium text-foreground">
+                    {{ a.commune?.libelle }}{{ a.quartier ? ', ' + a.quartier : '' }}{{ a.rue ? ', ' + a.rue : '' }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </app-card-content>
+        </app-card>
+
+        <!-- Description du local -->
+        <app-card>
+          <app-card-header>
+            <app-card-title>Description du local</app-card-title>
+          </app-card-header>
+          <app-card-content>
+            <ul class="space-y-2 text-sm">
+              @for (item of [
+                { label: 'Construit en dur', value: a.enDur },
+                { label: 'Construit éphémère', value: a.ephemere },
+                { label: "Doté d'un espace client", value: a.espaceClient },
+                { label: 'Doté de caméra(s)', value: a.camera },
+                { label: 'Sécurisé', value: a.securite },
+                { label: 'Caisse(s) accessible(s)', value: a.caisseIsole },
+                { label: 'Caisse(s) inaccessible(s)', value: a.caisseNonIsole }
+              ]; track item.label) {
+                <li class="flex items-center gap-2" [class.opacity-40]="!item.value">
+                  <span
+                    class="flex h-4 w-4 shrink-0 items-center justify-center rounded"
+                    [class]="item.value ? 'bg-primary text-primary-foreground' : 'border border-border'"
+                  >
+                    @if (item.value) { <lucide-icon [img]="CheckCircleIcon" [size]="10" /> }
+                  </span>
+                  <span [class]="item.value ? 'text-foreground' : 'text-muted-foreground'">{{ item.label }}</span>
+                </li>
+              }
+            </ul>
+          </app-card-content>
+        </app-card>
+
+      </div>
+
+      <!-- ── Right panel (tabs) ─────────────────────────────────────────── -->
+      <div class="lg:col-span-2">
+        <app-tabs>
+
+          <!-- Évaluation -->
+          <app-tab label="Évaluation" [icon]="CheckCircleIcon">
+            <app-card>
+              <app-card-content class="!pt-6">
+                @if (!a.evaluation) {
+                  <p class="text-sm text-muted-foreground italic">Aucune évaluation enregistrée pour cet agent.</p>
+                } @else {
+                  <div class="flex flex-col gap-5 text-sm">
+
+                    <div>
+                      <p class="text-xs font-semibold uppercase text-muted-foreground mb-1">Historique du propriétaire</p>
+                      <p class="text-foreground">{{ a.evaluation.historique }}</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                      <div>
+                        <p class="text-xs font-semibold uppercase text-muted-foreground mb-1">Agence la plus proche</p>
+                        <p class="text-foreground">{{ a.evaluation.agenceProche }}</p>
+                      </div>
+                      <div>
+                        <p class="text-xs font-semibold uppercase text-muted-foreground mb-1">Distance</p>
+                        <p class="text-foreground">{{ distanceLabel(a.evaluation.distanceAgence) }}</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p class="text-xs font-semibold uppercase text-muted-foreground mb-1">Niveau de sécurité de la zone</p>
+                      <p class="text-foreground">{{ a.evaluation.securite }}</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                      <div class="rounded-lg border border-border p-3">
+                        <p class="text-xs font-semibold uppercase text-muted-foreground mb-2">Forces</p>
+                        <ul class="space-y-1.5">
+                          @for (f of FORCES; track f) {
+                            <li class="flex items-center gap-2 text-xs" [class.opacity-40]="!hasForce(f)">
+                              <span
+                                class="flex h-3.5 w-3.5 shrink-0 rounded"
+                                [class]="hasForce(f) ? 'bg-primary' : 'border border-border'"
+                              ></span>
+                              {{ f }}
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                      <div class="rounded-lg border border-border p-3">
+                        <p class="text-xs font-semibold uppercase text-muted-foreground mb-2">Faiblesses</p>
+                        <ul class="space-y-1.5">
+                          @for (f of FAIBLESSES; track f) {
+                            <li class="flex items-center gap-2 text-xs" [class.opacity-40]="!hasFaiblesse(f)">
+                              <span
+                                class="flex h-3.5 w-3.5 shrink-0 rounded"
+                                [class]="hasFaiblesse(f) ? 'bg-destructive' : 'border border-border'"
+                              ></span>
+                              {{ f }}
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                    </div>
+
+                    @if (a.evaluation.commentaire) {
+                      <div>
+                        <p class="text-xs font-semibold uppercase text-muted-foreground mb-1">Commentaire du gestionnaire</p>
+                        <p class="text-foreground">{{ a.evaluation.commentaire }}</p>
+                      </div>
+                    }
+
+                  </div>
+                }
+              </app-card-content>
+            </app-card>
+          </app-tab>
+
+          <!-- Documents -->
+          <app-tab label="Documents" [icon]="FileTextIcon">
+            <app-card>
+              <app-card-content class="!pt-6">
+                <div class="flex flex-col gap-4">
+                  @for (type of DOC_TYPES; track type) {
+                    <div>
+                      <p class="text-xs font-semibold uppercase text-muted-foreground mb-2">{{ type }}</p>
+                      @if (documentsByType()[type].length === 0) {
+                        <p class="text-xs text-muted-foreground italic">Aucun document chargé.</p>
+                      } @else {
+                        <div class="flex flex-wrap gap-2">
+                          @for (doc of documentsByType()[type]; track doc.reference) {
+                            <button
+                              appButton variant="outline" size="sm" type="button"
+                              (click)="openDocument(doc.lien)"
+                              class="gap-1.5 text-xs"
+                            >
+                              <lucide-icon [img]="FileTextIcon" [size]="13" />
+                              {{ doc.reference ?? type }}
+                              <lucide-icon [img]="ExternalLinkIcon" [size]="11" class="text-muted-foreground" />
+                            </button>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </app-card-content>
+            </app-card>
+          </app-tab>
+
+          <!-- Images -->
+          <app-tab label="Images" [icon]="ImageIcon">
+            <app-card>
+              <app-card-content class="!pt-6">
+                <div class="flex flex-col gap-5">
+                  @for (type of IMG_TYPES; track type) {
+                    <div>
+                      <p class="text-xs font-semibold uppercase text-muted-foreground mb-2">{{ type }}</p>
+                      @if (imagesByType()[type].length === 0) {
+                        <p class="text-xs text-muted-foreground italic">Aucune image chargée.</p>
+                      } @else {
+                        <div class="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                          @for (img of imagesByType()[type]; track img.reference) {
+                            <a [href]="img.lien" target="_blank" class="block overflow-hidden rounded-lg border border-border hover:opacity-80 transition-opacity">
+                              <img [src]="img.lien" [alt]="img.libelle" class="h-24 w-full object-cover" />
+                            </a>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </app-card-content>
+            </app-card>
+          </app-tab>
+
+          <!-- Carte -->
+          <app-tab label="Carte" [icon]="MapIcon">
+            <app-card>
+              <app-card-content class="!pt-6">
+                @if (mapCenter()) {
+                  <div class="overflow-hidden rounded-lg">
+                    <google-map height="350px" width="100%" [zoom]="15" [center]="mapCenter()!" [options]="mapOptions">
+                      <map-marker [position]="mapCenter()!" [title]="a.cora?.designation ?? ''" />
+                    </google-map>
+                  </div>
+                  <button appButton variant="outline" type="button" (click)="openMap()" class="mt-3 gap-2">
+                    <lucide-icon [img]="ExternalLinkIcon" [size]="14" />
+                    Voir l'itinéraire
+                  </button>
+                } @else {
+                  <p class="text-sm text-muted-foreground italic">Aucune géolocalisation enregistrée pour cet agent.</p>
+                }
+              </app-card-content>
+            </app-card>
+          </app-tab>
+
+          <!-- Décisions -->
+          <app-tab label="Décisions" [icon]="ClipboardListIcon">
+            <app-card>
+              <app-card-content class="!pt-6">
+                @if (!a.decision || a.decision.length === 0) {
+                  <p class="text-sm text-muted-foreground italic">Aucune décision enregistrée.</p>
+                } @else {
+                  <div class="flex flex-col gap-3">
+                    @for (d of a.decision; track $index) {
+                      <div class="rounded-lg border border-border p-3 text-sm">
+                        <div class="flex items-center justify-between mb-1">
+                          <span class="font-medium text-foreground">
+                            {{ d.user?.nom | uppercase }} {{ d.user?.prenom }}
+                          </span>
+                          @if (d.dateDecision) {
+                            <span class="text-xs text-muted-foreground">{{ d.dateDecision | date: 'dd/MM/yyyy' }}</span>
+                          }
+                        </div>
+                        <p class="text-muted-foreground">{{ d.observation }}</p>
+                      </div>
+                    }
+                  </div>
+                }
+              </app-card-content>
+            </app-card>
+          </app-tab>
+
+        </app-tabs>
+      </div>
+
+    </div>
+  }
+
+</div>

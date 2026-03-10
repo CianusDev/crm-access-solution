@@ -2,23 +2,22 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   input,
-  signal,
   OnInit,
-  DestroyRef,
+  signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { merge } from 'rxjs';
-import { LabelDirective } from '@/shared/directives/ui/label/label';
-import { LucideAngularModule, Check, Minus } from 'lucide-angular';
 import {
-  ReactiveFormsModule,
-  ControlContainer,
-  FormGroupDirective,
-  FormGroup,
   AbstractControl,
+  ControlContainer,
+  FormGroup,
+  FormGroupDirective,
+  ReactiveFormsModule,
 } from '@angular/forms';
+import { Check, LucideAngularModule, Minus } from 'lucide-angular';
+import { merge } from 'rxjs';
 
 const ERROR_MESSAGES: Record<string, (params?: Record<string, unknown>) => string> = {
   required: () => 'Ce champ est requis.',
@@ -27,7 +26,7 @@ const ERROR_MESSAGES: Record<string, (params?: Record<string, unknown>) => strin
 
 @Component({
   selector: 'app-form-checkbox',
-  imports: [LabelDirective, ReactiveFormsModule, LucideAngularModule],
+  imports: [ReactiveFormsModule, LucideAngularModule],
   viewProviders: [{ provide: ControlContainer, useExisting: FormGroupDirective }],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './form-checkbox.component.html',

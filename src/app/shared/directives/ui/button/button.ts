@@ -7,11 +7,11 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90', // Style par défaut
+        default: 'bg-primary text-primary-foreground shadow-xs hover:bg-primary/90', // Style par défaut
         destructive: 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90', // Style destructif
         outline:
-          'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground', // Style avec bordure
-        secondary: 'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80', // Style secondaire
+          'border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground', // Style avec bordure
+        secondary: 'bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80', // Style secondaire
         ghost: 'hover:bg-accent hover:text-accent-foreground', // Style fantôme
         link: 'text-primary underline-offset-4 hover:underline', // Style lien
       },

@@ -1,5 +1,6 @@
 import { SidebarGroup } from '@/shared/components/sidebar/sidebar.interface';
 import {
+  Clock,
   Ellipsis,
   FileText,
   LayoutDashboard,
@@ -20,6 +21,7 @@ export const DEFAULT_MENU: SidebarGroup[] = [
     items: [
       { label: 'Tableau de bord', href: '/app/cora/dashboard', icon: LayoutDashboard },
       { label: 'Liste des CORAs', href: '/app/cora/list', icon: List },
+      { label: 'Demandes en attente', href: '/app/cora/pending', icon: Clock },
       { label: 'Créer un CORA', href: '/app/cora/create', icon: UserPlus },
     ],
   },

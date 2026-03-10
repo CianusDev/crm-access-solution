@@ -1,0 +1,131 @@
+<div class="pt-4 flex flex-col gap-6">
+
+  <!-- Header -->
+  <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-foreground">Demandes en attente</h1>
+      <p class="text-sm text-muted-foreground">{{ totalCount() }} dossier{{ totalCount() > 1 ? 's' : '' }} en attente</p>
+    </div>
+    <button
+      appButton
+      variant="outline"
+      size="icon"
+      type="button"
+      (click)="refresh()"
+      [disabled]="isRefreshing()"
+      title="Actualiser"
+    >
+      <lucide-icon [img]="RefreshIcon" [size]="16" [class.animate-spin]="isRefreshing()" />
+    </button>
+  </div>
+
+  <!-- Search -->
+  <div class="relative w-full max-w-sm">
+    <lucide-icon
+      [img]="SearchIcon"
+      [size]="16"
+      class="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+    />
+    <input
+      type="text"
+      placeholder="Rechercher (désignation, référence, commune…)"
+      [value]="searchQuery()"
+      (input)="onSearch($event)"
+      class="w-full rounded-lg border border-input bg-background py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors placeholder:text-muted-foreground"
+    />
+  </div>
+
+  <!-- Table -->
+  <app-table>
+    <thead appTableHeader>
+      <tr appTableRow>
+        <th appTableHead>CORA / Agent</th>
+        <th appTableHead>Type</th>
+        <th appTableHead>Zone géographique</th>
+        <th appTableHead>Statut</th>
+        <th appTableHead align="center">Actions</th>
+      </tr>
+    </thead>
+    <tbody appTableBody>
+      @for (agent of paginated(); track agent.id) {
+        <tr appTableRow>
+
+          <!-- CORA + Agent -->
+          <td appTableCell>
+            <div class="flex items-center gap-3">
+              <div
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                [class]="avatarColor(agent.typeUser)"
+              >
+                {{ initiales(agent.cora?.designation) }}
+              </div>
+              <div class="flex flex-col min-w-0">
+                <span class="font-semibold text-foreground truncate">{{ agent.cora?.designation ?? '—' }}</span>
+                <span class="text-xs text-muted-foreground font-mono">{{ agent.reference }}</span>
+                @if (agent.nomPrenom && agent.typeUser === 1) {
+                  <span class="text-xs text-muted-foreground uppercase">{{ agent.nomPrenom }}</span>
+                }
+              </div>
+            </div>
+          </td>
+
+          <!-- Type -->
+          <td appTableCell>
+            <app-badge [variant]="agent.typeUser === 1 ? 'default' : 'secondary'">
+              {{ agent.typeUser === 1 ? 'Agent principal' : 'Sous-agent' }}
+            </app-badge>
+          </td>
+
+          <!-- Zone géographique -->
+          <td appTableCell>
+            <div class="flex flex-col text-sm">
+              <span class="font-medium text-foreground">{{ agent.commune?.libelle ?? '—' }}</span>
+              <span class="text-xs text-muted-foreground">
+                {{ agent.quartier }}{{ agent.rue ? ', ' + agent.rue : '' }}
+              </span>
+            </div>
+          </td>
+
+          <!-- Statut -->
+          <td appTableCell>
+            <app-badge [variant]="statutVariant(agent.statut)">
+              {{ statutLabel(agent.statut) }}
+            </app-badge>
+          </td>
+
+          <!-- Actions -->
+          <td appTableCell align="center">
+            <button
+              appButton
+              variant="ghost"
+              size="icon"
+              type="button"
+              (click)="viewDetail(agent.id)"
+              title="Voir le détail"
+            >
+              <lucide-icon [img]="EyeIcon" [size]="16" />
+            </button>
+          </td>
+
+        </tr>
+      } @empty {
+        <tr appTableRow>
+          <td appTableCell align="center" colspan="5" class="py-10 text-muted-foreground text-sm">
+            Aucune demande en attente.
+          </td>
+        </tr>
+      }
+    </tbody>
+  </app-table>
+
+  <!-- Pagination -->
+  @if (totalCount() > 10) {
+    <app-pagination
+      [total]="totalCount()"
+      [pageSize]="10"
+      [currentPage]="currentPage()"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+
+</div>

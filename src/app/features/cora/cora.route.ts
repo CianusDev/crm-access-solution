@@ -2,6 +2,9 @@ import { Route } from '@angular/router';
 import { dashboardCoraDataResolver } from './pages/dashboard/dashboad-cora.resolver';
 import { createCoraFormDataResolver } from './pages/create-cora/create-cora.resolver';
 import { listCoraResolver } from './pages/list-cora/list-cora.resolver';
+import { detailCoraResolver } from './pages/detail-cora/detail-cora.resolver';
+import { pendingCoraResolver } from './pages/pending-cora/pending-cora.resolver';
+import { detailAgentResolver } from './pages/detail-agent/detail-agent.resolver';
 
 export const coraRoutes: Route = {
   path: 'cora',
@@ -34,6 +37,30 @@ export const coraRoutes: Route = {
       },
       loadComponent: () =>
         import('./pages/list-cora/list-cora.component').then((m) => m.ListCoraComponent),
+    },
+    {
+      path: 'pending',
+      resolve: {
+        agents: pendingCoraResolver,
+      },
+      loadComponent: () =>
+        import('./pages/pending-cora/pending-cora.component').then((m) => m.PendingCoraComponent),
+    },
+    {
+      path: 'agent/:id',
+      resolve: {
+        agent: detailAgentResolver,
+      },
+      loadComponent: () =>
+        import('./pages/detail-agent/detail-agent.component').then((m) => m.DetailAgentComponent),
+    },
+    {
+      path: ':id',
+      resolve: {
+        cora: detailCoraResolver,
+      },
+      loadComponent: () =>
+        import('./pages/detail-cora/detail-cora.component').then((m) => m.DetailCoraComponent),
     },
   ],
 };
