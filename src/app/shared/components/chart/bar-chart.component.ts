@@ -54,8 +54,8 @@ export interface BarChartData {
       }
 
       <!-- Chart -->
-      <div class="relative w-full flex-1 min-h-0">
-        <canvas #chartCanvas class="absolute inset-0 w-full h-full"></canvas>
+      <div class="relative w-full flex-1 h-full">
+        <canvas #chartCanvas class="w-full h-full"></canvas>
       </div>
     </div>
   `,

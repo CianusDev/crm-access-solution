@@ -4,6 +4,10 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { ApiErrorBody } from './api.interface';
 import { DEFAULT_ERROR_MESSAGE } from '@/core/constants/error-messages';
+import { AuthService } from '../auth/auth.service';
+import { TOKEN, USER_ID } from '@/core/constants/local-storage-key';
+import { LocalStorageService } from '../local-storage/local-storage.service';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root',
@@ -11,6 +15,8 @@ import { DEFAULT_ERROR_MESSAGE } from '@/core/constants/error-messages';
 export class ApiService {
   private apiUrl: string = environment.apiUrl;
   private http: HttpClient = inject(HttpClient);
+  private localStorageService = inject(LocalStorageService);
+  private router = inject(Router);
 
   private getHeaders(): HttpHeaders {
     return new HttpHeaders({
@@ -21,6 +27,12 @@ export class ApiService {
   private handleResponse<T>() {
     return map<T, T>((res) => {
       const body = res as unknown as Record<string, unknown>;
+
+      if (body['status'] === 0) {
+        this.localStorageService.removeState(TOKEN);
+        this.localStorageService.removeState(USER_ID);
+        this.router.navigate(['/auth/login']);
+      }
 
       if (body['status'] && typeof body['status'] === 'number' && body['status'] >= 400) {
         throw {

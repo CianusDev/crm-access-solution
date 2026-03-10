@@ -1,8 +1,11 @@
 <fieldset class="flex flex-col gap-2">
+
   @if (label() !== null) {
     <label appLabel>{{ label() }}</label>
   }
+
   <div class="relative">
+
     <input
       appInput
       [type]="resolvedType()"
@@ -10,8 +13,13 @@
       [attr.aria-describedby]="shouldShowError ? name() + '-error' : null"
       [placeholder]="placeholder()"
       [formControlName]="name()"
-      [class.pr-10]="isPasswordType()"
+      [attr.min]="min()"
+      [attr.max]="max()"
+      [attr.step]="step()"
+      [class.pr-10]="isPasswordType() || trailingIcon()"
     />
+
+    <!-- Bouton toggle password -->
     @if (isPasswordType()) {
       <button
         type="button"
@@ -20,14 +28,26 @@
         (click)="togglePasswordVisibility()"
       >
         @if (showPassword()) {
-          <lucide-icon [img]="icons.EyeOff" size="18"></lucide-icon>
+          <lucide-icon [img]="icons.EyeOff" size="18" />
         } @else {
-          <lucide-icon [img]="icons.Eye" size="18"></lucide-icon>
+          <lucide-icon [img]="icons.Eye" size="18" />
         }
       </button>
     }
+
+    <!-- Icône décorative pour number / tel / date -->
+    @if (trailingIcon()) {
+      <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+        <lucide-icon [img]="trailingIcon()!" size="16" />
+      </span>
+    }
+
   </div>
+
   @if (shouldShowError) {
-    <span [id]="name() + '-error'" class="text-destructive text-sm" role="alert">{{ errorMessage }}</span>
+    <span [id]="name() + '-error'" class="text-destructive text-sm" role="alert">
+      {{ errorMessage }}
+    </span>
   }
+
 </fieldset>

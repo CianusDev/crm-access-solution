@@ -7,6 +7,7 @@ import {
   Package,
   Settings,
   ShoppingCart,
+  UserPlus,
   Users,
 } from 'lucide-angular';
 
@@ -21,7 +22,7 @@ export const DEFAULT_MENU: SidebarGroup[] = [
     icon: Ellipsis,
     items: [
       { label: 'Tableau de bord', href: '/app/cora/dashboard', icon: LayoutDashboard },
-      { label: 'Catégories', href: '/app/categories', icon: FolderTree },
+      { label: 'Creer un cora', href: '/app/cora/create', icon: UserPlus },
       { label: 'Commandes', href: '/app/orders', icon: ShoppingCart },
       { label: 'Clients', href: '/app/clients', icon: Users },
     ],

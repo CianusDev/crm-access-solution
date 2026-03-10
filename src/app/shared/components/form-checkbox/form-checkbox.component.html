@@ -1,0 +1,59 @@
+<div class="flex flex-col gap-1.5">
+
+  <label
+    class="flex items-start gap-3 group"
+    [class.cursor-pointer]="!isDisabled"
+    [class.cursor-not-allowed]="isDisabled"
+    [class.opacity-50]="isDisabled"
+    (click)="toggle()"
+  >
+
+    <!-- Checkbox custom -->
+    <span
+      class="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
+      role="checkbox"
+      [attr.aria-checked]="indeterminate() ? 'mixed' : isChecked()"
+      [attr.aria-disabled]="isDisabled"
+      [attr.aria-describedby]="shouldShowError ? name() + '-error' : null"
+      [class.bg-zinc-900]="isActive()"
+      [class.border-zinc-900]="isActive()"
+      [class.border-zinc-300]="!isActive()"
+      [class.bg-white]="!isActive()"
+      [class.group-hover:border-zinc-500]="!isDisabled && !isActive()"
+    >
+      @if (indeterminate()) {
+        <lucide-icon [img]="icons.Minus" [size]="11" [strokeWidth]="3" class="text-white" />
+      } @else if (isChecked()) {
+        <lucide-icon [img]="icons.Check" [size]="11" [strokeWidth]="3" class="text-white" />
+      }
+    </span>
+
+    <!-- Label + description -->
+    <span class="flex flex-col gap-0.5">
+      @if (label()) {
+        <span
+          class="text-sm font-medium leading-none transition-colors"
+          [class.text-zinc-900]="isChecked()"
+          [class.text-zinc-700]="!isChecked()"
+        >
+          {{ label() }}
+        </span>
+      }
+
+      @if (description()) {
+        <span class="text-xs text-zinc-400 leading-snug">
+          {{ description() }}
+        </span>
+      }
+    </span>
+
+  </label>
+
+  <!-- Message d'erreur -->
+  @if (shouldShowError) {
+    <span [id]="name() + '-error'" class="text-destructive text-sm ml-7" role="alert">
+      {{ errorMessage }}
+    </span>
+  }
+
+</div>

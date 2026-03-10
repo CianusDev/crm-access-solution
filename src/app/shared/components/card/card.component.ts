@@ -19,7 +19,7 @@ import { Component } from '@angular/core';
   selector: 'app-card',
   standalone: true,
   template: `
-    <div class="rounded-md border border-border bg-background shadow-sm">
+    <div class="rounded-md border border-border bg-background">
       <ng-content />
     </div>
   `,

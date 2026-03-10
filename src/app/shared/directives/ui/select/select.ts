@@ -28,7 +28,7 @@ export class SelectDirective {
   @Input() error = false;
 
   private readonly base =
-    'flex h-9 w-full appearance-none rounded-md border focus-visible:ring-ring bg-background pl-3 pr-8 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer';
+    'flex h-9 w-full appearance-none rounded-md border focus-visible:ring-ring bg-background pl-3 pr-8 py-1 text-sm transition-colors focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer';
 
   private readonly variants: Record<SelectVariant, string> = {
     default: 'border-zinc-200 text-zinc-900 focus:ring-zinc-950',

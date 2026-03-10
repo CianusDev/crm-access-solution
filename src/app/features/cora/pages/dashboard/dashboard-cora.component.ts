@@ -1,12 +1,4 @@
-import { PaginationComponent } from '@/shared/components/pagination/pagination.component';
-import {
-  TableCellDirective,
-  TableDirective,
-  TableFooterDirective,
-  TableHeadDirective,
-  TableHeaderDirective,
-  TableRowDirective,
-} from '@/shared/directives/ui/table/table';
+import { BarChartComponent } from '@/shared/components/chart/bar-chart.component';
 import { Component, computed, effect, input } from '@angular/core';
 import {
   FolderCheckIcon,
@@ -21,23 +13,10 @@ import {
 import { CoraManagersTable } from '../../components/cora-manager-table/cora-managers-table.component';
 import { StatsCard } from '../../components/stats-card/stats-card.component';
 import { DashboardCoraData } from '../../interfaces/dashbaord-cora.interface';
-import { BarChartComponent } from '@/shared/components/chart/bar-chart.component';
 
 @Component({
   selector: 'app-dashboard-cora',
-  imports: [
-    LucideAngularModule,
-    StatsCard,
-    TableHeaderDirective,
-    TableDirective,
-    TableHeadDirective,
-    TableRowDirective,
-    TableCellDirective,
-    TableFooterDirective,
-    PaginationComponent,
-    CoraManagersTable,
-    BarChartComponent,
-  ],
+  imports: [LucideAngularModule, StatsCard, CoraManagersTable, BarChartComponent],
   templateUrl: './dashboard-cora.component.html',
 })
 export class DashboardCoraComponent {

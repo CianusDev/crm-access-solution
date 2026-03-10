@@ -9,9 +9,8 @@ import {
   TableHeadDirective,
   TableHeaderDirective,
   TableRowDirective,
-  TableFooterDirective,
 } from '@/shared/directives/ui/table/table';
-import { Component, input, OnInit, computed, signal } from '@angular/core';
+import { Component, computed, input, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -22,7 +21,6 @@ import { FormsModule } from '@angular/forms';
     TableHeadDirective,
     TableRowDirective,
     TableCellDirective,
-    TableFooterDirective,
     PaginationComponent,
     FormsModule,
     InputDirective,
@@ -31,7 +29,7 @@ import { FormsModule } from '@angular/forms';
     SelectFieldComponent,
   ],
   template: `
-    <div class="flex flex-col p-4 gap-4 bg-card rounded-md border border-border">
+    <div class="flex flex-col p-4 gap-4 bg-card h-140 rounded-md border border-border">
       <div>
         <h2 class="text-lg font-semibold">Liste des gestionnaires de correspondant</h2>
         <p class="text-sm text-muted-foreground">
@@ -96,7 +94,7 @@ import { FormsModule } from '@angular/forms';
           </tbody>
         </table>
       </div>
-      <div class="flex justify-center items-center gap-2">
+      <div class="flex justify-center mt-auto items-center gap-2">
         <app-pagination
           [total]="filteredManagers().length"
           [pageSize]="pageSize()"

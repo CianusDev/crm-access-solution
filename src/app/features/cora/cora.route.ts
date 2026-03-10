@@ -17,5 +17,10 @@ export const coraRoutes: Route = {
       loadComponent: () =>
         import('./pages/dashboard/dashboard-cora.component').then((m) => m.DashboardCoraComponent),
     },
+    {
+      path: 'create',
+      loadComponent: () =>
+        import('./pages/create-cora/create-cora.component').then((m) => m.CreateCoraComponent),
+    },
   ],
 };

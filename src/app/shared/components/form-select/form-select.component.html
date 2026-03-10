@@ -1,0 +1,111 @@
+<fieldset class="flex flex-col gap-2">
+
+  @if (label() !== null) {
+    <label appLabel>{{ label() }}</label>
+  }
+
+  <div class="relative">
+
+    <!-- Trigger -->
+    <button
+      type="button"
+      [attr.aria-expanded]="isOpen()"
+      [attr.aria-haspopup]="'listbox'"
+      [attr.aria-invalid]="shouldShowError"
+      (click)="toggle()"
+      class="flex h-9 w-full items-center justify-between rounded-md border bg-input/20 px-3 py-1 text-sm transition-colors focus-visible:border-primary focus:ring-primary/50 focus:ring-[2px] disabled:cursor-not-allowed disabled:opacity-50"
+      [class.border-zinc-200]="!shouldShowError"
+      [class.border-red-500]="shouldShowError"
+    >
+      <!--
+        On affiche selectedLabel() si une valeur est sélectionnée,
+        sinon le placeholder — les deux ont leur propre classe de couleur.
+      -->
+      @if (selectedLabel()) {
+        <span class="truncate text-zinc-900">{{ selectedLabel() }}</span>
+      } @else {
+        <span class="truncate text-zinc-400">{{ placeholder() }}</span>
+      }
+
+      <span class="flex items-center gap-1 shrink-0 ml-2">
+        @if (selectedLabel()) {
+          <span
+            role="button"
+            aria-label="Effacer la sélection"
+            (click)="clear($event)"
+            class="rounded-sm p-0.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
+          >
+            <lucide-icon [img]="icons.X" [size]="13" />
+          </span>
+        }
+        <lucide-icon
+          [img]="icons.ChevronDown"
+          [size]="15"
+          class="text-zinc-400 transition-transform duration-200"
+          [class.rotate-180]="isOpen()"
+        />
+      </span>
+    </button>
+
+    <!-- Dropdown -->
+    @if (isOpen()) {
+      <div
+        role="listbox"
+        class="absolute z-50 mt-1 w-full rounded-md border border-zinc-200 bg-background animate-in fade-in-0 zoom-in-95"
+      >
+        <!-- Recherche -->
+        <div class="flex items-center gap-2 border-b border-zinc-100 px-3 py-2">
+          <lucide-icon [img]="icons.Search" [size]="14" class="shrink-0 text-zinc-400" />
+          <input
+            type="text"
+            [placeholder]="searchPlaceholder()"
+            [value]="searchQuery()"
+            (input)="searchQuery.set($any($event.target).value)"
+            (click)="$event.stopPropagation()"
+            class="w-full bg-transparent text-sm text-zinc-900 placeholder:text-zinc-400 outline-none"
+          />
+        </div>
+
+        <!-- Options -->
+        <ul class="max-h-56 overflow-y-auto py-1">
+          @if (filteredOptions().length === 0) {
+            <li class="px-3 py-6 text-center text-sm text-zinc-400">
+              Aucun résultat trouvé.
+            </li>
+          }
+
+          @for (option of filteredOptions(); track option.value) {
+            <li
+              role="option"
+              [attr.aria-selected]="isSelected(option)"
+              [attr.aria-disabled]="option.disabled"
+              (click)="select(option)"
+              class="flex items-center justify-between px-3 py-2 text-sm transition-colors select-none"
+              [class.opacity-40]="option.disabled"
+              [class.cursor-not-allowed]="option.disabled"
+              [class.cursor-pointer]="!option.disabled"
+              [class.bg-zinc-50]="isSelected(option)"
+              [class.font-medium]="isSelected(option)"
+              [class.text-zinc-900]="isSelected(option)"
+              [class.text-zinc-700]="!isSelected(option)"
+              [class.hover:bg-zinc-50]="!option.disabled && !isSelected(option)"
+            >
+              <span>{{ option.label }}</span>
+              @if (isSelected(option)) {
+                <lucide-icon [img]="icons.Check" [size]="14" class="text-zinc-900 shrink-0" />
+              }
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+  </div>
+
+  @if (shouldShowError) {
+    <span [id]="name() + '-error'" class="text-destructive text-sm" role="alert">
+      {{ errorMessage }}
+    </span>
+  }
+
+</fieldset>
