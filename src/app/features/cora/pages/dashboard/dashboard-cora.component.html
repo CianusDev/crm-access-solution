@@ -1,7 +1,205 @@
-<section class="pt-4 w-full">
-  <div class="grid md:grid-cols-3 gap-4">
-    <div class="p-2 border border-border bg-background rounded-md h-32"></div>
-    <div class="p-2 border border-border bg-background rounded-md h-32"></div>
-    <div class="p-2 border border-border bg-background rounded-md h-32"></div>
+@let data = dashboardCoraData()!;
+@let totalAttDocs = data.docsAttGes + data.agentAttenteCDPD + data.agentAttenteDGA + data.agentAttenteAGBO;
+
+<section class="pt-4 w-full flex flex-col gap-4">
+   <div class="grid grid-cols-3 gap-4">
+     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 col-span-1">
+       <app-stats-card
+         title="Total de dossiers"
+         [value]="data.allDocs||0"
+         />
+       <app-stats-card
+         title="Dossiers validés"
+         [value]="data.docsValid||0"
+         iconBackground="bg-green-100"
+       />
+       <app-stats-card
+         title="Dossiers en attentes"
+         [value]="totalAttDocs||0"
+         iconBackground="bg-amber-100"
+       />
+       <app-stats-card
+         title="Dossiers rejetés"
+         [value]="data.docsRejete||0"
+         iconBackground="bg-red-100"
+       />
+     </div>
+
+     <div class="p-4 border border-border bg-background rounded-md flex flex-col gap-4 col-span-2">
+       <div>
+         <h2 class="text-lg font-semibold">Statistiques des dossiers en attentes ({{totalAttDocs}} / {{data.allDocs}})</h2>
+         <p class="text-sm text-muted-foreground">
+            Soit au total {{totalAttDocs}} dossiers en attentes, répartis entre les différentes étapes du processus de validation.
+         </p>
+       </div>
+
+       <div class="grid grid-cols-1 lg:grid-cols-4 mt-auto gap-4">
+         <div class="border-border flex items-center gap-3 bg-background rounded-md">
+           <div
+             class="size-12 rounded-lg bg-red-100 flex flex-col justify-center items-center"
+           >
+             <lucide-icon [img]="FolderOpenIcon" class="size-5" />
+           </div>
+           <div class="flex flex-col gap-1">
+             <h3 class="text-sm font-medium">Evaluation</h3>
+             <p class="text-2xl font-bold">
+               {{data.docsAttGes||0}}
+             </p>
+           </div>
+         </div>
+
+         <div class="border-border flex items-center gap-3 bg-background rounded-md">
+           <div
+             class="size-12 rounded-lg bg-amber-100 flex flex-col justify-center items-center"
+           >
+             <lucide-icon [img]="FolderSymlinkIcon" class="size-5" />
+           </div>
+           <div class="flex flex-col gap-1">
+             <h3 class="text-sm font-medium">Validation</h3>
+             <p class="text-2xl font-bold">
+               {{data.agentAttenteCDPD||0}}
+             </p>
+           </div>
+         </div>
+
+         <div class="border-border flex items-center gap-3 bg-background rounded-md">
+           <div
+             class="size-12 rounded-lg bg-green-100 flex flex-col justify-center items-center"
+           >
+             <lucide-icon [img]="FolderCheckIcon" class="size-5" />
+           </div>
+           <div class="flex flex-col gap-1">
+             <h3 class="text-sm font-medium">Approbation</h3>
+             <p class="text-2xl font-bold">{{data.agentAttenteDGA}}</p>
+           </div>
+         </div>
+
+         <div class="border-border flex items-center gap-3 bg-background rounded-md">
+           <div
+             class="size-12 rounded-lg bg-violet-100 flex flex-col justify-center items-center"
+           >
+             <lucide-icon [img]="UserKeyIcon" class="size-5" />
+           </div>
+           <div class="flex flex-col gap-1">
+             <h3 class="text-sm font-medium">Création des accès</h3>
+             <p class="text-2xl font-bold">
+               {{data.agentAttenteAGBO}}
+             </p>
+           </div>
+         </div>
+       </div>
+
+     </div>
+   </div>
+
+  <!-- <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <app-stats-card
+      title="Total de dossiers"
+      [value]="data.allDocs||0"
+      />
+    <app-stats-card
+      title="Dossiers validés"
+      [value]="data.docsValid||0"
+      iconBackground="bg-green-100"
+    />
+    <app-stats-card
+      title="Dossiers en attentes"
+      [value]="totalAttDocs"
+      iconBackground="bg-amber-100"
+    />
+    <app-stats-card
+      title="Dossiers rejetés"
+      [value]="data.docsRejete"
+      iconBackground="bg-red-100"
+    />
+  </div> -->
+
+  <!-- <div class="p-4 border border-border bg-background rounded-md flex flex-col gap-4">
+
+    <div>
+      <h2 class="text-lg font-semibold">Evolutions des dossiers en attentes ({{totalAttDocs}} / {{data.allDocs}})</h2>
+    </div>
+
+    <div class="grid lg:grid-cols-4 gap-4">
+
+      <div class="border-border flex items-center gap-3 bg-background rounded-md">
+        <div
+          class="size-12 rounded-lg bg-red-100 flex flex-col justify-center items-center"
+        >
+          <lucide-icon [img]="FolderOpenIcon" class="size-5" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <h3 class="text-sm font-medium">Evaluation</h3>
+          <p class="text-2xl font-bold">2</p>
+        </div>
+      </div>
+
+      <div class="border-border flex items-center gap-3 bg-background rounded-md">
+        <div
+          class="size-12 rounded-lg bg-amber-100 flex flex-col justify-center items-center"
+        >
+          <lucide-icon [img]="FolderSymlinkIcon" class="size-5" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <h3 class="text-sm font-medium">Validation</h3>
+          <p class="text-2xl font-bold">2</p>
+        </div>
+      </div>
+
+      <div class="border-border flex items-center gap-3 bg-background rounded-md">
+        <div
+          class="size-12 rounded-lg bg-green-100 flex flex-col justify-center items-center"
+        >
+          <lucide-icon [img]="FolderCheckIcon" class="size-5" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <h3 class="text-sm font-medium">Approbation</h3>
+          <p class="text-2xl font-bold">2</p>
+        </div>
+      </div>
+
+      <div class="border-border flex items-center gap-3 bg-background rounded-md">
+        <div
+          class="size-12 rounded-lg bg-violet-100 flex flex-col justify-center items-center"
+        >
+          <lucide-icon [img]="UserKeyIcon" class="size-5" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <h3 class="text-sm font-medium">Création des accès</h3>
+          <p class="text-2xl font-bold">2</p>
+        </div>
+      </div>
+
+    </div>
+
+  </div> -->
+
+  <div class="grid lg:grid-cols-2 gap-4">
+    <div class="flex flex-col gap-4">
+      <div class="grid grid-cols-2 gap-4">
+        <app-stats-card
+          title="Agents principaux"
+          [icon]="UserIcon"
+          [value]="data.agencePrincipale||0"
+        />
+        <app-stats-card
+          title="Sous-agents"
+          [icon]="UsersIcon"
+          [value]="data.sousAgence||0"
+        />
+      </div>
+      <app-cora-managers-table [managers]="data?.gestCoras||[]"/>
+    </div>
+    <app-bar-chart
+      title="Dossiers par gestionnaire"
+      subtitle=""
+      [data]="{
+        labels: coraManagerNames(),
+        datasets: [
+          { label: 'Attentes', values: pendingCounts(), colorVar: '--color-chart-1' },
+          { label: 'Validés', values: validatedCounts(),  colorVar: '--color-chart-2' }
+        ]
+      }"
+    />
   </div>
 </section>

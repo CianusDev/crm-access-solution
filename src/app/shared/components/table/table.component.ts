@@ -4,138 +4,143 @@ import { CommonModule } from '@angular/common';
 /**
  * Composant Table shadcn-ui like.
  *
+ * Les sélecteurs sont des ATTRIBUTS (et non des balises custom) pour éviter
+ * que le navigateur casse la structure HTML native des tableaux.
+ *
  * Usage :
- *   <app-table>
- *     <app-table-header>
- *       <app-table-row>
- *         <app-table-head>Nom</app-table-head>
- *         <app-table-head>Email</app-table-head>
- *       </app-table-row>
- *     </app-table-header>
- *     <app-table-body>
- *       <app-table-row>
- *         <app-table-cell>John Doe</app-table-cell>
- *         <app-table-cell>john@example.com</app-table-cell>
- *       </app-table-row>
- *     </app-table-body>
- *     <app-table-footer>
- *       <app-table-row>
- *         <app-table-cell>Total</app-table-cell>
- *         <app-table-cell>100</app-table-cell>
- *       </app-table-row>
- *     </app-table-footer>
- *   </app-table>
+ *   <table appTable>
+ *     <thead appTableHeader>
+ *       <tr appTableRow>
+ *         <th appTableHead>Nom</th>
+ *         <th appTableHead align="right">Montant</th>
+ *       </tr>
+ *     </thead>
+ *     <tbody appTableBody>
+ *       <tr appTableRow>
+ *         <td appTableCell>John</td>
+ *         <td appTableCell align="right">100 €</td>
+ *       </tr>
+ *     </tbody>
+ *     <tfoot appTableFooter>
+ *       <tr appTableRow>
+ *         <td appTableCell>Total</td>
+ *         <td appTableCell align="right">100 €</td>
+ *       </tr>
+ *     </tfoot>
+ *   </table>
  */
 
-// ─── Table (wrapper avec scroll horizontal) ───────────────────────────────────
+// ─── Table wrapper ────────────────────────────────────────────────────────────
+@Component({
+  selector: 'table[appTable]',
+  standalone: true,
+  host: {
+    class: 'w-full caption-bottom text-sm',
+  },
+  template: `<ng-content />`,
+})
+export class TableComponent {}
+
+// ─── Wrapper avec scroll horizontal ──────────────────────────────────────────
 @Component({
   selector: 'app-table',
   standalone: true,
+  imports: [TableComponent],
   template: `
-    <div class="relative w-full overflow-auto rounded-md border border-zinc-200">
-      <table class="w-full caption-bottom text-sm">
+    <div class="relative w-full overflow-auto bg-background rounded-md border border-zinc-200">
+      <table appTable>
         <ng-content />
       </table>
     </div>
   `,
 })
-export class TableComponent {}
+export class AppTableComponent {}
 
-// ─── Table Caption ────────────────────────────────────────────────────────────
+// ─── Caption ──────────────────────────────────────────────────────────────────
 @Component({
-  selector: 'app-table-caption',
+  selector: 'caption[appTableCaption]',
   standalone: true,
-  template: `
-    <caption class="mt-4 text-sm text-zinc-500">
-      <ng-content />
-    </caption>
-  `,
+  host: {
+    class: 'mt-4 text-sm text-zinc-500',
+  },
+  template: `<ng-content />`,
 })
 export class TableCaptionComponent {}
 
-// ─── Table Header (<thead>) ───────────────────────────────────────────────────
+// ─── Header (<thead>) ─────────────────────────────────────────────────────────
 @Component({
-  selector: 'app-table-header',
+  selector: 'thead[appTableHeader]',
   standalone: true,
-  template: `
-    <thead class="[&_tr]:border-b [&_tr]:border-zinc-200">
-      <ng-content />
-    </thead>
-  `,
+  host: {
+    class: '[&_tr]:border-b [&_tr]:border-zinc-200',
+  },
+  template: `<ng-content />`,
 })
 export class TableHeaderComponent {}
 
-// ─── Table Body (<tbody>) ─────────────────────────────────────────────────────
+// ─── Body (<tbody>) ───────────────────────────────────────────────────────────
 @Component({
-  selector: 'app-table-body',
+  selector: 'tbody[appTableBody]',
   standalone: true,
-  template: `
-    <tbody class="[&_tr:last-child]:border-0">
-      <ng-content />
-    </tbody>
-  `,
+  host: {
+    class: '[&_tr:last-child]:border-0',
+  },
+  template: `<ng-content />`,
 })
 export class TableBodyComponent {}
 
-// ─── Table Footer (<tfoot>) ───────────────────────────────────────────────────
+// ─── Footer (<tfoot>) ─────────────────────────────────────────────────────────
 @Component({
-  selector: 'app-table-footer',
+  selector: 'tfoot[appTableFooter]',
   standalone: true,
-  template: `
-    <tfoot class="border-t border-zinc-200 bg-zinc-50 font-medium [&>tr]:last:border-b-0">
-      <ng-content />
-    </tfoot>
-  `,
+  host: {
+    class: 'border-t border-zinc-200 bg-zinc-50 font-medium [&>tr]:last:border-b-0',
+  },
+  template: `<ng-content />`,
 })
 export class TableFooterComponent {}
 
-// ─── Table Row (<tr>) ─────────────────────────────────────────────────────────
+// ─── Row (<tr>) ───────────────────────────────────────────────────────────────
 @Component({
-  selector: 'app-table-row',
+  selector: 'tr[appTableRow]',
   standalone: true,
-  template: `
-    <tr
-      class="border-b border-zinc-200 transition-colors hover:bg-zinc-50 data-[state=selected]:bg-zinc-100"
-    >
-      <ng-content />
-    </tr>
-  `,
+  host: {
+    class:
+      'border-b border-zinc-200 transition-colors hover:bg-zinc-50 data-[state=selected]:bg-zinc-100',
+  },
+  template: `<ng-content />`,
 })
 export class TableRowComponent {}
 
-// ─── Table Head (<th>) ────────────────────────────────────────────────────────
+// ─── Head (<th>) ──────────────────────────────────────────────────────────────
 @Component({
-  selector: 'app-table-head',
+  selector: 'th[appTableHead]',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <th
-      class="h-10 px-4 text-left align-middle font-medium text-zinc-500 [&:has([role=checkbox])]:pr-0"
-      [class.text-right]="align === 'right'"
-      [class.text-center]="align === 'center'"
-    >
-      <ng-content />
-    </th>
-  `,
+  host: {
+    class: 'h-10 px-4 align-middle font-medium text-zinc-500 [&:has([role=checkbox])]:pr-0',
+    '[class.text-right]': `align === 'right'`,
+    '[class.text-center]': `align === 'center'`,
+    '[class.text-left]': `align === 'left'`,
+  },
+  template: `<ng-content />`,
 })
 export class TableHeadComponent {
   @Input() align: 'left' | 'center' | 'right' = 'left';
 }
 
-// ─── Table Cell (<td>) ────────────────────────────────────────────────────────
+// ─── Cell (<td>) ──────────────────────────────────────────────────────────────
 @Component({
-  selector: 'app-table-cell',
+  selector: 'td[appTableCell]',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <td
-      class="p-4 align-middle [&:has([role=checkbox])]:pr-0"
-      [class.text-right]="align === 'right'"
-      [class.text-center]="align === 'center'"
-    >
-      <ng-content />
-    </td>
-  `,
+  host: {
+    class: 'p-4 align-middle [&:has([role=checkbox])]:pr-0',
+    '[class.text-right]': `align === 'right'`,
+    '[class.text-center]': `align === 'center'`,
+    '[class.text-left]': `align === 'left'`,
+  },
+  template: `<ng-content />`,
 })
 export class TableCellComponent {
   @Input() align: 'left' | 'center' | 'right' = 'left';
