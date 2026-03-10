@@ -1,0 +1,223 @@
+<div class="pt-4 w-full flex flex-col gap-4">
+
+  <!-- Header -->
+  <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-foreground">Liste des CORAs</h1>
+      <p class="text-sm text-muted-foreground">{{ totalCount() }} résultat{{ totalCount() > 1 ? 's' : '' }}</p>
+    </div>
+    <div class="flex items-center gap-2 self-start sm:self-auto">
+      <button
+        appButton
+        variant="ghost"
+        size="icon"
+        type="button"
+        (click)="refresh()"
+        [disabled]="isRefreshing()"
+        title="Actualiser"
+      >
+        <lucide-icon [img]="RefreshIcon" [size]="16" [class.animate-spin]="isRefreshing()" />
+      </button>
+      <button appButton variant="outline" type="button" (click)="exportCSV()" class="gap-2">
+        <lucide-icon [img]="DownloadIcon" [size]="16" />
+        Export CSV
+      </button>
+      <button appButton type="button" (click)="goToCreate()" class="gap-2">
+        <lucide-icon [img]="PlusIcon" [size]="16" />
+        Nouveau CORA
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter panel -->
+  <div class="rounded-xl border border-border bg-card p-4">
+    <div class="flex items-center gap-2 mb-4 text-sm font-medium text-foreground">
+      <lucide-icon [img]="FilterIcon" [size]="15" class="text-muted-foreground" />
+      Filtres de recherche
+    </div>
+    <form [formGroup]="filterForm" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <app-form-select
+        label="Gestionnaire"
+        name="gestionnaire"
+        placeholder="Tous"
+        [options]="gestionnairesOptions()"
+      />
+      <app-form-select
+        label="Commune"
+        name="commune"
+        placeholder="Toutes"
+        [options]="communesOptions()"
+      />
+      <app-form-input
+        label="Quartier"
+        name="quartier"
+        placeholder="Ex: Cocody"
+      />
+      <app-form-input
+        label="Rue"
+        name="rue"
+        placeholder="Ex: Rue des fleurs"
+      />
+    </form>
+    <div class="flex justify-end gap-2 mt-4">
+      <button appButton variant="outline" type="button" (click)="resetFilter()" class="gap-2">
+        <lucide-icon [img]="XIcon" [size]="14" />
+        Réinitialiser
+      </button>
+      <button
+        appLoadingButton
+        type="button"
+        [loading]="isSearching()"
+        loadingText="Recherche…"
+        (click)="searchCoras()"
+      >
+        <lucide-icon [img]="SearchIcon" [size]="14" />
+        Rechercher
+      </button>
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div class="rounded-xl border border-border bg-card overflow-hidden">
+    <div class="px-4 py-3 border-b border-border text-sm font-medium text-foreground flex items-center gap-2">
+      <span>Carte des agences</span>
+      <span class="text-xs text-muted-foreground font-normal">
+        — <span class="inline-block h-2 w-2 rounded-full bg-blue-600"></span> Agent principal
+        &nbsp;<span class="inline-block h-2 w-2 rounded-full bg-orange-500"></span> Sous-agent
+      </span>
+    </div>
+    <app-cora-map [coras]="coraList()" />
+  </div>
+
+  <!-- Quick search -->
+  <div class="relative w-full max-w-sm">
+    <lucide-icon
+      [img]="SearchIcon"
+      [size]="16"
+      class="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+    />
+    <input
+      type="text"
+      placeholder="Recherche rapide (désignation, référence, perfect…)"
+      [value]="searchQuery()"
+      (input)="onSearch($event)"
+      class="w-full rounded-lg border border-input bg-background py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors placeholder:text-muted-foreground"
+    />
+  </div>
+
+  <!-- Table -->
+  <app-table>
+    <thead appTableHeader>
+      <tr appTableRow>
+        <th appTableHead>Désignation</th>
+        <th appTableHead>N. Perfect</th>
+        <th appTableHead>N. P-Mobile</th>
+        <th appTableHead>Zone géographique</th>
+        <th appTableHead>Gestionnaire</th>
+        <th appTableHead align="center">Nb Agences</th>
+        <th appTableHead align="center">Actions</th>
+      </tr>
+    </thead>
+    <tbody appTableBody>
+
+      @for (cora of paginated(); track cora.id) {
+        <tr appTableRow>
+          <!-- Désignation + avatar initiales -->
+          <td appTableCell>
+            <div class="flex items-center gap-3">
+              <div
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                [class]="avatarColor(cora.statut)"
+              >
+                {{ initiales(cora.designation) }}
+              </div>
+              <div class="flex flex-col min-w-0">
+                <span class="font-semibold text-foreground truncate">{{ cora.designation }}</span>
+                <span class="text-xs text-muted-foreground font-mono">{{ cora.reference }}</span>
+                @if (cora.email) {
+                  <span class="text-xs text-muted-foreground truncate">{{ cora.email }}</span>
+                }
+              </div>
+            </div>
+          </td>
+
+          <!-- N. Perfect -->
+          <td appTableCell>
+            @if (cora.perfect) {
+              <span class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                {{ cora.perfect }}
+              </span>
+            } @else {
+              <span class="text-muted-foreground text-xs">—</span>
+            }
+          </td>
+
+          <!-- N. P-Mobile -->
+          <td appTableCell>
+            @if (cora.pmobile) {
+              <span class="inline-flex items-center rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-medium text-orange-700">
+                {{ cora.pmobile }}
+              </span>
+            } @else {
+              <span class="text-muted-foreground text-xs">—</span>
+            }
+          </td>
+
+          <!-- Zone géographique -->
+          <td appTableCell>
+            <div class="flex flex-col text-sm">
+              <span class="font-medium text-foreground">{{ cora.commune?.libelle ?? '—' }}</span>
+              <span class="text-xs text-muted-foreground">
+                {{ cora.quartier }}{{ cora.rue ? ', ' + cora.rue : '' }}
+              </span>
+            </div>
+          </td>
+
+          <!-- Gestionnaire -->
+          <td appTableCell>
+            <span class="text-sm font-medium text-foreground uppercase">{{ cora.user?.nom ?? '' }}</span>
+            <span class="text-sm text-foreground"> {{ cora.user?.prenom ?? '' }}</span>
+          </td>
+
+          <!-- Nb agences -->
+          <td appTableCell align="center">
+            <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+              {{ cora.agents?.length ?? 0 }}
+            </span>
+          </td>
+
+          <!-- Actions -->
+          <td appTableCell align="center">
+            <button
+              appButton
+              variant="ghost"
+              size="icon"
+              type="button"
+              (click)="viewDetail(cora.id)"
+              title="Voir le détail"
+            >
+              <lucide-icon [img]="EyeIcon" [size]="16" />
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr appTableRow>
+          <td appTableCell align="center" colspan="7" class="py-6 text-muted-foreground text-sm">
+            Aucun CORA trouvé.
+          </td>
+        </tr>
+      }
+    </tbody>
+  </app-table>
+
+  <!-- Pagination -->
+  @if (totalCount() > 10) {
+    <app-pagination
+      [total]="totalCount()"
+      [pageSize]="10"
+      [currentPage]="currentPage()"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+
+</div>

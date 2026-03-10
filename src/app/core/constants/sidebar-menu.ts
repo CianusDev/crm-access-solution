@@ -2,13 +2,10 @@ import { SidebarGroup } from '@/shared/components/sidebar/sidebar.interface';
 import {
   Ellipsis,
   FileText,
-  FolderTree,
   LayoutDashboard,
-  Package,
+  List,
   Settings,
-  ShoppingCart,
   UserPlus,
-  Users,
 } from 'lucide-angular';
 
 export const DEFAULT_MENU: SidebarGroup[] = [
@@ -22,9 +19,8 @@ export const DEFAULT_MENU: SidebarGroup[] = [
     icon: Ellipsis,
     items: [
       { label: 'Tableau de bord', href: '/app/cora/dashboard', icon: LayoutDashboard },
-      { label: 'Creer un cora', href: '/app/cora/create', icon: UserPlus },
-      { label: 'Commandes', href: '/app/orders', icon: ShoppingCart },
-      { label: 'Clients', href: '/app/clients', icon: Users },
+      { label: 'Liste des CORAs', href: '/app/cora/list', icon: List },
+      { label: 'Créer un CORA', href: '/app/cora/create', icon: UserPlus },
     ],
   },
   {

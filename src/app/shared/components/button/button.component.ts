@@ -25,7 +25,7 @@ import { buttonVariants, ButtonVariant, ButtonSize } from '@/shared/directives/u
     @if (loading() && loadingText()) {
       <span>{{ loadingText() }}</span>
     } @else {
-      <span [class.sr-only]="loading()">
+      <span class="inline-flex items-center gap-2" [class.sr-only]="loading()">
         <ng-content />
       </span>
     }
