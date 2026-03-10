@@ -1,7 +1,12 @@
 <fieldset class="flex flex-col gap-2">
 
   @if (label() !== null) {
-    <label appLabel>{{ label() }}</label>
+    <label appLabel>
+      {{ label() }}
+      @if (required()) {
+        <span class="text-destructive" aria-hidden="true">*</span>
+      }
+    </label>
   }
 
   <div class="relative">
@@ -16,7 +21,7 @@
       [attr.min]="min()"
       [attr.max]="max()"
       [attr.step]="step()"
-      [class.pr-10]="isPasswordType() || trailingIcon()"
+      [class.pr-10]="isPasswordType()"
     />
 
     <!-- Bouton toggle password -->
@@ -33,13 +38,6 @@
           <lucide-icon [img]="icons.Eye" size="18" />
         }
       </button>
-    }
-
-    <!-- Icône décorative pour number / tel / date -->
-    @if (trailingIcon()) {
-      <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-        <lucide-icon [img]="trailingIcon()!" size="16" />
-      </span>
     }
 
   </div>

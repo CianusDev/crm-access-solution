@@ -2,12 +2,16 @@
 
   @if (label() !== null) {
     <legend>
-      <label appLabel>{{ label() }}</label>
+      <label appLabel>
+        {{ label() }}
+        @if (required()) {
+          <span class="text-destructive" aria-hidden="true">*</span>
+        }
+      </label>
     </legend>
   }
 
-  <!-- Liste des options -->
-  <div [class]="containerClass()" role="radiogroup" [attr.aria-labelledby]="name() + '-label'">
+  <div [class]="containerClass()" class="mt-4" role="radiogroup" [attr.aria-labelledby]="name() + '-label'">
 
     @for (option of options(); track option.value) {
       <label
@@ -20,18 +24,17 @@
         <!-- Bouton radio custom -->
         <span
           class="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all duration-150"
-          [class.border-zinc-900]="isSelected(option)"
-          [class.bg-zinc-900]="isSelected(option)"
-          [class.border-zinc-300]="!isSelected(option)"
-          [class.bg-white]="!isSelected(option)"
-          [class.group-hover:border-zinc-500]="!option.disabled && !isSelected(option)"
+          [class.border-primary]="isSelected(option)"
+          [class.bg-primary]="isSelected(option)"
+          [class.border-border]="!isSelected(option)"
+          [class.bg-background]="!isSelected(option)"
+          [class.group-hover:border-primary/60]="!option.disabled && !isSelected(option)"
           role="radio"
           [attr.aria-checked]="isSelected(option)"
           [attr.aria-disabled]="option.disabled"
         >
-          <!-- Point intérieur -->
           @if (isSelected(option)) {
-            <span class="h-1.5 w-1.5 rounded-full bg-white"></span>
+            <span class="h-1.5 w-1.5 rounded-full bg-primary-foreground"></span>
           }
         </span>
 
@@ -39,14 +42,14 @@
         <span class="flex flex-col gap-0.5">
           <span
             class="text-sm font-medium leading-none transition-colors"
-            [class.text-zinc-900]="isSelected(option)"
-            [class.text-zinc-700]="!isSelected(option)"
+            [class.text-foreground]="isSelected(option)"
+            [class.text-foreground/75]="!isSelected(option)"
           >
             {{ option.label }}
           </span>
 
           @if (option.description) {
-            <span class="text-xs text-zinc-400 leading-snug">
+            <span class="text-xs text-muted-foreground leading-snug">
               {{ option.description }}
             </span>
           }
@@ -56,7 +59,6 @@
 
   </div>
 
-  <!-- Message d'erreur -->
   @if (shouldShowError) {
     <span [id]="name() + '-error'" class="text-destructive text-sm" role="alert">
       {{ errorMessage }}

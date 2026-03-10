@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  booleanAttribute,
   computed,
   inject,
   input,
@@ -11,6 +12,7 @@ import {
   DestroyRef,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { merge } from 'rxjs';
 import { LabelDirective } from '@/shared/directives/ui/label/label';
 import { LucideAngularModule, ChevronDown, Search, X, Check } from 'lucide-angular';
 import {
@@ -51,29 +53,27 @@ export class FormSelect implements OnInit {
   placeholder = input<string>('Sélectionner…');
   options = input<SelectOption[]>([]);
   searchPlaceholder = input<string>('Rechercher…');
+  required = input(false, { transform: booleanAttribute });
 
   // ── State ─────────────────────────────────────────────────────────────────
   isOpen = signal(false);
   searchQuery = signal('');
-
-  /**
-   * Signal alimenté par valueChanges du FormControl.
-   * Nécessaire avec OnPush : un simple getter ne déclenche pas la détection
-   * de changement — le signal si.
-   */
   selectedValue = signal<string | number | null>(null);
+  private readonly _tick = signal(0);
 
   ngOnInit() {
     const ctrl = this.control;
     if (!ctrl) return;
 
-    // Valeur initiale (ex: formulaire pré-rempli)
     this.selectedValue.set(ctrl.value ?? null);
 
-    // Synchronisation à chaque changement du FormControl
     ctrl.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((v) => this.selectedValue.set(v ?? null));
+
+    merge(ctrl.statusChanges, this.formGroupDirective.ngSubmit)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this._tick.update((n) => n + 1));
   }
 
   // ── Computed ──────────────────────────────────────────────────────────────
@@ -100,6 +100,7 @@ export class FormSelect implements OnInit {
   }
 
   get shouldShowError(): boolean {
+    void this._tick();
     const ctrl = this.control;
     if (!ctrl || !ctrl.errors) return false;
     const keys = Object.keys(ctrl.errors);
@@ -108,6 +109,7 @@ export class FormSelect implements OnInit {
   }
 
   get errorMessage(): string | null {
+    void this._tick();
     const ctrl = this.control;
     if (!ctrl || !ctrl.errors) return null;
     for (const key of Object.keys(ctrl.errors)) {

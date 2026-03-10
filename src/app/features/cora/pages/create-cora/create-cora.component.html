@@ -1,0 +1,288 @@
+<form [formGroup]="form" class="pt-4 w-full flex flex-col gap-6" (ngSubmit)="submit()">
+
+  <!-- ── Étapes ──────────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-0">
+    <div class="flex items-center gap-2 shrink-0">
+      <span class="flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">1</span>
+      <span class="text-sm font-medium hidden sm:block">Mandataire social</span>
+    </div>
+    <div class="flex-1 h-px bg-border mx-3"></div>
+    <div class="flex items-center gap-2 shrink-0">
+      <span class="flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">2</span>
+      <span class="text-sm font-medium hidden sm:block">Activité</span>
+    </div>
+    <div class="flex-1 h-px bg-border mx-3"></div>
+    <div class="flex items-center gap-2 shrink-0">
+      <span class="flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">3</span>
+      <span class="text-sm font-medium hidden sm:block">Local</span>
+    </div>
+  </div>
+
+  <!-- ── Section 1 : Mandataire social ─────────────────────────────────── -->
+  <app-card>
+    <app-card-header>
+      <app-card-title>Mandataire social</app-card-title>
+      <app-card-description>Informations sur la personne responsable et représentant légal du réseau.</app-card-description>
+    </app-card-header>
+    <app-card-content>
+
+      <!-- Identité -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <app-form-input label="Nom & Prénoms" placeholder="Ex: Jean Dupont" name="nomPrenom" required />
+        <app-form-input label="Date de naissance" type="date" name="dateNaiss" required />
+        <app-form-input label="Lieu de naissance" placeholder="Ex: Abidjan" name="lieuNaiss" required />
+      </div>
+
+      <!-- Identité légale -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <app-form-select
+          label="Nationalité"
+          name="nationalite"
+          placeholder="Choisir"
+          searchPlaceholder="Rechercher…"
+          [options]="paysOptions()"
+          required
+        />
+        <app-form-select
+          label="Type de pièce"
+          name="typePiece"
+          placeholder="Choisir"
+          [options]="DOCUMENT_TYPES"
+          required
+        />
+        <app-form-input label="Numéro de la pièce" placeholder="Ex: CI-001-2024" name="numeroPiece" required />
+      </div>
+
+      <!-- Profil -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <app-form-select label="Civilité" name="civilite" placeholder="Choisir" [options]="CIVILITIES_OPTIONS" required />
+        <app-form-select label="Situation matrimoniale" name="situationMat" placeholder="Choisir" [options]="SITUATION_MAT" />
+        <app-form-input label="Fonction" placeholder="Ex: Gérant" name="fonction" required />
+      </div>
+
+      <!-- Contact & expérience -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <app-form-input label="Contact tél." type="tel" placeholder="Ex: 0700000000" name="contactMandataire" required />
+
+        <div class="flex flex-col gap-2">
+          <label appLabel>Ancienneté mobile money <span class="text-destructive" aria-hidden="true">*</span></label>
+          <div class="flex gap-2">
+            <app-form-input type="number" placeholder="Années" name="ancieneteMmAn" [min]="0" />
+            <app-form-input type="number" placeholder="Mois (0-11)" name="ancieneteMmMois" [min]="0" [max]="11" />
+          </div>
+        </div>
+
+        <app-form-input label="Nombre de points de services" type="number" name="nombrePtService" [min]="1" required />
+      </div>
+
+    </app-card-content>
+  </app-card>
+
+  <!-- ── Section 2 : Description de l'activité ─────────────────────────── -->
+  <app-card>
+    <app-card-header>
+      <app-card-title>Description de l'activité</app-card-title>
+      <app-card-description>Informations légales, coordonnées et localisation du point de service.</app-card-description>
+    </app-card-header>
+    <app-card-content>
+
+      <!-- Sous-section : Entreprise -->
+      <div class="flex items-center gap-3">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground shrink-0">Entreprise</p>
+        <hr class="flex-1 border-border/60" />
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="md:col-span-2">
+          <app-form-input label="Désignation / Raison sociale" placeholder="Ex: Sarl Dupont" name="designation" required />
+        </div>
+        <app-form-input label="Date de création" type="date" name="dateCreation" required />
+        <app-form-input label="Capital" type="number" placeholder="Ex: 500000" name="capital" [min]="0" required />
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <app-form-select label="Forme juridique" name="formuleJuridique" placeholder="Choisir" [options]="FORME_JURIDIQUE" required />
+        <app-form-input label="N° RCCM" placeholder="Ex: CI-ABJ-2024-B-0001" name="rccm" required />
+        <app-form-input label="N° CC" placeholder="Optionnel" name="ncc" />
+      </div>
+
+      <!-- Sous-section : Coordonnées -->
+      <div class="flex items-center gap-3 pt-2">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground shrink-0">Coordonnées</p>
+        <hr class="flex-1 border-border/60" />
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <app-form-input label="Tél. mobile" type="tel" placeholder="Ex: 0700000000" name="mobile" required />
+        <app-form-input label="Tél. fixe" type="tel" placeholder="Optionnel" name="fixe" />
+        <app-form-input label="Email" type="email" placeholder="contact@exemple.ci" name="email" />
+        <app-form-input label="Nombre d'employés" type="number" name="nombreEmploye" [min]="0" required />
+      </div>
+
+      <!-- Sous-section : Localisation -->
+      <div class="flex items-center gap-3 pt-2">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground shrink-0">Localisation</p>
+        <hr class="flex-1 border-border/60" />
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <app-form-select
+          label="Commune"
+          name="commune"
+          placeholder="Choisir"
+          searchPlaceholder="Rechercher une commune…"
+          [options]="communesOptions()"
+          required
+        />
+        <app-form-input label="Quartier" placeholder="Ex: Cocody Riviera" name="quartier" required />
+        <app-form-input label="Rue" placeholder="Optionnel" name="rue" />
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <app-form-input label="N° Lot" placeholder="Optionnel" name="lot" />
+        <app-form-input label="N° Ilot" placeholder="Optionnel" name="ilot" />
+        <app-form-select label="Nature du bail" name="bail" placeholder="Choisir" [options]="NATURE_BAIL" required />
+
+        <div class="flex flex-col gap-2">
+          <label appLabel>Ancienneté dans le local <span class="text-destructive" aria-hidden="true">*</span></label>
+          <div class="flex gap-2">
+            <app-form-input type="number" placeholder="Années" name="ancieneteLocalAn" [min]="0" />
+            <app-form-input type="number" placeholder="Mois (0-11)" name="ancieneteLocalMois" [min]="0" [max]="11" />
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <app-form-input label="Immeuble" placeholder="Optionnel" name="immeuble" />
+        <app-form-input label="Étage" placeholder="Optionnel" name="etage" />
+        <app-form-input label="Porte" placeholder="Optionnel" name="porte" />
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="flex flex-col gap-2">
+          <label appLabel>Facture CIE / SODECI ou Certificat de résidence <span class="text-destructive" aria-hidden="true">*</span></label>
+          <div class="flex gap-2">
+            <div class="w-52 shrink-0">
+              <app-form-select name="typeFacture" placeholder="Type" [options]="TYPE_FACTURE" />
+            </div>
+            <div class="flex-1">
+              <app-form-input placeholder="N° de facture" name="facture" />
+            </div>
+          </div>
+        </div>
+        <app-form-input label="Bâtiment / Lieu de repère" placeholder="Ex: En face de la pharmacie…" name="reperes" />
+      </div>
+
+      <!-- Sous-section : Activité numérique -->
+      <div class="flex items-center gap-3 pt-2">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground shrink-0">Activité numérique</p>
+        <hr class="flex-1 border-border/60" />
+      </div>
+
+      <!-- Partenaires -->
+      <div class="flex flex-col gap-2">
+        <label appLabel>Partenaires</label>
+        <div class="flex flex-wrap gap-2">
+          @for (partner of PARTNERS_OPTIONS; track partner) {
+            <button
+              type="button"
+              (click)="togglePartner(partner)"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border transition-all cursor-pointer"
+              [class.bg-primary]="isPartnerSelected(partner)"
+              [class.text-primary-foreground]="isPartnerSelected(partner)"
+              [class.border-primary]="isPartnerSelected(partner)"
+              [class.bg-background]="!isPartnerSelected(partner)"
+              [class.text-foreground]="!isPartnerSelected(partner)"
+              [class.border-border]="!isPartnerSelected(partner)"
+              [class.hover:border-primary/60]="!isPartnerSelected(partner)"
+            >
+              @if (isPartnerSelected(partner)) {
+                <lucide-icon [img]="CheckIcon" [size]="13" />
+              }
+              {{ partner }}
+            </button>
+          }
+        </div>
+        <app-form-input label="Autres partenaires" placeholder="Précisez d'autres partenaires…" name="autrePartners" />
+      </div>
+
+      <!-- Devices -->
+      <div class="flex flex-col gap-2">
+        <label appLabel>Type de devices utilisés</label>
+        <div class="flex flex-wrap gap-2">
+          @for (device of TYPE_DEVICES_OPTIONS; track device) {
+            <button
+              type="button"
+              (click)="toggleDevice(device)"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border transition-all cursor-pointer"
+              [class.bg-primary]="isDeviceSelected(device)"
+              [class.text-primary-foreground]="isDeviceSelected(device)"
+              [class.border-primary]="isDeviceSelected(device)"
+              [class.bg-background]="!isDeviceSelected(device)"
+              [class.text-foreground]="!isDeviceSelected(device)"
+              [class.border-border]="!isDeviceSelected(device)"
+              [class.hover:border-primary/60]="!isDeviceSelected(device)"
+            >
+              @if (isDeviceSelected(device)) {
+                <lucide-icon [img]="CheckIcon" [size]="13" />
+              }
+              {{ device }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <app-form-select label="Type de téléphone" name="debit" placeholder="Choisir" [options]="TYPE_DEBIT" required />
+        <app-form-radio-group label="Connexion internet" name="internet" orientation="horizontal" [options]="INTERNET_OPTIONS" required />
+      </div>
+
+      <!-- Description -->
+      <div class="flex items-center gap-3 pt-2">
+        <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground shrink-0">Description</p>
+        <hr class="flex-1 border-border/60" />
+      </div>
+
+      <app-form-textarea
+        label="Description des activités"
+        name="description"
+        placeholder="Décrivez les activités exercées par ce réseau CORA…"
+        [rows]="5"
+        required
+      />
+
+    </app-card-content>
+  </app-card>
+
+  <!-- ── Section 3 : Description du local ──────────────────────────────── -->
+  <app-card>
+    <app-card-header>
+      <app-card-title>Description du local</app-card-title>
+      <app-card-description>Caractéristiques physiques et équipements du point de service.</app-card-description>
+    </app-card-header>
+    <app-card-content>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+        <app-form-checkbox name="enDur" label="Construit en dur" description="Brique, acier ou matériaux similaires" />
+        <app-form-checkbox name="ephemere" label="Construction éphémère" description="Structure provisoire ou légère" />
+        <app-form-checkbox name="espaceClient" label="Espace client dédié" description="Zone réservée à l'accueil" />
+        <app-form-checkbox name="camera" label="Caméra(s) de surveillance" description="Système de vidéo-surveillance" />
+        <app-form-checkbox name="securite" label="Sécurisé" description="Système de sécurité en place" />
+        <app-form-checkbox name="caisseIsole" label="Caisse(s) accessible(s)" description="Caisse en zone ouverte" />
+        <app-form-checkbox name="caisseNonIsole" label="Caisse(s) inaccessible(s)" description="Caisse isolée / sécurisée" />
+      </div>
+    </app-card-content>
+  </app-card>
+
+  <!-- ── Actions ────────────────────────────────────────────────────────── -->
+  <div class="flex justify-end pb-4">
+    <button
+      appLoadingButton
+      type="submit"
+      [loading]="isLoading()"
+      loadingText="Enregistrement…"
+    >
+      Enregistrer
+    </button>
+  </div>
+
+</form>

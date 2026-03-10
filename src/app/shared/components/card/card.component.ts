@@ -67,7 +67,7 @@ export class CardDescriptionComponent {}
   selector: 'app-card-content',
   standalone: true,
   template: `
-    <div class="p-6 pt-0">
+    <div class="p-6 flex flex-col gap-6 pt-0">
       <ng-content />
     </div>
   `,

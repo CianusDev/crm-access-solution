@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  booleanAttribute,
   computed,
   inject,
   input,
@@ -9,6 +10,7 @@ import {
   DestroyRef,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { merge } from 'rxjs';
 import { LabelDirective } from '@/shared/directives/ui/label/label';
 import { LucideAngularModule } from 'lucide-angular';
 import {
@@ -48,10 +50,12 @@ export class FormRadioGroup implements OnInit {
   name = input<string>('');
   options = input<RadioOption[]>([]);
   orientation = input<RadioGroupOrientation>('vertical');
+  required = input(false, { transform: booleanAttribute });
 
   // ── State ─────────────────────────────────────────────────────────────────
   /** Signal synchronisé avec le FormControl pour réactivité OnPush */
   selectedValue = signal<string | number | null>(null);
+  private readonly _tick = signal(0);
 
   ngOnInit() {
     const ctrl = this.control;
@@ -62,6 +66,10 @@ export class FormRadioGroup implements OnInit {
     ctrl.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((v) => this.selectedValue.set(v ?? null));
+
+    merge(ctrl.statusChanges, this.formGroupDirective.ngSubmit)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this._tick.update((n) => n + 1));
   }
 
   // ── Computed ──────────────────────────────────────────────────────────────
@@ -79,6 +87,7 @@ export class FormRadioGroup implements OnInit {
   }
 
   get shouldShowError(): boolean {
+    void this._tick();
     const ctrl = this.control;
     if (!ctrl || !ctrl.errors) return false;
     const keys = Object.keys(ctrl.errors);
@@ -87,6 +96,7 @@ export class FormRadioGroup implements OnInit {
   }
 
   get errorMessage(): string | null {
+    void this._tick();
     const ctrl = this.control;
     if (!ctrl || !ctrl.errors) return null;
     for (const key of Object.keys(ctrl.errors)) {

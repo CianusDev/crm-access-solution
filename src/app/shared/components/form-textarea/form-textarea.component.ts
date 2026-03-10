@@ -1,39 +1,61 @@
-import { InputDirective } from '@/shared/directives/ui/input/input';
 import { LabelDirective } from '@/shared/directives/ui/label/label';
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, booleanAttribute, computed, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnInit,
+  booleanAttribute,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { LucideAngularModule, Eye, EyeOff } from 'lucide-angular';
 import { merge } from 'rxjs';
 import {
-  ReactiveFormsModule,
-  ControlContainer,
-  FormGroupDirective,
-  FormGroup,
   AbstractControl,
+  ControlContainer,
+  FormGroup,
+  FormGroupDirective,
+  ReactiveFormsModule,
 } from '@angular/forms';
-
-export type InputType = 'text' | 'password' | 'email' | 'number' | 'tel' | 'date';
 
 const ERROR_MESSAGES: Record<string, (params?: Record<string, unknown>) => string> = {
   required: () => 'Ce champ est requis.',
-  email: () => 'Veuillez saisir une adresse e-mail valide.',
   minlength: (p) => `Minimum ${p?.['requiredLength'] ?? ''} caractères requis.`,
   maxlength: (p) => `Maximum ${p?.['requiredLength'] ?? ''} caractères autorisés.`,
-  pattern: () => 'Le format est invalide.',
-  min: (p) => `La valeur minimale est ${p?.['min'] ?? ''}.`,
-  max: (p) => `La valeur maximale est ${p?.['max'] ?? ''}.`,
 };
 
 @Component({
-  selector: 'app-form-input',
-  imports: [InputDirective, LabelDirective, ReactiveFormsModule, LucideAngularModule],
+  selector: 'app-form-textarea',
+  imports: [LabelDirective, ReactiveFormsModule],
   viewProviders: [{ provide: ControlContainer, useExisting: FormGroupDirective }],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  templateUrl: './form-input.component.html',
+  template: `
+    <fieldset class="flex flex-col gap-2">
+      @if (label() !== null) {
+        <label appLabel>
+          {{ label() }}
+          @if (required()) {
+            <span class="text-destructive" aria-hidden="true">*</span>
+          }
+        </label>
+      }
+      <textarea
+        [formControlName]="name()"
+        [placeholder]="placeholder()"
+        [rows]="rows()"
+        [attr.aria-invalid]="shouldShowError"
+        class="dark:bg-input/30 focus-visible:shadow-sm border-input focus-visible:border-primary focus-visible:ring-primary/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive disabled:bg-input/50 rounded-lg border bg-input/20 px-2.5 py-2 text-base transition-colors focus-visible:outline-none focus-visible:ring-[2px] min-w-0 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 resize-none md:text-sm w-full"
+      ></textarea>
+      @if (shouldShowError) {
+        <span [id]="name() + '-error'" class="text-destructive text-sm" role="alert">
+          {{ errorMessage }}
+        </span>
+      }
+    </fieldset>
+  `,
 })
-export class FormInput implements OnInit {
-  readonly icons = { Eye, EyeOff };
-
+export class FormTextarea implements OnInit {
   private readonly formGroupDirective = inject(FormGroupDirective);
   private readonly destroyRef = inject(DestroyRef);
   private readonly _tick = signal(0);
@@ -41,24 +63,16 @@ export class FormInput implements OnInit {
   label = input<string | null>(null);
   name = input<string>('');
   placeholder = input<string>('');
-  type = input<InputType>('text');
+  rows = input<number>(4);
   required = input(false, { transform: booleanAttribute });
 
-  /** Pour number : valeur min/max */
-  min = input<number | null>(null);
-  max = input<number | null>(null);
-
-  /** Pour number : pas (ex: 0.01 pour les décimales) */
-  step = input<number | null>(null);
-
-  showPassword = signal(false);
-
-  isPasswordType = computed(() => this.type() === 'password');
-
-  resolvedType = computed(() => {
-    if (this.isPasswordType() && this.showPassword()) return 'text';
-    return this.type();
-  });
+  ngOnInit(): void {
+    const ctrl = this.control;
+    if (!ctrl) return;
+    merge(ctrl.statusChanges, this.formGroupDirective.ngSubmit)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this._tick.update((n) => n + 1));
+  }
 
   get control(): AbstractControl | null {
     return (this.formGroupDirective.form as FormGroup).get(this.name());
@@ -87,17 +101,5 @@ export class FormInput implements OnInit {
       if (fn) return fn(ctrl.errors[key]);
     }
     return null;
-  }
-
-  ngOnInit(): void {
-    const ctrl = this.control;
-    if (!ctrl) return;
-    merge(ctrl.statusChanges, this.formGroupDirective.ngSubmit)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this._tick.update((n) => n + 1));
-  }
-
-  togglePasswordVisibility(): void {
-    this.showPassword.update((v) => !v);
   }
 }

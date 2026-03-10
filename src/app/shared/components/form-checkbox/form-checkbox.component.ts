@@ -9,6 +9,7 @@ import {
   DestroyRef,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { merge } from 'rxjs';
 import { LabelDirective } from '@/shared/directives/ui/label/label';
 import { LucideAngularModule, Check, Minus } from 'lucide-angular';
 import {
@@ -51,6 +52,7 @@ export class FormCheckbox implements OnInit {
   // ── State ─────────────────────────────────────────────────────────────────
   /** Signal synchronisé avec le FormControl pour réactivité OnPush */
   isChecked = signal<boolean>(false);
+  private readonly _tick = signal(0);
 
   ngOnInit() {
     const ctrl = this.control;
@@ -61,6 +63,10 @@ export class FormCheckbox implements OnInit {
     ctrl.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((v) => this.isChecked.set(!!v));
+
+    merge(ctrl.statusChanges, this.formGroupDirective.ngSubmit)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this._tick.update((n) => n + 1));
   }
 
   // ── Computed ──────────────────────────────────────────────────────────────
@@ -80,6 +86,7 @@ export class FormCheckbox implements OnInit {
   }
 
   get shouldShowError(): boolean {
+    void this._tick();
     const ctrl = this.control;
     if (!ctrl || !ctrl.errors) return false;
     const keys = Object.keys(ctrl.errors);
@@ -88,6 +95,7 @@ export class FormCheckbox implements OnInit {
   }
 
   get errorMessage(): string | null {
+    void this._tick();
     const ctrl = this.control;
     if (!ctrl || !ctrl.errors) return null;
     for (const key of Object.keys(ctrl.errors)) {

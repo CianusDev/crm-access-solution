@@ -46,3 +46,20 @@ export const TYPE_DEBIT = [
   { value: 1, label: '3G' },
   { value: 2, label: '4G' },
 ] as const;
+
+export const PARTNERS_OPTIONS = [
+  'ORANGE',
+  'MTN',
+  'MOOV',
+  'YUP',
+  'WAVE',
+  'WIZALL BAOBAB',
+  'ADVANS',
+] as const;
+
+export const TYPE_DEVICES_OPTIONS = ['SMARTPHONE', 'TABLETTE', 'ORDINATEUR'] as const;
+
+export const INTERNET_OPTIONS = [
+  { value: 'oui', label: 'OUI' },
+  { value: 'non', label: 'NON' },
+] as const;
