@@ -137,3 +137,47 @@ export interface ListCoraData {
   communes: { id: number; libelle: string }[];
   gestionnaires: Gestionnaire[];
 }
+
+export interface CoraRefDesig {
+  id: number;
+  ref?: string;
+  reference?: string;
+  designation: string;
+}
+
+export interface CreateAgentFormData {
+  communes: { id: number; libelle: string }[];
+  coras: CoraRefDesig[];
+}
+
+export interface CreateAgentDto {
+  cora: number;
+  commune: number;
+  typeUser: number;
+  mobile: string;
+  fixe?: string;
+  bail: number;
+  lot?: string;
+  ilot?: string;
+  immeuble?: string;
+  etage?: string;
+  porte?: string;
+  ancieneteLocalAn: number;
+  ancieneteLocalMois: number;
+  quartier: string;
+  rue?: string;
+  typeFacture?: string;
+  facture?: string;
+  reperes: string;
+  debit: number;
+  internet: number;
+  description: string;
+  espaceClient?: boolean;
+  camera?: boolean;
+  securite?: boolean;
+  caisseIsole?: boolean;
+  enDur?: boolean;
+  ephemere?: boolean;
+  caisseNonIsole?: boolean;
+  agent?: number;
+}

@@ -224,8 +224,8 @@
                       } @else {
                         <div class="grid grid-cols-3 gap-2 sm:grid-cols-4">
                           @for (img of imagesByType()[type]; track img.reference) {
-                            <a [href]="img.lien" target="_blank" class="block overflow-hidden rounded-lg border border-border hover:opacity-80 transition-opacity">
-                              <img [src]="img.lien" [alt]="img.libelle" class="h-24 w-full object-cover" />
+                            <a [href]="fileUrl(img.lien)" target="_blank" class="block overflow-hidden rounded-lg border border-border hover:opacity-80 transition-opacity">
+                              <img [src]="fileUrl(img.lien)" [alt]="img.libelle" class="h-24 w-full object-cover" />
                             </a>
                           }
                         </div>

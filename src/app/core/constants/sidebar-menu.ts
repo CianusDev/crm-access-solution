@@ -20,9 +20,10 @@ export const DEFAULT_MENU: SidebarGroup[] = [
     icon: Ellipsis,
     items: [
       { label: 'Tableau de bord', href: '/app/cora/dashboard', icon: LayoutDashboard },
+      { label: 'Créer un CORA', href: '/app/cora/create', icon: UserPlus },
       { label: 'Liste des CORAs', href: '/app/cora/list', icon: List },
       { label: 'Demandes en attente', href: '/app/cora/pending', icon: Clock },
-      { label: 'Créer un CORA', href: '/app/cora/create', icon: UserPlus },
+      { label: 'Créer un agent', href: '/app/cora/agent/create', icon: UserPlus },
     ],
   },
   {

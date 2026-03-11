@@ -1,0 +1,283 @@
+<div class="flex mt-4 flex-col gap-6">
+
+  <!-- Header -->
+  <div class="flex items-center gap-3">
+    <button appButton variant="ghost" size="icon" (click)="goBack()">
+      <lucide-icon [img]="ArrowLeftIcon" [size]="18" />
+    </button>
+    <div>
+      <h1 class="text-xl font-bold text-foreground">Créer un agent</h1>
+      <p class="text-sm text-muted-foreground">Enregistrement d'un nouvel agent CORA</p>
+    </div>
+  </div>
+
+  <!-- Étape 1 : Recherche CORA (signaux purs, pas de FormGroup) -->
+  @if (!selectedCora()) {
+    <app-card>
+      <app-card-header>
+        <app-card-title>Sélectionner un CORA</app-card-title>
+      </app-card-header>
+      <app-card-content class="!pt-6">
+        <p class="text-sm text-muted-foreground">
+          Commencez par sélectionner le CORA auquel sera rattaché le nouvel agent.
+        </p>
+
+        <!-- Champ de recherche -->
+        <div class="relative">
+          <lucide-icon
+            [img]="SearchIcon"
+            [size]="15"
+            class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+          />
+          <input
+            type="text"
+            placeholder="Rechercher par désignation ou référence…"
+            [value]="searchQuery()"
+            (input)="searchQuery.set($any($event.target).value)"
+            class="h-9 w-full rounded-lg border border-border bg-input/20 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/50"
+          />
+          @if (searchQuery()) {
+            <button
+              type="button"
+              (click)="searchQuery.set('')"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <lucide-icon [img]="XIcon" [size]="14" />
+            </button>
+          }
+        </div>
+
+        <!-- Liste des résultats -->
+        @if (searchQuery()) {
+          <div class="mt-1 max-h-64 overflow-y-auto rounded-lg border border-border bg-popover shadow-md">
+            @if (filteredCoras().length === 0) {
+              <p class="px-3 py-6 text-center text-sm text-muted-foreground">Aucun CORA trouvé.</p>
+            }
+            @for (cora of filteredCoras(); track cora.id) {
+              <button
+                type="button"
+                (click)="selectCora(cora)"
+                class="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-accent transition-colors"
+              >
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                  <lucide-icon [img]="Building2Icon" [size]="14" class="text-primary" />
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-foreground">{{ cora.designation }}</p>
+                  <p class="text-xs text-muted-foreground font-mono">{{ cora.ref ?? cora.reference }}</p>
+                </div>
+              </button>
+            }
+          </div>
+        }
+      </app-card-content>
+    </app-card>
+  }
+
+  <!-- Étape 2 : CORA sélectionné + formulaire -->
+  @if (selectedCora(); as cora) {
+
+    <!-- Bandeau CORA sélectionné -->
+    <div class="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+      <div class="flex items-center gap-3">
+        <div class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+          <lucide-icon [img]="Building2Icon" [size]="16" class="text-primary" />
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-foreground">{{ cora.designation }}</p>
+          <p class="text-xs text-muted-foreground font-mono">{{ cora.ref ?? cora.reference }}</p>
+        </div>
+      </div>
+      <button appButton variant="ghost" size="sm" type="button" (click)="changeCora()">
+        Changer
+      </button>
+    </div>
+
+    <!-- Formulaire principal -->
+    <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-4">
+
+      <!-- Contact & Type -->
+      <app-card>
+        <app-card-header>
+          <app-card-title>Contact & Type</app-card-title>
+        </app-card-header>
+        <app-card-content>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <app-form-select
+              label="Type d'agent"
+              name="typeUser"
+              placeholder="Sélectionner…"
+              [options]="typeUserOptions"
+              required
+            />
+            <app-form-input
+              label="Mobile"
+              name="mobile"
+              type="tel"
+              placeholder="Ex: 0700000000"
+              required
+            />
+            <app-form-input
+              label="Fixe"
+              name="fixe"
+              type="tel"
+              placeholder="Ex: 2700000000"
+            />
+          </div>
+        </app-card-content>
+      </app-card>
+
+      <!-- Localisation -->
+      <app-card>
+        <app-card-header>
+          <app-card-title>Localisation</app-card-title>
+        </app-card-header>
+        <app-card-content>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <app-form-select
+              label="Commune"
+              name="commune"
+              placeholder="Sélectionner une commune…"
+              searchPlaceholder="Rechercher…"
+              [options]="communeOptions()"
+              required
+            />
+            <app-form-input
+              label="Quartier"
+              name="quartier"
+              placeholder="Ex: Cocody Riviera"
+              required
+            />
+            <app-form-input
+              label="Rue"
+              name="rue"
+              placeholder="Ex: Rue des Jardins"
+            />
+            <app-form-input
+              label="Repères"
+              name="reperes"
+              placeholder="Ex: Près de la pharmacie centrale…"
+              required
+            />
+          </div>
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            <app-form-input label="Lot" name="lot" placeholder="Ex: A12" />
+            <app-form-input label="Îlot" name="ilot" placeholder="Ex: 03" />
+            <app-form-input label="Immeuble" name="immeuble" placeholder="Ex: Résidence Lumière" />
+            <app-form-input label="Étage" name="etage" placeholder="Ex: 2" />
+            <app-form-input label="Porte" name="porte" placeholder="Ex: 204" />
+          </div>
+        </app-card-content>
+      </app-card>
+
+      <!-- Ancienneté & Bail -->
+      <app-card>
+        <app-card-header>
+          <app-card-title>Ancienneté & Bail</app-card-title>
+        </app-card-header>
+        <app-card-content>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <app-form-input
+              label="Ancienneté (années)"
+              name="ancieneteLocalAn"
+              type="number"
+              placeholder="Ex: 2"
+              [min]="0"
+              required
+            />
+            <app-form-input
+              label="Ancienneté (mois)"
+              name="ancieneteLocalMois"
+              type="number"
+              placeholder="0–11"
+              [min]="0"
+              [max]="11"
+              required
+            />
+            <app-form-select
+              label="Nature du bail"
+              name="bail"
+              placeholder="Sélectionner…"
+              [options]="bailOptions"
+              required
+            />
+            <app-form-input
+              label="Type de facture"
+              name="typeFacture"
+              placeholder="Ex: Eau, Électricité"
+            />
+          </div>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <app-form-input
+              label="N° Facture"
+              name="facture"
+              placeholder="Ex: FAC-2024-001"
+            />
+          </div>
+        </app-card-content>
+      </app-card>
+
+      <!-- Connexion -->
+      <app-card>
+        <app-card-header>
+          <app-card-title>Connexion Internet</app-card-title>
+        </app-card-header>
+        <app-card-content>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <app-form-select
+              label="Type de débit"
+              name="debit"
+              placeholder="Sélectionner…"
+              [options]="debitOptions"
+              required
+            />
+            <app-form-select
+              label="Accès internet"
+              name="internet"
+              placeholder="Sélectionner…"
+              [options]="internetOptions"
+              required
+            />
+          </div>
+        </app-card-content>
+      </app-card>
+
+      <!-- Description du local -->
+      <app-card>
+        <app-card-header>
+          <app-card-title>Description du local</app-card-title>
+        </app-card-header>
+        <app-card-content>
+          <app-form-textarea
+            label="Description de l'activité"
+            name="description"
+            placeholder="Décrivez l'activité et le local…"
+            [rows]="4"
+            required
+          />
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            <app-form-checkbox name="espaceClient" label="Espace client" />
+            <app-form-checkbox name="camera" label="Caméra de sécurité" />
+            <app-form-checkbox name="securite" label="Sécurisé" />
+            <app-form-checkbox name="enDur" label="En dur" />
+            <app-form-checkbox name="ephemere" label="Éphémère" />
+            <app-form-checkbox name="caisseIsole" label="Caisse isolée" />
+            <app-form-checkbox name="caisseNonIsole" label="Caisse non isolée" />
+          </div>
+        </app-card-content>
+      </app-card>
+
+      <!-- Actions -->
+      <div class="flex justify-end gap-3">
+        <button appButton variant="outline" type="button" (click)="goBack()">
+          Annuler
+        </button>
+        <button appLoadingButton type="submit" [loading]="isSubmitting()">
+          Enregistrer l'agent
+        </button>
+      </div>
+
+    </form>
+  }
+
+</div>

@@ -1,5 +1,6 @@
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   booleanAttribute,
   computed,
@@ -45,6 +46,7 @@ export class FormSelect implements OnInit {
 
   private el = inject(ElementRef);
   private destroyRef = inject(DestroyRef);
+  private cdr = inject(ChangeDetectorRef);
   private formGroupDirective = inject(FormGroupDirective);
 
   // ── Inputs ────────────────────────────────────────────────────────────────
@@ -69,7 +71,10 @@ export class FormSelect implements OnInit {
 
     ctrl.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((v) => this.selectedValue.set(v ?? null));
+      .subscribe((v) => {
+        this.selectedValue.set(v ?? null);
+        this.cdr.markForCheck();
+      });
 
     merge(ctrl.statusChanges, this.formGroupDirective.ngSubmit)
       .pipe(takeUntilDestroyed(this.destroyRef))

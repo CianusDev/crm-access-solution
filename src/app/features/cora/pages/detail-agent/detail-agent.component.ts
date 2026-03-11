@@ -54,6 +54,8 @@ const DOC_TYPES = [
   'Contrat de bail', 'Facture',
 ];
 
+const FILE_BASE_URL = 'https://crm-fichiers.creditaccess.ci/crm/panier-de-fichiers-ca/';
+
 const IMG_TYPES = [
   'Mandataire Social', 'Façade', 'Ruelle', 'Espace client', 'Photo Caisse',
 ];
@@ -144,8 +146,13 @@ export class DetailAgentComponent {
   hasForce(f: string) { return this.forces().includes(f); }
   hasFaiblesse(f: string) { return this.faiblesses().includes(f); }
 
+  fileUrl(lien?: string) {
+    return lien ? FILE_BASE_URL + lien : null;
+  }
+
   openDocument(lien?: string) {
-    if (lien) window.open(lien, '_blank');
+    const url = this.fileUrl(lien);
+    if (url) window.open(url, '_blank');
   }
 
   openMap() {

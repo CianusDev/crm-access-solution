@@ -2,7 +2,7 @@ import { ApiService } from '@/core/services/api/api.service';
 import { inject, Injectable } from '@angular/core';
 import { catchError, forkJoin, map, throwError } from 'rxjs';
 import { CoraFormData, CreateCoraDto } from '../../interfaces/create-cora-dto.interface';
-import { AgentCoraDetail, AgentEnAttente, Cora, CoraFiltre, Gestionnaire, ListCoraData } from '../../interfaces/cora.interface';
+import { AgentCoraDetail, AgentEnAttente, Cora, CoraFiltre, CoraRefDesig, CreateAgentDto, CreateAgentFormData, Gestionnaire, ListCoraData } from '../../interfaces/cora.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -63,6 +63,33 @@ export class CoraService {
   getAgentsEnAttente() {
     return this.apiService.get<{ agents: AgentEnAttente[] }>(this.endpoint + '/agent_attente').pipe(
       map((res) => res.agents),
+      catchError((err) => throwError(() => ({ status: err.status, message: err.message }))),
+    );
+  }
+
+  getCreateAgentFormData() {
+    return forkJoin({
+      communes: this.apiService
+        .get<{ communes: { id: number; libelle: string }[] }>('/pays_commune')
+        .pipe(map((res) => res.communes)),
+      coras: this.apiService
+        .get<{ coras: CoraRefDesig[] }>(this.endpoint + '/coras_list_ref_design')
+        .pipe(map((res) => res.coras)),
+    }).pipe(
+      catchError((err) => throwError(() => ({ status: err.status, message: err.message }))),
+    );
+  }
+
+  saveAgent(data: CreateAgentDto) {
+    return this.apiService.post<{ agent: AgentCoraDetail }>(this.endpoint + '/save_agent', data).pipe(
+      map((res) => res.agent),
+      catchError((err) => throwError(() => ({ status: err.status, message: err.message }))),
+    );
+  }
+
+  updateAgent(data: CreateAgentDto & { agent: number }) {
+    return this.apiService.put<{ agent: AgentCoraDetail }>(this.endpoint + '/update_agent', data).pipe(
+      map((res) => res.agent),
       catchError((err) => throwError(() => ({ status: err.status, message: err.message }))),
     );
   }

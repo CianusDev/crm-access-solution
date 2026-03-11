@@ -5,6 +5,7 @@ import { listCoraResolver } from './pages/list-cora/list-cora.resolver';
 import { detailCoraResolver } from './pages/detail-cora/detail-cora.resolver';
 import { pendingCoraResolver } from './pages/pending-cora/pending-cora.resolver';
 import { detailAgentResolver } from './pages/detail-agent/detail-agent.resolver';
+import { createAgentFormDataResolver } from './pages/create-agent/create-agent.resolver';
 
 export const coraRoutes: Route = {
   path: 'cora',
@@ -45,6 +46,14 @@ export const coraRoutes: Route = {
       },
       loadComponent: () =>
         import('./pages/pending-cora/pending-cora.component').then((m) => m.PendingCoraComponent),
+    },
+    {
+      path: 'agent/create',
+      resolve: {
+        formData: createAgentFormDataResolver,
+      },
+      loadComponent: () =>
+        import('./pages/create-agent/create-agent.component').then((m) => m.CreateAgentComponent),
     },
     {
       path: 'agent/:id',
