@@ -1,0 +1,179 @@
+<div class="relative h-screen w-screen overflow-hidden">
+
+  <!-- Google Map (fond) -->
+  <google-map height="100%" width="100%" [zoom]="zoom" [center]="center" [options]="mapOptions" class="absolute inset-0">
+    @for (marker of markers(); track $index) {
+      <map-marker
+        #markerRef="mapMarker"
+        [position]="marker.position"
+        [title]="marker.coraDesignation"
+        [options]="markerOptions(marker.agentType)"
+        (mapClick)="openInfo(markerRef, marker)"
+      />
+    }
+    <map-info-window>
+      @if (activeMarker(); as m) {
+        <div class="min-w-[180px] p-1">
+          <p class="text-sm font-bold text-gray-900">{{ m.coraDesignation }}</p>
+          <p class="text-xs text-gray-500 font-mono">{{ m.coraReference }}</p>
+          @if (m.coraCommune) {
+            <p class="mt-1 text-xs text-gray-600">📍 {{ m.coraCommune }}{{ m.coraQuartier ? ', ' + m.coraQuartier : '' }}</p>
+          }
+          <a
+            [href]="'https://www.google.com/maps?q=' + m.position.lat + ',' + m.position.lng"
+            target="_blank"
+            class="mt-2 block text-xs text-blue-600 hover:underline"
+          >
+            Voir l'itinéraire ↗
+          </a>
+        </div>
+      }
+    </map-info-window>
+  </google-map>
+
+  <!-- Panneau latéral -->
+  <div
+    class="absolute left-0 top-0 z-10 flex h-full flex-col bg-white shadow-xl transition-transform duration-300 overflow-y-auto"
+    [class.-translate-x-full]="!panelOpen()"
+    style="width: 300px"
+  >
+    <!-- En-tête -->
+    <div class="flex items-center gap-3 border-b border-gray-100 px-4 py-4 sticky top-0 bg-white z-10">
+      <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600">
+        <lucide-icon [img]="MapPinIcon" [size]="16" class="text-white" />
+      </div>
+      <div class="flex-1 min-w-0">
+        <h1 class="text-sm font-bold text-gray-900 leading-tight">Réseau de CORAs</h1>
+        <p class="text-xs text-gray-500">Credit Access CI</p>
+      </div>
+      <button type="button" (click)="panelOpen.set(false)" class="text-gray-400 hover:text-gray-600 transition-colors shrink-0">
+        <lucide-icon [img]="XIcon" [size]="16" />
+      </button>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="grid grid-cols-3 divide-x divide-gray-100 border-b border-gray-100 shrink-0">
+      <div class="flex flex-col items-center py-3">
+        <p class="text-lg font-bold text-gray-900">{{ totalCoras() }}</p>
+        <p class="text-xs text-gray-500">CORAs</p>
+      </div>
+      <div class="flex flex-col items-center py-3">
+        <p class="text-lg font-bold text-gray-900">{{ totalAgents() }}</p>
+        <p class="text-xs text-gray-500">Agents</p>
+      </div>
+      <div class="flex flex-col items-center py-3">
+        <p class="text-lg font-bold text-blue-600">{{ visibleMarkers() }}</p>
+        <p class="text-xs text-gray-500">Sur la carte</p>
+      </div>
+    </div>
+
+    <!-- Filtres -->
+    <div class="flex flex-col gap-3 border-b border-gray-100 px-4 py-4">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Filtres</p>
+        @if (hasActiveFilters()) {
+          <button
+            type="button"
+            (click)="resetFilters()"
+            class="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors"
+          >
+            <lucide-icon [img]="FilterXIcon" [size]="12" />
+            Réinitialiser
+          </button>
+        }
+      </div>
+
+      <!-- Gestionnaire -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-gray-500">Gestionnaire</label>
+        <select
+          [value]="gestionnaireFilter()"
+          (change)="gestionnaireFilter.set($any($event.target).value ? +$any($event.target).value : null); applyFilter()"
+          class="h-8 w-full rounded-md border border-gray-200 bg-gray-50 px-2.5 text-xs text-gray-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+        >
+          <option value="">Tous les gestionnaires</option>
+          @for (g of gestionnaireOptions(); track g.id) {
+            <option [value]="g.id">{{ g.nom }} {{ g.prenom }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Commune -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-gray-500">Commune</label>
+        <select
+          [value]="communeFilter()"
+          (change)="communeFilter.set($any($event.target).value ? +$any($event.target).value : null); applyFilter()"
+          class="h-8 w-full rounded-md border border-gray-200 bg-gray-50 px-2.5 text-xs text-gray-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+        >
+          <option value="">Toutes les communes</option>
+          @for (c of communeOptions(); track c.id) {
+            <option [value]="c.id">{{ c.libelle }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Quartier -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-gray-500">Quartier</label>
+        <input
+          type="text"
+          placeholder="Ex: Riviera, Plateau…"
+          [value]="quartierFilter()"
+          (input)="quartierFilter.set($any($event.target).value); applyFilter()"
+          class="h-8 w-full rounded-md border border-gray-200 bg-gray-50 px-2.5 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+        />
+      </div>
+
+      <!-- Rue -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-gray-500">Rue</label>
+        <input
+          type="text"
+          placeholder="Ex: Boulevard Latrille…"
+          [value]="rueFilter()"
+          (input)="rueFilter.set($any($event.target).value); applyFilter()"
+          class="h-8 w-full rounded-md border border-gray-200 bg-gray-50 px-2.5 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+        />
+      </div>
+    </div>
+
+    <!-- Légende -->
+    <div class="px-4 py-3">
+      <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Légende</p>
+      <div class="flex flex-col gap-1.5">
+        <div class="flex items-center gap-2">
+          <span class="h-3 w-3 shrink-0 rounded-full bg-blue-600 ring-2 ring-white shadow-sm"></span>
+          <span class="text-xs text-gray-700">Agent principal (Mandataire)</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="h-3 w-3 shrink-0 rounded-full bg-orange-500 ring-2 ring-white shadow-sm"></span>
+          <span class="text-xs text-gray-700">Sous-agent</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aucun résultat -->
+    @if (hasActiveFilters() && visibleMarkers() === 0) {
+      <div class="flex flex-col items-center gap-2 px-4 py-6 text-center">
+        <lucide-icon [img]="MapPinIcon" [size]="28" class="text-gray-300" />
+        <p class="text-sm text-gray-500">Aucun résultat pour ces filtres.</p>
+        <button type="button" (click)="resetFilters()" class="text-xs text-blue-600 hover:underline">
+          Réinitialiser les filtres
+        </button>
+      </div>
+    }
+  </div>
+
+  <!-- Bouton rouvrir panneau -->
+  @if (!panelOpen()) {
+    <button
+      type="button"
+      (click)="panelOpen.set(true)"
+      class="absolute left-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-lg hover:shadow-xl transition-shadow"
+    >
+      <lucide-icon [img]="Building2Icon" [size]="18" class="text-blue-600" />
+    </button>
+  }
+
+</div>

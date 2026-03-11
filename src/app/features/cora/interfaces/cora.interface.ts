@@ -12,6 +12,7 @@ export interface CoraAgent {
 }
 
 export interface CoraUser {
+  id?: number;
   nom: string;
   prenom: string;
 }

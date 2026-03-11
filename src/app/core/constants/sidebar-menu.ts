@@ -5,6 +5,7 @@ import {
   FileText,
   LayoutDashboard,
   List,
+  MapPin,
   Settings,
   UserPlus,
 } from 'lucide-angular';
@@ -24,6 +25,7 @@ export const DEFAULT_MENU: SidebarGroup[] = [
       { label: 'Liste des CORAs', href: '/app/cora/list', icon: List },
       { label: 'Demandes en attente', href: '/app/cora/pending', icon: Clock },
       { label: 'Créer un agent', href: '/app/cora/agent/create', icon: UserPlus },
+      { label: 'Géolocalisation CORA', href: '/cora-map', icon: MapPin },
     ],
   },
   {

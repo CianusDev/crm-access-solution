@@ -1,6 +1,7 @@
 import {
   CardComponent,
   CardContentComponent,
+  CardDescriptionComponent,
   CardHeaderComponent,
   CardTitleComponent,
 } from '@/shared/components/card/card.component';
@@ -23,9 +24,17 @@ import { CoraService } from '../../services/cora/cora.service';
   templateUrl: './create-agent.component.html',
   imports: [
     ReactiveFormsModule,
-    CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent,
-    ButtonDirective, ButtonComponent,
-    FormInput, FormSelect, FormTextarea, FormCheckbox,
+    CardComponent,
+    CardHeaderComponent,
+    CardTitleComponent,
+    CardContentComponent,
+    CardDescriptionComponent,
+    ButtonDirective,
+    ButtonComponent,
+    FormInput,
+    FormSelect,
+    FormTextarea,
+    FormCheckbox,
     LucideAngularModule,
   ],
 })
@@ -83,7 +92,10 @@ export class CreateAgentComponent implements OnInit {
     etage: [''],
     porte: [''],
     ancieneteLocalAn: [null as number | null, [Validators.required, Validators.min(0)]],
-    ancieneteLocalMois: [null as number | null, [Validators.required, Validators.min(0), Validators.max(11)]],
+    ancieneteLocalMois: [
+      null as number | null,
+      [Validators.required, Validators.min(0), Validators.max(11)],
+    ],
     reperes: ['', Validators.required],
     bail: [null as number | null, Validators.required],
     typeFacture: [''],

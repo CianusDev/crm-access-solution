@@ -16,18 +16,17 @@
     <app-card>
       <app-card-header>
         <app-card-title>Sélectionner un CORA</app-card-title>
+        <app-card-description>
+          Recherchez le CORA existant pour lequel vous souhaitez créer un agent. Si le CORA n'existe pas, créez-le d'abord dans la section "Gérer les CORAs".
+        </app-card-description>
       </app-card-header>
-      <app-card-content class="!pt-6">
-        <p class="text-sm text-muted-foreground">
-          Commencez par sélectionner le CORA auquel sera rattaché le nouvel agent.
-        </p>
-
+      <app-card-content class="">
         <!-- Champ de recherche -->
         <div class="relative">
           <lucide-icon
             [img]="SearchIcon"
             [size]="15"
-            class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+            class="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
           />
           <input
             type="text"

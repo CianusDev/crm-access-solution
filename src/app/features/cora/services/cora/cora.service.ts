@@ -67,6 +67,33 @@ export class CoraService {
     );
   }
 
+  getGestionnaires() {
+    return this.apiService
+      .get<{ data: Gestionnaire[] }>(this.endpoint + '/all_gestionnaires')
+      .pipe(
+        map((res) => res.data),
+        catchError((err) => throwError(() => ({ status: err.status, message: err.message }))),
+      );
+  }
+
+  getCommunes() {
+    return this.apiService
+      .get<{ communes: { id: number; libelle: string }[] }>('/pays_commune')
+      .pipe(
+        map((res) => res.communes),
+        catchError((err) => throwError(() => ({ status: err.status, message: err.message }))),
+      );
+  }
+
+  getPublicCoraList() {
+    return this.apiService
+      .get<{ coras: Cora[] }>(this.endpoint + '/cora_list')
+      .pipe(
+        map((res) => res.coras),
+        catchError((err) => throwError(() => ({ status: err.status, message: err.message }))),
+      );
+  }
+
   getCreateAgentFormData() {
     return forkJoin({
       communes: this.apiService
