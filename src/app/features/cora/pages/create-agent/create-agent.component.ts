@@ -12,6 +12,7 @@ import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { FormSelect, SelectOption } from '@/shared/components/form-select/form-select.component';
 import { FormTextarea } from '@/shared/components/form-textarea/form-textarea.component';
 import { ToastService } from '@/core/services/toast/toast.service';
+import { TYPE_DEVICES_OPTIONS } from '@/core/constants/cora-form';
 import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -103,6 +104,9 @@ export class CreateAgentComponent implements OnInit {
     debit: [null as number | null, Validators.required],
     internet: [null as number | null, Validators.required],
     description: ['', Validators.required],
+    deviceSmartphone: [false],
+    deviceTablette: [false],
+    deviceOrdinateur: [false],
     espaceClient: [false],
     camera: [false],
     securite: [false],
@@ -118,9 +122,8 @@ export class CreateAgentComponent implements OnInit {
   );
 
   readonly typeUserOptions: SelectOption[] = [
-    { value: 1, label: 'Agent principal (Mandataire)' },
-    { value: 2, label: 'Sous-utilisateur' },
     { value: 3, label: 'Sous-agent' },
+    { value: 2, label: 'Sous-utilisateur' },
   ];
 
   readonly bailOptions: SelectOption[] = [
@@ -134,8 +137,8 @@ export class CreateAgentComponent implements OnInit {
   ];
 
   readonly internetOptions: SelectOption[] = [
-    { value: 1, label: 'Oui' },
-    { value: 2, label: 'Non' },
+    { value: 'oui', label: 'OUI' },
+    { value: 'non', label: 'NON' },
   ];
 
   ngOnInit() {
@@ -156,7 +159,15 @@ export class CreateAgentComponent implements OnInit {
       return;
     }
     this.isSubmitting.set(true);
-    const payload = { ...this.form.getRawValue(), cora: this.selectedCora()!.id };
+    const raw = this.form.getRawValue();
+    const typeDevice = TYPE_DEVICES_OPTIONS.filter(
+      (d) =>
+        (d === 'SMARTPHONE' && raw.deviceSmartphone) ||
+        (d === 'TABLETTE' && raw.deviceTablette) ||
+        (d === 'ORDINATEUR' && raw.deviceOrdinateur),
+    );
+    const { deviceSmartphone, deviceTablette, deviceOrdinateur, ...rest } = raw;
+    const payload = { ...rest, cora: this.selectedCora()!.id, typeDevice };
     this.coraService.saveAgent(payload as any).subscribe({
       next: (agent) => {
         this.toast.success('Agent enregistré avec succès.');

@@ -1,0 +1,290 @@
+<div class="flex flex-col gap-6 mt-4">
+
+  <!-- Header -->
+  <div class="flex items-center gap-3">
+    <button appButton variant="ghost" size="icon" type="button" (click)="goBack()">
+      <lucide-icon [img]="ArrowLeftIcon" [size]="18" />
+    </button>
+    <div>
+      <h1 class="text-xl font-bold text-foreground">Nouvelle demande ASC</h1>
+      <p class="text-sm text-muted-foreground">Avance sur chèque</p>
+    </div>
+  </div>
+
+  <!-- Stepper -->
+  <div class="flex items-center gap-0">
+    @for (step of steps; track $index) {
+      <div class="flex flex-1 items-center">
+        <button
+          type="button"
+          (click)="goToStep($index + 1)"
+          class="flex items-center gap-2 shrink-0"
+        >
+          <span
+            class="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors"
+            [class.bg-primary]="currentStep() > $index + 1 || currentStep() === $index + 1"
+            [class.text-primary-foreground]="currentStep() >= $index + 1"
+            [class.bg-muted]="currentStep() < $index + 1"
+            [class.text-muted-foreground]="currentStep() < $index + 1"
+          >
+            @if (currentStep() > $index + 1) {
+              <lucide-icon [img]="CheckIcon" [size]="14" />
+            } @else {
+              {{ $index + 1 }}
+            }
+          </span>
+          <div class="hidden sm:flex flex-col text-left">
+            <span class="text-xs font-semibold" [class.text-foreground]="currentStep() >= $index + 1" [class.text-muted-foreground]="currentStep() < $index + 1">
+              {{ step.label }}
+            </span>
+            <span class="text-xs text-muted-foreground">{{ step.subtitle }}</span>
+          </div>
+        </button>
+        @if (!$last) {
+          <div class="flex-1 mx-2 h-px" [class.bg-primary]="currentStep() > $index + 1" [class.bg-border]="currentStep() <= $index + 1"></div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Bandeau client -->
+  @if (client(); as c) {
+    <div class="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
+      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10">
+        <span class="text-sm font-bold text-destructive">{{ c.nomPrenom.slice(0,2).toUpperCase() }}</span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-foreground truncate">{{ c.nomPrenom }}</p>
+        <p class="text-xs text-muted-foreground">{{ c.codeClient }} · Agence {{ c.agence.libelle }}</p>
+      </div>
+      <div class="hidden sm:flex items-center gap-4 text-xs text-muted-foreground">
+        <span>{{ c.nbreChequeRemise | number }} chèques remisés</span>
+        <span>{{ c.nbreIncidentPaie | number }} incident(s)</span>
+        <span class="font-medium text-primary">Max: {{ c.montantChequeAccordeAsc | number }} FCFA</span>
+      </div>
+    </div>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+
+    <!-- ── Étape 1 : Historique client ── -->
+    @if (currentStep() === 1) {
+      <app-card>
+        <app-card-header>
+          <app-card-title>Historique du client</app-card-title>
+        </app-card-header>
+        <app-card-content>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <app-form-input
+              label="Montant maximal encaissé sur compte (FCFA)"
+              name="montantMaxEncaisse"
+              type="number"
+              placeholder="Ex: 500000"
+              required
+            />
+            <app-form-select
+              label="Autres crédits en cours"
+              name="autreCreditEncours"
+              placeholder="Sélectionner…"
+              [options]="creditOptions"
+            />
+          </div>
+        </app-card-content>
+      </app-card>
+
+      <div class="flex justify-end mt-4">
+        <button appButton type="button" [disabled]="!step1Valid()" (click)="next()">
+          Suivant
+          <lucide-icon [img]="ArrowRightIcon" [size]="15" />
+        </button>
+      </div>
+    }
+
+    <!-- ── Étape 2 : Informations du règlement ── -->
+    @if (currentStep() === 2) {
+      <app-card>
+        <app-card-header>
+          <app-card-title>Informations du chèque</app-card-title>
+        </app-card-header>
+        <app-card-content>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <app-form-input
+              label="Tireur (Nom & Raison sociale)"
+              name="tireur"
+              placeholder="Ex: Société ABC"
+              required
+            />
+            <app-form-input
+              label="Date de signature du chèque"
+              name="dateCheque"
+              type="date"
+              required
+            />
+            <app-form-input
+              label="Numéro du chèque"
+              name="numcheque"
+              placeholder="Ex: 1234567"
+              required
+            />
+            <app-form-input
+              label="Numéro de remise"
+              name="numTransaction"
+              placeholder="Ex: REM-2024-001"
+              required
+            />
+            <app-form-input
+              label="Montant du chèque (FCFA)"
+              name="montantCheque"
+              type="number"
+              placeholder="Ex: 1000000"
+              required
+            />
+            <app-form-select
+              label="Banque du tireur"
+              name="banque"
+              placeholder="Sélectionner une banque…"
+              [options]="banqueOptions()"
+              required
+            />
+            <app-form-select
+              label="Nature de la prestation"
+              name="naturePrestation"
+              placeholder="Sélectionner…"
+              [options]="natureOptions()"
+            />
+          </div>
+
+          <!-- Documents -->
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 mt-2">
+
+            <!-- Image chèque -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-foreground">
+                Image du chèque <span class="text-destructive">*</span>
+              </label>
+              @if (imageCheque()) {
+                <div class="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2">
+                  <span class="truncate text-xs text-foreground">{{ imageCheque()!.name }}</span>
+                  <button type="button" (click)="removeFile('imageCheque')" class="ml-2 shrink-0 text-muted-foreground hover:text-destructive">
+                    <lucide-icon [img]="XIcon" [size]="14" />
+                  </button>
+                </div>
+              } @else {
+                <label class="flex cursor-pointer flex-col items-center gap-1 rounded-md border border-dashed border-border bg-muted/20 px-3 py-4 text-center hover:bg-muted/40 transition-colors">
+                  <lucide-icon [img]="UploadIcon" [size]="18" class="text-muted-foreground" />
+                  <span class="text-xs text-muted-foreground">Scan couleur (PDF)</span>
+                  <input type="file" accept="application/pdf" class="hidden" (change)="onFileChange($event, 'imageCheque')" />
+                </label>
+              }
+            </div>
+
+            <!-- Preuve transaction -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-foreground">
+                Preuve de transaction <span class="text-destructive">*</span>
+              </label>
+              @if (preuveTransaction()) {
+                <div class="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2">
+                  <span class="truncate text-xs text-foreground">{{ preuveTransaction()!.name }}</span>
+                  <button type="button" (click)="removeFile('preuveTransaction')" class="ml-2 shrink-0 text-muted-foreground hover:text-destructive">
+                    <lucide-icon [img]="XIcon" [size]="14" />
+                  </button>
+                </div>
+              } @else {
+                <label class="flex cursor-pointer flex-col items-center gap-1 rounded-md border border-dashed border-border bg-muted/20 px-3 py-4 text-center hover:bg-muted/40 transition-colors">
+                  <lucide-icon [img]="UploadIcon" [size]="18" class="text-muted-foreground" />
+                  <span class="text-xs text-muted-foreground">Bon commande, facture, contrat…</span>
+                  <input type="file" accept="application/pdf" class="hidden" (change)="onFileChange($event, 'preuveTransaction')" />
+                </label>
+              }
+            </div>
+
+            <!-- Preuve entreprise -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-foreground">
+                Preuve de l'entreprise <span class="text-destructive">*</span>
+              </label>
+              @if (preuveEntreprise()) {
+                <div class="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2">
+                  <span class="truncate text-xs text-foreground">{{ preuveEntreprise()!.name }}</span>
+                  <button type="button" (click)="removeFile('preuveEntreprise')" class="ml-2 shrink-0 text-muted-foreground hover:text-destructive">
+                    <lucide-icon [img]="XIcon" [size]="14" />
+                  </button>
+                </div>
+              } @else {
+                <label class="flex cursor-pointer flex-col items-center gap-1 rounded-md border border-dashed border-border bg-muted/20 px-3 py-4 text-center hover:bg-muted/40 transition-colors">
+                  <lucide-icon [img]="UploadIcon" [size]="18" class="text-muted-foreground" />
+                  <span class="text-xs text-muted-foreground">Relevé de compte confrère</span>
+                  <input type="file" accept="application/pdf" class="hidden" (change)="onFileChange($event, 'preuveEntreprise')" />
+                </label>
+              }
+            </div>
+          </div>
+
+          <app-form-textarea
+            label="Avis sur la demande"
+            name="description"
+            placeholder="Observations, commentaires…"
+            [rows]="3"
+          />
+        </app-card-content>
+      </app-card>
+
+      <div class="flex justify-between mt-4">
+        <button appButton variant="outline" type="button" (click)="prev()">
+          <lucide-icon [img]="ArrowLeftIcon" [size]="15" />
+          Précédent
+        </button>
+        <button appButton type="button" [disabled]="!step2Valid()" (click)="next()">
+          Suivant
+          <lucide-icon [img]="ArrowRightIcon" [size]="15" />
+        </button>
+      </div>
+    }
+
+    <!-- ── Étape 3 : Demande ASC ── -->
+    @if (currentStep() === 3) {
+      <app-card>
+        <app-card-header>
+          <app-card-title>Demande avance sur chèque</app-card-title>
+        </app-card-header>
+        <app-card-content>
+          <div class="flex items-center gap-3 rounded-lg bg-destructive/5 border border-destructive/20 px-4 py-3 mb-4">
+            <span class="text-sm text-muted-foreground">Montant du chèque :</span>
+            <span class="text-base font-bold text-destructive">
+              {{ form.get('montantCheque')?.value | number }} FCFA
+            </span>
+          </div>
+          <div class="max-w-xs">
+            <app-form-input
+              label="Montant sollicité (FCFA)"
+              name="montantSollicite"
+              type="number"
+              placeholder="Ex: 800000"
+              required
+            />
+          </div>
+        </app-card-content>
+      </app-card>
+
+      <div class="flex justify-between mt-4">
+        <button appButton variant="outline" type="button" (click)="prev()">
+          <lucide-icon [img]="ArrowLeftIcon" [size]="15" />
+          Précédent
+        </button>
+        <button
+          appButton
+          type="submit"
+          [disabled]="!form.get('montantSollicite')?.value || isSubmitting()"
+        >
+          @if (isSubmitting()) {
+            <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+          }
+          Enregistrer la demande
+        </button>
+      </div>
+    }
+
+  </form>
+
+</div>

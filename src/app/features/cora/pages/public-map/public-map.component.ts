@@ -2,6 +2,7 @@ import { Component, OnChanges, computed, input, signal, viewChild } from '@angul
 import { GoogleMap, MapInfoWindow, MapMarker } from '@angular/google-maps';
 import { X, LucideAngularModule, MapPin, Building2, FilterX } from 'lucide-angular';
 import { Cora, Gestionnaire } from '../../interfaces/cora.interface';
+import { SearchableSelectComponent } from '../../../../shared/components/searchable-select/searchable-select.component';
 
 interface PublicMarker {
   position: google.maps.LatLngLiteral;
@@ -19,7 +20,7 @@ interface PublicMarker {
 @Component({
   selector: 'app-public-map',
   templateUrl: './public-map.component.html',
-  imports: [GoogleMap, MapMarker, MapInfoWindow, LucideAngularModule],
+  imports: [GoogleMap, MapMarker, MapInfoWindow, LucideAngularModule, SearchableSelectComponent],
 })
 export class PublicMapComponent implements OnChanges {
   readonly XIcon = X;
@@ -57,10 +58,14 @@ export class PublicMapComponent implements OnChanges {
 
   // ── Options triées ────────────────────────────────────────────────────────
   readonly communeOptions = computed(() =>
-    [...this.communes()].sort((a, b) => a.libelle.localeCompare(b.libelle)),
+    [...this.communes()]
+      .sort((a, b) => a.libelle.localeCompare(b.libelle))
+      .map((c) => ({ value: c.id, label: c.libelle })),
   );
   readonly gestionnaireOptions = computed(() =>
-    [...this.gestionnaires()].sort((a, b) => a.nom.localeCompare(b.nom)),
+    [...this.gestionnaires()]
+      .sort((a, b) => a.nom.localeCompare(b.nom))
+      .map((g) => ({ value: g.id, label: `${g.nom} ${g.prenom}` })),
   );
 
   // ── Stats ────────────────────────────────────────────────────────────────

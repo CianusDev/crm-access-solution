@@ -1,0 +1,243 @@
+<div class="flex flex-col gap-6 mt-4">
+
+  <!-- Header -->
+  <div class="flex items-center gap-3">
+    <button appButton variant="ghost" size="icon" type="button" (click)="goBack()">
+      <lucide-icon [img]="ArrowLeftIcon" [size]="18" />
+    </button>
+    <div class="flex-1 min-w-0">
+      <h1 class="text-xl font-bold text-foreground">Détail de la demande</h1>
+      @if (demande()?.numDemandeAsc) {
+        <p class="text-sm font-mono text-muted-foreground">{{ demande()!.numDemandeAsc }}</p>
+      }
+    </div>
+    @if (statut(); as s) {
+      <span class="rounded-full px-3 py-1 text-xs font-semibold" [class]="s.class">{{ s.label }}</span>
+    }
+  </div>
+
+  @if (demande(); as d) {
+
+    <!-- Client + Montants -->
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+
+      <!-- Client -->
+      <app-card class="lg:col-span-2">
+        <app-card-header>
+          <app-card-title>Client</app-card-title>
+        </app-card-header>
+        <app-card-content>
+          <div class="flex items-start gap-4">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-destructive/10">
+              <lucide-icon [img]="UserIcon" [size]="20" class="text-destructive" />
+            </div>
+            <div class="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-2">
+              <div>
+                <p class="text-xs text-muted-foreground">Nom & Prénoms</p>
+                <p class="text-sm font-semibold text-foreground">{{ d.client?.nomPrenom ?? '—' }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-muted-foreground">Code client</p>
+                <p class="text-sm font-mono text-foreground">{{ d.client?.codeClient ?? '—' }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-muted-foreground">Agence</p>
+                <p class="text-sm text-foreground">{{ d.client?.agence?.libelle ?? '—' }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-muted-foreground">Date d'ouverture</p>
+                <p class="text-sm text-foreground">{{ d.client?.dateOuvertureCompte | date:'dd/MM/yyyy' }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-muted-foreground">Chèques remisés</p>
+                <p class="text-sm text-foreground">{{ d.client?.nbreChequeRemise | number }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-muted-foreground">Incidents de paiement</p>
+                <p class="text-sm font-medium" [class.text-destructive]="(d.client?.nbreIncidentPaie ?? 0) > 0">
+                  {{ d.client?.nbreIncidentPaie | number }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </app-card-content>
+      </app-card>
+
+      <!-- Montants -->
+      <app-card>
+        <app-card-header>
+          <app-card-title>Montants</app-card-title>
+        </app-card-header>
+        <app-card-content>
+          <div class="flex flex-col gap-4">
+            <div class="rounded-lg bg-muted/40 p-4 text-center">
+              <p class="text-xs text-muted-foreground mb-1">Montant du chèque</p>
+              <p class="text-xl font-bold text-foreground">{{ d.cheque?.montantCheque | number }}</p>
+              <p class="text-xs text-muted-foreground">FCFA</p>
+            </div>
+            <div class="rounded-lg bg-primary/5 border border-primary/20 p-4 text-center">
+              <p class="text-xs text-muted-foreground mb-1">Montant sollicité</p>
+              <p class="text-xl font-bold text-primary">{{ d.montantSollicite | number }}</p>
+              <p class="text-xs text-muted-foreground">FCFA</p>
+            </div>
+            @if (d.montantMaxEncaisse) {
+              <div class="text-center">
+                <p class="text-xs text-muted-foreground">Max encaissé sur compte</p>
+                <p class="text-sm font-medium text-foreground">{{ d.montantMaxEncaisse | number }} FCFA</p>
+              </div>
+            }
+          </div>
+        </app-card-content>
+      </app-card>
+    </div>
+
+    <!-- Chèque -->
+    <app-card>
+      <app-card-header>
+        <app-card-title>Informations du chèque</app-card-title>
+      </app-card-header>
+      <app-card-content>
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div>
+            <p class="text-xs text-muted-foreground">Numéro de chèque</p>
+            <p class="text-sm font-mono font-medium text-foreground">{{ d.cheque?.numcheque ?? '—' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-muted-foreground">N° de remise (Perfect)</p>
+            <p class="text-sm font-mono font-medium text-foreground">{{ d.cheque?.numTransaction ?? '—' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-muted-foreground">Tireur</p>
+            <p class="text-sm font-medium text-foreground">{{ d.cheque?.tireur ?? '—' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-muted-foreground">Banque</p>
+            <p class="text-sm font-medium text-foreground">{{ d.cheque?.banque ?? '—' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-muted-foreground">Date du chèque</p>
+            <p class="text-sm text-foreground">{{ d.cheque?.dateCheque | date:'dd/MM/yyyy' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-muted-foreground">Date de la demande</p>
+            <p class="text-sm text-foreground">{{ d.dateRemise ?? d.datedemande | date:'dd/MM/yyyy' }}</p>
+          </div>
+          @if (d.user) {
+            <div>
+              <p class="text-xs text-muted-foreground">Créé par</p>
+              <p class="text-sm text-foreground">{{ d.user.nom }} {{ d.user.prenom }}</p>
+            </div>
+          }
+          @if (d.agence) {
+            <div>
+              <p class="text-xs text-muted-foreground">Agence émettrice</p>
+              <p class="text-sm text-foreground">{{ d.agence.libelle }}</p>
+            </div>
+          }
+        </div>
+        @if (d.description) {
+          <div class="mt-4 rounded-lg bg-muted/30 p-4">
+            <p class="text-xs font-medium text-muted-foreground mb-1">Avis sur la demande</p>
+            <p class="text-sm text-foreground">{{ d.description }}</p>
+          </div>
+        }
+      </app-card-content>
+    </app-card>
+
+    <!-- Documents -->
+    <app-card>
+      <app-card-header>
+        <app-card-title>Documents</app-card-title>
+      </app-card-header>
+      <app-card-content>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <!-- Image chèque -->
+          <div class="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-4 py-3">
+            <div class="flex items-center gap-3">
+              <lucide-icon [img]="FileTextIcon" [size]="18" class="text-primary shrink-0" />
+              <span class="text-sm font-medium text-foreground">Image du chèque</span>
+            </div>
+            @if (fileUrl(d.cheque?.imageCheque)) {
+              <button type="button" (click)="openFile(d.cheque?.imageCheque)" class="flex items-center gap-1 text-xs text-primary hover:underline">
+                Voir <lucide-icon [img]="ExternalLinkIcon" [size]="12" />
+              </button>
+            } @else {
+              <span class="text-xs text-muted-foreground">Non fourni</span>
+            }
+          </div>
+          <!-- Preuve transaction -->
+          <div class="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-4 py-3">
+            <div class="flex items-center gap-3">
+              <lucide-icon [img]="FileTextIcon" [size]="18" class="text-primary shrink-0" />
+              <span class="text-sm font-medium text-foreground">Preuve de transaction</span>
+            </div>
+            @if (fileUrl(d.preuveTransaction)) {
+              <button type="button" (click)="openFile(d.preuveTransaction)" class="flex items-center gap-1 text-xs text-primary hover:underline">
+                Voir <lucide-icon [img]="ExternalLinkIcon" [size]="12" />
+              </button>
+            } @else {
+              <span class="text-xs text-muted-foreground">Non fourni</span>
+            }
+          </div>
+          <!-- Preuve entreprise -->
+          <div class="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-4 py-3">
+            <div class="flex items-center gap-3">
+              <lucide-icon [img]="FileTextIcon" [size]="18" class="text-primary shrink-0" />
+              <span class="text-sm font-medium text-foreground">Preuve de l'entreprise</span>
+            </div>
+            @if (fileUrl(d.preuveEntreprise)) {
+              <button type="button" (click)="openFile(d.preuveEntreprise)" class="flex items-center gap-1 text-xs text-primary hover:underline">
+                Voir <lucide-icon [img]="ExternalLinkIcon" [size]="12" />
+              </button>
+            } @else {
+              <span class="text-xs text-muted-foreground">Non fourni</span>
+            }
+          </div>
+        </div>
+      </app-card-content>
+    </app-card>
+
+    <!-- Décision -->
+    @if (d.decision) {
+      <app-card>
+        <app-card-header>
+          <app-card-title>Décision</app-card-title>
+        </app-card-header>
+        <app-card-content>
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div>
+              <p class="text-xs text-muted-foreground">Décision</p>
+              <span
+                class="mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                [class.bg-green-100]="d.decision.decision === 1"
+                [class.text-green-700]="d.decision.decision === 1"
+                [class.bg-red-100]="d.decision.decision === 2"
+                [class.text-red-700]="d.decision.decision === 2"
+              >
+                {{ d.decision.decision === 1 ? 'Accordé' : d.decision.decision === 2 ? 'Refusé' : '—' }}
+              </span>
+            </div>
+            <div>
+              <p class="text-xs text-muted-foreground">Date</p>
+              <p class="text-sm text-foreground">{{ d.decision.dateDecision | date:'dd/MM/yyyy' }}</p>
+            </div>
+            @if (d.decision.user) {
+              <div>
+                <p class="text-xs text-muted-foreground">Par</p>
+                <p class="text-sm text-foreground">{{ d.decision.user.nom }} {{ d.decision.user.prenom }}</p>
+              </div>
+            }
+          </div>
+          @if (d.decision.observation) {
+            <div class="mt-4 rounded-lg bg-muted/30 p-4">
+              <p class="text-xs font-medium text-muted-foreground mb-1">Observation</p>
+              <p class="text-sm text-foreground">{{ d.decision.observation }}</p>
+            </div>
+          }
+        </app-card-content>
+      </app-card>
+    }
+
+  }
+
+</div>

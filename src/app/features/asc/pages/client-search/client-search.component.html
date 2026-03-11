@@ -1,0 +1,140 @@
+<div class="flex flex-col gap-6 mt-4">
+
+  <!-- Titre -->
+  <div>
+    <h1 class="text-xl font-bold text-foreground">Avance sur chèque</h1>
+    <p class="text-sm text-muted-foreground">Recherchez un client pour créer une demande</p>
+  </div>
+
+  <!-- Barre de recherche -->
+  <app-card>
+    <app-card-content class="!pt-6">
+      <div class="flex flex-col items-center gap-4 py-4">
+        <div class="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+          <lucide-icon [img]="CreditCardIcon" [size]="28" class="text-primary" />
+        </div>
+        <div class="text-center">
+          <h2 class="text-base font-semibold text-foreground">Rechercher un client</h2>
+          <p class="text-sm text-muted-foreground">Saisissez le numéro de compte client</p>
+        </div>
+        <div class="flex w-full max-w-md gap-2">
+          <div class="relative flex-1">
+            <lucide-icon
+              [img]="SearchIcon"
+              [size]="15"
+              class="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+            />
+            <input
+              type="text"
+              placeholder="Ex: 0000001234…"
+              [ngModel]="codeClient()"
+              (ngModelChange)="codeClient.set($event)"
+              (keydown.enter)="search()"
+              class="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+          <button
+            appButton
+            type="button"
+            (click)="search()"
+            [disabled]="!codeClient() || isSearching()"
+          >
+            @if (isSearching()) {
+              <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+            } @else {
+              <lucide-icon [img]="SearchIcon" [size]="15" />
+            }
+            Rechercher
+          </button>
+        </div>
+      </div>
+    </app-card-content>
+  </app-card>
+
+  <!-- Profil client -->
+  @if (client(); as c) {
+    <app-card>
+      <app-card-header>
+        <app-card-title>Profil client</app-card-title>
+      </app-card-header>
+      <app-card-content>
+        <div class="flex flex-col gap-6 md:flex-row">
+
+          <!-- Infos principales -->
+          <div class="flex flex-1 flex-col gap-4">
+            <div class="flex items-start gap-4">
+              <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-destructive/10">
+                <span class="text-lg font-bold text-destructive">{{ clientInitials(c) }}</span>
+              </div>
+              <div class="flex flex-col gap-1">
+                <h3 class="text-base font-semibold text-foreground">{{ c.nomPrenom }}</h3>
+                <div class="flex flex-wrap gap-1.5">
+                  <span class="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
+                    {{ typeAgentLabel(c.typeAgent) }}
+                  </span>
+                  <span class="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                    Agence {{ c.agence.libelle }}
+                  </span>
+                  <span class="rounded-full bg-muted px-2.5 py-0.5 text-xs font-mono text-muted-foreground">
+                    {{ c.codeClient }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex items-center gap-2 rounded-lg border border-border bg-muted/30 p-3">
+                <lucide-icon [img]="CheckCircleIcon" [size]="18" class="text-green-600 shrink-0" />
+                <div>
+                  <p class="text-lg font-bold text-foreground">{{ c.nbreAvChequeBenef }}</p>
+                  <p class="text-xs text-muted-foreground">Avance(s) obtenue(s)</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 rounded-lg border border-border bg-muted/30 p-3">
+                <lucide-icon [img]="DollarSignIcon" [size]="18" class="text-primary shrink-0" />
+                <div>
+                  <p class="text-sm font-bold text-foreground">{{ c.montantChequeAccordeAsc | number }} FCFA</p>
+                  <p class="text-xs text-muted-foreground">Montant max accordé</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Détails -->
+          <div class="flex flex-1 flex-col gap-2 border-t border-border pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
+            @if (c.typeAgent === 'SC' && c.gerant) {
+              <div class="flex justify-between py-1.5 border-b border-border/50">
+                <span class="text-sm text-muted-foreground">Gérant</span>
+                <span class="text-sm font-medium text-foreground">{{ c.gerant.nomDirigeant }}</span>
+              </div>
+            }
+            <div class="flex justify-between py-1.5 border-b border-border/50">
+              <span class="text-sm text-muted-foreground">Ouverture du compte</span>
+              <span class="text-sm font-medium text-foreground">{{ c.dateOuvertureCompte | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="flex justify-between py-1.5 border-b border-border/50">
+              <span class="text-sm text-muted-foreground">Chèques remisés</span>
+              <span class="text-sm font-medium text-foreground">{{ c.nbreChequeRemise | number }}</span>
+            </div>
+            <div class="flex justify-between py-1.5">
+              <span class="text-sm text-muted-foreground">Incidents de paiement</span>
+              <span class="text-sm font-medium" [class.text-destructive]="c.nbreIncidentPaie > 0" [class.text-foreground]="c.nbreIncidentPaie === 0">
+                {{ c.nbreIncidentPaie | number }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action -->
+        <div class="flex justify-end border-t border-border pt-4 mt-2">
+          <button appButton type="button" (click)="goNewCheque()">
+            <lucide-icon [img]="CreditCardIcon" [size]="15" />
+            Nouveau chèque
+          </button>
+        </div>
+      </app-card-content>
+    </app-card>
+  }
+
+</div>

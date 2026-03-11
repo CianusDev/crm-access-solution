@@ -6,8 +6,8 @@
       <lucide-icon [img]="ArrowLeftIcon" [size]="18" />
     </button>
     <div>
-      <h1 class="text-xl font-bold text-foreground">Créer un agent</h1>
-      <p class="text-sm text-muted-foreground">Enregistrement d'un nouvel agent CORA</p>
+      <h1 class="text-xl font-bold text-foreground">Créer un sous-agent</h1>
+      <p class="text-sm text-muted-foreground">Enregistrement d'un nouvel sous-agent CORA</p>
     </div>
   </div>
 
@@ -212,6 +212,20 @@
               name="facture"
               placeholder="Ex: FAC-2024-001"
             />
+          </div>
+        </app-card-content>
+      </app-card>
+
+      <!-- Types de services / device -->
+      <app-card>
+        <app-card-header>
+          <app-card-title>Types de services / Device</app-card-title>
+        </app-card-header>
+        <app-card-content>
+          <div class="flex flex-wrap gap-6">
+            <app-form-checkbox name="deviceSmartphone" label="Smartphone" />
+            <app-form-checkbox name="deviceTablette" label="Tablette" />
+            <app-form-checkbox name="deviceOrdinateur" label="Ordinateur" />
           </div>
         </app-card-content>
       </app-card>

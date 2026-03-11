@@ -8,6 +8,7 @@ import { currentUserResolver } from './shared/layouts/main-layout/main-layout.re
 import { RouteLoaderComponent } from './shared/layouts/route-loader/route-loader.component';
 import { coraRoutes } from './features/cora/cora.route';
 import { CoraService } from './features/cora/services/cora/cora.service';
+import { ASC_ROUTES } from './features/asc/asc.route';
 
 export const routes: Routes = [
   {
@@ -67,6 +68,10 @@ export const routes: Routes = [
             ],
           },
           coraRoutes,
+          {
+            path: 'asc',
+            children: ASC_ROUTES,
+          },
         ],
       },
     ],

@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   List,
   MapPin,
+  Search,
   Settings,
   UserPlus,
 } from 'lucide-angular';
@@ -22,18 +23,20 @@ export const DEFAULT_MENU: SidebarGroup[] = [
     items: [
       { label: 'Tableau de bord', href: '/app/cora/dashboard', icon: LayoutDashboard },
       { label: 'Créer un CORA', href: '/app/cora/create', icon: UserPlus },
+      { label: 'Créer un sous-agent', href: '/app/cora/agent/create', icon: UserPlus },
       { label: 'Liste des CORAs', href: '/app/cora/list', icon: List },
       { label: 'Demandes en attente', href: '/app/cora/pending', icon: Clock },
-      { label: 'Créer un agent', href: '/app/cora/agent/create', icon: UserPlus },
       { label: 'Géolocalisation CORA', href: '/cora-map', icon: MapPin },
     ],
   },
   {
-    label: 'Avance sur cheque',
+    label: 'Avance sur chèque',
     icon: Ellipsis,
     items: [
-      { label: 'Rapports', href: '/app/reports', icon: FileText },
-      { label: 'Paramètres', href: '/app/settings', icon: Settings },
+      { label: 'Tableau de bord', href: '/app/asc/dashboard', icon: LayoutDashboard },
+      { label: 'Nouvelle demande', href: '/app/asc/client-search', icon: Search },
+      { label: 'Demandes en attente', href: '/app/asc/pending', icon: Clock },
+      { label: 'Liste des chèques', href: '/app/asc/list', icon: List },
     ],
   },
 ];

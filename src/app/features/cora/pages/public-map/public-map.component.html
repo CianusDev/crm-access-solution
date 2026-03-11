@@ -86,31 +86,25 @@
       <!-- Gestionnaire -->
       <div class="flex flex-col gap-1">
         <label class="text-xs text-gray-500">Gestionnaire</label>
-        <select
+        <app-searchable-select
+          [options]="gestionnaireOptions()"
           [value]="gestionnaireFilter()"
-          (change)="gestionnaireFilter.set($any($event.target).value ? +$any($event.target).value : null); applyFilter()"
-          class="h-8 w-full rounded-md border border-gray-200 bg-gray-50 px-2.5 text-xs text-gray-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-        >
-          <option value="">Tous les gestionnaires</option>
-          @for (g of gestionnaireOptions(); track g.id) {
-            <option [value]="g.id">{{ g.nom }} {{ g.prenom }}</option>
-          }
-        </select>
+          placeholder="Tous les gestionnaires"
+          searchPlaceholder="Rechercher un gestionnaire…"
+          (valueChange)="gestionnaireFilter.set($event !== null ? +$event : null); applyFilter()"
+        />
       </div>
 
       <!-- Commune -->
       <div class="flex flex-col gap-1">
         <label class="text-xs text-gray-500">Commune</label>
-        <select
+        <app-searchable-select
+          [options]="communeOptions()"
           [value]="communeFilter()"
-          (change)="communeFilter.set($any($event.target).value ? +$any($event.target).value : null); applyFilter()"
-          class="h-8 w-full rounded-md border border-gray-200 bg-gray-50 px-2.5 text-xs text-gray-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-        >
-          <option value="">Toutes les communes</option>
-          @for (c of communeOptions(); track c.id) {
-            <option [value]="c.id">{{ c.libelle }}</option>
-          }
-        </select>
+          placeholder="Toutes les communes"
+          searchPlaceholder="Rechercher une commune…"
+          (valueChange)="communeFilter.set($event !== null ? +$event : null); applyFilter()"
+        />
       </div>
 
       <!-- Quartier -->
