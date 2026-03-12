@@ -19,8 +19,9 @@ export interface AscClient {
   nbreAvChequeBenef: number;
   montantChequeAccordeAsc: number;
   montantMaxCreditObtenu?: number;
-  autreCreditBeneficie: string[];
+  autreCreditBeneficie: { typeCreditBenef: string }[];
   gerant?: AscClientGerant;
+  historiqueAvCheque?: AscDemande[];
 }
 
 export interface AscBanque {
@@ -42,21 +43,35 @@ export interface AscCheque {
   montantCheque: number;
   dateCheque?: string;
   imageCheque?: string;
+  image?: string;
+  checkliste?: string; // JSON stringified number[]
+}
+
+export interface AscObservation {
+  decision: string;
+  date: string;
+  observation: string;
+  user: { nom: string; prenom: string; profil: string };
 }
 
 export interface AscDemande {
   id: number;
   numDemandeAsc?: string;
   dateRemise?: string;
+  dateDemande?: string;
   datedemande?: string;
   montantSollicite: number;
   montantMaxEncaisse?: number;
+  montantAccorde?: number;
+  autreCreditEncours?: string;
+  natureObjetReglement?: string;
   statut: number;
   description?: string;
   client?: AscClient;
   cheque: AscCheque;
   preuveTransaction?: string;
   preuveEntreprise?: string;
+  observation?: AscObservation[];
   user?: { nom: string; prenom: string };
   agence?: AscAgence;
   decision?: {
@@ -68,11 +83,12 @@ export interface AscDemande {
 }
 
 export interface AscTireur {
-  id: number;
-  nom: string;
-  prenom?: string;
-  nbreCheque?: number;
-  montantTotal?: number;
+  dateRemise?: string;
+  client?: string;
+  tireur?: string;
+  bankTireur?: string;
+  nature?: string;
+  agence?: string;
 }
 
 export interface AscDashboardAgence {

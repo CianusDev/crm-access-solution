@@ -7,7 +7,7 @@
     </div>
     <!-- Recherche -->
     <div class="relative w-full sm:w-64">
-      <lucide-icon [img]="SearchIcon" [size]="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+      <lucide-icon [img]="SearchIcon" [size]="14" class="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
       <input
         type="text"
         placeholder="Rechercher…"
@@ -19,7 +19,7 @@
   </div>
 
   <app-card>
-    <app-card-content class="!pt-6 !p-0">
+    <app-card-content class="!p-0">
       @if (filtered().length === 0) {
         <div class="flex flex-col items-center gap-3 py-16 text-center">
           <lucide-icon [img]="ClockIcon" [size]="40" class="text-muted-foreground/40" />
@@ -31,7 +31,7 @@
             <thead>
               <tr class="border-b border-border bg-muted/30">
                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Date</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">N° Demande</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">N° Ref</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Client</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tireur</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Banque</th>
@@ -43,15 +43,15 @@
             <tbody class="divide-y divide-border">
               @for (d of filtered(); track d.id) {
                 <tr class="hover:bg-muted/30 transition-colors cursor-pointer" (click)="goDetail(d.id)">
-                  <td class="px-4 py-3 text-muted-foreground whitespace-nowrap">{{ d.dateRemise ?? d.datedemande | date:'dd/MM/yyyy' }}</td>
-                  <td class="px-4 py-3 font-mono text-xs">{{ d.numDemandeAsc ?? '—' }}</td>
+                  <td class="px-4 py-3 text-muted-foreground whitespace-nowrap">{{ d.dateDemande | date:'dd/MM/yyyy'  }}</td>
+                  <td class="px-4 py-3 font-mono text-xs">{{ d.cheque.numTransaction | uppercase }}</td>
                   <td class="px-4 py-3">
                     <p class="font-medium text-foreground">{{ d.client?.nomPrenom ?? '—' }}</p>
                     <p class="text-xs text-muted-foreground">{{ d.client?.codeClient }}</p>
                   </td>
-                  <td class="px-4 py-3 text-foreground">{{ d.cheque?.tireur ?? '—' }}</td>
-                  <td class="px-4 py-3 text-foreground">{{ d.cheque?.banque ?? '—' }}</td>
-                  <td class="px-4 py-3 text-right font-medium text-foreground whitespace-nowrap">{{ d.cheque?.montantCheque | number }} FCFA</td>
+                  <td class="px-4 py-3 text-foreground">{{ d.cheque.tireur }}</td>
+                  <td class="px-4 py-3 text-foreground">{{ d.cheque.banque }}</td>
+                  <td class="px-4 py-3 text-right font-medium text-foreground whitespace-nowrap">{{ d.cheque.montantCheque | number }} FCFA</td>
                   <td class="px-4 py-3 text-right font-semibold text-primary whitespace-nowrap">{{ d.montantSollicite | number }} FCFA</td>
                   <td class="px-4 py-3 text-right">
                     <button type="button" (click)="$event.stopPropagation(); goDetail(d.id)" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-foreground">

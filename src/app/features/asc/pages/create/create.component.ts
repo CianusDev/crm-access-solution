@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { LucideAngularModule, ArrowLeft, ArrowRight, Check, Upload, X } from 'lucide-angular';
 import {
   CardComponent,
@@ -23,7 +23,6 @@ import { AscService } from '../../services/asc/asc.service';
   imports: [
     ReactiveFormsModule,
     DecimalPipe,
-    DatePipe,
     LucideAngularModule,
     CardComponent,
     CardContentComponent,

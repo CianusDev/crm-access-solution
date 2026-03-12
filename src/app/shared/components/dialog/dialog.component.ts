@@ -88,7 +88,7 @@ export class DialogContentComponent {}
     @if (open) {
       <!-- Overlay -->
       <div
-        class="fixed inset-0 z-50 bg-black/80 animate-in fade-in-0"
+        class="fixed inset-0 z-50 bg-black/20 animate-in fade-in-0"
         (click)="onOverlayClick()"
         aria-hidden="true"
       ></div>
@@ -97,8 +97,9 @@ export class DialogContentComponent {}
       <div
         role="dialog"
         aria-modal="true"
-        class="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg border border-zinc-200 bg-white p-6 shadow-lg
+        class="fixed left-1/2 top-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2 rounded-lg border border-zinc-200 bg-background p-6 shadow-lg
                animate-in fade-in-0 zoom-in-95 slide-in-from-left-1/2 slide-in-from-top-48"
+        [ngClass]="classContainer || 'max-w-lg'"
       >
         <!-- Bouton fermer -->
         <button
@@ -119,6 +120,7 @@ export class DialogContentComponent {}
 })
 export class DialogComponent {
   @Input() open = false;
+  @Input() classContainer = '';
   @Output() openChange = new EventEmitter<boolean>();
 
   /** Fermer en cliquant sur l'overlay */

@@ -8,6 +8,7 @@ import { AscBanque, AscClient, AscDashboard, AscDemande, AscNaturePrestation, As
 export class AscService {
   private readonly api = inject(ApiService);
   private readonly endpoint = '/cheque';
+  private readonly banqueEndpoint = '/banque';
 
   // ── Dashboard ────────────────────────────────────────────────────────────
   getDashboard(annee: number) {
@@ -32,34 +33,34 @@ export class AscService {
   // ── Demandes ──────────────────────────────────────────────────────────────
   getDemandesEnAttente() {
     return this.api
-      .get<{ asc: AscDemande[] }>(this.endpoint + '/ascEnAttente')
+      .get<{ avCheques: AscDemande[] }>(this.endpoint + '/ascEnAttente')
       .pipe(
-        map((res) => res.asc),
+        map((res) => res.avCheques),
         catchError((err) => throwError(() => err)),
       );
   }
 
   getListeDemandes() {
     return this.api
-      .get<{ asc: AscDemande[] }>(this.endpoint + '/listeAsc')
+      .get<{ avCheques: AscDemande[] }>(this.endpoint + '/listeAsc')
       .pipe(
-        map((res) => res.asc),
+        map((res) => res.avCheques),
         catchError((err) => throwError(() => err)),
       );
   }
 
   getDemandeById(id: number) {
     return this.api
-      .get<{ asc: AscDemande }>(this.endpoint + '/showAsc/' + id)
+      .get<{ avCheque: AscDemande }>(this.endpoint + '/showAsc/' + id)
       .pipe(
-        map((res) => res.asc),
+        map((res) => res.avCheque),
         catchError((err) => throwError(() => err)),
       );
   }
 
   saveDemandeAsc(formData: FormData) {
     return this.api
-      .post<{ asc: AscDemande }>(this.endpoint + '/saveSousDemande', formData)
+      .post<{ asc: AscDemande }>(this.endpoint + '/saveAvanceSurCheque', formData)
       .pipe(
         map((res) => res.asc),
         catchError((err) => throwError(() => err)),
@@ -68,7 +69,7 @@ export class AscService {
 
   updateDemandeAsc(id: number, formData: FormData) {
     return this.api
-      .post<{ asc: AscDemande }>(this.endpoint + '/updateAsc/' + id, formData)
+      .post<{ asc: AscDemande }>(this.endpoint + '/updateCheque/' + id, formData)
       .pipe(
         map((res) => res.asc),
         catchError((err) => throwError(() => err)),
@@ -83,37 +84,52 @@ export class AscService {
 
   sendDecision(data: { idAsc: number; decision: number; observation?: string }) {
     return this.api
-      .post<{ asc: AscDemande }>(this.endpoint + '/saveDecisionAsc', data)
-      .pipe(
-        map((res) => res.asc),
-        catchError((err) => throwError(() => err)),
-      );
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveDecisionAsc', data)
+      .pipe(catchError((err) => throwError(() => err)));
   }
 
   // ── Référentiels ─────────────────────────────────────────────────────────
   getBanques() {
     return this.api
-      .get<{ banques: AscBanque[] }>(this.endpoint + '/banques')
+      .get<{ banque: AscBanque[] }>(this.banqueEndpoint + '/liste')
       .pipe(
-        map((res) => res.banques),
+        map((res) => res.banque),
         catchError((err) => throwError(() => err)),
       );
   }
 
   getNaturesPrestations() {
     return this.api
-      .get<{ natures: AscNaturePrestation[] }>(this.endpoint + '/natures_prestations')
+      .get<{ naturePrestation: AscNaturePrestation[] }>(this.endpoint + '/liste_nature_prestation')
       .pipe(
-        map((res) => res.natures),
+        map((res) => res.naturePrestation),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  getAgences() {
+    return this.api
+      .get<{ agences: { id: number; libelle: string }[] }>('/agence/list')
+      .pipe(
+        map((res) => res.agences),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  getChequesAttente() {
+    return this.api
+      .get<{ cheques: AscDemande[] }>(this.endpoint + '/chequesattente')
+      .pipe(
+        map((res) => res.cheques),
         catchError((err) => throwError(() => err)),
       );
   }
 
   getTireurs() {
     return this.api
-      .get<{ tireurs: AscTireur[] }>(this.endpoint + '/tireurs')
+      .get<{ tireus: AscTireur[] }>(this.endpoint + '/tireurs')
       .pipe(
-        map((res) => res.tireurs),
+        map((res) => res.tireus),
         catchError((err) => throwError(() => err)),
       );
   }

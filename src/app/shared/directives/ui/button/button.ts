@@ -8,7 +8,7 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         default: 'bg-primary text-primary-foreground shadow-xs hover:bg-primary/90', // Style par défaut
-        destructive: 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90', // Style destructif
+        destructive: 'bg-destructive text-background shadow-sm hover:bg-destructive/90', // Style destructif
         outline:
           'border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground', // Style avec bordure
         secondary: 'bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80', // Style secondaire

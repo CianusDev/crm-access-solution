@@ -38,8 +38,24 @@ export const ASC_ROUTES: Routes = [
   },
   {
     path: 'list',
-    resolve: { demandes: () => inject(AscService).getListeDemandes() },
+    resolve: {
+      demandes: () => inject(AscService).getListeDemandes(),
+      agences: () => inject(AscService).getAgences(),
+    },
     loadComponent: () => import('./pages/list/list.component').then((m) => m.ListComponent),
+  },
+  {
+    path: 'tireurs',
+    resolve: { tireurs: () => inject(AscService).getTireurs() },
+    loadComponent: () => import('./pages/tireurs/tireurs.component').then((m) => m.TireursComponent),
+  },
+  {
+    path: 'cheques-attente',
+    resolve: { cheques: () => inject(AscService).getChequesAttente() },
+    loadComponent: () =>
+      import('./pages/cheques-attente/cheques-attente.component').then(
+        (m) => m.ChequesAttenteComponent,
+      ),
   },
   {
     path: '',

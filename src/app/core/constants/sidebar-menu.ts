@@ -9,6 +9,8 @@ import {
   Search,
   Settings,
   UserPlus,
+  Users,
+  AlarmClock,
 } from 'lucide-angular';
 
 export const DEFAULT_MENU: SidebarGroup[] = [
@@ -37,6 +39,8 @@ export const DEFAULT_MENU: SidebarGroup[] = [
       { label: 'Nouvelle demande', href: '/app/asc/client-search', icon: Search },
       { label: 'Demandes en attente', href: '/app/asc/pending', icon: Clock },
       { label: 'Liste des chèques', href: '/app/asc/list', icon: List },
+      { label: 'Liste des tireurs', href: '/app/asc/tireurs', icon: Users },
+      { label: 'Chèques en attente (7j)', href: '/app/asc/cheques-attente', icon: AlarmClock },
     ],
   },
 ];

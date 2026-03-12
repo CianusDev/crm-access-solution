@@ -1,0 +1,121 @@
+<div class="flex flex-col gap-6 mt-4">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <div class="flex flex-col gap-1">
+    <h1 class="text-xl font-bold text-foreground">Liste des tireurs</h1>
+    <p class="text-sm text-muted-foreground">Ensemble des émetteurs de chèques enregistrés</p>
+  </div>
+
+  <!-- ── KPIs ─────────────────────────────────────────────────────────────── -->
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+
+    <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
+      <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
+        <lucide-icon [img]="UsersIcon" [size]="20" class="text-foreground" />
+      </div>
+      <div>
+        <p class="text-2xl font-bold text-foreground">{{ uniqueTireurs() }}</p>
+        <p class="text-xs text-muted-foreground">Tireurs uniques</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
+      <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-100">
+        <lucide-icon [img]="FileTextIcon" [size]="20" class="text-blue-600" />
+      </div>
+      <div>
+        <p class="text-2xl font-bold text-foreground">{{ tireurs().length }}</p>
+        <p class="text-xs text-muted-foreground">Total chèques remis</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
+      <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-100">
+        <lucide-icon [img]="Building2Icon" [size]="20" class="text-green-600" />
+      </div>
+      <div>
+        <p class="text-2xl font-bold text-foreground">
+          {{ (filtered().length) }}
+        </p>
+        <p class="text-xs text-muted-foreground">Résultats filtrés</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Table card ────────────────────────────────────────────────────────── -->
+  <app-card>
+    <app-card-header>
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-center gap-2">
+          <app-card-title>Liste des tireurs</app-card-title>
+          <span class="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+            {{ filtered().length }}
+          </span>
+        </div>
+        <!-- Search -->
+        <div class="relative w-full sm:w-72">
+          <lucide-icon [img]="SearchIcon" [size]="14" class="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <input
+            type="search"
+            [value]="query()"
+            (input)="onSearch($any($event.target).value)"
+            placeholder="Tireur, banque, agence, nature…"
+            class="w-full rounded-lg border border-border bg-background pl-8 pr-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+      </div>
+    </app-card-header>
+    <app-card-content class="!p-0 !pt-0">
+      <div class="overflow-x-auto border-t border-border">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border bg-muted/30">
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Date de remise</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tireur</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Banque du tireur</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Nature prestation</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Agence</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            @for (t of paged(); track $index) {
+              <tr class="hover:bg-muted/30 transition-colors">
+                <td class="px-4 py-3 whitespace-nowrap">
+                  <p class="font-medium text-foreground">{{ t.dateRemise | date:'dd/MM/yyyy' }}</p>
+                  @if (t.client) {
+                    <p class="text-xs text-muted-foreground">code client : <span class="font-semibold">{{ t.client }}</span></p>
+                  }
+                </td>
+                <td class="px-4 py-3 font-medium text-foreground">{{ t.tireur ?? '—' }}</td>
+                <td class="px-4 py-3 text-foreground">{{ t.bankTireur ?? '—' }}</td>
+                <td class="px-4 py-3 text-foreground">{{ t.nature ?? '—' }}</td>
+                <td class="px-4 py-3 text-foreground">{{ t.agence ?? '—' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="px-4 py-14 text-center text-sm text-muted-foreground">
+                  <lucide-icon [img]="UsersIcon" [size]="32" class="mx-auto mb-3 text-muted-foreground/25" />
+                  Aucun tireur trouvé.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (filtered().length > pageSize) {
+        <div class="border-t border-border px-4 py-4">
+          <app-pagination
+            [total]="filtered().length"
+            [pageSize]="pageSize"
+            [currentPage]="page()"
+            (pageChange)="page.set($event)"
+          />
+        </div>
+      }
+
+    </app-card-content>
+  </app-card>
+
+</div>
