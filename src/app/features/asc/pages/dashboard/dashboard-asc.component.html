@@ -89,12 +89,11 @@
     <!-- ── Chart + Sidebar ──────────────────────────────────────────────── -->
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
 
-      <!-- Bar chart (2/3) -->
-      <div class="lg:col-span-2" style="min-height:300px">
-        <app-bar-chart
-          title="Demandes par agence"
-          subtitle="En attente vs Validées"
-          [data]="chartData()"
+      <!-- Monthly line chart (2/3) -->
+      <div class="lg:col-span-2" style="min-height:360px">
+        <app-asc-monthly-chart
+          [agences]="agencesList()"
+          [year]="selectedYear()"
         />
       </div>
 

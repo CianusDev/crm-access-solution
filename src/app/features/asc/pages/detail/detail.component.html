@@ -567,16 +567,40 @@
   <app-dialog-header>
     <app-dialog-title>{{ pendingAction()?.title }}</app-dialog-title>
     <app-dialog-description>
-      Veuillez renseigner une observation avant de confirmer.
+      @if (pendingAction()?.requireObs) {
+        Une observation est <strong>obligatoire</strong> pour cette action.
+      } @else {
+        Vous pouvez renseigner une observation avant de confirmer.
+      }
     </app-dialog-description>
   </app-dialog-header>
   <app-dialog-content>
-    <textarea
-      [(ngModel)]="observation"
-      rows="3"
-      placeholder="Observation (optionnel)"
-      class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-    ></textarea>
+    <div class="flex flex-col gap-1.5">
+      <div class="flex items-center justify-between">
+        <label class="text-xs font-medium text-foreground">
+          Observation
+          @if (pendingAction()?.requireObs) {
+            <span class="ml-0.5 text-destructive">*</span>
+          }
+        </label>
+        @if (pendingAction()?.requireObs) {
+          <span class="text-xs text-muted-foreground">Obligatoire</span>
+        }
+      </div>
+      <textarea
+        [(ngModel)]="observation"
+        rows="3"
+        [placeholder]="pendingAction()?.requireObs ? 'Saisissez une observation…' : 'Observation (optionnel)'"
+        class="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 resize-none transition-colors"
+        [class.border-border]="!obsInvalid || !observation"
+        [class.focus:ring-primary]="!obsInvalid || !observation"
+        [class.border-destructive]="obsInvalid && observation !== null"
+        [class.focus:ring-destructive]="obsInvalid"
+      ></textarea>
+      @if (obsInvalid && observation !== undefined) {
+        <p class="text-xs text-destructive">Ce champ est requis pour continuer.</p>
+      }
+    </div>
   </app-dialog-content>
   <app-dialog-footer>
     <button appButton variant="outline" size="sm" type="button"
@@ -585,7 +609,7 @@
       Annuler
     </button>
     <button appButton size="sm" type="button"
-      [disabled]="isLoading()"
+      [disabled]="isLoading() || obsInvalid"
       (click)="confirmAction()">
       @if (isLoading()) {
         <lucide-icon [img]="LoaderIcon" [size]="14" class="mr-1.5 animate-spin" />

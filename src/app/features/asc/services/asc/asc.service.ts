@@ -2,7 +2,7 @@ import { ApiService } from '@/core/services/api/api.service';
 import { Injectable, inject } from '@angular/core';
 import { throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { AscBanque, AscClient, AscDashboard, AscDemande, AscNaturePrestation, AscTireur } from '../../interfaces/asc.interface';
+import { AscBanque, AscClient, AscDashboard, AscDashboardMensuelItem, AscDemande, AscNaturePrestation, AscTireur } from '../../interfaces/asc.interface';
 
 @Injectable({ providedIn: 'root' })
 export class AscService {
@@ -16,6 +16,17 @@ export class AscService {
       .get<AscDashboard>(this.endpoint + '/dashboard_asc?annee=' + annee)
       .pipe(
         map((res) => res),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  getDashboardMensuel(annee: number, agenceId: number) {
+    return this.api
+      .get<{ data: AscDashboardMensuelItem[] }>(
+        this.endpoint + `/dashboard_asc_mensuel?annee=${annee}&agenceId=${agenceId}`,
+      )
+      .pipe(
+        map((res) => res.data),
         catchError((err) => throwError(() => err)),
       );
   }

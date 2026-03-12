@@ -11,6 +11,7 @@ import {
   UserPlus,
   Users,
   AlarmClock,
+  CreditCard,
 } from 'lucide-angular';
 
 export const DEFAULT_MENU: SidebarGroup[] = [
@@ -29,6 +30,13 @@ export const DEFAULT_MENU: SidebarGroup[] = [
       { label: 'Liste des CORAs', href: '/app/cora/list', icon: List },
       { label: 'Demandes en attente', href: '/app/cora/pending', icon: Clock },
       { label: 'Géolocalisation CORA', href: '/cora-map', icon: MapPin },
+    ],
+  },
+  {
+    label: 'Crédit',
+    icon: CreditCard,
+    items: [
+      { label: 'Tableau de bord', href: '/app/credit/dashboard', icon: LayoutDashboard },
     ],
   },
   {

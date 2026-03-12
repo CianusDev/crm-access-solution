@@ -98,6 +98,12 @@ export interface AscDashboardAgence {
   montDebourse: number;
 }
 
+export interface AscDashboardMensuelItem {
+  mois: number; // 1–12
+  montant: number;
+  nbre: number;
+}
+
 export interface AscDashboard {
   totalCheques: number;
   totalAscAttente: number;

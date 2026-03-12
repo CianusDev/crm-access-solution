@@ -9,6 +9,7 @@ import { RouteLoaderComponent } from './shared/layouts/route-loader/route-loader
 import { coraRoutes } from './features/cora/cora.route';
 import { CoraService } from './features/cora/services/cora/cora.service';
 import { ASC_ROUTES } from './features/asc/asc.route';
+import { CREDIT_ROUTES } from './features/credit/credit.route';
 
 export const routes: Routes = [
   {
@@ -71,6 +72,10 @@ export const routes: Routes = [
           {
             path: 'asc',
             children: ASC_ROUTES,
+          },
+          {
+            path: 'credit',
+            children: CREDIT_ROUTES,
           },
         ],
       },

@@ -3,10 +3,7 @@ import { Router } from '@angular/router';
 import { inject } from '@angular/core';
 import { DecimalPipe, DatePipe, UpperCasePipe } from '@angular/common';
 import { LucideAngularModule, Eye, Search, Clock } from 'lucide-angular';
-import {
-  CardComponent,
-  CardContentComponent,
-} from '@/shared/components/card/card.component';
+import { CardComponent, CardContentComponent } from '@/shared/components/card/card.component';
 import { AscDemande } from '../../interfaces/asc.interface';
 
 @Component({
@@ -40,7 +37,8 @@ export class PendingComponent {
         d.client?.nomPrenom.toLowerCase().includes(q) ||
         d.client?.codeClient.toLowerCase().includes(q) ||
         d.cheque.tireur.toLowerCase().includes(q) ||
-        d.numDemandeAsc?.toLowerCase().includes(q),
+        d.numDemandeAsc?.toLowerCase().includes(q) ||
+        d.cheque.numTransaction.toLowerCase().includes(q),
     );
   });
 

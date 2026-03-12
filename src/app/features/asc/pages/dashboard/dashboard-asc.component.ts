@@ -12,7 +12,7 @@ import {
   CardTitleComponent,
 } from '@/shared/components/card/card.component';
 import { PaginationComponent } from '@/shared/components/pagination/pagination.component';
-import { BarChartComponent, BarChartData } from '@/shared/components/chart/bar-chart.component';
+import { AscMonthlyChartComponent } from './asc-monthly-chart.component';
 import { AscDashboard } from '../../interfaces/asc.interface';
 import { AscService } from '../../services/asc/asc.service';
 
@@ -27,7 +27,7 @@ import { AscService } from '../../services/asc/asc.service';
     CardHeaderComponent,
     CardTitleComponent,
     PaginationComponent,
-    BarChartComponent,
+    AscMonthlyChartComponent,
   ],
 })
 export class DashboardAscComponent implements OnInit {
@@ -47,6 +47,7 @@ export class DashboardAscComponent implements OnInit {
   readonly selectedYear = signal(this.currentYear);
   readonly isLoading = signal(false);
   readonly dashboard = signal<AscDashboard | null>(null);
+  readonly agencesList = signal<{ id: number; libelle: string }[]>([]);
 
   // Pagination agences table
   readonly page = signal(1);
@@ -58,19 +59,11 @@ export class DashboardAscComponent implements OnInit {
     return agences.slice(start, start + this.pageSize);
   });
 
-  readonly chartData = computed<BarChartData>(() => {
-    const agences = this.dashboard()?.agences ?? [];
-    return {
-      labels: agences.map((a) => a.libelle),
-      datasets: [
-        { label: 'En attente', values: agences.map((a) => a.avcAttente), colorVar: '--color-chart-1' },
-        { label: 'Validées',   values: agences.map((a) => a.avcValide),  colorVar: '--color-chart-2' },
-      ],
-    };
-  });
-
   ngOnInit() {
     this.load(this.currentYear);
+    this.ascService.getAgences().subscribe({
+      next: (agences) => this.agencesList.set(agences),
+    });
   }
 
   load(annee: number) {

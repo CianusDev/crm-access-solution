@@ -1,0 +1,565 @@
+<div class="flex flex-col gap-4 mt-4 min-w-0 w-full overflow-x-hidden">
+
+  <!-- ── Header ───────────────────────────────────────────────────────────── -->
+  <div>
+    <h1 class="text-xl font-bold text-foreground">Tableau de bord — Crédits</h1>
+    <p class="text-sm text-muted-foreground">Vue d'ensemble des demandes de crédit</p>
+  </div>
+
+  <app-tabs defaultTab="Général">
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         TAB : GÉNÉRAL
+         Sources : dashCrdBytype + dashCrdByStatut + dashCrdByAgence + dashCrdByRegion
+    ════════════════════════════════════════════════════════════════════ -->
+    <app-tab label="Général" [icon]="LayoutDashboardIcon">
+    <div class="flex flex-col gap-6 pt-2 min-w-0">
+
+
+    @if (isLoading()) {
+      <div class="flex items-center justify-center py-32">
+        <span class="h-9 w-9 animate-spin rounded-full border-4 border-primary border-t-transparent"></span>
+      </div>
+    } @else {
+
+      <!-- SECTION 1 — Montant total déboursé + répartition par type (dashCrdBytype) -->
+      <div class="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+
+        <!-- Hero -->
+        <div class="flex flex-col items-center justify-center py-8 gap-1 border-b border-border bg-muted/20">
+          <p class="text-4xl font-extrabold tracking-tight text-foreground">
+            {{ dashTypeCredit()!.sommeTotaleMontEmprunte | number }}
+            <span class="text-2xl font-bold text-primary ml-1">FCFA</span>
+          </p>
+          <div class="flex items-center gap-1.5 mt-1">
+            <app-badge variant="secondary">100%</app-badge>
+            <span class="text-sm text-muted-foreground">Montant total déboursé</span>
+          </div>
+        </div>
+
+        <!-- Grille par type de crédit -->
+        @if (typesAvecPourcentage().length > 0) {
+          <div class="grid grid-cols-2 gap-px bg-border sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            @for (t of typesAvecPourcentage(); track t.id) {
+              <div class="flex flex-col gap-2 bg-card p-4">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide leading-tight">{{ t.libelle }}</span>
+                  <app-badge variant="outline">{{ t.pourcentage }}%</app-badge>
+                </div>
+                <div class="h-1 w-full rounded-full bg-muted overflow-hidden">
+                  <div class="h-full rounded-full bg-primary transition-all duration-700" [style.width.%]="t.pourcentage"></div>
+                </div>
+                <p class="text-sm font-bold text-foreground leading-none">
+                  {{ t.montant | number }}
+                  <span class="text-[11px] font-normal text-muted-foreground ml-0.5">F</span>
+                </p>
+              </div>
+            }
+          </div>
+        }
+
+      </div>
+
+      <!-- SECTION 2 — État des dossiers (gauche) + Agences (droite) -->
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+
+        <!-- État des dossiers (dashCrdByStatut) -->
+        <app-card>
+          <app-card-header>
+            <app-card-title>État des Dossiers</app-card-title>
+          </app-card-header>
+          <app-card-content>
+
+            <!-- KPIs -->
+            <div class="flex flex-col gap-3 mb-5">
+              <div class="flex items-center justify-between rounded-lg bg-muted/40 px-4 py-3">
+                <span class="text-sm font-semibold text-foreground">Total des dossiers</span>
+                <span class="text-2xl font-extrabold text-foreground">{{ reseauTotal() | number }}</span>
+              </div>
+              <div class="flex items-center justify-between rounded-lg  border border-border bg-card px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <span class="inline-block h-2.5 w-2.5 rounded-full bg-orange-400"></span>
+                  <span class="text-sm text-muted-foreground">Dossiers En cours</span>
+                </div>
+                <span class="text-xl font-bold text-foreground">{{ reseauEnCours() | number }}</span>
+              </div>
+              <div class="flex items-center justify-between rounded-lg  border border-border bg-card px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <span class="inline-block h-2.5 w-2.5 rounded-full bg-green-400"></span>
+                  <span class="text-sm text-muted-foreground">Dossiers clôturés</span>
+                </div>
+                <span class="text-xl font-bold text-green-600">{{ reseauClotures() | number }}</span>
+              </div>
+              <div class="flex items-center justify-between rounded-lg border border-border border-border bg-card px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <span class="inline-block h-2.5 w-2.5 rounded-full bg-red-400"></span>
+                  <span class="text-sm text-muted-foreground">Dossiers Rejetés</span>
+                </div>
+                <span class="text-xl font-bold text-red-600">{{ reseauRejetes() | number }}</span>
+              </div>
+            </div>
+
+            <!-- Donut -->
+            <div class="flex justify-center">
+              <div class="w-48">
+                <app-credit-donut-chart
+                  [enCours]="reseauEnCours()"
+                  [clotures]="reseauClotures()"
+                  [rejetes]="reseauRejetes()"
+                />
+              </div>
+            </div>
+
+          </app-card-content>
+        </app-card>
+
+        <!-- Agences table (dashCrdByAgence) -->
+        <app-card class="lg:col-span-2">
+          <app-card-header>
+            <div class="flex items-center gap-2">
+              <lucide-icon [img]="Building2Icon" [size]="15" class="text-muted-foreground" />
+              <app-card-title>Statistiques par agence</app-card-title>
+              <app-badge variant="secondary">{{ statAgences().length }}</app-badge>
+            </div>
+          </app-card-header>
+          <app-card-content class="!p-0 !pt-0">
+            @if (statAgences().length === 0) {
+              <div class="flex items-center justify-center py-12 border-t border-border">
+                <p class="text-sm text-muted-foreground">Aucune donnée agence disponible.</p>
+              </div>
+            } @else {
+              <div class="overflow-x-auto border-t border-border">
+                <table appTable>
+                  <thead appTableHeader>
+                    <tr appTableRow class="bg-muted/30">
+                      <th appTableHead>Agence</th>
+                      <th appTableHead align="center">D. En cours</th>
+                      <th appTableHead align="center">D. Décaissées</th>
+                      <th appTableHead align="center">D. Rejetées</th>
+                      <th appTableHead align="right">Montant Décaissé</th>
+                    </tr>
+                  </thead>
+                  <tbody appTableBody>
+                    @for (ag of statAgences(); track ag.code) {
+                      <tr appTableRow>
+                        <td appTableCell>
+                          <div class="flex items-center gap-2">
+                            <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                              {{ ag.libelle.slice(0, 2).toUpperCase() }}
+                            </div>
+                            <span class="text-sm font-medium text-foreground">{{ ag.libelle }}</span>
+                          </div>
+                        </td>
+                        <td appTableCell class="text-center">
+                          <div class="flex items-center justify-center gap-1">
+                            <span class="inline-block h-2 w-2 rounded-full bg-orange-400"></span>
+                            <span class="text-sm font-medium">{{ ag.demandeEncours }}</span>
+                          </div>
+                        </td>
+                        <td appTableCell class="text-center">
+                          <div class="flex items-center justify-center gap-1">
+                            <span class="inline-block h-2 w-2 rounded-full bg-green-400"></span>
+                            <span class="text-sm font-medium">{{ ag.demandeCloture }}</span>
+                          </div>
+                        </td>
+                        <td appTableCell class="text-center">
+                          <div class="flex items-center justify-center gap-1">
+                            <span class="inline-block h-2 w-2 rounded-full bg-red-400"></span>
+                            <span class="text-sm font-medium">{{ ag.demandeRejete }}</span>
+                          </div>
+                        </td>
+                        <td appTableCell class="text-right whitespace-nowrap">
+                          <app-badge variant="secondary">{{ ag.montant | number }} FCFA</app-badge>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </app-card-content>
+        </app-card>
+
+      </div>
+
+      <!-- SECTION 3 — Régions + Zones (dashCrdByRegion + statCrdRegion) -->
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-4">
+
+        <!-- Sidebar régions -->
+        <app-card>
+          <app-card-header>
+            <div class="flex items-center gap-2">
+              <lucide-icon [img]="MapPinIcon" [size]="15" class="text-muted-foreground" />
+              <app-card-title>Régions</app-card-title>
+            </div>
+          </app-card-header>
+          <app-card-content class="!p-0 !pt-0">
+            @if (statRegions().length === 0) {
+              <div class="flex items-center justify-center py-10">
+                <p class="text-sm text-muted-foreground">Aucune région.</p>
+              </div>
+            } @else {
+              <div class="flex flex-col border-t border-border">
+                @for (r of statRegions(); track r.id) {
+                  <button
+                    type="button"
+                    (click)="selectRegion(r.id)"
+                    class="flex items-center justify-between px-4 py-3 text-sm transition-colors hover:bg-muted/50 text-left border-b border-border last:border-0"
+                    [class]="selectedRegionId() === r.id ? 'bg-primary/5 font-semibold text-primary' : 'text-foreground'"
+                  >
+                    <div class="flex items-center gap-2 min-w-0">
+                      <lucide-icon [img]="MapPinIcon" [size]="13"
+                        [class]="selectedRegionId() === r.id ? 'text-primary shrink-0' : 'text-muted-foreground shrink-0'" />
+                      <div class="min-w-0">
+                        <span class="truncate block">{{ r.libelle }}</span>
+                        @if (r.regional) {
+                          <span class="block text-xs font-normal"
+                            [class]="selectedRegionId() === r.id ? 'text-primary/70' : 'text-muted-foreground'">
+                            {{ r.regional }}
+                          </span>
+                        }
+                      </div>
+                    </div>
+                    @if (selectedRegionId() === r.id) {
+                      <lucide-icon [img]="ChevronRightIcon" [size]="14" class="text-primary shrink-0" />
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </app-card-content>
+        </app-card>
+
+        <!-- Détail région sélectionnée -->
+        <div class="lg:col-span-3 flex flex-col gap-4">
+
+          @if (selectedRegion(); as reg) {
+
+            <!-- Hero région -->
+            <div class="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 shadow-sm">
+              <div class="flex items-center justify-between">
+                <div class="text-center">
+                  <p class="text-xs text-muted-foreground mb-1">Montant total déboursé</p>
+                  <p class="text-2xl font-extrabold text-foreground leading-none">
+                    {{ reg.montantTotal | number }}
+                    <span class="text-sm font-normal text-muted-foreground ml-0.5">FCFA</span>
+                  </p>
+                </div>
+              </div>
+
+              <!-- KPIs détaillés -->
+              <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 mt-1">
+                <div class="flex flex-col items-center gap-1 rounded-lg bg-muted/30 p-3 text-center">
+                  <lucide-icon [img]="FileTextIcon" [size]="18" class="text-muted-foreground" />
+                  <span class="text-xl font-bold text-foreground">{{ reg.totalDemandes | number }}</span>
+                  <span class="text-[11px] text-muted-foreground leading-tight">Total demandes</span>
+                </div>
+                <div class="flex flex-col items-center gap-1 rounded-lg bg-muted/30 p-3 text-center">
+                  <lucide-icon [img]="AwardIcon" [size]="18" class="text-blue-500" />
+                  <span class="text-xl font-bold text-foreground">{{ reg.demandeArs | number }}</span>
+                  <span class="text-[11px] text-muted-foreground leading-tight">D. en cours d'analyse</span>
+                </div>
+                <div class="flex flex-col items-center gap-1 rounded-lg bg-muted/30 p-3 text-center">
+                  <lucide-icon [img]="BarChart2Icon" [size]="18" class="text-yellow-500" />
+                  <span class="text-xl font-bold text-foreground">{{ reg.demandeEnComite | number }}</span>
+                  <span class="text-[11px] text-muted-foreground leading-tight">D. en comité</span>
+                </div>
+                <div class="flex flex-col items-center gap-1 rounded-lg bg-muted/30 p-3 text-center">
+                  <lucide-icon [img]="CheckCircleIcon" [size]="18" class="text-orange-500" />
+                  <span class="text-xl font-bold text-foreground">{{ reg.demandeEnLeveRecom | number }}</span>
+                  <span class="text-[11px] text-muted-foreground leading-tight">D. en levée de recommandation</span>
+                </div>
+                <div class="flex flex-col items-center gap-1 rounded-lg bg-muted/30 p-3 text-center">
+                  <lucide-icon [img]="CheckSquareIcon" [size]="18" class="text-green-500" />
+                  <span class="text-xl font-bold text-green-600">{{ reg.demandeCloture | number }}</span>
+                  <span class="text-[11px] text-muted-foreground leading-tight">D. clôturées</span>
+                </div>
+                <div class="flex flex-col items-center gap-1 rounded-lg bg-muted/30 p-3 text-center">
+                  <lucide-icon [img]="XOctagonIcon" [size]="18" class="text-red-500" />
+                  <span class="text-xl font-bold text-red-600">{{ reg.demandeRejete | number }}</span>
+                  <span class="text-[11px] text-muted-foreground leading-tight">D. rejetées</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tableau zones -->
+            <app-card>
+              <app-card-header>
+                <div class="flex items-center gap-2">
+                  <app-card-title>Liste des zones</app-card-title>
+                  @if (isLoadingZones()) {
+                    <span class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+                  }
+                </div>
+              </app-card-header>
+              <app-card-content class="!p-0 !pt-0">
+                @if (isLoadingZones()) {
+                  <div class="flex items-center justify-center py-12 border-t border-border">
+                    <span class="h-7 w-7 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+                  </div>
+                } @else if (listeZones().length === 0) {
+                  <div class="flex items-center justify-center py-12 border-t border-border">
+                    <p class="text-sm text-muted-foreground">Aucune zone disponible pour cette région.</p>
+                  </div>
+                } @else {
+                  <div class="overflow-x-auto border-t border-border">
+                    <table appTable>
+                      <thead appTableHeader>
+                        <tr appTableRow class="bg-muted/30">
+                          <th appTableHead>Zone</th>
+                          <th appTableHead align="center">D. en analyse</th>
+                          <th appTableHead align="center">D. en comité</th>
+                          <th appTableHead align="center">D. en levée de reco</th>
+                          <th appTableHead align="center">D. clôturées</th>
+                          <th appTableHead align="center">D. rejetées</th>
+                        </tr>
+                      </thead>
+                      <tbody appTableBody>
+                        @for (z of listeZones(); track z.id) {
+                          <tr appTableRow>
+                            <td appTableCell>
+                              <div class="flex items-center gap-2">
+                                <lucide-icon [img]="MapPinIcon" [size]="13" class="text-muted-foreground shrink-0" />
+                                <div class="flex flex-col gap-0.5">
+                                  <span class="text-sm font-medium text-foreground">{{ z.libelle }}</span>
+                                  @if (z.regional) {
+                                    <span class="text-xs text-muted-foreground">{{ z.regional }}</span>
+                                  }
+                                </div>
+                              </div>
+                            </td>
+                            <td appTableCell class="text-center">
+                              <div class="flex items-center justify-center gap-1">
+                                <span class="inline-block h-2 w-2 rounded-full bg-blue-400"></span>
+                                <span class="text-sm font-medium">{{ z.demandeArs }}</span>
+                              </div>
+                            </td>
+                            <td appTableCell class="text-center">
+                              <div class="flex items-center justify-center gap-1">
+                                <span class="inline-block h-2 w-2 rounded-full bg-yellow-400"></span>
+                                <span class="text-sm font-medium">{{ z.demandeEnComite }}</span>
+                              </div>
+                            </td>
+                            <td appTableCell class="text-center">
+                              <div class="flex items-center justify-center gap-1">
+                                <span class="inline-block h-2 w-2 rounded-full bg-orange-400"></span>
+                                <span class="text-sm font-medium">{{ z.demandeEnLeveRecom }}</span>
+                              </div>
+                            </td>
+                            <td appTableCell class="text-center">
+                              <div class="flex items-center justify-center gap-1">
+                                <span class="inline-block h-2 w-2 rounded-full bg-green-400"></span>
+                                <span class="text-sm font-medium text-green-700">{{ z.demandeCloture }}</span>
+                              </div>
+                            </td>
+                            <td appTableCell class="text-center">
+                              <div class="flex items-center justify-center gap-1">
+                                <span class="inline-block h-2 w-2 rounded-full bg-red-400"></span>
+                                <span class="text-sm font-medium text-red-700">{{ z.demandeRejete }}</span>
+                              </div>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              </app-card-content>
+            </app-card>
+
+          } @else {
+            <div class="flex h-full min-h-48 items-center justify-center rounded-xl border border-dashed border-border bg-muted/10 p-8">
+              <p class="text-sm text-muted-foreground">Sélectionnez une région pour voir ses zones.</p>
+            </div>
+          }
+
+        </div>
+
+      </div>
+
+    }
+
+    </div>
+    </app-tab>
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         TAB : TOTAL RÉSEAU
+         Source : tbByProd (rapport par type de crédit)
+    ════════════════════════════════════════════════════════════════════ -->
+    <app-tab label="Total Réseau" [icon]="GlobeIcon">
+    <div class="flex flex-col gap-6 pt-2 max-w-[95%]">
+
+    <!-- Filtres -->
+    <app-card>
+      <app-card-content>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 items-end pt-4">
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-medium text-muted-foreground">Agence</label>
+            <app-searchable-select
+              [options]="agencesOptions()"
+              [value]="tbFilterAgence()"
+              placeholder="Toutes les agences"
+              (valueChange)="tbFilterAgence.set($event !== null ? '' + $event : null)"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-medium text-muted-foreground">
+              Date début <span class="text-destructive">*</span>
+            </label>
+            <input appInput type="date" [ngModel]="tbFilterDateDebut()" (ngModelChange)="tbFilterDateDebut.set($event)" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-medium text-muted-foreground">
+              Date fin <span class="text-destructive">*</span>
+            </label>
+            <input appInput type="date" [ngModel]="tbFilterDateFin()" (ngModelChange)="tbFilterDateFin.set($event)" />
+          </div>
+          <div class="flex">
+            <button appLoadingButton [loading]="tbIsSearching()" loadingText="Recherche…" type="button" (click)="rechercherTb()" class="w-full">
+              <lucide-icon [img]="SearchIcon" [size]="14" />
+              Recherche
+            </button>
+          </div>
+        </div>
+      </app-card-content>
+    </app-card>
+
+    <!-- Loader -->
+    @if (tbIsLoading()) {
+      <div class="flex items-center justify-center py-32">
+        <span class="h-9 w-9 animate-spin rounded-full border-4 border-primary border-t-transparent"></span>
+      </div>
+    } @else {
+
+      <!-- Tableau pivot par type de crédit -->
+      <app-card>
+        <app-card-header>
+          <div class="flex items-center gap-2">
+            <lucide-icon [img]="BarChart2Icon" [size]="15" class="text-muted-foreground" />
+            <app-card-title>Rapport par type de crédit</app-card-title>
+          </div>
+        </app-card-header>
+        <app-card-content class="!p-0 !pt-0">
+          <div class="w-full overflow-x-auto border-t border-border">
+            <table class="text-xs border-collapse w-max">
+
+              <!-- Header row 1 — groupes de colonnes -->
+              <thead>
+                <tr class="border-b border-border bg-muted/30">
+                  <th class="px-4 py-2.5 text-left font-semibold text-muted-foreground border-r border-border" rowspan="2">
+                    TYPE DE CRÉDIT
+                  </th>
+                  <th class="px-4 py-2.5 text-center font-semibold border-r border-border" colspan="2">Décaissés</th>
+                  <th class="px-4 py-2.5 text-center font-semibold border-r border-border" colspan="2">En décaissement</th>
+                  <th class="px-4 py-2.5 text-center font-semibold border-r border-border" colspan="2">En Comité</th>
+                  <th class="px-4 py-2.5 text-center font-semibold border-r border-border" colspan="2">En contre-évaluation</th>
+                  <th class="px-4 py-2.5 text-center font-semibold border-r border-border" colspan="2">En instruction</th>
+                  <th class="px-4 py-2.5 text-center font-semibold border-r border-border" colspan="2">Non Instruit</th>
+                  <th class="px-4 py-2.5 text-center font-semibold border-r border-border" colspan="2">Total</th>
+                  <th class="px-4 py-2.5 text-center font-semibold border-r border-border" colspan="2">Probable</th>
+                  <th class="px-4 py-2.5 text-center font-semibold" colspan="2">Valide</th>
+                </tr>
+
+                <!-- Header row 2 — Nombre / Volume -->
+                <tr class="border-b border-border bg-muted/10 text-muted-foreground">
+                  @for (col of ['Décaissés','En décaissement','En Comité','En contre-évaluation','En instruction','Non Instruit','Total','Probable','Valide']; track col) {
+                    <th class="px-3 py-1.5 text-center font-medium border-r border-border">Nombre</th>
+                    <th class="px-3 py-1.5 text-center font-medium border-r border-border last:border-r-0">Volume</th>
+                  }
+                </tr>
+
+                <!-- Row TOTAL (fond sombre) -->
+                <tr class="border-b border-border bg-[#4b4b4b] text-white font-bold">
+                  <td class="px-4 py-3 border-r border-white/10 whitespace-nowrap">TOTAL</td>
+                  <!-- Décaissés -->
+                  <td class="px-3 py-3 text-center border-r border-white/10">{{ tbTotaux().decaisses.nombre | number }}</td>
+                  <td class="px-3 py-3 text-center border-r border-white/10 whitespace-nowrap">{{ tbTotaux().decaisses.volume | number }} FCFA</td>
+                  <!-- En décaissement -->
+                  <td class="px-3 py-3 text-center border-r border-white/10">{{ tbTotaux().enDecaissement.nombre | number }}</td>
+                  <td class="px-3 py-3 text-center border-r border-white/10 whitespace-nowrap">{{ tbTotaux().enDecaissement.volume | number }} FCFA</td>
+                  <!-- En Comité -->
+                  <td class="px-3 py-3 text-center border-r border-white/10">{{ tbTotaux().enComite.nombre | number }}</td>
+                  <td class="px-3 py-3 text-center border-r border-white/10 whitespace-nowrap">{{ tbTotaux().enComite.volume | number }} FCFA</td>
+                  <!-- En contre-évaluation -->
+                  <td class="px-3 py-3 text-center border-r border-white/10">{{ tbTotaux().enContreVal.nombre | number }}</td>
+                  <td class="px-3 py-3 text-center border-r border-white/10 whitespace-nowrap">{{ tbTotaux().enContreVal.volume | number }} FCFA</td>
+                  <!-- En instruction -->
+                  <td class="px-3 py-3 text-center border-r border-white/10">{{ tbTotaux().enInstruction.nombre | number }}</td>
+                  <td class="px-3 py-3 text-center border-r border-white/10 whitespace-nowrap">{{ tbTotaux().enInstruction.volume | number }} FCFA</td>
+                  <!-- Non Instruit -->
+                  <td class="px-3 py-3 text-center border-r border-white/10">{{ tbTotaux().nonInstruit.nombre | number }}</td>
+                  <td class="px-3 py-3 text-center border-r border-white/10 whitespace-nowrap">{{ tbTotaux().nonInstruit.volume | number }} FCFA</td>
+                  <!-- Total -->
+                  <td class="px-3 py-3 text-center border-r border-white/10">{{ tbTotaux().total.nombre | number }}</td>
+                  <td class="px-3 py-3 text-center border-r border-white/10 whitespace-nowrap">{{ tbTotaux().total.volume | number }} FCFA</td>
+                  <!-- Probable -->
+                  <td class="px-3 py-3 text-center border-r border-white/10">{{ tbTotaux().probable.nombre | number }}</td>
+                  <td class="px-3 py-3 text-center border-r border-white/10 whitespace-nowrap">{{ tbTotaux().probable.volume | number }} FCFA</td>
+                  <!-- Valide -->
+                  <td class="px-3 py-3 text-center border-r border-white/10">{{ tbTotaux().valide.nombre | number }}</td>
+                  <td class="px-3 py-3 text-center whitespace-nowrap">{{ tbTotaux().valide.volume | number }} FCFA</td>
+                </tr>
+              </thead>
+
+              <!-- Body — lignes par type de crédit -->
+              <tbody>
+                @for (p of tbProduits(); track p.libelle) {
+                  <tr class="border-b border-border hover:bg-muted/30 transition-colors">
+                    <td class="px-4 py-2.5 font-semibold text-foreground uppercase tracking-wide border-r border-border whitespace-nowrap">
+                      {{ p.libelle }}
+                    </td>
+                    <!-- Décaissés -->
+                    <td class="px-3 py-2.5 text-center text-foreground border-r border-border">{{ p.decaisses.nombre | number }}</td>
+                    <td class="px-3 py-2.5 text-center text-muted-foreground border-r border-border whitespace-nowrap">{{ p.decaisses.volume | number }} F</td>
+                    <!-- En décaissement -->
+                    <td class="px-3 py-2.5 text-center text-foreground border-r border-border">{{ p.enDecaissement.nombre | number }}</td>
+                    <td class="px-3 py-2.5 text-center text-muted-foreground border-r border-border whitespace-nowrap">{{ p.enDecaissement.volume | number }} F</td>
+                    <!-- En Comité -->
+                    <td class="px-3 py-2.5 text-center text-foreground border-r border-border">{{ p.enComite.nombre | number }}</td>
+                    <td class="px-3 py-2.5 text-center text-muted-foreground border-r border-border whitespace-nowrap">{{ p.enComite.volume | number }} F</td>
+                    <!-- En contre-évaluation -->
+                    <td class="px-3 py-2.5 text-center text-foreground border-r border-border">{{ p.enContreVal.nombre | number }}</td>
+                    <td class="px-3 py-2.5 text-center text-muted-foreground border-r border-border whitespace-nowrap">{{ p.enContreVal.volume | number }} F</td>
+                    <!-- En instruction -->
+                    <td class="px-3 py-2.5 text-center text-foreground border-r border-border">{{ p.enInstruction.nombre | number }}</td>
+                    <td class="px-3 py-2.5 text-center text-muted-foreground border-r border-border whitespace-nowrap">{{ p.enInstruction.volume | number }} F</td>
+                    <!-- Non Instruit -->
+                    <td class="px-3 py-2.5 text-center text-foreground border-r border-border">{{ p.nonInstruit.nombre | number }}</td>
+                    <td class="px-3 py-2.5 text-center text-muted-foreground border-r border-border whitespace-nowrap">{{ p.nonInstruit.volume | number }} F</td>
+                    <!-- Total -->
+                    <td class="px-3 py-2.5 text-center border-r border-border">
+                      <app-badge variant="secondary">{{ p.total.nombre | number }}</app-badge>
+                    </td>
+                    <td class="px-3 py-2.5 text-center border-r border-border">
+                      <app-badge variant="secondary">{{ p.total.volume | number }} F</app-badge>
+                    </td>
+                    <!-- Probable -->
+                    <td class="px-3 py-2.5 text-center text-foreground border-r border-border">{{ p.probable.nombre | number }}</td>
+                    <td class="px-3 py-2.5 text-center text-muted-foreground border-r border-border whitespace-nowrap">{{ p.probable.volume | number }} F</td>
+                    <!-- Valide -->
+                    <td class="px-3 py-2.5 text-center text-foreground border-r border-border">{{ p.valide.nombre | number }}</td>
+                    <td class="px-3 py-2.5 text-center text-muted-foreground whitespace-nowrap">{{ p.valide.volume | number }} F</td>
+                  </tr>
+                }
+
+                @if (tbProduits().length === 0) {
+                  <tr>
+                    <td colspan="19" class="px-4 py-16 text-center text-sm text-muted-foreground">
+                      Aucune donnée disponible.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </app-card-content>
+      </app-card>
+
+    }
+
+    </div>
+    </app-tab>
+
+  </app-tabs>
+
+</div>

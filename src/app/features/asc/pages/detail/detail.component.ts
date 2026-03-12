@@ -206,10 +206,16 @@ export class DetailComponent {
     this.dialogOpen.set(true);
   }
 
+  get obsInvalid(): boolean {
+    return !!(this.pendingAction()?.requireObs && !this.observation?.trim());
+  }
+
   confirmAction() {
     const action = this.pendingAction();
     const d = this.demande();
     if (!action || !d) return;
+
+    if (action.requireObs && !this.observation?.trim()) return;
 
     const obs = this.observation?.trim() || 'Avis favorable';
     this.isLoading.set(true);
