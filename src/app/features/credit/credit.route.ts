@@ -9,6 +9,13 @@ export const CREDIT_ROUTES: Routes = [
       ),
   },
   {
+    path: 'create',
+    loadComponent: () =>
+      import('./pages/create/create-credit.component').then(
+        (m) => m.CreateCreditComponent,
+      ),
+  },
+  {
     path: '',
     redirectTo: 'dashboard',
     pathMatch: 'full',

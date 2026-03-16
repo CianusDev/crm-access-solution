@@ -12,6 +12,7 @@ import {
   Users,
   AlarmClock,
   CreditCard,
+  FilePlus,
 } from 'lucide-angular';
 
 export const DEFAULT_MENU: SidebarGroup[] = [
@@ -37,6 +38,7 @@ export const DEFAULT_MENU: SidebarGroup[] = [
     icon: CreditCard,
     items: [
       { label: 'Tableau de bord', href: '/app/credit/dashboard', icon: LayoutDashboard },
+      { label: 'Nouvelle demande', href: '/app/credit/create', icon: FilePlus },
     ],
   },
   {

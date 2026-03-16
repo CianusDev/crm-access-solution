@@ -61,7 +61,7 @@ export interface CreditDashboardFiltre {
 
 // ── Tab Total Réseau — dashCrdBytype ─────────────────────────────────────────
 export interface CreditDashboardTypeCredit {
-  sommeTotaleMontEmprunte: number;  // champ réel backend
+  sommeTotaleMontEmprunte: number; // champ réel backend
   montantDebParCrd: CreditTypeItem[];
 }
 
@@ -87,7 +87,7 @@ export interface CreditStatAgence {
 export interface CreditStatRegion {
   id: number;
   libelle: string;
-  regional?: string;       // nom du responsable régional
+  regional?: string; // nom du responsable régional
   montantTotal: number;
   totalDemandes: number;
   demandeArs: number;
@@ -117,44 +117,88 @@ export interface CreditTbStatut {
 
 export interface CreditTbProduit {
   libelle: string;
-  decaisses:      CreditTbStatut;
+  decaisses: CreditTbStatut;
   enDecaissement: CreditTbStatut;
-  enComite:       CreditTbStatut;
-  enContreVal:    CreditTbStatut;
-  enInstruction:  CreditTbStatut;
-  nonInstruit:    CreditTbStatut;
-  total:          CreditTbStatut;
-  probable:       CreditTbStatut;
-  valide:         CreditTbStatut;
+  enComite: CreditTbStatut;
+  enContreVal: CreditTbStatut;
+  enInstruction: CreditTbStatut;
+  nonInstruit: CreditTbStatut;
+  total: CreditTbStatut;
+  probable: CreditTbStatut;
+  valide: CreditTbStatut;
+}
+
+// ── Création de demande ───────────────────────────────────────────────────────
+export interface CreditClientEntreprise {
+  nomDirigeant: string;
+  NumEnregistrement: string;
+}
+
+export interface CreditClientDetail {
+  codeClient: string;
+  nomPrenom: string;
+  typeAgent: 'PP' | 'PM' | string;
+  agence: { libelle: string };
+  indicatifCel?: string;
+  numCel?: string;
+  ville?: {
+    id: number;
+    libelle: string;
+  };
+  domicille?: string;
+  dataNaiss?: string;
+  dateInscription?: string;
+  adresse?: string;
+  entreprise?: CreditClientEntreprise;
+}
+
+export interface CreditTypeActivite {
+  id: number;
+  libelle: string;
+}
+
+export interface CreditSaveDemande {
+  codeClient: string;
+  typeCredit: number;
+  objetCredit: string;
+  typeActivite: number;
+  montantSollicite: number;
+  nbreEcheanceSollicite: number;
+  montantEcheSouhaite: number;
+  nbreEcheDiffere?: number | null;
+  description: string;
 }
 
 // ── Statuts ───────────────────────────────────────────────────────────────────
-export const CREDIT_STATUTS: Record<number, { label: string; variant: 'default' | 'success' | 'destructive' | 'warning' }> = {
-  1:  { label: 'Enregistrement de la demande',                              variant: 'default'     },
-  2:  { label: 'Pré-Évaluation',                                            variant: 'default'     },
-  3:  { label: 'En attente de création dans PERFECT',                       variant: 'warning'     },
-  4:  { label: "En attente d'affectation",                                  variant: 'warning'     },
-  5:  { label: "En attente de l'analyse financière",                        variant: 'warning'     },
-  6:  { label: 'En attente de la contre-évaluation',                        variant: 'warning'     },
-  7:  { label: 'En attente du pré-comité',                                  variant: 'warning'     },
-  8:  { label: 'En attente du Responsable Régional',                        variant: 'warning'     },
-  9:  { label: 'En attente du comité CDCR',                                 variant: 'warning'     },
-  10: { label: 'En attente DGA Risque',                                     variant: 'warning'     },
-  11: { label: 'En attente DGA EXPL.',                                      variant: 'warning'     },
-  12: { label: 'En attente Directeur Général',                              variant: 'warning'     },
-  13: { label: 'Levée des recommandations',                                 variant: 'warning'     },
-  14: { label: 'En attente de suivi',                                       variant: 'warning'     },
-  16: { label: 'En attente de décaissement et de clôture',                  variant: 'warning'     },
-  17: { label: 'Enregistrement des contrats',                               variant: 'warning'     },
-  18: { label: 'Formalités post décaissement',                              variant: 'warning'     },
-  19: { label: 'Visite commanditaire',                                      variant: 'default'     },
-  21: { label: 'Dossier rejeté',                                            variant: 'destructive' },
-  22: { label: "En attente d'authentification des gages (demande)",         variant: 'warning'     },
-  23: { label: "En attente d'authentification des gages",                   variant: 'warning'     },
-  24: { label: 'Avis défavorable',                                          variant: 'destructive' },
-  25: { label: 'Décaissement annulé',                                       variant: 'destructive' },
-  26: { label: 'Validation décaissement par dérogation',                    variant: 'warning'     },
-  27: { label: 'Confirmation décaissement par dérogation',                  variant: 'warning'     },
-  28: { label: 'En attente DIRECTRICE EXPL.',                               variant: 'warning'     },
-  30: { label: 'Dossier clôturé',                                           variant: 'success'     },
+export const CREDIT_STATUTS: Record<
+  number,
+  { label: string; variant: 'default' | 'success' | 'destructive' | 'warning' }
+> = {
+  1: { label: 'Enregistrement de la demande', variant: 'default' },
+  2: { label: 'Pré-Évaluation', variant: 'default' },
+  3: { label: 'En attente de création dans PERFECT', variant: 'warning' },
+  4: { label: "En attente d'affectation", variant: 'warning' },
+  5: { label: "En attente de l'analyse financière", variant: 'warning' },
+  6: { label: 'En attente de la contre-évaluation', variant: 'warning' },
+  7: { label: 'En attente du pré-comité', variant: 'warning' },
+  8: { label: 'En attente du Responsable Régional', variant: 'warning' },
+  9: { label: 'En attente du comité CDCR', variant: 'warning' },
+  10: { label: 'En attente DGA Risque', variant: 'warning' },
+  11: { label: 'En attente DGA EXPL.', variant: 'warning' },
+  12: { label: 'En attente Directeur Général', variant: 'warning' },
+  13: { label: 'Levée des recommandations', variant: 'warning' },
+  14: { label: 'En attente de suivi', variant: 'warning' },
+  16: { label: 'En attente de décaissement et de clôture', variant: 'warning' },
+  17: { label: 'Enregistrement des contrats', variant: 'warning' },
+  18: { label: 'Formalités post décaissement', variant: 'warning' },
+  19: { label: 'Visite commanditaire', variant: 'default' },
+  21: { label: 'Dossier rejeté', variant: 'destructive' },
+  22: { label: "En attente d'authentification des gages (demande)", variant: 'warning' },
+  23: { label: "En attente d'authentification des gages", variant: 'warning' },
+  24: { label: 'Avis défavorable', variant: 'destructive' },
+  25: { label: 'Décaissement annulé', variant: 'destructive' },
+  26: { label: 'Validation décaissement par dérogation', variant: 'warning' },
+  27: { label: 'Confirmation décaissement par dérogation', variant: 'warning' },
+  28: { label: 'En attente DIRECTRICE EXPL.', variant: 'warning' },
+  30: { label: 'Dossier clôturé', variant: 'success' },
 };

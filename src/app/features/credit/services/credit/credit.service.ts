@@ -4,14 +4,17 @@ import { throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { ApiService } from '@/core/services/api/api.service';
 import {
+  CreditClientDetail,
   CreditDashboard,
   CreditDashboardFiltre,
   CreditDashboardStatut,
   CreditDashboardTypeCredit,
+  CreditSaveDemande,
   CreditStatAgence,
   CreditStatRegion,
   CreditStatZone,
   CreditTbProduit,
+  CreditTypeActivite,
   CreditTypeCredit,
 } from '../../interfaces/credit.interface';
 
@@ -135,5 +138,33 @@ export class CreditService {
         map((res) => res.typeCredits),
         catchError((err) => throwError(() => err)),
       );
+  }
+
+  // ── Création de demande ───────────────────────────────────────────────────
+  searchClientCredit(codeClient: string) {
+    return this.api
+      .post<{ client: CreditClientDetail }>(this.endpoint + '/searchClient', { codeClient })
+      .pipe(
+        map((res) => res.client),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  getTypesActivite() {
+    return this.api
+      .get<{ TypeActivites: CreditTypeActivite[] }>(this.endpoint + '/gettypeactivite')
+      .pipe(
+        map((res) => res.TypeActivites),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  saveDemandeCredit(data: CreditSaveDemande) {
+    return this.api
+      .post<{ status: number; demande: { refDemande: string }; message?: string }>(
+        this.endpoint + '/saveDemandeCredit',
+        data,
+      )
+      .pipe(catchError((err) => throwError(() => err)));
   }
 }

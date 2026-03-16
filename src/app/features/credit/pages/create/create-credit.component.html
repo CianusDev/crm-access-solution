@@ -1,0 +1,461 @@
+<div class="flex flex-col gap-6 mt-4">
+
+  <!-- En-tête -->
+  <div class="flex items-center gap-3">
+    <button
+      type="button"
+      (click)="goBack()"
+      class="flex items-center justify-center h-8 w-8 rounded-md border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+    >
+      <lucide-icon [img]="ChevronLeftIcon" [size]="16" />
+    </button>
+    <div>
+      <h1 class="text-xl font-bold text-foreground">Nouvelle demande de crédit</h1>
+      <p class="text-sm text-muted-foreground">Créez une demande de crédit pour un client</p>
+    </div>
+  </div>
+
+  <!-- Choix du type de demande -->
+  @if (step() === 'search') {
+    <app-card>
+      <app-card-content class="!pt-6">
+        <div class="flex flex-col items-center gap-6 py-4">
+
+          <!-- Icône -->
+          <div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+            <lucide-icon [img]="CreditCardIcon" [size]="32" class="text-primary" />
+          </div>
+
+          <!-- Titre + choix -->
+          <div class="text-center">
+            <h2 class="text-base font-semibold text-foreground">Type de demande</h2>
+            <p class="text-sm text-muted-foreground mt-1">Sélectionnez le type de demande à créer</p>
+          </div>
+
+          <!-- Radio buttons -->
+          <div class="flex gap-4">
+            <label
+              class="flex items-center gap-2.5 cursor-pointer rounded-lg border px-4 py-3 transition-colors"
+              [class.border-primary]="choix() === '1'"
+              [class.bg-primary/5]="choix() === '1'"
+              [class.border-border]="choix() !== '1'"
+            >
+              <input
+                type="radio"
+                name="choix"
+                value="1"
+                [ngModel]="choix()"
+                (ngModelChange)="choix.set($event)"
+                class="accent-primary"
+              />
+              <span class="text-sm font-medium text-foreground">Nouvelle demande</span>
+            </label>
+            <label
+              class="flex items-center gap-2.5 cursor-pointer rounded-lg border px-4 py-3 transition-colors"
+              [class.border-primary]="choix() === '2'"
+              [class.bg-primary/5]="choix() === '2'"
+              [class.border-border]="choix() !== '2'"
+            >
+              <input
+                type="radio"
+                name="choix"
+                value="2"
+                [ngModel]="choix()"
+                (ngModelChange)="choix.set($event)"
+                class="accent-primary"
+              />
+              <span class="text-sm font-medium text-foreground">Tirage découvert</span>
+            </label>
+          </div>
+
+          <!-- Recherche client (nouvelle demande) -->
+          @if (choix() === '1') {
+            <div class="w-full max-w-md">
+              <p class="text-sm text-center text-muted-foreground mb-3">Saisissez le numéro de compte client</p>
+              <div class="flex gap-2">
+                <div class="relative flex-1">
+                  <lucide-icon
+                    [img]="SearchIcon"
+                    [size]="15"
+                    class="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Ex: 0000001234…"
+                    [ngModel]="codeClient()"
+                    (ngModelChange)="codeClient.set($event)"
+                    (keydown.enter)="searchClient()"
+                    class="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/50"
+                  />
+                </div>
+                <button
+                  appButton
+                  type="button"
+                  (click)="searchClient()"
+                  [disabled]="!codeClient() || isSearching()"
+                >
+                  @if (isSearching()) {
+                    <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                  } @else {
+                    <lucide-icon [img]="SearchIcon" [size]="15" />
+                  }
+                  Rechercher
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- Tirage découvert -->
+          @if (choix() === '2') {
+            <div class="w-full max-w-md">
+              <p class="text-sm text-center text-muted-foreground mb-3">Saisissez le numéro PERFECT du découvert</p>
+              <div class="flex gap-2">
+                <div class="relative flex-1">
+                  <lucide-icon
+                    [img]="SearchIcon"
+                    [size]="15"
+                    class="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Numéro PERFECT du découvert…"
+                    class="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/50"
+                  />
+                </div>
+                <button appButton type="button">
+                  <lucide-icon [img]="SearchIcon" [size]="15" />
+                  Rechercher
+                </button>
+              </div>
+            </div>
+          }
+
+        </div>
+      </app-card-content>
+    </app-card>
+  }
+
+  <!-- Étape formulaire (client trouvé) -->
+  @if (step() === 'form') {
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
+
+      <!-- Colonne gauche : fiche client -->
+      <div class="flex flex-col gap-4">
+        <app-card>
+          <app-card-header>
+            <app-card-title>Profil client</app-card-title>
+          </app-card-header>
+          <app-card-content>
+            @if (client(); as c) {
+              <div class="flex flex-col items-center gap-3 pb-4">
+                <!-- Avatar -->
+                <div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                  @if (isPersonneMorale()) {
+                    <lucide-icon [img]="Building2Icon" [size]="28" class="text-primary" />
+                  } @else {
+                    <lucide-icon [img]="UserIcon" [size]="28" class="text-primary" />
+                  }
+                </div>
+                <!-- Nom + badges -->
+                <div class="text-center">
+                  <h3 class="text-sm font-semibold text-foreground">{{ c.nomPrenom }}</h3>
+                  <div class="flex flex-wrap justify-center gap-1.5 mt-1.5">
+                    <span class="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                      {{ isPersonneMorale() ? 'Personne morale' : 'Personne physique' }}
+                    </span>
+                    <span class="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
+                      Agence {{ c.agence.libelle }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Détails -->
+              <div class="flex flex-col gap-2 border-t border-border pt-4">
+                @if (!isPersonneMorale()) {
+                  @if (c.numCel) {
+                    <div class="flex items-center gap-2">
+                      <lucide-icon [img]="PhoneIcon" [size]="13" class="text-muted-foreground shrink-0" />
+                      <span class="text-xs text-foreground">+{{ c.indicatifCel }} {{ c.numCel }}</span>
+                    </div>
+                  }
+                  @if (c.ville) {
+                    <div class="flex items-center gap-2">
+                      <lucide-icon [img]="MapPinIcon" [size]="13" class="text-muted-foreground shrink-0" />
+                      <span class="text-xs text-foreground">{{ c.ville.libelle  }}@if (c.domicille) {, {{ c.domicille | json }}}</span>
+                    </div>
+                  }
+                  @if (c.dataNaiss) {
+                    <div class="flex items-center gap-2">
+                      <lucide-icon [img]="CalendarIcon" [size]="13" class="text-muted-foreground shrink-0" />
+                      <span class="text-xs text-foreground">Né(e) le {{ c.dataNaiss | date:'dd/MM/yyyy' }}</span>
+                    </div>
+                  }
+                } @else {
+                  @if (c.entreprise?.nomDirigeant) {
+                    <div class="flex justify-between py-1 border-b border-border/50">
+                      <span class="text-xs text-muted-foreground">Dirigeant</span>
+                      <span class="text-xs font-medium text-foreground">{{ c.entreprise!.nomDirigeant }}</span>
+                    </div>
+                  }
+                  @if (c.entreprise?.NumEnregistrement) {
+                    <div class="flex justify-between py-1 border-b border-border/50">
+                      <span class="text-xs text-muted-foreground">N° RCCM</span>
+                      <span class="text-xs font-medium text-foreground">{{ c.entreprise!.NumEnregistrement }}</span>
+                    </div>
+                  }
+                  @if (c.ville) {
+                    <div class="flex justify-between py-1">
+                      <span class="text-xs text-muted-foreground">Localisation</span>
+                      <span class="text-xs font-medium text-foreground">{{ c.ville }}</span>
+                    </div>
+                  }
+                }
+                @if (c.dateInscription) {
+                  <div class="flex justify-between py-1 border-t border-border/50 mt-1">
+                    <span class="text-xs text-muted-foreground">Inscription</span>
+                    <span class="text-xs font-medium text-foreground">{{ c.dateInscription | date:'dd/MM/yyyy' }}</span>
+                  </div>
+                }
+              </div>
+
+              <!-- Bouton modifier client -->
+              <div class="mt-4">
+                <button
+                  type="button"
+                  (click)="resetSearch()"
+                  class="w-full h-8 rounded-md border border-border bg-background text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                >
+                  Changer de client
+                </button>
+              </div>
+            }
+          </app-card-content>
+        </app-card>
+      </div>
+
+      <!-- Colonne droite : formulaire -->
+      <app-card>
+        <app-card-header>
+          <app-card-title>Demande de crédit</app-card-title>
+        </app-card-header>
+        <app-card-content>
+
+          @if (isLoadingRefs()) {
+            <div class="flex items-center justify-center py-16">
+              <span class="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+              <span class="ml-3 text-sm text-muted-foreground">Chargement des références…</span>
+            </div>
+          } @else {
+            <div class="flex flex-col gap-5">
+
+              <!-- Type de crédit -->
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-foreground">
+                  Type de crédit <span class="text-destructive">*</span>
+                </label>
+                <app-searchable-select
+                  [options]="typesCreditOptions()"
+                  [value]="fcTypeCredit()"
+                  placeholder="Sélectionner un type de crédit…"
+                  (valueChange)="fcTypeCredit.set($event !== null ? +$event : null)"
+                />
+                @if (submitted() && errors().typeCredit) {
+                  <p class="text-xs text-destructive">{{ errors().typeCredit }}</p>
+                }
+              </div>
+
+              @if (fcTypeCredit() !== null) {
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+
+                  <!-- Montant sollicité -->
+                  <div class="flex flex-col gap-1.5">
+                    <label class="text-sm font-medium text-foreground">
+                      Montant demandé <span class="text-destructive">*</span>
+                    </label>
+                    <div class="flex">
+                      <input
+                        type="number"
+                        min="0"
+                        [ngModel]="fcMontant()"
+                        (ngModelChange)="fcMontant.set($event)"
+                        placeholder="0"
+                        class="h-9 flex-1 rounded-l-md border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                        [class.border-destructive]="submitted() && errors().montant"
+                        [class.border-border]="!submitted() || !errors().montant"
+                        [class.focus:border-destructive]="submitted() && errors().montant"
+                        [class.focus:border-primary]="!submitted() || !errors().montant"
+                      />
+                      <span class="flex items-center rounded-r-md border border-l-0 border-border bg-muted px-3 text-xs text-muted-foreground">
+                        FCFA
+                      </span>
+                    </div>
+                    @if (submitted() && errors().montant) {
+                      <p class="text-xs text-destructive">{{ errors().montant }}</p>
+                    }
+                  </div>
+
+                  <!-- Objet du crédit -->
+                  <div class="flex flex-col gap-1.5">
+                    <label class="text-sm font-medium text-foreground">
+                      Objet du crédit <span class="text-destructive">*</span>
+                    </label>
+                    <app-searchable-select
+                      [options]="objetsCreditOptions"
+                      [value]="fcObjetCredit()"
+                      placeholder="Sélectionner un objet…"
+                      (valueChange)="fcObjetCredit.set($event !== null ? '' + $event : null)"
+                    />
+                    @if (submitted() && errors().objetCredit) {
+                      <p class="text-xs text-destructive">{{ errors().objetCredit }}</p>
+                    }
+                  </div>
+
+                  <!-- Secteur d'activité -->
+                  <div class="flex flex-col gap-1.5">
+                    <label class="text-sm font-medium text-foreground">
+                      Secteur d'activité <span class="text-destructive">*</span>
+                    </label>
+                    <app-searchable-select
+                      [options]="typesActiviteOptions()"
+                      [value]="fcTypeActivite()"
+                      placeholder="Sélectionner un secteur…"
+                      (valueChange)="fcTypeActivite.set($event !== null ? +$event : null)"
+                    />
+                    @if (submitted() && errors().typeActivite) {
+                      <p class="text-xs text-destructive">{{ errors().typeActivite }}</p>
+                    }
+                  </div>
+
+                  <!-- Durée de remboursement -->
+                  <div class="flex flex-col gap-1.5">
+                    <label class="text-sm font-medium text-foreground">
+                      Durée de remboursement <span class="text-destructive">*</span>
+                    </label>
+                    <div class="flex">
+                      <input
+                        type="number"
+                        min="1"
+                        [ngModel]="fcDuree()"
+                        (ngModelChange)="fcDuree.set($event)"
+                        placeholder="0"
+                        class="h-9 flex-1 rounded-l-md border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                        [class.border-destructive]="submitted() && errors().duree"
+                        [class.border-border]="!submitted() || !errors().duree"
+                      />
+                      <span class="flex items-center rounded-r-md border border-l-0 border-border bg-muted px-3 text-xs text-muted-foreground">
+                        Mois
+                      </span>
+                    </div>
+                    @if (submitted() && errors().duree) {
+                      <p class="text-xs text-destructive">{{ errors().duree }}</p>
+                    }
+                  </div>
+
+                  <!-- Montant échéance souhaitée -->
+                  <div class="flex flex-col gap-1.5">
+                    <label class="text-sm font-medium text-foreground">
+                      Montant échéance souhaitée <span class="text-destructive">*</span>
+                    </label>
+                    <div class="flex">
+                      <input
+                        type="number"
+                        min="0"
+                        [ngModel]="fcMontantEche()"
+                        (ngModelChange)="fcMontantEche.set($event)"
+                        placeholder="0"
+                        class="h-9 flex-1 rounded-l-md border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                        [class.border-destructive]="submitted() && errors().montantEche"
+                        [class.border-border]="!submitted() || !errors().montantEche"
+                      />
+                      <span class="flex items-center rounded-r-md border border-l-0 border-border bg-muted px-3 text-xs text-muted-foreground">
+                        FCFA
+                      </span>
+                    </div>
+                    @if (submitted() && errors().montantEche) {
+                      <p class="text-xs text-destructive">{{ errors().montantEche }}</p>
+                    }
+                  </div>
+
+                  <!-- Nb échéances différées (optionnel) -->
+                  <div class="flex flex-col gap-1.5">
+                    <label class="text-sm font-medium text-foreground">
+                      Échéances différées
+                      <span class="ml-1 text-xs font-normal text-muted-foreground">(optionnel)</span>
+                    </label>
+                    <div class="flex">
+                      <input
+                        type="number"
+                        min="0"
+                        [ngModel]="fcDiffere()"
+                        (ngModelChange)="fcDiffere.set($event)"
+                        placeholder="0"
+                        class="h-9 flex-1 rounded-l-md border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                        [class.border-destructive]="submitted() && errors().differe"
+                        [class.border-border]="!submitted() || !errors().differe"
+                      />
+                      <span class="flex items-center rounded-r-md border border-l-0 border-border bg-muted px-3 text-xs text-muted-foreground">
+                        Mois
+                      </span>
+                    </div>
+                    @if (submitted() && errors().differe) {
+                      <p class="text-xs text-destructive">{{ errors().differe }}</p>
+                    }
+                  </div>
+
+                </div>
+
+                <!-- Description -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-sm font-medium text-foreground">
+                    Description de l'utilisation du crédit <span class="text-destructive">*</span>
+                  </label>
+                  <textarea
+                    rows="5"
+                    [ngModel]="fcDescription()"
+                    (ngModelChange)="fcDescription.set($event)"
+                    placeholder="Décrivez l'utilisation prévue du crédit…"
+                    class="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none"
+                    [class.border-destructive]="submitted() && errors().description"
+                    [class.border-border]="!submitted() || !errors().description"
+                  ></textarea>
+                  @if (submitted() && errors().description) {
+                    <p class="text-xs text-destructive">{{ errors().description }}</p>
+                  }
+                </div>
+
+                <!-- Actions -->
+                <div class="flex justify-end gap-3 border-t border-border pt-4">
+                  <button
+                    type="button"
+                    (click)="resetSearch()"
+                    class="h-9 rounded-md border border-border bg-background px-4 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    appButton
+                    type="button"
+                    (click)="save()"
+                    [disabled]="isSaving()"
+                  >
+                    @if (isSaving()) {
+                      <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                      Enregistrement…
+                    } @else {
+                      <lucide-icon [img]="SaveIcon" [size]="15" />
+                      Enregistrer
+                    }
+                  </button>
+                </div>
+              }
+
+            </div>
+          }
+
+        </app-card-content>
+      </app-card>
+    </div>
+  }
+
+</div>
