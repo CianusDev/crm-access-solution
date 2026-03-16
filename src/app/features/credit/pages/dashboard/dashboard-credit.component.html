@@ -140,7 +140,7 @@
                     </tr>
                   </thead>
                   <tbody appTableBody>
-                    @for (ag of statAgences(); track ag.code) {
+                    @for (ag of pagedAgences(); track ag.code) {
                       <tr appTableRow>
                         <td appTableCell>
                           <div class="flex items-center gap-2">
@@ -176,6 +176,16 @@
                   </tbody>
                 </table>
               </div>
+              @if (statAgences().length > agencePageSize) {
+                <div class="border-t border-border px-4 py-3">
+                  <app-pagination
+                    [total]="statAgences().length"
+                    [pageSize]="agencePageSize"
+                    [currentPage]="agencePage()"
+                    (pageChange)="agencePage.set($event)"
+                  />
+                </div>
+              }
             }
           </app-card-content>
         </app-card>
@@ -315,7 +325,7 @@
                         </tr>
                       </thead>
                       <tbody appTableBody>
-                        @for (z of listeZones(); track z.id) {
+                        @for (z of pagedZones(); track z.id) {
                           <tr appTableRow>
                             <td appTableCell>
                               <div class="flex items-center gap-2">
@@ -363,6 +373,16 @@
                       </tbody>
                     </table>
                   </div>
+                  @if (listeZones().length > zonePageSize) {
+                    <div class="border-t border-border px-4 py-3">
+                      <app-pagination
+                        [total]="listeZones().length"
+                        [pageSize]="zonePageSize"
+                        [currentPage]="zonePage()"
+                        (pageChange)="zonePage.set($event)"
+                      />
+                    </div>
+                  }
                 }
               </app-card-content>
             </app-card>
