@@ -40,9 +40,9 @@ export class BadgeComponent {
   @Input() variant: BadgeVariant = 'default';
 
   readonly variantClasses: Record<BadgeVariant, string> = {
-    default: 'border-transparent bg-zinc-900 text-white hover:bg-zinc-700',
-    secondary: 'border-transparent bg-zinc-100 text-zinc-900 hover:bg-zinc-200',
-    destructive: 'border-transparent bg-red-500 text-white hover:bg-red-600',
+    default: 'border-transparent bg-blue-500 text-background hover:bg-blue-600',
+    secondary: 'border-transparent bg-secondary hover:bg-secondary/80',
+    destructive: 'border-transparent bg-destructive text-background hover:bg-destructive/60',
     outline: 'border-zinc-300 text-zinc-700 bg-transparent hover:bg-zinc-50',
     success: 'border-transparent bg-green-100 text-green-700 hover:bg-green-200',
     warning: 'border-transparent bg-yellow-100 text-yellow-700 hover:bg-yellow-200',

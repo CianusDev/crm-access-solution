@@ -1,5 +1,4 @@
 <div class="flex flex-col gap-4 mt-4">
-
   <!-- ── Header ──────────────────────────────────────────────────────────── -->
   <div class="flex flex-wrap items-center gap-3">
     <button appButton variant="ghost" size="icon" type="button" (click)="goBack()">
@@ -8,98 +7,131 @@
     <div class="flex-1 min-w-0">
       <h1 class="text-xl font-bold text-foreground">Détail de la demande</h1>
       @if (demande()?.numDemandeAsc) {
-        <p class="text-xs font-mono text-muted-foreground">Réf. Perfect : {{ demande()!.numDemandeAsc }}</p>
+        <p class="text-xs font-mono text-muted-foreground">
+          Réf. Perfect : {{ demande()!.numDemandeAsc }}
+        </p>
       }
     </div>
     @if (statut(); as s) {
-      <span class="rounded-full px-3 py-1 text-xs font-semibold" [class]="s.class">{{ s.label }}</span>
+      <span class="rounded-full px-3 py-1 text-xs font-semibold" [class]="s.class">{{
+        s.label
+      }}</span>
     }
   </div>
 
   <!-- ── Boutons d'action ─────────────────────────────────────────────── -->
   @if (hasActions()) {
     <div class="flex flex-wrap items-center justify-end gap-2 rounded-xl">
-
       @if (showDelete()) {
-        <button appButton variant="destructive" size="sm" type="button" (click)="deleteDialogOpen.set(true)">
+        <button
+          appButton
+          variant="destructive"
+          size="sm"
+          type="button"
+          (click)="deleteDialogOpen.set(true)"
+        >
           <lucide-icon [img]="Trash2Icon" [size]="14" class="mr-1.5" />
           Supprimer cette demande
         </button>
       }
 
       @if (showAjourner()) {
-        <button appButton variant="outline" size="sm" type="button"
-          (click)="openAction(2, 'Ajourner la demande')">
+        <button
+          appButton
+          variant="outline"
+          size="sm"
+          type="button"
+          (click)="openAction(2, 'Ajourner la demande')"
+        >
           <lucide-icon [img]="AjournerIcon" [size]="14" />
           Ajourner
         </button>
       }
 
       @if (showRejeter()) {
-        <button appButton variant="outline" size="sm" type="button"
-          (click)="openAction(0, 'Rejeter la demande')">
+        <button
+          appButton
+          variant="outline"
+          size="sm"
+          type="button"
+          (click)="openAction(0, 'Rejeter la demande')"
+        >
           <lucide-icon [img]="XCircleIcon" [size]="14" class="mr-1.5" />
           Rejeter
         </button>
       }
 
       @if (showApprouver()) {
-        <button appButton size="sm" type="button"
-          (click)="openAction(1, 'Approuver la demande')">
+        <button appButton size="sm" type="button" (click)="openAction(1, 'Approuver la demande')">
           <lucide-icon [img]="CheckCircleIcon" [size]="14" class="mr-1.5" />
           Approuver la demande
         </button>
       }
 
       @if (showSoumettre()) {
-        <button appButton size="sm" type="button"
-          (click)="openAction(1, 'Soumettre la demande', false)">
+        <button
+          appButton
+          size="sm"
+          type="button"
+          (click)="openAction(1, 'Soumettre la demande', false)"
+        >
           <lucide-icon [img]="SendIcon" [size]="14" class="mr-1.5" />
           Soumettre
         </button>
       }
 
       @if (showAutoriser()) {
-        <button appButton size="sm" type="button"
-          (click)="openAction(1, 'Autoriser le Décaissement')">
+        <button
+          appButton
+          size="sm"
+          type="button"
+          (click)="openAction(1, 'Autoriser le Décaissement')"
+        >
           <lucide-icon [img]="CheckCircleIcon" [size]="14" class="mr-1.5" />
           Autoriser le Décaissement
         </button>
       }
 
       @if (showConfirmer()) {
-        <button appButton size="sm" type="button"
-          (click)="openAction(1, 'Confirmer le Décaissement')">
+        <button
+          appButton
+          size="sm"
+          type="button"
+          (click)="openAction(1, 'Confirmer le Décaissement')"
+        >
           <lucide-icon [img]="CheckCircleIcon" [size]="14" class="mr-1.5" />
           Confirmer le Décaissement
         </button>
       }
 
       @if (showAnnuler()) {
-        <button appButton variant="outline" size="sm" type="button"
-          (click)="openAction(4, 'Annuler le Décaissement')">
+        <button
+          appButton
+          variant="outline"
+          size="sm"
+          type="button"
+          (click)="openAction(4, 'Annuler le Décaissement')"
+        >
           <lucide-icon [img]="XCircleIcon" [size]="14" class="mr-1.5" />
           Annuler le Décaissement
         </button>
       }
-
     </div>
   }
 
   @if (demande(); as d) {
-
     <!-- ── Fiche client ─────────────────────────────────────────────────── -->
     <app-card>
       <app-card-header>
         <app-card-title>Informations client</app-card-title>
       </app-card-header>
       <app-card-content>
-
         <!-- Identity row -->
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
-
           <!-- Avatar -->
-          <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive font-bold text-lg select-none">
+          <div
+            class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive font-bold text-lg select-none"
+          >
             {{ clientInitials() }}
           </div>
 
@@ -107,7 +139,8 @@
           <div class="flex-1 min-w-0">
             <p class="text-lg font-bold text-foreground">{{ d.client?.nomPrenom ?? '—' }}</p>
             <div class="mt-1 flex flex-wrap items-center gap-2">
-              <span class="rounded-full px-2.5 py-0.5 text-xs font-medium"
+              <span
+                class="rounded-full px-2.5 py-0.5 text-xs font-medium"
                 [class.bg-primary/10]="d.client?.typeAgent === 'SC'"
                 [class.text-primary]="d.client?.typeAgent === 'SC'"
                 [class.bg-secondary]="d.client?.typeAgent !== 'SC'"
@@ -115,13 +148,22 @@
               >
                 {{ d.client?.typeAgent === 'SC' ? 'Personne morale' : 'Personne physique' }}
               </span>
-              <span class="text-xs font-mono text-muted-foreground">{{ d.client?.codeClient }}</span>
+              <span class="text-xs font-mono text-muted-foreground">{{
+                d.client?.codeClient
+              }}</span>
               @if (d.client?.agence?.libelle) {
-                <span class="text-xs text-muted-foreground">· Agence {{ d.client!.agence.libelle }}</span>
+                <span class="text-xs text-muted-foreground"
+                  >· Agence {{ d.client!.agence.libelle }}</span
+                >
               }
             </div>
             @if (d.client?.typeAgent === 'SC' && d.client?.gerant?.nomDirigeant) {
-              <p class="mt-1 text-xs text-muted-foreground">Gérant : <span class="font-medium text-foreground">{{ d.client!.gerant!.nomDirigeant }}</span></p>
+              <p class="mt-1 text-xs text-muted-foreground">
+                Gérant :
+                <span class="font-medium text-foreground">{{
+                  d.client!.gerant!.nomDirigeant
+                }}</span>
+              </p>
             }
           </div>
         </div>
@@ -129,36 +171,50 @@
         <!-- KPI stats -->
         <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div class="rounded-xl border border-border bg-muted/30 p-4 text-center">
-            <p class="text-2xl font-bold text-foreground">{{ d.client?.nbreAvChequeBenef ?? 0 | number }}</p>
+            <p class="text-2xl font-bold text-foreground">
+              {{ d.client?.nbreAvChequeBenef ?? 0 | number }}
+            </p>
             <p class="text-xs text-muted-foreground mt-0.5">Avances reçues</p>
           </div>
           <div class="rounded-xl border border-border bg-green-50 p-4 text-center">
-            <p class="text-2xl font-bold text-green-700">{{ d.client?.montantChequeAccordeAsc ?? 0 | number }}</p>
+            <p class="text-2xl font-bold text-green-700">
+              {{ d.client?.montantChequeAccordeAsc ?? 0 | number }}
+            </p>
             <p class="text-xs text-green-600 mt-0.5">Montant max accordé (FCFA)</p>
           </div>
           <div class="rounded-xl border border-border bg-muted/30 p-4 text-center">
-            <p class="text-2xl font-bold text-foreground" [class.text-destructive]="(d.client?.nbreIncidentPaie ?? 0) > 0">
+            <p
+              class="text-2xl font-bold text-foreground"
+              [class.text-destructive]="(d.client?.nbreIncidentPaie ?? 0) > 0"
+            >
               {{ d.client?.nbreIncidentPaie | number }}
             </p>
             <p class="text-xs text-muted-foreground mt-0.5">Incidents de paiement</p>
           </div>
           <div class="rounded-xl border border-border bg-muted/30 p-4 text-center">
-            <p class="text-2xl font-bold text-foreground">{{ d.client?.nbreChequeRemise | number }}</p>
+            <p class="text-2xl font-bold text-foreground">
+              {{ d.client?.nbreChequeRemise | number }}
+            </p>
             <p class="text-xs text-muted-foreground mt-0.5">Chèques remisés</p>
           </div>
         </div>
 
-
         <!-- Detail grid -->
-        <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 border-t border-border pt-4">
+        <div
+          class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 border-t border-border pt-4"
+        >
           <div>
             <p class="text-xs text-muted-foreground">Ouverture du compte</p>
-            <p class="text-sm font-medium text-foreground">{{ d.client?.dateOuvertureCompte | date:'dd MMMM yyyy' }}</p>
+            <p class="text-sm font-medium text-foreground">
+              {{ d.client?.dateOuvertureCompte | date: 'dd MMMM yyyy' }}
+            </p>
           </div>
           @if (d.client?.montantMaxCreditObtenu) {
             <div>
               <p class="text-xs text-muted-foreground">Montant maximal crédit</p>
-              <p class="text-sm font-medium text-foreground">{{ d.client!.montantMaxCreditObtenu | number }} FCFA</p>
+              <p class="text-sm font-medium text-foreground">
+                {{ d.client!.montantMaxCreditObtenu | number }} FCFA
+              </p>
             </div>
           }
           @if (d.agence?.libelle) {
@@ -178,7 +234,10 @@
               <p class="text-xs text-muted-foreground">Crédits obtenus</p>
               <div class="mt-1 flex flex-wrap gap-1.5">
                 @for (c of d.client!.autreCreditBeneficie; track c.typeCreditBenef) {
-                  <span class="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{{ c.typeCreditBenef }}</span>
+                  <span
+                    class="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
+                    >{{ c.typeCreditBenef }}</span
+                  >
                 }
               </div>
             </div>
@@ -189,24 +248,32 @@
 
     <!-- ── Montants ──────────────────────────────────────────────────────── -->
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <div class="flex flex-col items-center gap-1 rounded-xl border border-border bg-card p-5 text-center">
+      <div
+        class="flex flex-col items-center gap-1 rounded-xl border border-border bg-card p-5 text-center"
+      >
         <p class="text-xs text-muted-foreground">Montant du chèque</p>
         <p class="text-2xl font-bold text-foreground">{{ d.cheque.montantCheque | number }}</p>
         <p class="text-xs text-muted-foreground">FCFA</p>
       </div>
-      <div class="flex flex-col items-center gap-1 rounded-xl border border-primary/30 bg-primary/5 p-5 text-center">
+      <div
+        class="flex flex-col items-center gap-1 rounded-xl border border-primary/30 bg-primary/5 p-5 text-center"
+      >
         <p class="text-xs text-muted-foreground">Montant sollicité</p>
         <p class="text-2xl font-bold text-primary">{{ d.montantSollicite | number }}</p>
         <p class="text-xs text-muted-foreground">FCFA</p>
       </div>
       @if (d.montantAccorde) {
-        <div class="flex flex-col items-center gap-1 rounded-xl border border-green-300 bg-green-50 p-5 text-center">
+        <div
+          class="flex flex-col items-center gap-1 rounded-xl border border-green-300 bg-green-50 p-5 text-center"
+        >
           <p class="text-xs text-green-600">Montant accordé</p>
           <p class="text-2xl font-bold text-green-700">{{ d.montantAccorde | number }}</p>
           <p class="text-xs text-green-600">FCFA</p>
         </div>
       } @else if (d.montantMaxEncaisse) {
-        <div class="flex flex-col items-center gap-1 rounded-xl border border-border bg-card p-5 text-center">
+        <div
+          class="flex flex-col items-center gap-1 rounded-xl border border-border bg-card p-5 text-center"
+        >
           <p class="text-xs text-muted-foreground">Montant max. encaissé</p>
           <p class="text-2xl font-bold text-foreground">{{ d.montantMaxEncaisse | number }}</p>
           <p class="text-xs text-muted-foreground">FCFA</p>
@@ -216,7 +283,6 @@
 
     <!-- ── Informations de la demande + Vérifications ───────────────────── -->
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-
       <!-- Demande info (2/3) -->
       <app-card class="lg:col-span-2">
         <app-card-header>
@@ -224,14 +290,15 @@
         </app-card-header>
         <app-card-content>
           <div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
-
             <div>
               <p class="text-xs text-muted-foreground">Numéro de chèque</p>
               <p class="text-sm font-mono font-medium text-foreground">{{ d.cheque.numcheque }}</p>
             </div>
             <div>
               <p class="text-xs text-muted-foreground">Numéro de remise</p>
-              <p class="text-sm font-mono font-medium text-foreground">{{ d.cheque.numTransaction }}</p>
+              <p class="text-sm font-mono font-medium text-foreground">
+                {{ d.cheque.numTransaction }}
+              </p>
             </div>
             <div>
               <p class="text-xs text-muted-foreground">Tireur</p>
@@ -243,11 +310,13 @@
             </div>
             <div>
               <p class="text-xs text-muted-foreground">Date de la demande</p>
-              <p class="text-sm text-foreground">{{ (d.dateDemande ?? d.datedemande) | date:'dd/MM/yyyy' }}</p>
+              <p class="text-sm text-foreground">
+                {{ d.dateDemande ?? d.datedemande | date: 'dd/MM/yyyy' }}
+              </p>
             </div>
             <div>
               <p class="text-xs text-muted-foreground">Date de remise du chèque</p>
-              <p class="text-sm text-foreground">{{ d.cheque.dateCheque | date:'dd/MM/yyyy' }}</p>
+              <p class="text-sm text-foreground">{{ d.cheque.dateCheque | date: 'dd/MM/yyyy' }}</p>
             </div>
             @if (d.numDemandeAsc) {
               <div>
@@ -288,11 +357,23 @@
               @for (item of checklist(); track item.label) {
                 <li class="flex items-center gap-2.5">
                   @if (item.checked) {
-                    <lucide-icon [img]="CheckSquareIcon" [size]="16" class="shrink-0 text-green-600" />
+                    <lucide-icon
+                      [img]="CheckSquareIcon"
+                      [size]="16"
+                      class="shrink-0 text-green-600"
+                    />
                   } @else {
-                    <lucide-icon [img]="SquareIcon" [size]="16" class="shrink-0 text-muted-foreground/40" />
+                    <lucide-icon
+                      [img]="SquareIcon"
+                      [size]="16"
+                      class="shrink-0 text-muted-foreground/40"
+                    />
                   }
-                  <span class="text-sm" [class.text-foreground]="item.checked" [class.text-muted-foreground]="!item.checked">
+                  <span
+                    class="text-sm"
+                    [class.text-foreground]="item.checked"
+                    [class.text-muted-foreground]="!item.checked"
+                  >
                     {{ item.label }}
                   </span>
                 </li>
@@ -315,19 +396,33 @@
       </app-card-header>
       <app-card-content>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-
-          @for (doc of [
-            { label: 'Image du chèque',       lien: (d.cheque.imageCheque ?? d.cheque.image) },
-            { label: 'Preuve de transaction',  lien: d.preuveTransaction },
-            { label: "Preuve de l'entreprise", lien: d.preuveEntreprise }
-          ]; track doc.label) {
-            <div class="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-4 py-3 gap-3">
+          @for (
+            doc of [
+              { label: 'Image du chèque', lien: d.cheque.imageCheque ?? d.cheque.image },
+              { label: 'Preuve de transaction', lien: d.preuveTransaction },
+              { label: "Preuve de l'entreprise", lien: d.preuveEntreprise },
+            ];
+            track doc.label
+          ) {
+            <div
+              class="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-4 py-3 gap-3"
+            >
               <div class="flex items-center gap-3 min-w-0">
-                <lucide-icon [img]="FileTextIcon" [size]="18" class="shrink-0" [class.text-primary]="!!fileUrl(doc.lien)" [class.text-muted-foreground]="!fileUrl(doc.lien)" />
+                <lucide-icon
+                  [img]="FileTextIcon"
+                  [size]="18"
+                  class="shrink-0"
+                  [class.text-primary]="!!fileUrl(doc.lien)"
+                  [class.text-muted-foreground]="!fileUrl(doc.lien)"
+                />
                 <span class="text-sm font-medium text-foreground truncate">{{ doc.label }}</span>
               </div>
               @if (fileUrl(doc.lien)) {
-                <button type="button" (click)="openFile(doc.lien)" class="shrink-0 flex items-center gap-1 text-xs text-primary hover:underline">
+                <button
+                  type="button"
+                  (click)="openFile(doc.lien)"
+                  class="shrink-0 flex items-center gap-1 text-xs text-primary hover:underline"
+                >
                   Voir <lucide-icon [img]="ExternalLinkIcon" [size]="12" />
                 </button>
               } @else {
@@ -335,7 +430,6 @@
               }
             </div>
           }
-
         </div>
       </app-card-content>
     </app-card>
@@ -360,21 +454,30 @@
                 [class.text-orange-700]="d.decision.decision === 3"
               >
                 {{
-                  d.decision.decision === 1 ? 'Accordé' :
-                  d.decision.decision === 0 ? 'Rejeté' :
-                  d.decision.decision === 2 ? 'Ajourné' :
-                  d.decision.decision === 3 ? 'Approuvé' : '—'
+                  d.decision.decision === 1
+                    ? 'Accordé'
+                    : d.decision.decision === 0
+                      ? 'Rejeté'
+                      : d.decision.decision === 2
+                        ? 'Ajourné'
+                        : d.decision.decision === 3
+                          ? 'Approuvé'
+                          : '—'
                 }}
               </span>
             </div>
             <div>
               <p class="text-xs text-muted-foreground">Date</p>
-              <p class="text-sm text-foreground">{{ d.decision.dateDecision | date:'dd/MM/yyyy' }}</p>
+              <p class="text-sm text-foreground">
+                {{ d.decision.dateDecision | date: 'dd/MM/yyyy' }}
+              </p>
             </div>
             @if (d.decision.user) {
               <div>
                 <p class="text-xs text-muted-foreground">Par</p>
-                <p class="text-sm text-foreground">{{ d.decision.user.nom }} {{ d.decision.user.prenom }}</p>
+                <p class="text-sm text-foreground">
+                  {{ d.decision.user.nom }} {{ d.decision.user.prenom }}
+                </p>
               </div>
             }
           </div>
@@ -402,7 +505,11 @@
             </div>
             <!-- Search -->
             <div class="relative w-full sm:w-64">
-              <lucide-icon [img]="SearchIcon" [size]="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <lucide-icon
+                [img]="SearchIcon"
+                [size]="14"
+                class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+              />
               <input
                 type="text"
                 [ngModel]="histQuery()"
@@ -418,36 +525,79 @@
             <table class="w-full text-sm">
               <thead>
                 <tr class="border-b border-border bg-muted/30">
-                  <th class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Date</th>
-                  <th class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">N° Perfect</th>
-                  <th class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">N° Remise</th>
-                  <th class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tireur</th>
-                  <th class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Banque</th>
-                  <th class="px-3 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Mnt chèque</th>
-                  <th class="px-3 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Mnt sollicité</th>
-                  <th class="px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">Chèque</th>
+                  <th
+                    class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                  >
+                    Date
+                  </th>
+                  <th
+                    class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                  >
+                    N° Perfect
+                  </th>
+                  <th
+                    class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                  >
+                    N° Remise
+                  </th>
+                  <th
+                    class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                  >
+                    Tireur
+                  </th>
+                  <th
+                    class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                  >
+                    Banque
+                  </th>
+                  <th
+                    class="px-3 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                  >
+                    Mnt chèque
+                  </th>
+                  <th
+                    class="px-3 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                  >
+                    Mnt sollicité
+                  </th>
+                  <th
+                    class="px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                  >
+                    Chèque
+                  </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-border">
                 @for (h of pagedHist(); track h.id) {
                   <tr class="hover:bg-muted/30 transition-colors">
                     <td class="px-3 py-2.5 whitespace-nowrap text-muted-foreground text-xs">
-                      {{ (h.dateRemise ?? h.dateDemande ?? h.datedemande) | date:'dd/MM/yyyy' }}
+                      {{ h.dateRemise ?? h.dateDemande ?? h.datedemande | date: 'dd/MM/yyyy' }}
                     </td>
-                    <td class="px-3 py-2.5 font-mono text-xs text-foreground">{{ h.numDemandeAsc ?? '—' }}</td>
-                    <td class="px-3 py-2.5 font-mono text-xs text-foreground">{{ h.cheque.numTransaction }}</td>
+                    <td class="px-3 py-2.5 font-mono text-xs text-foreground">
+                      {{ h.numDemandeAsc ?? '—' }}
+                    </td>
+                    <td class="px-3 py-2.5 font-mono text-xs text-foreground">
+                      {{ h.cheque.numTransaction }}
+                    </td>
                     <td class="px-3 py-2.5 text-sm text-foreground">{{ h.cheque.tireur }}</td>
                     <td class="px-3 py-2.5 text-sm text-foreground">{{ h.cheque.banque }}</td>
-                    <td class="px-3 py-2.5 text-right font-medium text-foreground whitespace-nowrap text-sm">
+                    <td
+                      class="px-3 py-2.5 text-right font-medium text-foreground whitespace-nowrap text-sm"
+                    >
                       {{ h.cheque.montantCheque | number }} FCFA
                     </td>
-                    <td class="px-3 py-2.5 text-right font-medium text-primary whitespace-nowrap text-sm">
+                    <td
+                      class="px-3 py-2.5 text-right font-medium text-primary whitespace-nowrap text-sm"
+                    >
                       {{ h.montantSollicite | number }} FCFA
                     </td>
                     <td class="px-3 py-2.5 text-center">
                       @if (fileUrl(h.cheque.imageCheque ?? h.cheque.image)) {
-                        <button type="button" (click)="openFile(h.cheque.imageCheque ?? h.cheque.image)"
-                          class="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                        <button
+                          type="button"
+                          (click)="openFile(h.cheque.imageCheque ?? h.cheque.image)"
+                          class="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                        >
                           Voir <lucide-icon [img]="ExternalLinkIcon" [size]="11" />
                         </button>
                       } @else {
@@ -478,9 +628,7 @@
         </app-card-content>
       </app-card>
     }
-
   }
-
 </div>
 
 <!-- ── FAB : Observations ──────────────────────────────────────────────── -->
@@ -493,7 +641,9 @@
     <lucide-icon [img]="MessageSquareIcon" [size]="16" />
     Observations
     @if ((demande()!.observation?.length ?? 0) > 0) {
-      <span class="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-xs font-bold">
+      <span
+        class="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-xs font-bold"
+      >
         {{ demande()!.observation!.length }}
       </span>
     }
@@ -502,7 +652,6 @@
 
 <!-- ── Drawer : Observations et Commentaires ───────────────────────────── -->
 <app-drawer [open]="obsDrawerOpen()" (openChange)="obsDrawerOpen.set($event)">
-
   <app-drawer-header>
     <div class="flex items-center gap-2">
       <lucide-icon [img]="MessageSquareIcon" [size]="16" class="text-muted-foreground" />
@@ -514,7 +663,7 @@
       }
     </div>
   </app-drawer-header>
-  <app-drawer-content >
+  <app-drawer-content>
     @if ((demande()?.observation?.length ?? 0) === 0) {
       <div class="flex flex-col items-center gap-3 py-16 text-center">
         <lucide-icon [img]="MessageSquareIcon" [size]="36" class="text-muted-foreground/20" />
@@ -522,44 +671,48 @@
       </div>
     } @else {
       <ul class="relative ml-3 border-l border-border flex flex-col gap-3 py-1">
-        @for (obs of (demande()?.observation ?? []); track obs.date) {
+        @for (obs of demande()?.observation ?? []; track obs.date) {
           <li class="relative pl-5">
-
             <!-- Dot positionné sur la ligne -->
-            <span class="absolute -left-[5px] top-3.5 h-2.5 w-2.5 rounded-full bg-orange-400 ring-[3px] ring-orange-100"></span>
+            <span
+              class="absolute -left-[5px] top-0 h-2.5 w-2.5 rounded-full bg-primary ring-[3px] ring-primary/20"
+            ></span>
 
             <!-- Card -->
             <div class="rounded-xl border border-border bg-card p-3.5 shadow-sm">
-
               <!-- Header -->
               <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 mb-2">
                 <h6 class="text-sm font-semibold text-foreground">{{ obs.decision }}</h6>
                 <span class="text-xs text-muted-foreground whitespace-nowrap">
-                  {{ obs.date | date:'dd MMM yyyy' }} à {{ obs.date | date:'HH:mm' }}
+                  {{ obs.date | date: 'dd MMM yyyy' }} à {{ obs.date | date: 'HH:mm' }}
                 </span>
               </div>
 
               <!-- Observation text -->
               @if (obs.observation) {
-                <p class="text-sm text-muted-foreground mb-3 leading-relaxed">{{ obs.observation }}</p>
+                <p class="text-sm text-muted-foreground mb-3 leading-relaxed lowercase">
+                  {{ obs.observation }}
+                </p>
               }
 
               <!-- Footer -->
               <div class="border-t border-border pt-2.5 mt-2.5 flex items-center gap-2">
                 <app-avatar />
                 <div class="min-w-0">
-                  <p class="text-xs font-medium text-foreground leading-tight truncate">{{ obs.user.nom }} {{ obs.user.prenom }}</p>
-                  <p class="text-xs text-muted-foreground leading-tight truncate">{{ obs.user.profil }}</p>
+                  <p class="text-xs font-medium text-foreground leading-tight truncate">
+                    {{ obs.user.nom }} {{ obs.user.prenom }}
+                  </p>
+                  <p class="text-xs text-muted-foreground leading-tight truncate">
+                    {{ obs.user.profil }}
+                  </p>
                 </div>
               </div>
-
             </div>
           </li>
         }
       </ul>
     }
   </app-drawer-content>
-
 </app-drawer>
 
 <!-- ── Dialog : Action (soumettre / approuver / rejeter / ajourner…) ─── -->
@@ -590,7 +743,9 @@
       <textarea
         [(ngModel)]="observation"
         rows="3"
-        [placeholder]="pendingAction()?.requireObs ? 'Saisissez une observation…' : 'Observation (optionnel)'"
+        [placeholder]="
+          pendingAction()?.requireObs ? 'Saisissez une observation…' : 'Observation (optionnel)'
+        "
         class="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 resize-none transition-colors"
         [class.border-border]="!obsInvalid || !observation"
         [class.focus:ring-primary]="!obsInvalid || !observation"
@@ -603,14 +758,23 @@
     </div>
   </app-dialog-content>
   <app-dialog-footer>
-    <button appButton variant="outline" size="sm" type="button"
+    <button
+      appButton
+      variant="outline"
+      size="sm"
+      type="button"
       [disabled]="isLoading()"
-      (click)="dialogOpen.set(false)">
+      (click)="dialogOpen.set(false)"
+    >
       Annuler
     </button>
-    <button appButton size="sm" type="button"
+    <button
+      appButton
+      size="sm"
+      type="button"
       [disabled]="isLoading() || obsInvalid"
-      (click)="confirmAction()">
+      (click)="confirmAction()"
+    >
       @if (isLoading()) {
         <lucide-icon [img]="LoaderIcon" [size]="14" class="mr-1.5 animate-spin" />
       }
@@ -628,14 +792,24 @@
     </app-dialog-description>
   </app-dialog-header>
   <app-dialog-footer>
-    <button appButton variant="outline" size="sm" type="button"
+    <button
+      appButton
+      variant="outline"
+      size="sm"
+      type="button"
       [disabled]="isLoading()"
-      (click)="deleteDialogOpen.set(false)">
+      (click)="deleteDialogOpen.set(false)"
+    >
       Annuler
     </button>
-    <button appButton variant="destructive" size="sm" type="button"
+    <button
+      appButton
+      variant="destructive"
+      size="sm"
+      type="button"
       [disabled]="isLoading()"
-      (click)="confirmDelete()">
+      (click)="confirmDelete()"
+    >
       @if (isLoading()) {
         <lucide-icon [img]="LoaderIcon" [size]="14" class="mr-1.5 animate-spin" />
       }
@@ -643,4 +817,3 @@
     </button>
   </app-dialog-footer>
 </app-dialog>
-

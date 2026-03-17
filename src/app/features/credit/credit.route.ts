@@ -9,17 +9,17 @@ export const CREDIT_ROUTES: Routes = [
       ),
   },
   {
+    path: 'dashboard-agence',
+    loadComponent: () =>
+      import('./pages/dashboard-agence/dashboard-agence-credit.component').then(
+        (m) => m.DashboardAgenceCreditComponent,
+      ),
+  },
+  {
     path: 'create',
     loadComponent: () =>
       import('./pages/create/create-credit.component').then(
         (m) => m.CreateCreditComponent,
-      ),
-  },
-  {
-    path: 'pending',
-    loadComponent: () =>
-      import('./pages/pending/pending-credit.component').then(
-        (m) => m.PendingCreditComponent,
       ),
   },
   {

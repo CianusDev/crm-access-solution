@@ -192,10 +192,19 @@ export interface CreditDecisionFinale {
 }
 
 export interface CreditObservation {
-  id: number;
+  reference: string;
+  libelle?: string;
+  decision?: string;
   observation: string;
-  createdAt: string;
-  user?: { nomPrenom?: string; profil?: { name: string } };
+  operation?: string;
+  date: string;
+  user?: {
+    id?: number;
+    nom?: string;
+    prenom?: string;
+    profil?: string;
+    libelleAgence?: string;
+  };
 }
 
 export interface CreditDocumentAnnexe {

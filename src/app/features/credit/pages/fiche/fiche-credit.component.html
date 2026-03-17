@@ -83,9 +83,7 @@
             @if (demande()?.client; as c) {
               <div class="flex flex-col items-center gap-3">
                 <!-- Avatar -->
-                <div class="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-lg">
-                  {{ initiales(c.nomPrenom) }}
-                </div>
+                <app-avatar size="lg" />
                 <div class="text-center">
                   <p class="font-semibold text-foreground text-sm">{{ c.nomPrenom }}</p>
                   <p class="text-xs text-muted-foreground">{{ c.codeClient }}</p>
@@ -195,9 +193,8 @@
         <app-card-header class="!pb-0">
           <div class="flex border-b border-border">
             @for (tab of [
-              { id: 'details', label: 'Détails', icon: 'FileText' },
-              { id: 'documents', label: 'Documents', icon: 'Paperclip' },
-              { id: 'historique', label: 'Historique', icon: 'Clock' }
+              { id: 'details', label: 'Détails' },
+              { id: 'documents', label: 'Documents' }
             ]; track tab.id) {
               <button
                 type="button"
@@ -212,11 +209,6 @@
                 @if (tab.id === 'documents') {
                   <span class="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                     {{ documents().length }}
-                  </span>
-                }
-                @if (tab.id === 'historique') {
-                  <span class="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                    {{ observations().length }}
                   </span>
                 }
               </button>
@@ -395,12 +387,20 @@
           @if (activeTab() === 'documents') {
             <div class="flex flex-col gap-6">
 
-              <!-- Upload -->
-              <section>
-                <h3 class="text-sm font-semibold text-foreground mb-3">Ajouter un document</h3>
+              <!-- ── Ajouter un document ──────────────────────── -->
+              <section class="rounded-xl border border-dashed border-border bg-muted/20 p-5">
+                <div class="flex items-center gap-2 mb-4">
+                  <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                    <lucide-icon [img]="UploadIcon" [size]="15" class="text-primary" />
+                  </div>
+                  <h3 class="text-sm font-semibold text-foreground">Ajouter un document</h3>
+                </div>
+
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div class="flex flex-col gap-1">
-                    <label class="text-xs font-medium text-foreground">Libellé <span class="text-destructive">*</span></label>
+                  <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-medium text-foreground">
+                      Libellé <span class="text-destructive">*</span>
+                    </label>
                     <input
                       type="text"
                       placeholder="Ex: Acte notarié"
@@ -409,7 +409,7 @@
                       class="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50"
                     />
                   </div>
-                  <div class="flex flex-col gap-1">
+                  <div class="flex flex-col gap-1.5">
                     <label class="text-xs font-medium text-foreground">Description</label>
                     <input
                       type="text"
@@ -419,8 +419,10 @@
                       class="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50"
                     />
                   </div>
-                  <div class="flex flex-col gap-1 sm:col-span-2">
-                    <label class="text-xs font-medium text-foreground">Fichier <span class="text-destructive">*</span></label>
+                  <div class="flex flex-col gap-1.5 sm:col-span-2">
+                    <label class="text-xs font-medium text-foreground">
+                      Fichier <span class="text-destructive">*</span>
+                    </label>
                     <div class="flex items-center gap-3">
                       <input
                         type="file"
@@ -445,58 +447,98 @@
                 </div>
               </section>
 
-              <!-- Liste documents -->
-              <section class="border-t border-border pt-6">
-                <h3 class="text-sm font-semibold text-foreground mb-3">Documents annexes</h3>
+              <!-- ── Documents annexes ────────────────────────── -->
+              <section>
+                <!-- En-tête + recherche -->
+                <div class="flex items-center justify-between gap-3 mb-4">
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-sm font-semibold text-foreground">Documents annexes</h3>
+                    @if (!isLoadingDocs()) {
+                      <span class="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                        {{ filteredDocs().length }}@if (docSearch()) { / {{ documents().length }} }
+                      </span>
+                    }
+                  </div>
 
+                  @if (documents().length > 0) {
+                    <div class="relative w-52">
+                      <lucide-icon
+                        [img]="SearchIcon"
+                        [size]="13"
+                        class="absolute left-1.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Rechercher…"
+                        [ngModel]="docSearch()"
+                        (ngModelChange)="docSearch.set($event)"
+                        class="h-8 w-full rounded-md border border-border bg-background pl-7 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50"
+                      />
+                    </div>
+                  }
+                </div>
+
+                <!-- Contenu -->
                 @if (isLoadingDocs()) {
-                  <div class="flex items-center gap-2 py-8 text-muted-foreground">
+                  <div class="flex items-center gap-2 py-10 justify-center text-muted-foreground">
                     <span class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
                     <span class="text-sm">Chargement…</span>
                   </div>
                 } @else if (documents().length === 0) {
-                  <p class="text-sm text-muted-foreground py-8 text-center">Aucun document annexe.</p>
+                  <div class="flex flex-col items-center gap-2 py-10 text-center">
+                    <lucide-icon [img]="FolderOpenIcon" [size]="32" class="text-muted-foreground/30" />
+                    <p class="text-sm text-muted-foreground">Aucun document annexe.</p>
+                  </div>
+                } @else if (filteredDocs().length === 0) {
+                  <div class="flex flex-col items-center gap-2 py-10 text-center">
+                    <lucide-icon [img]="SearchIcon" [size]="28" class="text-muted-foreground/30" />
+                    <p class="text-sm text-muted-foreground">Aucun document correspond à « {{ docSearch() }} ».</p>
+                  </div>
                 } @else {
-                  <div class="flex flex-col divide-y divide-border">
-                    @for (doc of documents(); track doc.id) {
-                      <div class="flex items-center justify-between py-3">
-                        <div class="flex items-center gap-3">
-                          <div class="flex h-9 w-9 items-center justify-center rounded-md bg-muted">
-                            <lucide-icon [img]="PaperclipIcon" [size]="15" class="text-muted-foreground" />
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    @for (doc of filteredDocs(); track doc.id) {
+                      <div class="flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2.5 hover:bg-muted/40 transition-colors">
+
+                        <!-- Icône + infos -->
+                        <div class="flex items-center gap-2.5 min-w-0">
+                          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                            <lucide-icon [img]="PaperclipIcon" [size]="14" class="text-primary" />
                           </div>
-                          <div>
-                            <p class="text-sm font-medium text-foreground">{{ doc.libelle }}</p>
-                            @if (doc.description) {
-                              <p class="text-xs text-muted-foreground">{{ doc.description }}</p>
-                            }
+                          <div class="min-w-0">
+                            <p class="text-xs font-medium text-foreground truncate" [title]="doc.libelle">{{ doc.libelle }}</p>
                             @if (doc.user?.nomPrenom) {
-                              <p class="text-xs text-muted-foreground">par {{ doc.user!.nomPrenom }}</p>
+                              <p class="text-[10px] text-muted-foreground truncate">{{ doc.user!.nomPrenom }}</p>
+                            } @else if (doc.createdAt) {
+                              <p class="text-[10px] text-muted-foreground">{{ doc.createdAt | date:'dd/MM/yy' }}</p>
                             }
                           </div>
                         </div>
-                        <div class="flex items-center gap-1">
+
+                        <!-- Actions -->
+                        <div class="flex items-center gap-0.5 shrink-0">
                           <button
                             type="button"
                             (click)="downloadDocument(doc.document, doc.libelle)"
-                            class="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
                             title="Télécharger"
+                            class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
                           >
-                            <lucide-icon [img]="DownloadIcon" [size]="14" />
+                            <lucide-icon [img]="DownloadIcon" [size]="13" />
                           </button>
                           <button
                             type="button"
                             (click)="deleteDocument(doc)"
                             [disabled]="deletingDocId() === doc.id"
-                            class="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer disabled:opacity-50"
                             title="Supprimer"
+                            class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer disabled:opacity-50"
                           >
                             @if (deletingDocId() === doc.id) {
                               <span class="h-3 w-3 animate-spin rounded-full border-2 border-destructive border-t-transparent"></span>
                             } @else {
-                              <lucide-icon [img]="Trash2Icon" [size]="14" />
+                              <lucide-icon [img]="Trash2Icon" [size]="13" />
                             }
                           </button>
                         </div>
+
                       </div>
                     }
                   </div>
@@ -506,42 +548,6 @@
             </div>
           }
 
-          <!-- ── Tab Historique ─────────────────────────────────── -->
-          @if (activeTab() === 'historique') {
-            @if (isLoadingObs()) {
-              <div class="flex items-center gap-2 py-8 text-muted-foreground">
-                <span class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
-                <span class="text-sm">Chargement…</span>
-              </div>
-            } @else if (observations().length === 0) {
-              <p class="text-sm text-muted-foreground py-8 text-center">Aucune observation enregistrée.</p>
-            } @else {
-              <ol class="relative border-l border-border ml-3">
-                @for (obs of observations(); track obs.id) {
-                  <li class="mb-6 ml-6">
-                    <span class="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 border border-background">
-                      <lucide-icon [img]="ClockIcon" [size]="11" class="text-primary" />
-                    </span>
-                    <div class="flex flex-col gap-0.5">
-                      <div class="flex items-center gap-2">
-                        @if (obs.user?.nomPrenom) {
-                          <span class="text-xs font-semibold text-foreground">{{ obs.user!.nomPrenom }}</span>
-                        }
-                        @if (obs.user?.profil?.name) {
-                          <span class="text-[10px] text-muted-foreground">{{ obs.user!.profil!.name }}</span>
-                        }
-                        <time class="ml-auto text-[10px] text-muted-foreground">
-                          {{ obs.createdAt | date:'dd/MM/yyyy HH:mm' }}
-                        </time>
-                      </div>
-                      <p class="text-sm text-foreground leading-relaxed">{{ obs.observation }}</p>
-                    </div>
-                  </li>
-                }
-              </ol>
-            }
-          }
-
         </app-card-content>
       </app-card>
 
@@ -549,3 +555,118 @@
   }
 
 </div>
+
+<!-- ── Dialog : Confirmation suppression document ──────────────────────── -->
+<app-dialog [(open)]="deleteDialogOpen" classContainer="max-w-md">
+  <app-dialog-header>
+    <app-dialog-title>Supprimer le document</app-dialog-title>
+    <app-dialog-description>
+      @if (docToDelete()) {
+        Voulez-vous vraiment supprimer <strong>« {{ docToDelete()!.libelle }} »</strong> ?
+        Cette action est irréversible.
+      }
+    </app-dialog-description>
+  </app-dialog-header>
+  <app-dialog-footer>
+    <button
+      type="button"
+      (click)="deleteDialogOpen = false"
+      class="flex h-9 items-center rounded-md border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
+    >
+      Annuler
+    </button>
+    <button
+      type="button"
+      (click)="confirmDelete()"
+      class="flex h-9 items-center rounded-md bg-destructive px-4 text-sm font-medium text-white hover:bg-destructive/90 transition-colors cursor-pointer"
+    >
+      <lucide-icon [img]="Trash2Icon" [size]="14" class="mr-1.5" />
+      Supprimer
+    </button>
+  </app-dialog-footer>
+</app-dialog>
+
+<!-- ── FAB : Observations ──────────────────────────────────────────────── -->
+@if (fiche()) {
+  <button
+    type="button"
+    (click)="obsDrawerOpen.set(true)"
+    class="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors cursor-pointer"
+  >
+    <lucide-icon [img]="MessageSquareIcon" [size]="16" />
+    Observations
+    @if (observations().length > 0) {
+      <span class="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-xs font-bold">
+        {{ observations().length }}
+      </span>
+    }
+  </button>
+}
+
+<!-- ── Drawer : Observations ───────────────────────────────────────────── -->
+<app-drawer [open]="obsDrawerOpen()" (openChange)="obsDrawerOpen.set($event)">
+  <app-drawer-header>
+    <div class="flex items-center gap-2">
+      <lucide-icon [img]="MessageSquareIcon" [size]="16" class="text-muted-foreground" />
+      <app-drawer-title>Observations</app-drawer-title>
+      @if (observations().length > 0) {
+        <span class="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+          {{ observations().length }}
+        </span>
+      }
+    </div>
+  </app-drawer-header>
+  <app-drawer-content>
+    @if (isLoadingObs()) {
+      <div class="flex items-center gap-2 py-16 justify-center text-muted-foreground">
+        <span class="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+        <span class="text-sm">Chargement…</span>
+      </div>
+    } @else if (observations().length === 0) {
+      <div class="flex flex-col items-center gap-3 py-16 text-center">
+        <lucide-icon [img]="MessageSquareIcon" [size]="36" class="text-muted-foreground/20" />
+        <p class="text-sm text-muted-foreground">Aucune observation enregistrée.</p>
+      </div>
+    } @else {
+      <ul class="relative ml-3 border-l border-border flex flex-col gap-3 py-1">
+        @for (obs of observations(); track obs.reference) {
+          <li class="relative pl-5">
+            <span class="absolute -left-[5px] top-0 h-2.5 w-2.5 rounded-full bg-primary ring-[3px] ring-primary/20"></span>
+
+            <div class="rounded-xl border border-border bg-card p-3.5 shadow-sm">
+              <!-- Header : décision + date -->
+              <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 mb-2">
+                <h6 class="text-sm font-semibold text-foreground">{{ obs.decision ?? '—' }}</h6>
+                <time class="text-xs text-muted-foreground whitespace-nowrap">
+                  {{ obs.date | date:'dd MMM yyyy' }} à {{ obs.date | date:'HH:mm' }}
+                </time>
+              </div>
+
+              <!-- Texte -->
+              @if (obs.observation) {
+                <p class="text-sm text-muted-foreground mb-3 leading-relaxed">{{ obs.observation }}</p>
+              }
+
+              <!-- Footer : avatar + nom + profil -->
+              @if (obs.user) {
+                <div class="border-t border-border pt-2.5 mt-2.5 flex items-center gap-2">
+                  <app-avatar size="sm" />
+                  <div class="min-w-0">
+                    <p class="text-xs font-medium text-foreground leading-tight truncate">
+                      {{ obs.user.nom }} {{ obs.user.prenom }}
+                    </p>
+                    @if (obs.user.profil) {
+                      <p class="text-xs text-muted-foreground leading-tight truncate">
+                        {{ obs.user.profil }}
+                      </p>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </app-drawer-content>
+</app-drawer>

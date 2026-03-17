@@ -16,6 +16,7 @@ import {
   CardHeaderComponent,
 } from '@/shared/components/card/card.component';
 import { BadgeComponent } from '@/shared/components/badge/badge.component';
+import { Avatar } from '@/shared/components/avatar/avatar.component';
 import { PaginationComponent } from '@/shared/components/pagination/pagination.component';
 import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import { ToastService } from '@/core/services/toast/toast.service';
@@ -36,6 +37,7 @@ type TabFilter = 'attente' | 'cloture' | 'rejette';
     CardContentComponent,
     CardHeaderComponent,
     BadgeComponent,
+    Avatar,
     PaginationComponent,
     ButtonDirective,
   ],
@@ -144,12 +146,4 @@ export class ListCreditComponent implements OnInit {
     return new Intl.NumberFormat('fr-FR').format(n);
   }
 
-  initiales(nom: string): string {
-    return nom
-      .split(' ')
-      .slice(0, 2)
-      .map((w) => w[0])
-      .join('')
-      .toUpperCase();
-  }
 }

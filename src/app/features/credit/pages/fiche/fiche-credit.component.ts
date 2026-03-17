@@ -20,6 +20,9 @@ import {
   CreditCard,
   Calendar,
   TrendingUp,
+  MessageSquare,
+  Search,
+  FolderOpen,
 } from 'lucide-angular';
 import {
   CardComponent,
@@ -28,7 +31,21 @@ import {
   CardTitleComponent,
 } from '@/shared/components/card/card.component';
 import { BadgeComponent } from '@/shared/components/badge/badge.component';
+import { Avatar } from '@/shared/components/avatar/avatar.component';
 import { ButtonDirective } from '@/shared/directives/ui/button/button';
+import {
+  DrawerComponent,
+  DrawerHeaderComponent,
+  DrawerTitleComponent,
+  DrawerContentComponent,
+} from '@/shared/components/drawer/drawer.component';
+import {
+  DialogComponent,
+  DialogHeaderComponent,
+  DialogTitleComponent,
+  DialogDescriptionComponent,
+  DialogFooterComponent,
+} from '@/shared/components/dialog/dialog.component';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { PermissionService } from '@/core/services/permission/permission.service';
 import { CreditService } from '../../services/credit/credit.service';
@@ -39,7 +56,7 @@ import {
   CreditObservation,
 } from '../../interfaces/credit.interface';
 
-type TabId = 'details' | 'documents' | 'historique';
+type TabId = 'details' | 'documents';
 
 @Component({
   selector: 'app-fiche-credit',
@@ -54,7 +71,17 @@ type TabId = 'details' | 'documents' | 'historique';
     CardHeaderComponent,
     CardTitleComponent,
     BadgeComponent,
+    Avatar,
     ButtonDirective,
+    DrawerComponent,
+    DrawerHeaderComponent,
+    DrawerTitleComponent,
+    DrawerContentComponent,
+    DialogComponent,
+    DialogHeaderComponent,
+    DialogTitleComponent,
+    DialogDescriptionComponent,
+    DialogFooterComponent,
   ],
 })
 export class FicheCreditComponent implements OnInit {
@@ -74,6 +101,9 @@ export class FicheCreditComponent implements OnInit {
   readonly CreditCardIcon = CreditCard;
   readonly CalendarIcon = Calendar;
   readonly TrendingUpIcon = TrendingUp;
+  readonly MessageSquareIcon = MessageSquare;
+  readonly SearchIcon = Search;
+  readonly FolderOpenIcon = FolderOpen;
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -84,6 +114,7 @@ export class FicheCreditComponent implements OnInit {
   // ── State ──────────────────────────────────────────────────────────────
   readonly ref = signal('');
   readonly activeTab = signal<TabId>('details');
+  readonly obsDrawerOpen = signal(false);
 
   readonly isLoading = signal(false);
   readonly fiche = signal<CreditFiche | null>(null);
@@ -98,12 +129,30 @@ export class FicheCreditComponent implements OnInit {
   readonly isUploadingDoc = signal(false);
   readonly deletingDocId = signal<number | null>(null);
 
+  // Dialog confirmation suppression
+  deleteDialogOpen = false;
+  readonly docToDelete = signal<CreditDocumentAnnexe | null>(null);
+
   // Upload form
   readonly docLibelle = signal('');
   readonly docDescription = signal('');
   selectedFile: File | null = null;
 
+  // Recherche documents
+  readonly docSearch = signal('');
+
   // ── Computed ───────────────────────────────────────────────────────────
+  readonly filteredDocs = computed(() => {
+    const q = this.docSearch().trim().toLowerCase();
+    if (!q) return this.documents();
+    return this.documents().filter(
+      (d) =>
+        d.libelle.toLowerCase().includes(q) ||
+        d.description?.toLowerCase().includes(q) ||
+        d.user?.nomPrenom?.toLowerCase().includes(q),
+    );
+  });
+
   readonly demande = computed(() => this.fiche()?.demande ?? null);
   readonly decision = computed(() => this.fiche()?.decision ?? null);
   readonly pret = computed(() => this.fiche()?.pret ?? null);
@@ -204,11 +253,20 @@ export class FicheCreditComponent implements OnInit {
   }
 
   deleteDocument(doc: CreditDocumentAnnexe) {
+    this.docToDelete.set(doc);
+    this.deleteDialogOpen = true;
+  }
+
+  confirmDelete() {
+    const doc = this.docToDelete();
+    if (!doc) return;
+    this.deleteDialogOpen = false;
     this.deletingDocId.set(doc.id);
     this.creditService.deleteDocument(doc.id).subscribe({
       next: () => {
         this.toast.success('Document supprimé.');
         this.deletingDocId.set(null);
+        this.docToDelete.set(null);
         this.loadDocuments();
       },
       error: () => {
@@ -218,9 +276,11 @@ export class FicheCreditComponent implements OnInit {
     });
   }
 
-  downloadDocument(url: string, libelle: string) {
+  private readonly DOC_BASE_URL = 'https://crm-fichiers.creditaccess.ci/crm/credit-ca/';
+
+  downloadDocument(filename: string, libelle: string) {
     const a = document.createElement('a');
-    a.href = url;
+    a.href = this.DOC_BASE_URL + filename;
     a.target = '_blank';
     a.download = libelle;
     a.click();
@@ -233,15 +293,6 @@ export class FicheCreditComponent implements OnInit {
 
   statutVariant(statut: number) {
     return this.statuts[statut]?.variant ?? 'default';
-  }
-
-  initiales(nom: string): string {
-    return nom
-      .split(' ')
-      .slice(0, 2)
-      .map((w) => w[0])
-      .join('')
-      .toUpperCase();
   }
 
   formatMontant(n: number | undefined): string {

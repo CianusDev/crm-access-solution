@@ -1,6 +1,6 @@
 # CRM Access Solution — Liste des tâches
 
-> Dernière mise à jour : 2026-03-16 (session 2)
+> Dernière mise à jour : 2026-03-17 (session 3)
 > Les tâches sont ordonnées du plus prioritaire au moins prioritaire.
 > Mettre à jour le statut et la date à chaque complétion.
 
@@ -88,13 +88,9 @@
   - Pagination côté client via `PaginationComponent`
   - Ajouté au sidebar + route
 
-- [x] **T08** — Implémenter page "Demandes crédit en attente" `[1 j]`
-  - Route : `/app/credit/pending`
-  - Endpoint : `GET /credit/listeDemande` (sans filtre action)
-  - Liste dédiée "en attente" sans onglets cloture/rejette, avec compteur de dossiers
-  - Navigation intelligente selon statut : statuts 6-12,28 → résumé, autres → fiche
-  - Helper `navigateByStatut()` partagé entre list et pending
-  - Ajouté au sidebar + route
+- [~] **T08** — ~~Page "Demandes crédit en attente"~~ → **Supprimée, redondante avec T07**
+  - La page liste (`/app/credit/list`) affiche déjà l'onglet "En attente" par défaut
+  - Helper `navigateByStatut()` conservé dans `utils/credit-navigation.ts` (utilisé par T07)
 
 - [x] **T09** — Implémenter page "Fiche crédit" (détail dossier) `[4 j]`
   - Route : `/app/credit/:ref` (paramètre = `refDemande`)
@@ -119,12 +115,15 @@
   - Navigation vers fiche crédit depuis le résumé
   - Interfaces : `CreditResume`, `CreditSWOT`, `CreditComiteDecision`, `CreditPropositionAR`, `CreditContreEvaluation`, `CreditGarantieProposes`
 
-- [ ] **T12** — Implémenter page "Tableau de bord crédit agence" `[2 j]`
-  - Route : `/app/credit/dashboard/agence`
-  - FrontEnd ref : `tableau-bord-credit-agence`
-  - Version allégée du tableau de bord, vue par agence
-  - Visible seulement pour CA, CAA, RC, CC, GP, ACJ…
-  - Dépend de : **T01**, **T02**
+- [x] **T12** — Implémenter page "Tableau de bord crédit agence" `[2 j]`
+  - Route : `/app/credit/dashboard-agence`
+  - Endpoint : `GET /credit/dashCrdCaa` + filtre `?clickSearch=YES&...`
+  - KPIs : 6 compteurs (création, analyse, comité, levée reco, clôturé, rejeté)
+  - Montant total (sommeTotaleMontantsProposes) + répartition par type crédit avec barre de progression
+  - Formulaire de filtre : typeCredit, statut, codeClient, dateDebut, dateFin
+  - Tableau paginé des demandes avec click → `navigateByStatut()`
+  - Badge "Avance de fonds" si `avsFond.statut !== 3`
+  - Ajouté au sidebar : "Tableau de bord agence"
 
 - [ ] **T13** — Implémenter "Détail agence" depuis le tableau de bord crédit `[1 j]`
   - FrontEnd ref : `detail-tableau-bord-agence-siege`
@@ -340,10 +339,10 @@
 | Priorité | Tâches | Estimation | Terminées |
 |---|---|---|---|
 | 🔴 P1 — Infrastructure | T01 → T05 | 3.5 j | ✅ 5 / 5 |
-| 🟠 P2 — Workflow Crédit | T06 → T14h | 26.25 j | ✅ 7 / 16 (T06, T07, T08, T09, T10, T11) |
+| 🟠 P2 — Workflow Crédit | T06 → T14h | 26.25 j | ✅ 6 / 16 (T06, T07, T09, T10, T11 · T08 supprimé) |
 | 🟡 P3 — Tirage & Employeurs | T15 → T22 | 8.5 j | 0 / 8 |
 | 🟡 P4 — Exports | T23 → T29 | 8.5 j | 0 / 7 |
 | 🟢 P5 — ASC | T30 → T31 | 3 j | 0 / 2 |
 | 🟢 P6 — CORA | T32 → T33 | 2 j | 0 / 2 |
 | 🔵 P7 — Paramétrage | T34 → T41 | 9.75 j | 0 / 8 |
-| **TOTAL** | **43 tâches** | **~61.5 j** | **12 / 43** |
+| **TOTAL** | **43 tâches** | **~61.5 j** | **11 / 43** |

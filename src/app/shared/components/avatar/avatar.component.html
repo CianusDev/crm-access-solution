@@ -1,7 +1,7 @@
-<div class="shrink-0 size-9 rounded-full border border-gray-400 overflow-hidden relative">
+<div class="shrink-0 rounded-full border border-gray-400 overflow-hidden relative" [class]="sizeClasses()">
   <img
-    [ngSrc]="src()"
-    alt="Logo"
+    [ngSrc]="imgSrc()"
+    alt="Avatar"
     width="50"
     height="50"
     priority
