@@ -8,6 +8,7 @@ export interface CreditClient {
   codeClient: string;
   nomPrenom: string;
   typeAgent: 'PP' | 'PM' | string;
+  agence?: { libelle: string };
 }
 
 export interface CreditAvsFond {
@@ -167,6 +168,135 @@ export interface CreditSaveDemande {
   montantEcheSouhaite: number;
   nbreEcheDiffere?: number | null;
   description: string;
+}
+
+// ── Fiche crédit ─────────────────────────────────────────────────────────────
+export interface CreditDecisionFinale {
+  montant?: number;
+  montantPropose?: number;
+  fraisDossier?: number;
+  commissionDeboursement?: number;
+  assurDecesInvalidite?: number;
+  montantEmprunte?: number;
+  duree?: number;
+  mensualite?: number;
+  montantCaution?: number;
+  periodeGrace?: number; // 1 = oui, 2 = non
+  nbreMoisGrace?: number;
+  acteNotarie?: number;
+  authGage?: number;
+  assurMultiRisk?: number;
+  deposit?: number;
+  tauxCouverture?: number;
+  commentaire?: string;
+}
+
+export interface CreditObservation {
+  id: number;
+  observation: string;
+  createdAt: string;
+  user?: { nomPrenom?: string; profil?: { name: string } };
+}
+
+export interface CreditDocumentAnnexe {
+  id: number;
+  libelle: string;
+  description?: string;
+  document: string; // URL
+  refDemande: string;
+  createdAt?: string;
+  user?: { nomPrenom?: string };
+}
+
+export interface CreditFicheDemandeDetail extends CreditDemande {
+  description?: string;
+  objetCredit?: string;
+  nbreEcheDiffere?: number;
+  ar?: { nomPrenom?: string };
+  typeActivite?: { libelle: string };
+}
+
+export interface CreditFiche {
+  demande: CreditFicheDemandeDetail;
+  decision?: CreditDecisionFinale;
+  garantieDecision?: unknown;
+  pret?: { numPret?: string; numContrat?: string };
+  usersGaranties?: unknown[];
+  magasins?: unknown[];
+  nombreDemandes?: number;
+}
+
+// ── Résumé analyse ────────────────────────────────────────────────────────────
+export interface CreditSWOT {
+  id?: number;
+  forces?: string[];
+  faiblesses?: string[];
+  opportunites?: string[];
+  menaces?: string[];
+}
+
+export interface CreditComiteDecision {
+  id?: number;
+  dateDemande?: string;
+  montantPropose?: number;
+  montantEmprunte?: number;
+  duree?: number;
+  mensualite?: number;
+  fraisDossier?: number;
+  commissionDeboursement?: number;
+  assurDecesInvalidite?: number;
+  assurMultiRisk?: number;
+  acteNotarie?: number;
+  montantActeNotarie?: number;
+  authGage?: number;
+  tauxCouverture?: number;
+  deposit?: number;
+  periodeGrace?: number;
+  nbreMoisGrace?: number;
+  montantCaution?: number;
+  motivation?: string;
+  commentaire?: string;
+  statut?: number;
+  user?: { nomPrenom?: string; profil?: { name: string; libelle: string } };
+}
+
+export interface CreditPropositionAR {
+  montantPropose?: number;
+  duree?: number;
+  mensualite?: number;
+  motivation?: string;
+  commentaire?: string;
+  statut?: number;
+  user?: { nomPrenom?: string };
+}
+
+export interface CreditContreEvaluation {
+  montantPropose?: number;
+  duree?: number;
+  mensualite?: number;
+  motivation?: string;
+  commentaire?: string;
+  statut?: number;
+  user?: { nomPrenom?: string };
+}
+
+export interface CreditGarantieProposes {
+  montantTotal?: number;
+  rapportCredit?: number;
+  garanties?: Array<{ libelle: string; montant: number }>;
+}
+
+export interface CreditResume {
+  demande: CreditFicheDemandeDetail;
+  aSwots?: CreditSWOT[];
+  garantieProposes?: CreditGarantieProposes;
+  proposition?: CreditPropositionAR;
+  contreEvaluation?: CreditContreEvaluation;
+  precomites?: CreditComiteDecision[];
+  comites?: CreditComiteDecision[];
+  decision?: CreditDecisionFinale;
+  garantieDecision?: unknown;
+  observations?: CreditObservation[];
 }
 
 // ── Statuts ───────────────────────────────────────────────────────────────────

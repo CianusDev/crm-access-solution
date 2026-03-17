@@ -50,22 +50,24 @@
               />
               <span class="text-sm font-medium text-foreground">Nouvelle demande</span>
             </label>
-            <label
-              class="flex items-center gap-2.5 cursor-pointer rounded-lg border px-4 py-3 transition-colors"
-              [class.border-primary]="choix() === '2'"
-              [class.bg-primary/5]="choix() === '2'"
-              [class.border-border]="choix() !== '2'"
-            >
-              <input
-                type="radio"
-                name="choix"
-                value="2"
-                [ngModel]="choix()"
-                (ngModelChange)="choix.set($event)"
-                class="accent-primary"
-              />
-              <span class="text-sm font-medium text-foreground">Tirage découvert</span>
-            </label>
+            @if (canCreateTirage()) {
+              <label
+                class="flex items-center gap-2.5 cursor-pointer rounded-lg border px-4 py-3 transition-colors"
+                [class.border-primary]="choix() === '2'"
+                [class.bg-primary/5]="choix() === '2'"
+                [class.border-border]="choix() !== '2'"
+              >
+                <input
+                  type="radio"
+                  name="choix"
+                  value="2"
+                  [ngModel]="choix()"
+                  (ngModelChange)="choix.set($event)"
+                  class="accent-primary"
+                />
+                <span class="text-sm font-medium text-foreground">Tirage découvert</span>
+              </label>
+            }
           </div>
 
           <!-- Recherche client (nouvelle demande) -->

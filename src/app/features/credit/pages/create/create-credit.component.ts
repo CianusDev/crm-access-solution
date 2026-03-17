@@ -26,12 +26,22 @@ import {
   SelectOption,
 } from '@/shared/components/searchable-select/searchable-select.component';
 import { ToastService } from '@/core/services/toast/toast.service';
+import { UserRole } from '@/core/models/user.model';
+import { PermissionService } from '@/core/services/permission/permission.service';
 import { CreditService } from '../../services/credit/credit.service';
 import {
   CreditClientDetail,
   CreditTypeActivite,
   CreditTypeCredit,
 } from '../../interfaces/credit.interface';
+
+/** Codes de types de crédit autorisés par groupe de profil */
+const CODES_GP = ['004', '011', '019', '015', '021', '033', '016', '032', '035'];
+const CODES_ACJ_CE = ['002', '036'];
+const CODES_RC_CC = ['001', '008', '014'];
+
+/** Profils autorisés à créer un tirage découvert */
+const PROFILS_TIRAGE = [UserRole.GestionnairePortefeuilles, UserRole.Admin];
 
 const OBJETS_CREDIT: SelectOption[] = [
   { value: '1', label: 'Fonds de roulement' },
@@ -72,6 +82,7 @@ export class CreateCreditComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(ToastService);
+  private readonly permissions = inject(PermissionService);
 
   // ── State ──────────────────────────────────────────────────────────────
   readonly choix = signal<'1' | '2'>('1');
@@ -98,10 +109,28 @@ export class CreateCreditComponent implements OnInit {
   readonly isSaving = signal(false);
   readonly submitted = signal(false);
 
-  // ── Computed — options ─────────────────────────────────────────────────
-  readonly typesCreditOptions = computed<SelectOption[]>(() =>
-    this.typesCredit().map((t) => ({ value: t.id, label: t.libelle })),
+  // ── Permissions ────────────────────────────────────────────────────────
+  /** Le profil connecté peut créer un tirage découvert */
+  readonly canCreateTirage = computed(() =>
+    this.permissions.hasRole(...PROFILS_TIRAGE),
   );
+
+  /** Codes de types de crédit autorisés selon le profil */
+  private readonly allowedCodes = computed<string[]>(() => {
+    const role = this.permissions.userRole();
+    if (role === UserRole.GestionnairePortefeuilles || role === UserRole.Admin) return CODES_GP;
+    if (role === UserRole.AgentCommercialJunior || role === UserRole.ChefEquipe) return CODES_ACJ_CE;
+    if (role === UserRole.responsableClient || role === UserRole.conseilClientele) return CODES_RC_CC;
+    return [];
+  });
+
+  // ── Computed — options ─────────────────────────────────────────────────
+  readonly typesCreditOptions = computed<SelectOption[]>(() => {
+    const codes = this.allowedCodes();
+    return this.typesCredit()
+      .filter((t) => codes.length === 0 || codes.includes(t.code))
+      .map((t) => ({ value: t.id, label: t.libelle }));
+  });
 
   readonly typesActiviteOptions = computed<SelectOption[]>(() =>
     this.typesActivite().map((a) => ({ value: a.id, label: a.libelle })),
@@ -240,9 +269,7 @@ export class CreateCreditComponent implements OnInit {
           if (res.status === 200) {
             this.toast.success('Demande enregistrée avec succès.');
             this.isSaving.set(false);
-            this.router.navigate(['/app/credit/analyse'], {
-              queryParams: { ref: res.demande.refDemande },
-            });
+            this.router.navigate(['/app/credit/list']);
           } else {
             console.error('Erreur API:', res);
             this.toast.error(res.message ?? "Erreur lors de l'enregistrement.");

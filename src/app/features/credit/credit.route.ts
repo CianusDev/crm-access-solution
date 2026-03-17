@@ -16,6 +16,34 @@ export const CREDIT_ROUTES: Routes = [
       ),
   },
   {
+    path: 'pending',
+    loadComponent: () =>
+      import('./pages/pending/pending-credit.component').then(
+        (m) => m.PendingCreditComponent,
+      ),
+  },
+  {
+    path: 'resume/:ref',
+    loadComponent: () =>
+      import('./pages/resume/resume-credit.component').then(
+        (m) => m.ResumeCreditComponent,
+      ),
+  },
+  {
+    path: 'list',
+    loadComponent: () =>
+      import('./pages/list/list-credit.component').then(
+        (m) => m.ListCreditComponent,
+      ),
+  },
+  {
+    path: ':ref',
+    loadComponent: () =>
+      import('./pages/fiche/fiche-credit.component').then(
+        (m) => m.FicheCreditComponent,
+      ),
+  },
+  {
     path: '',
     redirectTo: 'dashboard',
     pathMatch: 'full',

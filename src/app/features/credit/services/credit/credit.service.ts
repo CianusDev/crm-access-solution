@@ -9,6 +9,11 @@ import {
   CreditDashboardFiltre,
   CreditDashboardStatut,
   CreditDashboardTypeCredit,
+  CreditDemande,
+  CreditDocumentAnnexe,
+  CreditFiche,
+  CreditObservation,
+  CreditResume,
   CreditSaveDemande,
   CreditStatAgence,
   CreditStatRegion,
@@ -157,6 +162,62 @@ export class CreditService {
         map((res) => res.TypeActivites),
         catchError((err) => throwError(() => err)),
       );
+  }
+
+  // ── Liste des demandes ────────────────────────────────────────────────────
+  getListeDemandes(action?: 'cloture' | 'rejette') {
+    let params = new HttpParams();
+    if (action) params = params.set('action', action);
+    return this.api
+      .get<{ demande: CreditDemande[] }>(this.endpoint + '/listeDemande', params)
+      .pipe(
+        map((res) => res.demande ?? []),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  // ── Fiche crédit ─────────────────────────────────────────────────────────────
+  // ── Résumé analyse ───────────────────────────────────────────────────────────
+  getResumeAnalyse(ref: string) {
+    return this.api
+      .get<CreditResume>(this.endpoint + '/getresume/' + ref)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  getFicheCredit(ref: string) {
+    return this.api
+      .get<CreditFiche>(this.endpoint + '/getinfosdmde/' + ref)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  getObservations(ref: string) {
+    return this.api
+      .get<{ observations: CreditObservation[] }>(this.endpoint + '/listeObservations/' + ref)
+      .pipe(
+        map((res) => res.observations ?? []),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  getDocuments(ref: string) {
+    return this.api
+      .get<{ documents: CreditDocumentAnnexe[] }>(this.endpoint + '/listeDocument/' + ref)
+      .pipe(
+        map((res) => res.documents ?? []),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  uploadDocument(formData: FormData) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveDocAnnexe', formData)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteDocument(idDocument: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/documents/' + idDocument)
+      .pipe(catchError((err) => throwError(() => err)));
   }
 
   saveDemandeCredit(data: CreditSaveDemande) {

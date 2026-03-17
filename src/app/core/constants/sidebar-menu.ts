@@ -13,6 +13,7 @@ import {
   AlarmClock,
   CreditCard,
   FilePlus,
+  Hourglass,
 } from 'lucide-angular';
 
 export const DEFAULT_MENU: SidebarGroup[] = [
@@ -39,6 +40,8 @@ export const DEFAULT_MENU: SidebarGroup[] = [
     items: [
       { label: 'Tableau de bord', href: '/app/credit/dashboard', icon: LayoutDashboard },
       { label: 'Nouvelle demande', href: '/app/credit/create', icon: FilePlus },
+      { label: 'Liste des demandes', href: '/app/credit/list', icon: List },
+      { label: 'Demandes en attente', href: '/app/credit/pending', icon: Hourglass },
     ],
   },
   {
