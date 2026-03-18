@@ -43,10 +43,10 @@ const STATUT_LABELS: Record<number, { label: string; class: string }> = {
   ],
 })
 export class ListComponent {
-  readonly EyeIcon = Eye;
-  readonly SearchIcon = Search;
+  readonly EyeIcon     = Eye;
+  readonly SearchIcon  = Search;
   readonly FileTextIcon = FileText;
-  readonly FilterIcon = Filter;
+  readonly FilterIcon  = Filter;
   readonly XIcon = X;
 
   private readonly router = inject(Router);
@@ -126,7 +126,6 @@ export class ListComponent {
     return STATUT_LABELS[statut] ?? { label: String(statut), class: 'bg-muted text-muted-foreground' };
   }
 
-  goDetail(id: number) {
-    this.router.navigate(['/app/asc/detail', id]);
-  }
+  goDetail(id: number)              { this.router.navigate(['/app/asc/detail', id]); }
+  goChequeDetail(numcheque: string) { this.router.navigate(['/app/asc/cheque', numcheque]); }
 }

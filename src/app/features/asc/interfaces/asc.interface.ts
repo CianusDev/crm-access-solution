@@ -45,6 +45,11 @@ export interface AscCheque {
   imageCheque?: string;
   image?: string;
   checkliste?: string; // JSON stringified number[]
+  preuveTransaction?: string;
+  preuveEntreprise?: string;
+  naturePrestation?: AscNaturePrestation;
+  client?: AscClient;
+  demandes?: AscDemande[];
 }
 
 export interface AscObservation {

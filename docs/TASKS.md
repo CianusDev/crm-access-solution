@@ -1,6 +1,6 @@
 # CRM Access Solution — Liste des tâches
 
-> Dernière mise à jour : 2026-03-18 (session 6)
+> Dernière mise à jour : 2026-03-18 (session 7)
 > Les tâches sont ordonnées du plus prioritaire au moins prioritaire.
 > Mettre à jour le statut et la date à chaque complétion.
 
@@ -281,12 +281,13 @@
   - Sidebar "Tableau de bord agence" ajouté dans section ASC
   - Nouveaux composants partagés créés : `LineChartComponent`, `DonutChartComponent`
 
-- [ ] **T31** — Implémenter page "Détail d'un chèque" `[1.5 j]`
-  - Route : `/app/asc/cheque/:id`
-  - FrontEnd ref : `detail-cheque`
-  - Page dédiée au chèque (différente du détail de la demande)
-  - Boutons d'action conditionnés par profil
-  - Dépend de : **T01**, **T02**
+- [x] **T31** — Implémenter page "Détail d'un chèque" `[1.5 j]`
+  - Route : `/app/asc/cheque/:numcheque`
+  - Endpoint : `GET /cheque/getAvChequeByCheque/{numcheque}`
+  - Layout 2 colonnes : infos chèque + récap montants (80% plafond, total sollicité/accordé) + liste demandes (gauche) | client + checklist (droite)
+  - Documents : image chèque, preuve transaction, preuve entreprise (boutons conditionnels)
+  - Checklist 7 critères parsée depuis JSON stringifié
+  - Navigation depuis `cheques-attente` et `list` via bouton "Chèque" (→ `/app/asc/cheque/:numcheque`) + bouton œil existant (→ détail demande)
 
 ---
 
@@ -369,8 +370,8 @@
 | 🔴 P1 — Infrastructure | T01 → T05 | 3.5 j | ✅ 5 / 5 |
 | 🟠 P2 — Workflow Crédit | T06 → T14h | 26.25 j | ✅ 16 / 16 (T06, T07, T09, T10, T11, T12, T13, T14a–T14h · T08 supprimé) |
 | 🟡 P3 — Tirage & Employeurs | T15 → T22 | 8.5 j | ✅ 8 / 8 (T15–T22) |
-| 🟡 P4 — Exports | T23 → T29 | 8.5 j | ✅ 6 / 7 (T23–T28 · T29 reste) |
-| 🟢 P5 — ASC | T30 → T31 | 3 j | 0 / 2 |
+| 🟡 P4 — Exports | T23 → T29 | 8.5 j | ✅ 7 / 7 (T23–T29) |
+| 🟢 P5 — ASC | T30 → T31 | 3 j | ✅ 2 / 2 (T30, T31) |
 | 🟢 P6 — CORA | T32 → T33 | 2 j | 0 / 2 |
 | 🔵 P7 — Paramétrage | T34 → T41 | 9.75 j | 0 / 8 |
-| **TOTAL** | **43 tâches** | **~61.5 j** | **34 / 43** |
+| **TOTAL** | **43 tâches** | **~61.5 j** | **36 / 43** |

@@ -138,13 +138,24 @@
                     </span>
                   </td>
                   <td class="px-4 py-3 text-right">
-                    <button
-                      type="button"
-                      (click)="$event.stopPropagation(); goDetail(d.id)"
-                      class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-foreground"
-                    >
-                      <lucide-icon [img]="EyeIcon" [size]="14" />
-                    </button>
+                    <div class="flex items-center justify-end gap-1">
+                      <button
+                        type="button"
+                        (click)="$event.stopPropagation(); goChequeDetail(d.cheque.numcheque)"
+                        title="Détail du chèque"
+                        class="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+                      >
+                        <lucide-icon [img]="FileTextIcon" [size]="13" /> Chèque
+                      </button>
+                      <button
+                        type="button"
+                        (click)="$event.stopPropagation(); goDetail(d.id)"
+                        title="Détail de la demande"
+                        class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-foreground"
+                      >
+                        <lucide-icon [img]="EyeIcon" [size]="14" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               }

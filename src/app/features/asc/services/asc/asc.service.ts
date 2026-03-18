@@ -2,7 +2,7 @@ import { ApiService } from '@/core/services/api/api.service';
 import { Injectable, inject } from '@angular/core';
 import { throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { AscBanque, AscClient, AscDashboard, AscDashboardMensuelItem, AscDemande, AscNaturePrestation, AscTireur } from '../../interfaces/asc.interface';
+import { AscBanque, AscCheque, AscClient, AscDashboard, AscDashboardMensuelItem, AscDemande, AscNaturePrestation, AscTireur } from '../../interfaces/asc.interface';
 
 @Injectable({ providedIn: 'root' })
 export class AscService {
@@ -123,6 +123,15 @@ export class AscService {
       .get<{ agences: { id: number; libelle: string }[] }>('/agence/list')
       .pipe(
         map((res) => res.agences),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  getChequeDetail(numcheque: string) {
+    return this.api
+      .get<{ cheque: AscCheque }>(this.endpoint + '/getAvChequeByCheque/' + numcheque)
+      .pipe(
+        map((res) => { console.log('[getChequeDetail] raw:', res); return res.cheque ?? (res as unknown as AscCheque); }),
         catchError((err) => throwError(() => err)),
       );
   }

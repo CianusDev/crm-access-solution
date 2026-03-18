@@ -57,6 +57,11 @@ export const ASC_ROUTES: Routes = [
     loadComponent: () => import('./pages/tireurs/tireurs.component').then((m) => m.TireursComponent),
   },
   {
+    path: 'cheque/:numcheque',
+    loadComponent: () =>
+      import('./pages/cheque-detail/cheque-detail.component').then((m) => m.ChequeDetailComponent),
+  },
+  {
     path: 'cheques-attente',
     resolve: { cheques: () => inject(AscService).getChequesAttente() },
     loadComponent: () =>

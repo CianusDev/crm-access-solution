@@ -1,0 +1,256 @@
+<div class="flex flex-col gap-6 mt-4">
+
+  <!-- En-tête -->
+  <div class="flex items-center gap-3 flex-wrap">
+    <button type="button" (click)="goBack()"
+      class="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+      <lucide-icon [img]="ChevronLeftIcon" [size]="15" /> Retour
+    </button>
+    <div class="flex-1 min-w-0">
+      <h1 class="text-xl font-bold text-foreground truncate">Chèque — {{ numcheque() }}</h1>
+      @if (cheque(); as c) {
+        <p class="text-sm text-muted-foreground">{{ c.client?.nomPrenom }} · {{ c.client?.agence?.libelle }}</p>
+      }
+    </div>
+    <button type="button" (click)="load()" [disabled]="isLoading()"
+      class="flex items-center justify-center h-9 w-9 rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50">
+      <lucide-icon [img]="RefreshCwIcon" [size]="15" [class.animate-spin]="isLoading()" />
+    </button>
+  </div>
+
+  <!-- Erreur -->
+  @if (error()) {
+    <div class="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3">
+      <lucide-icon [img]="AlertCircleIcon" [size]="16" class="text-destructive shrink-0" />
+      <p class="text-sm text-destructive">{{ error() }}</p>
+    </div>
+  }
+
+  <!-- Loader -->
+  @if (isLoading()) {
+    <div class="flex items-center justify-center py-24">
+      <span class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></span>
+    </div>
+  }
+
+  @if (!isLoading() && cheque(); as c) {
+
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+
+      <!-- Colonne gauche -->
+      <div class="flex flex-col gap-4 lg:col-span-2">
+
+        <!-- Informations chèque -->
+        <app-card>
+          <app-card-header>
+            <div class="flex items-center justify-between w-full">
+              <app-card-title>Informations du chèque</app-card-title>
+              <!-- Documents -->
+              <div class="flex items-center gap-2">
+                @if (c.image || c.imageCheque) {
+                  <button type="button" (click)="openDoc(c.image ?? c.imageCheque)"
+                    class="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                    <lucide-icon [img]="EyeIcon" [size]="13" /> Image chèque
+                  </button>
+                }
+                @if (c.preuveTransaction) {
+                  <button type="button" (click)="openDoc(c.preuveTransaction)"
+                    class="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                    <lucide-icon [img]="FileTextIcon" [size]="13" /> Preuve transaction
+                  </button>
+                }
+                @if (c.preuveEntreprise) {
+                  <button type="button" (click)="openDoc(c.preuveEntreprise)"
+                    class="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                    <lucide-icon [img]="FileTextIcon" [size]="13" /> Preuve entreprise
+                  </button>
+                }
+              </div>
+            </div>
+          </app-card-header>
+          <app-card-content>
+            <dl class="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
+              <div>
+                <dt class="text-xs text-muted-foreground">N° de remise</dt>
+                <dd class="text-sm font-medium font-mono">{{ c.numTransaction }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-muted-foreground">N° de chèque</dt>
+                <dd class="text-sm font-medium font-mono">{{ c.numcheque }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-muted-foreground">Tireur</dt>
+                <dd class="text-sm font-medium">{{ c.tireur }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-muted-foreground">Banque du tireur</dt>
+                <dd class="text-sm font-medium">{{ c.banque }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-muted-foreground">Date du chèque</dt>
+                <dd class="text-sm font-medium">{{ c.dateCheque | date:'dd/MM/yyyy' }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-muted-foreground">Nature prestation</dt>
+                <dd class="text-sm font-medium">{{ c.naturePrestation?.libelle ?? '—' }}</dd>
+              </div>
+              <div class="col-span-2 sm:col-span-3">
+                <dt class="text-xs text-muted-foreground">Montant du chèque</dt>
+                <dd class="text-xl font-bold text-foreground">{{ c.montantCheque | number }} FCFA</dd>
+              </div>
+            </dl>
+          </app-card-content>
+        </app-card>
+
+        <!-- Récapitulatif montants -->
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div class="rounded-xl border border-border bg-card p-4">
+            <p class="text-xs text-muted-foreground">Montant chèque</p>
+            <p class="text-lg font-bold tabular-nums">{{ c.montantCheque | number }}</p>
+          </div>
+          <div class="rounded-xl border border-border bg-card p-4">
+            <p class="text-xs text-muted-foreground">Plafond (80%)</p>
+            <p class="text-lg font-bold tabular-nums text-primary">{{ montantMax() | number }}</p>
+          </div>
+          <div class="rounded-xl border border-border bg-card p-4">
+            <p class="text-xs text-muted-foreground">Total sollicité</p>
+            <p class="text-lg font-bold tabular-nums text-amber-600">{{ totalSollicite() | number }}</p>
+          </div>
+          <div class="rounded-xl border border-border bg-card p-4">
+            <p class="text-xs text-muted-foreground">Total accordé</p>
+            <p class="text-lg font-bold tabular-nums text-green-600">{{ totalAccorde() | number }}</p>
+          </div>
+        </div>
+
+        <!-- Demandes associées -->
+        <app-card>
+          <app-card-header>
+            <div class="flex items-center justify-between w-full">
+              <app-card-title>Demandes d'avance ({{ (c.demandes ?? []).length }})</app-card-title>
+            </div>
+          </app-card-header>
+          <app-card-content class="!p-0 !pt-0">
+            @if ((c.demandes ?? []).length === 0) {
+              <p class="py-8 text-center text-sm text-muted-foreground">Aucune demande associée à ce chèque.</p>
+            } @else {
+              <div class="divide-y divide-border border-t border-border">
+                @for (d of c.demandes; track d.id) {
+                  <div class="flex items-center gap-4 px-4 py-3 hover:bg-muted/30 transition-colors">
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                          [class]="statutClass(d.statut)">
+                          {{ statutLabel(d.statut) }}
+                        </span>
+                        @if (d.numDemandeAsc) {
+                          <span class="text-xs font-mono text-muted-foreground">{{ d.numDemandeAsc }}</span>
+                        }
+                      </div>
+                      <div class="mt-1 flex items-center gap-4 flex-wrap text-sm">
+                        <span class="text-muted-foreground">Sollicité : <strong class="text-foreground">{{ d.montantSollicite | number }} FCFA</strong></span>
+                        @if (d.montantAccorde) {
+                          <span class="text-muted-foreground">Accordé : <strong class="text-green-600">{{ d.montantAccorde | number }} FCFA</strong></span>
+                        }
+                        @if (d.dateDemande ?? d.datedemande) {
+                          <span class="text-xs text-muted-foreground">{{ (d.dateDemande ?? d.datedemande) | date:'dd/MM/yyyy' }}</span>
+                        }
+                      </div>
+                    </div>
+                    <button type="button" (click)="goDetail(d.id)"
+                      class="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0">
+                      <lucide-icon [img]="EyeIcon" [size]="13" /> Détail
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </app-card-content>
+        </app-card>
+
+      </div>
+
+      <!-- Colonne droite -->
+      <div class="flex flex-col gap-4">
+
+        <!-- Client -->
+        <app-card>
+          <app-card-header>
+            <app-card-title>Client</app-card-title>
+          </app-card-header>
+          <app-card-content>
+            @if (c.client; as cl) {
+              <div class="flex flex-col gap-3">
+                <div class="flex items-center gap-3">
+                  <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                    {{ cl.nomPrenom.slice(0, 2).toUpperCase() }}
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-foreground truncate">{{ cl.nomPrenom }}</p>
+                    <p class="text-xs text-muted-foreground font-mono">{{ cl.codeClient }}</p>
+                  </div>
+                </div>
+                <dl class="flex flex-col gap-2 text-sm">
+                  <div class="flex justify-between">
+                    <dt class="text-muted-foreground">Type</dt>
+                    <dd class="font-medium">{{ cl.typeAgent === 'SC' ? 'Personne morale' : 'Personne physique' }}</dd>
+                  </div>
+                  <div class="flex justify-between">
+                    <dt class="text-muted-foreground">Agence</dt>
+                    <dd class="font-medium">{{ cl.agence.libelle }}</dd>
+                  </div>
+                  <div class="flex justify-between">
+                    <dt class="text-muted-foreground">Chèques remisés</dt>
+                    <dd class="font-medium">{{ cl.nbreChequeRemise }}</dd>
+                  </div>
+                  <div class="flex justify-between">
+                    <dt class="text-muted-foreground">Incidents de paiement</dt>
+                    <dd class="font-medium" [class.text-destructive]="cl.nbreIncidentPaie > 0">{{ cl.nbreIncidentPaie }}</dd>
+                  </div>
+                  <div class="flex justify-between">
+                    <dt class="text-muted-foreground">Avances reçues</dt>
+                    <dd class="font-medium">{{ cl.nbreAvChequeBenef }}</dd>
+                  </div>
+                  <div class="flex justify-between">
+                    <dt class="text-muted-foreground">Montant max accordé</dt>
+                    <dd class="font-medium tabular-nums">{{ cl.montantChequeAccordeAsc | number }}</dd>
+                  </div>
+                </dl>
+              </div>
+            } @else {
+              <p class="text-sm text-muted-foreground">Aucune info client disponible.</p>
+            }
+          </app-card-content>
+        </app-card>
+
+        <!-- Vérifications (checkliste) -->
+        @if (checklist().length > 0) {
+          <app-card>
+            <app-card-header>
+              <app-card-title>Vérifications</app-card-title>
+            </app-card-header>
+            <app-card-content>
+              <div class="flex flex-col gap-2">
+                @for (item of checklist(); track item.label) {
+                  <div class="flex items-center gap-2">
+                    <lucide-icon
+                      [img]="item.checked ? CheckSquareIcon : SquareIcon"
+                      [size]="16"
+                      [class.text-green-500]="item.checked"
+                      [class.text-muted-foreground]="!item.checked"
+                    />
+                    <span class="text-sm" [class.text-foreground]="item.checked" [class.text-muted-foreground]="!item.checked">
+                      {{ item.label }}
+                    </span>
+                  </div>
+                }
+              </div>
+            </app-card-content>
+          </app-card>
+        }
+
+      </div>
+    </div>
+
+  }
+
+</div>

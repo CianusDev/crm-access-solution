@@ -63,7 +63,6 @@ export class ChequesAttenteComponent {
     this.page.set(1);
   }
 
-  goDetail(id: number) {
-    this.router.navigate(['/app/asc/detail', id]);
-  }
+  goDetail(id: number)              { this.router.navigate(['/app/asc/detail', id]); }
+  goChequeDetail(numcheque: string) { this.router.navigate(['/app/asc/cheque', numcheque]); }
 }
