@@ -22,11 +22,11 @@ export class AscService {
 
   getDashboardMensuel(annee: number, agenceId: number) {
     return this.api
-      .get<{ data: AscDashboardMensuelItem[] }>(
-        this.endpoint + `/dashboard_asc_mensuel?annee=${annee}&agenceId=${agenceId}`,
+      .get<AscDashboardMensuelItem[] | { data: AscDashboardMensuelItem[] }>(
+        this.endpoint + `/statByAgenceMonth?annee=${annee}&agence=${agenceId}`,
       )
       .pipe(
-        map((res) => res.data),
+        map((res) => (Array.isArray(res) ? res : (res as { data: AscDashboardMensuelItem[] }).data ?? [])),
         catchError((err) => throwError(() => err)),
       );
   }

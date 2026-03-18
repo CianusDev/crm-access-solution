@@ -257,9 +257,10 @@
   - Boutons conditionnels par type crédit et statut : contrat de prêt PP/PM/coopérative, convention crédit auto, contrat relais business, engagement règlement, fiche résumé dossier, convention cautionnement (par caution), gage véhicule (par véhicule)
   - `DatePipe` ajouté aux providers root (`app.config.ts`)
 
-- [ ] **T29** — Export Excel : Géolocalisation CORAs `[0.5 j]`
-  - Depuis : `/cora-map`
-  - Dépend de : **T04**
+- [x] **T29** — Export Excel : Géolocalisation CORAs `[0.5 j]`
+  - Depuis : `/cora-map` — bouton "Export Excel" dans le panneau latéral
+  - 9 colonnes : référence, désignation, gestionnaire, type agent, commune, quartier, rue, latitude, longitude
+  - Basé sur `markers()` (respecte les filtres actifs)
 
 ---
 
@@ -271,11 +272,14 @@
 | T31 | Détail d'un chèque | 1.5 j |
 | | **Sous-total P5** | **3 j** |
 
-- [ ] **T30** — Implémenter page "Tableau de bord ASC agence" `[1.5 j]`
+- [x] **T30** — Implémenter page "Tableau de bord ASC agence" `[1.5 j]`
   - Route : `/app/asc/dashboard/agence`
-  - FrontEnd ref : `tableau-bord-asc-agence`
-  - Vue allégée pour CA, CAA, RC, CC
-  - Dépend de : **T01**, **T02**
+  - 5 KPI cards (total, attente, validées, décaiss. annulés, rejetées)
+  - Montants déboursé / rejeté, top clients, graphique mensuel (`app-bar-chart`) auto-chargé via `agence.id` du user connecté
+  - Transactions récentes cliquables → détail
+  - Endpoint mensuel : `/statByAgenceMonth?annee=&agence=` (retourne tableau direct)
+  - Sidebar "Tableau de bord agence" ajouté dans section ASC
+  - Nouveaux composants partagés créés : `LineChartComponent`, `DonutChartComponent`
 
 - [ ] **T31** — Implémenter page "Détail d'un chèque" `[1.5 j]`
   - Route : `/app/asc/cheque/:id`

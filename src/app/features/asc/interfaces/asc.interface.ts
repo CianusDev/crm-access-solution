@@ -114,6 +114,9 @@ export interface AscDashboard {
   montTotalAscRejette: number;
   topAgences: { libelle: string; montant: number }[];
   agences: AscDashboardAgence[];
+  // Agence-level extras (returned when user is CA/CAA/RC/CC)
+  topClients?: { NOM_PRENOM?: string; nomPrenom?: string; montant: number }[];
+  recentesAsc?: AscDemande[];
 }
 
 export interface SaveAscDto {

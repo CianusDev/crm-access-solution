@@ -9,7 +9,6 @@ import {
   CardHeaderComponent,
   CardTitleComponent,
 } from '@/shared/components/card/card.component';
-import { BadgeComponent } from '@/shared/components/badge/badge.component';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { CreditService } from '../../services/credit/credit.service';
 import { CreditDemande } from '../../interfaces/credit.interface';
@@ -31,7 +30,6 @@ interface GroupeAR {
     CardContentComponent,
     CardHeaderComponent,
     CardTitleComponent,
-    BadgeComponent,
   ],
 })
 export class OrganigrammeCreditComponent implements OnInit {

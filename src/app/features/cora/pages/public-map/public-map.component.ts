@@ -1,8 +1,9 @@
-import { Component, OnChanges, computed, input, signal, viewChild } from '@angular/core';
+import { Component, OnChanges, computed, inject, input, signal, viewChild } from '@angular/core';
 import { GoogleMap, MapInfoWindow, MapMarker } from '@angular/google-maps';
-import { X, LucideAngularModule, MapPin, Building2, FilterX } from 'lucide-angular';
+import { X, LucideAngularModule, MapPin, Building2, FilterX, Download } from 'lucide-angular';
 import { Cora, Gestionnaire } from '../../interfaces/cora.interface';
 import { SearchableSelectComponent } from '../../../../shared/components/searchable-select/searchable-select.component';
+import { ExcelExportService, ExcelColumn } from '../../../../core/services/export/excel-export.service';
 
 interface PublicMarker {
   position: google.maps.LatLngLiteral;
@@ -14,6 +15,7 @@ interface PublicMarker {
   coraQuartier: string;
   coraRue: string;
   coraUserId: number;
+  coraGestionnaire: string;
   agentType: number;
 }
 
@@ -27,6 +29,9 @@ export class PublicMapComponent implements OnChanges {
   readonly MapPinIcon = MapPin;
   readonly Building2Icon = Building2;
   readonly FilterXIcon = FilterX;
+  readonly DownloadIcon = Download;
+
+  private readonly excelService = inject(ExcelExportService);
 
   readonly coras = input<Cora[]>([]);
   readonly communes = input<{ id: number; libelle: string }[]>([]);
@@ -100,6 +105,7 @@ export class PublicMapComponent implements OnChanges {
             coraQuartier: cora.quartier ?? '',
             coraRue: cora.rue ?? '',
             coraUserId: cora.user?.id ?? 0,
+            coraGestionnaire: cora.user ? `${cora.user.nom} ${cora.user.prenom}` : '',
             agentType: agent.typeUser ?? 2,
           });
         }
@@ -136,6 +142,32 @@ export class PublicMapComponent implements OnChanges {
   openInfo(markerRef: MapMarker, marker: PublicMarker) {
     this.activeMarker.set(marker);
     this.infoWindow().open(markerRef);
+  }
+
+  async exportExcel() {
+    const columns: ExcelColumn[] = [
+      { header: 'Référence CORA', key: 'coraReference' },
+      { header: 'Désignation', key: 'coraDesignation' },
+      { header: 'Gestionnaire', key: 'coraGestionnaire' },
+      { header: 'Type agent', key: 'typeAgent' },
+      { header: 'Commune', key: 'coraCommune' },
+      { header: 'Quartier', key: 'coraQuartier' },
+      { header: 'Rue', key: 'coraRue' },
+      { header: 'Latitude', key: 'lat' },
+      { header: 'Longitude', key: 'lng' },
+    ];
+    const rows: Record<string, unknown>[] = this.markers().map((m) => ({
+      coraReference: m.coraReference,
+      coraDesignation: m.coraDesignation,
+      coraGestionnaire: m.coraGestionnaire,
+      typeAgent: m.agentType === 1 ? 'Agent principal' : 'Sous-agent',
+      coraCommune: m.coraCommune,
+      coraQuartier: m.coraQuartier,
+      coraRue: m.coraRue,
+      lat: m.position.lat,
+      lng: m.position.lng,
+    }));
+    await this.excelService.export(rows, columns, 'Géolocalisation_CORAs', 'Géolocalisation');
   }
 
   markerOptions(type: number): google.maps.MarkerOptions {

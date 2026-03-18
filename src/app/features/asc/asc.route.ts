@@ -9,6 +9,13 @@ export const ASC_ROUTES: Routes = [
       import('./pages/dashboard/dashboard-asc.component').then((m) => m.DashboardAscComponent),
   },
   {
+    path: 'dashboard/agence',
+    loadComponent: () =>
+      import('./pages/dashboard-agence/dashboard-agence-asc.component').then(
+        (m) => m.DashboardAgenceAscComponent,
+      ),
+  },
+  {
     path: 'client-search',
     loadComponent: () =>
       import('./pages/client-search/client-search.component').then((m) => m.ClientSearchComponent),

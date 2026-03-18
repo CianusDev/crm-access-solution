@@ -50,6 +50,7 @@ export const DEFAULT_MENU: SidebarGroup[] = [
     icon: Ellipsis,
     items: [
       { label: 'Tableau de bord', href: '/app/asc/dashboard', icon: LayoutDashboard },
+      { label: 'Tableau de bord agence', href: '/app/asc/dashboard/agence', icon: LayoutDashboard },
       { label: 'Nouvelle demande', href: '/app/asc/client-search', icon: Search },
       { label: 'Demandes en attente', href: '/app/asc/pending', icon: Clock },
       { label: 'Liste des chèques', href: '/app/asc/list', icon: List },

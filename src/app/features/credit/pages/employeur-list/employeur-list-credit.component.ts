@@ -6,8 +6,6 @@ import { LucideAngularModule, Building2, Search, RefreshCw, ChevronRight } from 
 import {
   CardComponent,
   CardContentComponent,
-  CardHeaderComponent,
-  CardTitleComponent,
 } from '@/shared/components/card/card.component';
 import { BadgeComponent } from '@/shared/components/badge/badge.component';
 import { PaginationComponent } from '@/shared/components/pagination/pagination.component';
@@ -26,8 +24,6 @@ type Filtre = 'tous' | 'valide' | 'rejette';
     LucideAngularModule,
     CardComponent,
     CardContentComponent,
-    CardHeaderComponent,
-    CardTitleComponent,
     BadgeComponent,
     PaginationComponent,
   ],

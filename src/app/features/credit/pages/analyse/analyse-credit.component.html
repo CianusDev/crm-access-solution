@@ -17,7 +17,7 @@
       <div class="flex-1 min-w-0">
         <h1 class="text-xl font-bold text-foreground truncate">{{ ref() }}</h1>
         @if (ficheHeader(); as h) {
-          <p class="text-sm text-muted-foreground">{{ h.client?.nomPrenom }}</p>
+          <p class="text-sm text-muted-foreground">{{ h.client.nomPrenom }}</p>
         }
       </div>
       @if (ficheHeader(); as h) {
