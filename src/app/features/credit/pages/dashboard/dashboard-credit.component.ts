@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import {
   LucideAngularModule,
@@ -53,6 +54,7 @@ import {
   CreditTbStatut,
   CreditTypeItem,
 } from '../../interfaces/credit.interface';
+
 import { CreditDonutChartComponent } from '../../components/credit-donut-chart/credit-donut-chart.component';
 
 interface TbTotaux {
@@ -110,6 +112,7 @@ export class DashboardCreditComponent implements OnInit {
   readonly BarChart2Icon = BarChart2;
 
   private readonly creditService = inject(CreditService);
+  private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
 
   // ── Général — dashCrdBytype + dashCrdByStatut + dashCrdByAgence + dashCrdByRegion ──
@@ -241,6 +244,12 @@ export class DashboardCreditComponent implements OnInit {
       error: () => {
         this.isLoadingZones.set(false);
       },
+    });
+  }
+
+  goToDetailAgence(ag: CreditStatAgence) {
+    this.router.navigate(['/app/credit/detail-agence', ag.code], {
+      queryParams: { libelle: ag.libelle },
     });
   }
 

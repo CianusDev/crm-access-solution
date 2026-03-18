@@ -128,9 +128,13 @@
   - Badge "Avance de fonds" si `avsFond.statut !== 3`
   - Ajouté au sidebar : "Tableau de bord agence"
 
-- [ ] **T13** — Implémenter "Détail agence" depuis le tableau de bord crédit `[1 j]`
-  - FrontEnd ref : `detail-tableau-bord-agence-siege`
-  - Accessible depuis le tableau des agences dans le dashboard
+- [x] **T13** — Implémenter "Détail agence" depuis le tableau de bord crédit `[1 j]`
+  - Route : `/app/credit/detail-agence/:code?libelle={libelle}`
+  - Endpoint : `GET /credit/statCrdAgence?agence={code}` (load) + `&clickSearch=YES&...` (filtre)
+  - Lignes agence du dashboard siège (`dashCrdByAgence`) rendues cliquables → navigation
+  - Interface `CreditDetailAgence` : montantTotal, KPIs demandes, liste demandes
+  - Service : `getDetailAgence(code)` + `filtrerDetailAgence(code, filtre)`
+  - UI : retour au dashboard, montant total, 6 KPI cards, formulaire de filtre, tableau paginé cliquable
 
 - [x] **T14** — Implémenter "Analyse financière" *(décomposée en 8 sous-tâches)* `[14.5 j total]`
   - Route : `/app/credit/analyse/:id`
@@ -345,7 +349,7 @@
 | Priorité | Tâches | Estimation | Terminées |
 |---|---|---|---|
 | 🔴 P1 — Infrastructure | T01 → T05 | 3.5 j | ✅ 5 / 5 |
-| 🟠 P2 — Workflow Crédit | T06 → T14h | 26.25 j | ✅ 15 / 16 (T06, T07, T09, T10, T11, T12, T14a–T14h · T08 supprimé · T13 reste) |
+| 🟠 P2 — Workflow Crédit | T06 → T14h | 26.25 j | ✅ 16 / 16 (T06, T07, T09, T10, T11, T12, T13, T14a–T14h · T08 supprimé) |
 | 🟡 P3 — Tirage & Employeurs | T15 → T22 | 8.5 j | 0 / 8 |
 | 🟡 P4 — Exports | T23 → T29 | 8.5 j | ✅ 1 / 7 (T28) |
 | 🟢 P5 — ASC | T30 → T31 | 3 j | 0 / 2 |

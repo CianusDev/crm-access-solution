@@ -44,6 +44,13 @@ export const CREDIT_ROUTES: Routes = [
       ),
   },
   {
+    path: 'detail-agence/:code',
+    loadComponent: () =>
+      import('./pages/detail-agence/detail-agence-credit.component').then(
+        (m) => m.DetailAgenceCreditComponent,
+      ),
+  },
+  {
     path: ':ref',
     loadComponent: () =>
       import('./pages/fiche/fiche-credit.component').then(

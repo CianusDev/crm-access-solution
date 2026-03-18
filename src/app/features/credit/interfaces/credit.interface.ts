@@ -124,6 +124,18 @@ export interface CreditDashboardFiltre {
   dateFin?: string;
 }
 
+// ── Détail agence depuis le dashboard siège (statCrdAgence) ──────────────────
+export interface CreditDetailAgence {
+  montantTotal: number;
+  demandeEnCrea: number;
+  demandeArs: number;
+  demandeEnComite: number;
+  demandeEnLeveRecom: number;
+  demandeCloture: number;
+  demandeRejete: number;
+  demandes: CreditDemande[];
+}
+
 // ── Tab Total Réseau — dashCrdBytype ─────────────────────────────────────────
 export interface CreditDashboardTypeCredit {
   sommeTotaleMontEmprunte: number; // champ réel backend

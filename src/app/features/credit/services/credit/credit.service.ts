@@ -12,6 +12,7 @@ import {
   CreditDashboardStatut,
   CreditDashboardTypeCredit,
   CreditDemande,
+  CreditDetailAgence,
   CreditDocumentAnnexe,
   CreditFiche,
   CreditObservation,
@@ -134,6 +135,32 @@ export class CreditService {
       .get<{ produits: CreditTbProduit[] }>(this.endpoint + '/tbByProd', params)
       .pipe(
         map((res) => res.produits),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  // ── Détail agence depuis dashboard siège (statCrdAgence) ─────────────────
+  getDetailAgence(code: string) {
+    const params = new HttpParams().set('agence', code);
+    return this.api
+      .get<{ data: CreditDetailAgence }>(this.endpoint + '/statCrdAgence', params)
+      .pipe(
+        map((res) => res.data),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  filtrerDetailAgence(code: string, filtre: CreditDashboardFiltre) {
+    let params = new HttpParams().set('agence', code).set('clickSearch', 'YES');
+    if (filtre.codeClient) params = params.set('codeClient', filtre.codeClient);
+    if (filtre.typeCredit != null) params = params.set('typeCredit', String(filtre.typeCredit));
+    if (filtre.statut != null) params = params.set('statut', String(filtre.statut));
+    if (filtre.dateDebut) params = params.set('dateDebut', filtre.dateDebut);
+    if (filtre.dateFin) params = params.set('dateFin', filtre.dateFin);
+    return this.api
+      .get<{ data: CreditDetailAgence }>(this.endpoint + '/statCrdAgence', params)
+      .pipe(
+        map((res) => res.data),
         catchError((err) => throwError(() => err)),
       );
   }

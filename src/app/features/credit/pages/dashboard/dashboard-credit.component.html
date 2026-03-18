@@ -141,7 +141,7 @@
                   </thead>
                   <tbody appTableBody>
                     @for (ag of pagedAgences(); track ag.code) {
-                      <tr appTableRow>
+                      <tr appTableRow class="cursor-pointer hover:bg-muted/40 transition-colors" (click)="goToDetailAgence(ag)">
                         <td appTableCell>
                           <div class="flex items-center gap-2">
                             <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">

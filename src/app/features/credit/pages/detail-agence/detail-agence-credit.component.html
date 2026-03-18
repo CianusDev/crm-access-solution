@@ -1,0 +1,255 @@
+<div class="flex flex-col gap-6 mt-4">
+
+  <!-- En-tête -->
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div class="flex items-center gap-3">
+      <button type="button" (click)="goBack()" appButton variant="ghost" size="sm"
+        class="flex items-center gap-1.5 shrink-0">
+        <lucide-icon [img]="ChevronLeftIcon" [size]="16" />
+        Retour
+      </button>
+      <div>
+        <h1 class="text-xl font-bold text-foreground">Agence de {{ libelle() }}</h1>
+        <p class="text-sm text-muted-foreground">Détail des demandes de crédit</p>
+      </div>
+    </div>
+    <button
+      type="button"
+      (click)="load()"
+      [disabled]="isLoading()"
+      class="flex items-center justify-center h-9 w-9 rounded-md border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
+    >
+      <lucide-icon [img]="RefreshIcon" [size]="15" [class.animate-spin]="isLoading()" />
+    </button>
+  </div>
+
+  <!-- Erreur globale -->
+  @if (error()) {
+    <div class="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3">
+      <lucide-icon [img]="AlertCircleIcon" [size]="16" class="text-destructive shrink-0" />
+      <p class="text-sm text-destructive">{{ error() }}</p>
+    </div>
+  }
+
+  <!-- Montant total -->
+  @if (!isLoading() && detail()) {
+    <div class="flex flex-col items-center justify-center py-6 gap-1 rounded-2xl border border-border bg-card shadow-sm">
+      <p class="text-4xl font-extrabold tracking-tight text-foreground">
+        {{ formatMontant(detail()!.montantTotal) }}
+        <span class="text-2xl font-bold text-primary ml-1">FCFA</span>
+      </p>
+      <p class="text-sm text-muted-foreground mt-1">Montant total des demandes</p>
+    </div>
+  }
+
+  <!-- KPI cards -->
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+    @if (isLoading()) {
+      @for (_ of [1,2,3,4,5,6]; track $index) {
+        <div class="h-24 rounded-xl border border-border bg-muted/30 animate-pulse"></div>
+      }
+    } @else {
+      @for (kpi of kpis(); track kpi.label) {
+        <div class="rounded-xl border border-border bg-card p-4 flex flex-col gap-1">
+          <span class="text-xs text-muted-foreground leading-tight">{{ kpi.label }}</span>
+          <span class="text-2xl font-bold" [class]="kpi.colorText">{{ kpi.value | number }}</span>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- Filtres -->
+  <app-card>
+    <app-card-header>
+      <app-card-title>Recherche de dossiers</app-card-title>
+    </app-card-header>
+    <app-card-content>
+      <form [formGroup]="filtre" (ngSubmit)="rechercher()">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+
+          <app-form-select
+            name="typeCredit"
+            label="Type de crédit"
+            placeholder="Tous les types"
+            [options]="typeCreditOptions()"
+          />
+
+          <app-form-select
+            name="statut"
+            label="Statut"
+            placeholder="Tous les statuts"
+            [options]="statutOptions"
+          />
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-foreground">Code client</label>
+            <input
+              type="text"
+              formControlName="codeClient"
+              placeholder="Ex: CLI001"
+              class="h-9 rounded-lg border border-border bg-input/20 px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-[2px] focus:ring-primary/50"
+            />
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-foreground">Date début</label>
+            <input
+              type="date"
+              formControlName="dateDebut"
+              class="h-9 rounded-lg border border-border bg-input/20 px-3 text-sm text-foreground focus:outline-none focus:border-primary focus:ring-[2px] focus:ring-primary/50"
+            />
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-foreground">Date fin</label>
+            <input
+              type="date"
+              formControlName="dateFin"
+              class="h-9 rounded-lg border border-border bg-input/20 px-3 text-sm text-foreground focus:outline-none focus:border-primary focus:ring-[2px] focus:ring-primary/50"
+            />
+          </div>
+
+        </div>
+
+        <div class="flex items-center gap-2 mt-4">
+          <button appButton type="submit" [disabled]="isSearching()">
+            <lucide-icon [img]="SearchIcon" [size]="14" />
+            @if (isSearching()) { Recherche… } @else { Rechercher }
+          </button>
+          <button
+            type="button"
+            (click)="resetFiltre()"
+            [disabled]="isLoading() || isSearching()"
+            class="flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-background text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <lucide-icon [img]="XIcon" [size]="13" />
+            Réinitialiser
+          </button>
+        </div>
+      </form>
+    </app-card-content>
+  </app-card>
+
+  <!-- Tableau des demandes -->
+  <app-card>
+    <app-card-header>
+      <app-card-title>Liste des dossiers</app-card-title>
+    </app-card-header>
+    <app-card-content class="!pt-0">
+
+      @if (isLoading() || isSearching()) {
+        <div class="flex items-center justify-center py-16">
+          <span class="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+          <span class="ml-3 text-sm text-muted-foreground">Chargement…</span>
+        </div>
+      }
+
+      @else if (demandes().length === 0) {
+        <div class="flex flex-col items-center justify-center gap-3 py-16 text-center">
+          <lucide-icon [img]="FileTextIcon" [size]="32" class="text-muted-foreground/50" />
+          <p class="text-sm text-muted-foreground">Aucun dossier trouvé</p>
+        </div>
+      }
+
+      @else {
+        <div class="overflow-x-auto border border-border rounded-xl">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border bg-muted/40">
+                <th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">Référence</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">Client</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Mt sollicité</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Mt échéance</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide hidden md:table-cell">Durée</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide hidden xl:table-cell">Type crédit</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of paged(); track d.id; let odd = $odd) {
+                <tr
+                  class="border-b border-border transition-colors cursor-pointer hover:bg-muted/50"
+                  [class.bg-muted/20]="odd"
+                  (click)="openDemande(d)"
+                >
+                  <td class="px-4 py-3">
+                    <p class="font-medium text-foreground">{{ d.refDemande }}</p>
+                    <p class="text-xs text-muted-foreground">{{ d.dateDemande | date:'dd/MM/yyyy' }}</p>
+                    @if (d.tirage === 1) {
+                      <span class="inline-block mt-0.5 rounded-full bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-700">Tirage</span>
+                    }
+                  </td>
+
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-2.5">
+                      <app-avatar size="sm" />
+                      <div>
+                        <p class="font-medium text-foreground leading-tight">{{ d.client.nomPrenom }}</p>
+                        <p class="text-xs text-muted-foreground">
+                          {{ d.client.codeClient }}
+                          <span class="ml-1 text-[10px]">{{ d.client.typeAgent === 'PP' ? '(PP)' : '(PM)' }}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td class="px-4 py-3 text-right hidden lg:table-cell">
+                    <span class="font-medium text-foreground">{{ formatMontant(d.montantSollicite) }}</span>
+                    <span class="text-xs text-muted-foreground ml-1">FCFA</span>
+                  </td>
+
+                  <td class="px-4 py-3 text-right hidden lg:table-cell">
+                    <span class="font-medium text-foreground">{{ formatMontant(d.montantEcheSouhaite) }}</span>
+                    <span class="text-xs text-muted-foreground ml-1">FCFA</span>
+                  </td>
+
+                  <td class="px-4 py-3 text-center hidden md:table-cell">
+                    <span class="text-foreground">{{ d.nbreEcheanceSollicite }}</span>
+                    <span class="text-xs text-muted-foreground ml-1">mois</span>
+                  </td>
+
+                  <td class="px-4 py-3 hidden xl:table-cell">
+                    <span class="text-foreground">{{ d.tirage === 1 ? 'TIRAGE' : d.typeCredit.libelle }}</span>
+                  </td>
+
+                  <td class="px-4 py-3">
+                    <app-badge [variant]="statutVariant(d.statut)">{{ statutLabel(d.statut) }}</app-badge>
+                    @if (d.pause === 1) {
+                      <app-badge variant="warning" class="mt-1 block">En pause</app-badge>
+                    }
+                    @if (d.avsFond && d.avsFond.statut !== 3) {
+                      <app-badge variant="warning" class="mt-1 block">Avance de fonds</app-badge>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (demandes().length > pageSize) {
+          <div class="flex items-center justify-between px-4 pt-4">
+            <p class="text-xs text-muted-foreground">
+              {{ demandes().length }} dossier{{ demandes().length > 1 ? 's' : '' }} —
+              page {{ page() }} / {{ Math.ceil(demandes().length / pageSize) }}
+            </p>
+            <app-pagination
+              [total]="demandes().length"
+              [pageSize]="pageSize"
+              [currentPage]="page()"
+              (pageChange)="page.set($event)"
+            />
+          </div>
+        } @else {
+          <div class="px-4 pt-2">
+            <p class="text-xs text-muted-foreground">
+              {{ demandes().length }} dossier{{ demandes().length > 1 ? 's' : '' }}
+            </p>
+          </div>
+        }
+      }
+
+    </app-card-content>
+  </app-card>
+
+</div>
