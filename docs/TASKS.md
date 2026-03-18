@@ -299,16 +299,18 @@
 | T33 | Détail agence CORA | 1 j |
 | | **Sous-total P6** | **2 j** |
 
-- [ ] **T32** — Implémenter page "Mes CORAs" `[1 j]`
-  - Route : `/app/cora/mes-coras`
-  - FrontEnd ref : `mes-coras`
-  - Vue filtrée sur les CORAs de l'agent connecté
-  - Ajouter dans sidebar pour profils `Gestion_Cora`, `Charge_Cora`
-  - Dépend de : **T01**, **T02**
+- [x] **T32** — Implémenter page "Mes CORAs" `[1 j]`
+  - Route : `/app/cora/my-coras`
+  - Endpoint : `GET /cora/cora_list` (filtre par token côté backend)
+  - Tableau paginé : désignation, référence, PERFECT/P-Mobile, commune/quartier, nb agents, statut
+  - Recherche inline, bouton refresh, click ligne → détail CORA
+  - Sidebar "Mes CORAs" ajouté dans la section CORA
 
-- [ ] **T33** — Implémenter page "Détail agence CORA" `[1 j]`
-  - Route : `/app/cora/agence/:id`
-  - FrontEnd ref : `detail-agence-cora`
+- [x] **T33** — ~~Implémenter page "Détail agence CORA"~~ → **Supprimée, couverte par `agent/:id`**
+  - FrontEnd ref `detail-agence-cora` = détail d'un agent dans l'ancien frontend
+  - Le nouveau frontend couvre déjà cela via `/app/cora/agent/:id` → `DetailAgentComponent`
+  - 3 navigations existantes dans le code pointent déjà vers cette route
+  - Pas de doublon `/app/cora/agence/:id` ajouté
 
 ---
 
@@ -372,6 +374,6 @@
 | 🟡 P3 — Tirage & Employeurs | T15 → T22 | 8.5 j | ✅ 8 / 8 (T15–T22) |
 | 🟡 P4 — Exports | T23 → T29 | 8.5 j | ✅ 7 / 7 (T23–T29) |
 | 🟢 P5 — ASC | T30 → T31 | 3 j | ✅ 2 / 2 (T30, T31) |
-| 🟢 P6 — CORA | T32 → T33 | 2 j | 0 / 2 |
+| 🟢 P6 — CORA | T32 → T33 | 2 j | ✅ 2 / 2 (T32, T33) |
 | 🔵 P7 — Paramétrage | T34 → T41 | 9.75 j | 0 / 8 |
-| **TOTAL** | **43 tâches** | **~61.5 j** | **36 / 43** |
+| **TOTAL** | **43 tâches** | **~61.5 j** | **38 / 43** |

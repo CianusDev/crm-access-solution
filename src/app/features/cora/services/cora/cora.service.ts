@@ -94,6 +94,15 @@ export class CoraService {
       );
   }
 
+  getMesCoras() {
+    return this.apiService
+      .get<{ coras: Cora[] }>(this.endpoint + '/cora_list')
+      .pipe(
+        map((res) => res.coras),
+        catchError((err) => throwError(() => ({ status: err.status, message: err.message }))),
+      );
+  }
+
   getCreateAgentFormData() {
     return forkJoin({
       communes: this.apiService

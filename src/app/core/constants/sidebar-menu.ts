@@ -29,6 +29,7 @@ export const DEFAULT_MENU: SidebarGroup[] = [
       { label: 'Créer un CORA', href: '/app/cora/create', icon: UserPlus },
       { label: 'Créer un sous-agent', href: '/app/cora/agent/create', icon: UserPlus },
       { label: 'Liste des CORAs', href: '/app/cora/list', icon: List },
+      { label: 'Mes CORAs', href: '/app/cora/my-coras', icon: Users },
       { label: 'Demandes en attente', href: '/app/cora/pending', icon: Clock },
       { label: 'Géolocalisation CORA', href: '/cora-map', icon: MapPin },
     ],

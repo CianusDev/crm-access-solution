@@ -57,11 +57,14 @@ export const coraRoutes: Route = {
     },
     {
       path: 'agent/:id',
-      resolve: {
-        agent: detailAgentResolver,
-      },
+      resolve: { agent: detailAgentResolver },
       loadComponent: () =>
         import('./pages/detail-agent/detail-agent.component').then((m) => m.DetailAgentComponent),
+    },
+    {
+      path: 'my-coras',
+      loadComponent: () =>
+        import('./pages/mes-coras/mes-coras.component').then((m) => m.MesCoras),
     },
     {
       path: ':id',
