@@ -35,7 +35,7 @@
         type="text"
         placeholder="Rechercher un employeur…"
         [ngModel]="search()"
-        (ngModelChange)="search.set($event)"
+        (ngModelChange)="search.set($event); currentPage.set(1)"
         class="h-9 w-full rounded-md border border-border bg-background pl-8 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50"
       />
     </div>
@@ -71,7 +71,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (e of filtered(); track e.id) {
+              @for (e of paginated(); track e.id) {
                 <tr
                   class="border-b border-border/50 hover:bg-muted/40 transition-colors cursor-pointer"
                   (click)="goDetail(e)"
@@ -107,6 +107,16 @@
         <div class="px-4 py-3 border-t border-border text-xs text-muted-foreground">
           {{ filtered().length }} employeur{{ filtered().length > 1 ? 's' : '' }}
         </div>
+        @if (filtered().length > 10) {
+          <div class="px-4 pb-3">
+            <app-pagination
+              [total]="filtered().length"
+              [pageSize]="10"
+              [currentPage]="currentPage()"
+              (pageChange)="onPageChange($event)"
+            />
+          </div>
+        }
       }
 
     </app-card-content>

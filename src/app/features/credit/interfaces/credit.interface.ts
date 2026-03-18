@@ -51,6 +51,8 @@ export interface CreditClient {
   domicille?: string;
   dataNaiss?: string;
   dateInscription?: string;
+  latittude?: string | number | null;  // typo conservé pour compatibilité API
+  longitude?: string | number | null;
   // PP signataires PM
   signataires?: CreditSignataire[];
   // PM spécifique
@@ -305,6 +307,8 @@ export interface CreditClientDetail {
   dataNaiss?: string;
   dateInscription?: string;
   adresse?: string;
+  latittude?: string | number | null;  // typo conservé pour compatibilité API
+  longitude?: string | number | null;
   entreprise?: CreditClientEntreprise;
 }
 
@@ -512,6 +516,8 @@ export interface ActiviteCredit {
   quartier?: string;
   rue?: string;
   boitePostale?: string;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
   typeActivite?: CreditTypeActivite;
   niveauActivite?: number;
   margePondere?: number;
@@ -594,7 +600,7 @@ export interface MembreMenage {
   refDemande?: string;
 }
 
-export type TypeActif = 'IMMOBILIER' | 'VEHICULE' | 'EQUIPEMENT' | 'DAT' | 'AUTRE';
+export type TypeActif = 'IMMOBILIER' | 'VEHICULE' | 'EQUIPEMENT' | 'DAT' | 'BIEN_MOBILIER' | 'AUTRE';
 
 export interface ActifGarantie {
   id?: number;
@@ -609,6 +615,11 @@ export interface ActifGarantie {
   echeance?: string;
   statut?: string;
   refDemande?: string;
+  // Biens mobiliers famille
+  quantite?: number;
+  valeurAchat?: number;
+  dateAcquisition?: string;
+  evaluation?: string;
 }
 
 export interface CautionSolidaire {
@@ -620,6 +631,8 @@ export interface CautionSolidaire {
   adresse?: string;
   montantCaution?: number;
   refDemande?: string;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
 }
 
 export interface DocumentAnalyse {

@@ -3,14 +3,20 @@
 <div class="pt-4 flex flex-col gap-6">
 
   <!-- Back + title -->
-  <div class="flex items-center gap-3">
-    <button appButton variant="ghost" size="icon" type="button" (click)="goBack()">
-      <lucide-icon [img]="ArrowLeftIcon" [size]="18" />
-    </button>
-    <div>
-      <h1 class="text-2xl font-bold text-foreground">Détail CORA</h1>
-      <p class="text-sm text-muted-foreground font-mono">{{ c?.reference }}</p>
+  <div class="flex items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <button appButton variant="ghost" size="icon" type="button" (click)="goBack()">
+        <lucide-icon [img]="ArrowLeftIcon" [size]="18" />
+      </button>
+      <div>
+        <h1 class="text-2xl font-bold text-foreground">Détail CORA</h1>
+        <p class="text-sm text-muted-foreground font-mono">{{ c?.reference }}</p>
+      </div>
     </div>
+    <button appButton variant="outline" type="button" (click)="exportPdf()" class="gap-2">
+      <lucide-icon [img]="FileTextIcon" [size]="15" />
+      Exporter PDF
+    </button>
   </div>
 
   @if (c) {

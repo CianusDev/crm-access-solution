@@ -10,6 +10,7 @@ import {
   CardTitleComponent,
 } from '@/shared/components/card/card.component';
 import { BadgeComponent } from '@/shared/components/badge/badge.component';
+import { PaginationComponent } from '@/shared/components/pagination/pagination.component';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { CreditService } from '../../services/credit/credit.service';
 import { Employeur } from '../../interfaces/credit.interface';
@@ -28,6 +29,7 @@ type Filtre = 'tous' | 'valide' | 'rejette';
     CardHeaderComponent,
     CardTitleComponent,
     BadgeComponent,
+    PaginationComponent,
   ],
 })
 export class EmployeurListCreditComponent implements OnInit {
@@ -46,9 +48,12 @@ export class EmployeurListCreditComponent implements OnInit {
     { value: 'rejette', label: 'Rejetés' },
   ];
 
+  private readonly PAGE_SIZE = 10;
+
   readonly isLoading = signal(true);
   readonly filtre = signal<Filtre>('tous');
   readonly search = signal('');
+  readonly currentPage = signal(1);
   readonly employeurs = signal<Employeur[]>([]);
 
   readonly filtered = computed(() => {
@@ -60,13 +65,24 @@ export class EmployeurListCreditComponent implements OnInit {
     );
   });
 
+  readonly paginated = computed(() => {
+    const page = this.currentPage();
+    const start = (page - 1) * this.PAGE_SIZE;
+    return this.filtered().slice(start, start + this.PAGE_SIZE);
+  });
+
   ngOnInit() {
     this.load('tous');
   }
 
   setFiltre(f: Filtre) {
     this.filtre.set(f);
+    this.currentPage.set(1);
     this.load(f);
+  }
+
+  onPageChange(page: number) {
+    this.currentPage.set(page);
   }
 
   private load(f: Filtre) {

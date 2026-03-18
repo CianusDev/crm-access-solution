@@ -19,8 +19,9 @@ import { GarantiesSectionComponent } from './sections/garanties/garanties-sectio
 import { CautionsSectionComponent } from './sections/cautions/cautions-section.component';
 import { SwotSectionComponent } from './sections/swot/swot-section.component';
 import { EnvoiSectionComponent } from './sections/envoi/envoi-section.component';
+import { GeolocalisationSectionComponent } from './sections/geolocalisation/geolocalisation-section.component';
 
-type TabId = 'activite' | 'achats' | 'tresorerie' | 'familial' | 'garanties' | 'cautions' | 'swot' | 'envoi';
+type TabId = 'activite' | 'achats' | 'tresorerie' | 'familial' | 'garanties' | 'cautions' | 'swot' | 'geolocalisation' | 'envoi';
 
 interface Tab {
   id: TabId;
@@ -35,6 +36,7 @@ const TABS: Tab[] = [
   { id: 'garanties', label: 'Actifs & Garanties' },
   { id: 'cautions', label: 'Cautions & Documents' },
   { id: 'swot', label: 'SWOT & Comités' },
+  { id: 'geolocalisation', label: 'Géolocalisation' },
   { id: 'envoi', label: 'Envoi & Validation' },
 ];
 
@@ -52,6 +54,7 @@ const TABS: Tab[] = [
     GarantiesSectionComponent,
     CautionsSectionComponent,
     SwotSectionComponent,
+    GeolocalisationSectionComponent,
     EnvoiSectionComponent,
   ],
 })

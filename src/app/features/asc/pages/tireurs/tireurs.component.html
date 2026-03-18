@@ -1,9 +1,16 @@
 <div class="flex flex-col gap-6 mt-4">
 
   <!-- ── Header ──────────────────────────────────────────────────────────── -->
-  <div class="flex flex-col gap-1">
-    <h1 class="text-xl font-bold text-foreground">Liste des tireurs</h1>
-    <p class="text-sm text-muted-foreground">Ensemble des émetteurs de chèques enregistrés</p>
+  <div class="flex items-center justify-between">
+    <div class="flex flex-col gap-1">
+      <h1 class="text-xl font-bold text-foreground">Liste des tireurs</h1>
+      <p class="text-sm text-muted-foreground">Ensemble des émetteurs de chèques enregistrés</p>
+    </div>
+    <button type="button" (click)="exportExcel()"
+      class="flex items-center gap-2 h-9 rounded-md border border-border bg-background px-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer">
+      <lucide-icon [img]="DownloadIcon" [size]="14" />
+      Export Excel
+    </button>
   </div>
 
   <!-- ── KPIs ─────────────────────────────────────────────────────────────── -->

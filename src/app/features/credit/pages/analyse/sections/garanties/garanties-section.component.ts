@@ -10,6 +10,7 @@ import {
   Wrench,
   PiggyBank,
   Box,
+  Users,
 } from 'lucide-angular';
 import {
   CardComponent,
@@ -43,6 +44,7 @@ const TYPES_ACTIF: SelectOption[] = [
   { value: 'VEHICULE', label: 'Véhicule' },
   { value: 'EQUIPEMENT', label: 'Équipement / Matériel' },
   { value: 'DAT', label: 'Dépôt à terme (DAT)' },
+  { value: 'BIEN_MOBILIER', label: 'Biens mobiliers famille' },
   { value: 'AUTRE', label: 'Autre actif' },
 ];
 
@@ -82,6 +84,7 @@ export class GarantiesSectionComponent implements OnInit {
   readonly WrenchIcon = Wrench;
   readonly PiggyBankIcon = PiggyBank;
   readonly BoxIcon = Box;
+  readonly UsersIcon = Users;
 
   private readonly fb = inject(FormBuilder);
   private readonly creditService = inject(CreditService);
@@ -98,6 +101,7 @@ export class GarantiesSectionComponent implements OnInit {
   readonly vehicules = computed(() => this.actifs().filter((a) => a.type === 'VEHICULE'));
   readonly equipements = computed(() => this.actifs().filter((a) => a.type === 'EQUIPEMENT'));
   readonly dats = computed(() => this.actifs().filter((a) => a.type === 'DAT'));
+  readonly biensMobiliers = computed(() => this.actifs().filter((a) => a.type === 'BIEN_MOBILIER'));
   readonly autres = computed(() => this.actifs().filter((a) => a.type === 'AUTRE'));
 
   readonly totalValeur = computed(() =>
@@ -128,6 +132,11 @@ export class GarantiesSectionComponent implements OnInit {
     // DAT
     banque: [''],
     echeance: [''],
+    // Biens mobiliers famille
+    quantite: [null as number | null],
+    valeurAchat: [null as number | null],
+    dateAcquisition: [''],
+    evaluation: [''],
   });
 
   // ── Lifecycle ──────────────────────────────────────────────────────────
@@ -180,6 +189,10 @@ export class GarantiesSectionComponent implements OnInit {
       annee: null,
       banque: '',
       echeance: '',
+      quantite: null,
+      valeurAchat: null,
+      dateAcquisition: '',
+      evaluation: '',
     });
     this.selectedType.set(preselect ?? null);
     this.actifDrawerOpen = true;
@@ -203,6 +216,10 @@ export class GarantiesSectionComponent implements OnInit {
         annee: val.annee,
         banque: val.banque || null,
         echeance: val.echeance || null,
+        quantite: val.quantite,
+        valeurAchat: val.valeurAchat,
+        dateAcquisition: val.dateAcquisition || null,
+        evaluation: val.evaluation || null,
         refDemande: this.ref(),
       })
       .subscribe({

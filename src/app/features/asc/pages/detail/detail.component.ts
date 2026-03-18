@@ -20,6 +20,7 @@ import {
   Loader,
   History,
   Search,
+  Download,
 } from 'lucide-angular';
 import {
   CardComponent,
@@ -41,6 +42,8 @@ import { FormsModule } from '@angular/forms';
 import { AscDemande } from '../../interfaces/asc.interface';
 import { AscService } from '../../services/asc/asc.service';
 import { ToastService } from '@/core/services/toast/toast.service';
+import { PdfExportService } from '@/core/services/export/pdf-export.service';
+import type { Content, TableCell } from 'pdfmake/interfaces';
 import { Avatar } from '@/shared/components/avatar/avatar.component';
 import {
   DrawerComponent,
@@ -145,10 +148,12 @@ export class DetailComponent {
   readonly LoaderIcon = Loader;
   readonly HistoryIcon = History;
   readonly SearchIcon = Search;
+  readonly DownloadIcon = Download;
 
   private readonly router = inject(Router);
   private readonly ascService = inject(AscService);
   private readonly toast = inject(ToastService);
+  private readonly pdfService = inject(PdfExportService);
 
   readonly demande = input<AscDemande | null>(null);
 
@@ -318,6 +323,119 @@ export class DetailComponent {
       this.showAnnuler() ||
       this.showDelete(),
   );
+
+  // ── Export PDF ─────────────────────────────────────────────────────────
+  async exportPdf() {
+    const d = this.demande();
+    if (!d) return;
+
+    const fmt = (v?: number) =>
+      v !== undefined ? v.toLocaleString('fr-FR') + ' FCFA' : '—';
+    const fmtDate = (s?: string) =>
+      s ? new Date(s).toLocaleDateString('fr-FR') : '—';
+
+    const statutInfo = this.statut();
+    const decisionLabel = (v?: number) =>
+      v === 1 ? 'Accordé' : v === 0 ? 'Rejeté' : v === 2 ? 'Ajourné' : v === 3 ? 'Approuvé' : '—';
+
+    const infoRows = (pairs: [string, string][]): TableCell[][] =>
+      pairs.map(([label, value], i) => [
+        { text: label, style: i % 2 === 0 ? 'tableCell' : 'tableCellAlt', bold: true },
+        { text: value, style: i % 2 === 0 ? 'tableCell' : 'tableCellAlt' },
+      ]);
+
+    const infoTable = (pairs: [string, string][]): Content => ({
+      table: {
+        widths: [150, '*'],
+        body: infoRows(pairs),
+      },
+      layout: { hLineWidth: () => 0.5, vLineWidth: () => 0, hLineColor: () => '#e5e7eb' },
+    });
+
+    const content: Content[] = [
+      { text: 'Informations client', style: 'sectionTitle' },
+      infoTable([
+        ['Nom / Prénom', d.client?.nomPrenom ?? '—'],
+        ['Code client', d.client?.codeClient ?? '—'],
+        ['Type', d.client?.typeAgent === 'SC' ? 'Personne morale' : 'Personne physique'],
+        ['Agence', d.client?.agence?.libelle ?? '—'],
+        ['Ouverture du compte', fmtDate(d.client?.dateOuvertureCompte)],
+        ['Avances reçues', String(d.client?.nbreAvChequeBenef ?? 0)],
+        ['Incidents de paiement', String(d.client?.nbreIncidentPaie ?? 0)],
+        ['Montant max accordé', fmt(d.client?.montantChequeAccordeAsc)],
+      ]),
+      { text: '\n' },
+      { text: 'Informations du chèque', style: 'sectionTitle' },
+      infoTable([
+        ['N° de chèque', d.cheque?.numcheque ?? '—'],
+        ['N° de remise', d.cheque?.numTransaction ?? '—'],
+        ['Tireur', d.cheque?.tireur ?? '—'],
+        ['Banque du tireur', d.cheque?.banque ?? '—'],
+        ['Date de remise', fmtDate(d.cheque?.dateCheque)],
+        ['Date de la demande', fmtDate(d.dateDemande ?? d.datedemande)],
+        ['N° demande Perfect', d.numDemandeAsc ?? '—'],
+        ['Nature prestation', d.natureObjetReglement ?? '—'],
+        ['Agence émettrice', d.agence?.libelle ?? '—'],
+        ['Créé par', d.user ? `${d.user.nom} ${d.user.prenom}` : '—'],
+      ]),
+      { text: '\n' },
+      { text: 'Montants', style: 'sectionTitle' },
+      infoTable([
+        ['Montant du chèque', fmt(d.cheque?.montantCheque)],
+        ['Montant sollicité', fmt(d.montantSollicite)],
+        ['Montant accordé', fmt(d.montantAccorde)],
+        ['Montant max encaissé', fmt(d.montantMaxEncaisse)],
+      ]),
+    ];
+
+    if (this.hasChecklist()) {
+      const checklistBody: TableCell[][] = this.checklist().map((item, i) => [
+        {
+          text: item.checked ? '✓' : '✗',
+          style: i % 2 === 0 ? 'tableCell' : 'tableCellAlt',
+          color: item.checked ? '#16a34a' : '#9ca3af',
+          bold: true,
+        },
+        { text: item.label, style: i % 2 === 0 ? 'tableCell' : 'tableCellAlt' },
+      ]);
+      content.push(
+        { text: '\n' },
+        { text: 'Vérification', style: 'sectionTitle' },
+        {
+          table: { widths: [30, '*'], body: checklistBody },
+          layout: { hLineWidth: () => 0.5, vLineWidth: () => 0, hLineColor: () => '#e5e7eb' },
+        } as Content,
+      );
+    }
+
+    if (d.decision) {
+      content.push(
+        { text: '\n' },
+        { text: 'Décision', style: 'sectionTitle' },
+        infoTable([
+          ['Résultat', decisionLabel(d.decision.decision)],
+          ['Date', fmtDate(d.decision.dateDecision)],
+          ['Par', d.decision.user ? `${d.decision.user.nom} ${d.decision.user.prenom}` : '—'],
+          ['Observation', d.decision.observation ?? '—'],
+        ]),
+      );
+    }
+
+    const ref = d.numDemandeAsc ?? String(d.id);
+    await this.pdfService.download(
+      {
+        pageMargins: [40, 70, 40, 50],
+        header: this.pdfService.header(
+          'Demande d\'avance sur chèque',
+          `Réf. ${ref} — Statut : ${statutInfo?.label ?? ''}`,
+        ),
+        footer: (currentPage, pageCount) => this.pdfService.footer(currentPage, pageCount),
+        content,
+        styles: this.pdfService.baseStyles,
+      },
+      `asc-demande-${ref}`,
+    );
+  }
 
   // ── Helpers ────────────────────────────────────────────────────────────
   fileUrl(lien?: string) {

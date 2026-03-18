@@ -1,6 +1,6 @@
 # CRM Access Solution — Liste des tâches
 
-> Dernière mise à jour : 2026-03-18 (session 5)
+> Dernière mise à jour : 2026-03-18 (session 6)
 > Les tâches sont ordonnées du plus prioritaire au moins prioritaire.
 > Mettre à jour le statut et la date à chaque complétion.
 
@@ -229,27 +229,27 @@
 | T29 | Export Excel : Géolocalisation CORAs | 0.5 j |
 | | **Sous-total P4** | **8.5 j** |
 
-- [ ] **T23** — Export Excel : Liste des CORAs `[0.5 j]`
-  - Depuis : `/app/cora/list`
-  - Colonnes : code, nom, agence, statut, date création
-  - Dépend de : **T04**
+- [x] **T23** — Export Excel : Liste des CORAs `[0.5 j]`
+  - Depuis : `/app/cora/list` — bouton "Export Excel" (remplace CSV)
+  - Colonnes : référence, désignation, email, PERFECT, téléphone, commune, quartier, rue, gestionnaire, statut
+  - Basé sur `filtered()` (respecte filtres actifs)
 
-- [ ] **T24** — Export PDF : Liste des CORAs `[1 j]`
-  - Depuis : `/app/cora/list`
-  - Dépend de : **T05**
+- [x] **T24** — Export PDF : Liste des CORAs `[1 j]`
+  - Depuis : `/app/cora/list` — bouton "Export PDF"
+  - Tableau paysage avec 7 colonnes, header/footer standard PdfExportService
 
-- [ ] **T25** — Export PDF : Contrat CORA individuel `[1.5 j]`
-  - Depuis : `/app/cora/:id`
-  - Dépend de : **T05**
+- [x] **T25** — Export PDF : Contrat CORA individuel `[1.5 j]`
+  - Depuis : `/app/cora/:id` — bouton "Exporter PDF" dans le header
+  - Sections : informations générales (15 champs), tableau agents avec type et statut
 
-- [ ] **T26** — Export Excel : Liste des tireurs ASC `[0.5 j]`
-  - Depuis : `/app/asc/tireurs`
-  - Colonnes : nom tireur, banque, nb chèques, montant total
-  - Dépend de : **T04**
+- [x] **T26** — Export Excel : Liste des tireurs ASC `[0.5 j]`
+  - Depuis : `/app/asc/tireurs` — bouton "Export Excel" dans le header
+  - Colonnes : date remise, code client, tireur, banque du tireur, nature prestation, agence
+  - Basé sur `filtered()` (respecte la recherche active)
 
-- [ ] **T27** — Export PDF : Demande d'avance sur chèque `[1.5 j]`
-  - Depuis : `/app/asc/detail/:id`
-  - Dépend de : **T05**
+- [x] **T27** — Export PDF : Demande d'avance sur chèque `[1.5 j]`
+  - Depuis : `/app/asc/detail/:id` — bouton "Exporter PDF" dans le header
+  - Sections : client (KPIs + infos), chèque, montants, checklist, décision
 
 - [x] **T28** — Export PDF : Convention de crédit `[3 j]`
   - Depuis : fiche crédit (`/app/credit/:id`), onglet Documents → section "Contrats & PDF"
@@ -365,8 +365,8 @@
 | 🔴 P1 — Infrastructure | T01 → T05 | 3.5 j | ✅ 5 / 5 |
 | 🟠 P2 — Workflow Crédit | T06 → T14h | 26.25 j | ✅ 16 / 16 (T06, T07, T09, T10, T11, T12, T13, T14a–T14h · T08 supprimé) |
 | 🟡 P3 — Tirage & Employeurs | T15 → T22 | 8.5 j | ✅ 8 / 8 (T15–T22) |
-| 🟡 P4 — Exports | T23 → T29 | 8.5 j | ✅ 1 / 7 (T28) |
+| 🟡 P4 — Exports | T23 → T29 | 8.5 j | ✅ 6 / 7 (T23–T28 · T29 reste) |
 | 🟢 P5 — ASC | T30 → T31 | 3 j | 0 / 2 |
 | 🟢 P6 — CORA | T32 → T33 | 2 j | 0 / 2 |
 | 🔵 P7 — Paramétrage | T34 → T41 | 9.75 j | 0 / 8 |
-| **TOTAL** | **43 tâches** | **~61.5 j** | **29 / 43** |
+| **TOTAL** | **43 tâches** | **~61.5 j** | **34 / 43** |

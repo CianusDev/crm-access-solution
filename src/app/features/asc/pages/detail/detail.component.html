@@ -17,6 +17,10 @@
         s.label
       }}</span>
     }
+    <button appButton variant="outline" size="sm" type="button" (click)="exportPdf()" class="gap-2">
+      <lucide-icon [img]="DownloadIcon" [size]="14" />
+      Exporter PDF
+    </button>
   </div>
 
   <!-- ── Boutons d'action ─────────────────────────────────────────────── -->
