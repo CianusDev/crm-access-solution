@@ -1,0 +1,396 @@
+@if (isLoading()) {
+  <div class="flex justify-center py-16">
+    <span class="h-7 w-7 animate-spin rounded-full border-4 border-primary border-t-transparent"></span>
+  </div>
+} @else {
+<app-tabs>
+
+  <!-- ── Sous-zones ── -->
+  <app-tab label="Sous-zones" sublabel="A.Risque">
+    <div class="flex flex-col gap-4">
+      <div class="flex items-center gap-3">
+        <div class="relative flex-1">
+          <lucide-icon [img]="SearchIcon" [size]="14"
+            class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <input type="text" placeholder="Rechercher une sous-zone…"
+            [value]="searchSz()" (input)="setSearch('souszone', $any($event.target).value)"
+            class="input-field pl-8 text-sm" />
+        </div>
+        <button type="button" (click)="openSzCreate()"
+          class="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+          <lucide-icon [img]="PlusIcon" [size]="12" /> Ajouter
+        </button>
+      </div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (s of pagedSz(); track s.id) {
+          <app-card>
+            <app-card-content>
+              <div class="flex items-start justify-between gap-2 py-1">
+                <div>
+                  <p class="text-sm font-medium text-foreground">{{ s.libelle }}</p>
+                  @if (s.zone) { <p class="text-xs text-muted-foreground">Zone : {{ s.zone.libelle }}</p> }
+                  @if (s.delimitation) { <p class="text-xs text-muted-foreground">{{ s.delimitation }}</p> }
+                  @if (s.ar) { <p class="text-xs text-muted-foreground">AR : {{ s.ar.nom }} {{ s.ar.prenom }}</p> }
+                </div>
+                <button type="button" (click)="openSzEdit(s)"
+                  class="inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted">
+                  <lucide-icon [img]="EditIcon" [size]="12" /> Modifier
+                </button>
+              </div>
+            </app-card-content>
+          </app-card>
+        }
+      </div>
+      @if (filteredSz().length === 0) {
+        <p class="py-8 text-center text-sm text-muted-foreground">Aucune sous-zone.</p>
+      }
+      @if (filteredSz().length > PAGE_SIZE) {
+        <app-pagination [total]="filteredSz().length" [pageSize]="PAGE_SIZE"
+          [currentPage]="pageSz()" (pageChange)="pageSz.set($event)" />
+      }
+    </div>
+  </app-tab>
+
+  <!-- ── Zones ── -->
+  <app-tab label="Zones" sublabel="S.Risque">
+    <div class="flex flex-col gap-4">
+      <div class="flex items-center gap-3">
+        <div class="relative flex-1">
+          <lucide-icon [img]="SearchIcon" [size]="14"
+            class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <input type="text" placeholder="Rechercher une zone…"
+            [value]="searchZone()" (input)="setSearch('zone', $any($event.target).value)"
+            class="input-field pl-8 text-sm" />
+        </div>
+        <button type="button" (click)="openZoneCreate()"
+          class="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+          <lucide-icon [img]="PlusIcon" [size]="12" /> Ajouter
+        </button>
+      </div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (z of pagedZone(); track z.id) {
+          <app-card>
+            <app-card-content>
+              <div class="flex items-start justify-between gap-2 py-1">
+                <div>
+                  <p class="text-sm font-medium text-foreground">{{ z.libelle }}</p>
+                  @if (z.description) { <p class="text-xs text-muted-foreground">{{ z.description }}</p> }
+                  @if (z.region) { <p class="text-xs text-muted-foreground">Région : {{ z.region.libelle }}</p> }
+                  @if (z.sup) { <p class="text-xs text-muted-foreground">Sup. : {{ z.sup.nom }} {{ z.sup.prenom }}</p> }
+                </div>
+                <button type="button" (click)="openZoneEdit(z)"
+                  class="inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted">
+                  <lucide-icon [img]="EditIcon" [size]="12" /> Modifier
+                </button>
+              </div>
+            </app-card-content>
+          </app-card>
+        }
+      </div>
+      @if (filteredZone().length === 0) {
+        <p class="py-8 text-center text-sm text-muted-foreground">Aucune zone.</p>
+      }
+      @if (filteredZone().length > PAGE_SIZE) {
+        <app-pagination [total]="filteredZone().length" [pageSize]="PAGE_SIZE"
+          [currentPage]="pageZone()" (pageChange)="pageZone.set($event)" />
+      }
+    </div>
+  </app-tab>
+
+  <!-- ── Régions ── -->
+  <app-tab label="Régions" sublabel="R.Régional">
+    <div class="flex flex-col gap-4">
+      <div class="flex items-center gap-3">
+        <div class="relative flex-1">
+          <lucide-icon [img]="SearchIcon" [size]="14"
+            class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <input type="text" placeholder="Rechercher une région…"
+            [value]="searchRegion()" (input)="setSearch('region', $any($event.target).value)"
+            class="input-field pl-8 text-sm" />
+        </div>
+        <button type="button" (click)="openRegionCreate()"
+          class="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+          <lucide-icon [img]="PlusIcon" [size]="12" /> Ajouter
+        </button>
+      </div>
+      <!-- Liste -->
+      <app-card>
+        <app-card-content>
+          <div class="divide-y divide-border">
+            @for (r of pagedRegion(); track r.id) {
+              <div class="flex items-center justify-between py-3">
+                <div>
+                  <p class="text-sm font-medium text-foreground">{{ r.libelle }}</p>
+                  @if (r.user) {
+                    <p class="text-xs text-muted-foreground">{{ r.user.nom }} {{ r.user.prenom }}</p>
+                  }
+                </div>
+                <button type="button" (click)="openRegionEdit(r)"
+                  class="inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted">
+                  <lucide-icon [img]="EditIcon" [size]="12" /> Modifier
+                </button>
+              </div>
+            }
+            @if (filteredRegion().length === 0) {
+              <p class="py-8 text-center text-sm text-muted-foreground">Aucune région.</p>
+            }
+          </div>
+        </app-card-content>
+      </app-card>
+      @if (filteredRegion().length > PAGE_SIZE) {
+        <app-pagination [total]="filteredRegion().length" [pageSize]="PAGE_SIZE"
+          [currentPage]="pageRegion()" (pageChange)="pageRegion.set($event)" />
+      }
+    </div>
+  </app-tab>
+
+  <!-- ── Teams ── -->
+  <app-tab label="Teams" sublabel="C.Equipe">
+    <div class="flex flex-col gap-4">
+      <div class="flex items-center gap-3">
+        <div class="relative flex-1">
+          <lucide-icon [img]="SearchIcon" [size]="14"
+            class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <input type="text" placeholder="Rechercher une équipe…"
+            [value]="searchTeam()" (input)="setSearch('team', $any($event.target).value)"
+            class="input-field pl-8 text-sm" />
+        </div>
+        <button type="button" (click)="openTeamCreate()"
+          class="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+          <lucide-icon [img]="PlusIcon" [size]="12" /> Ajouter
+        </button>
+      </div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (t of pagedTeam(); track t.id) {
+          <app-card>
+            <app-card-content>
+              <div class="flex items-start justify-between gap-2 py-1">
+                <div>
+                  <p class="text-sm font-medium text-foreground">{{ t.libelle }}</p>
+                  @if (t.chefEquipe) { <p class="text-xs text-muted-foreground">Chef : {{ t.chefEquipe.nom }} {{ t.chefEquipe.prenom }}</p> }
+                  @if (t.cdc) { <p class="text-xs text-muted-foreground">CDC : {{ t.cdc.nom }} {{ t.cdc.prenom }}</p> }
+                </div>
+                <button type="button" (click)="openTeamEdit(t)"
+                  class="inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted">
+                  <lucide-icon [img]="EditIcon" [size]="12" /> Modifier
+                </button>
+              </div>
+            </app-card-content>
+          </app-card>
+        }
+      </div>
+      @if (filteredTeam().length === 0) {
+        <p class="py-8 text-center text-sm text-muted-foreground">Aucune équipe.</p>
+      }
+      @if (filteredTeam().length > PAGE_SIZE) {
+        <app-pagination [total]="filteredTeam().length" [pageSize]="PAGE_SIZE"
+          [currentPage]="pageTeam()" (pageChange)="pageTeam.set($event)" />
+      }
+    </div>
+  </app-tab>
+
+  <!-- ── Zone ACJ ── -->
+  <app-tab label="Zone ACJ" sublabel="Agent C.J.">
+    <div class="flex flex-col gap-4">
+      <div class="flex items-center gap-3">
+        <div class="relative flex-1">
+          <lucide-icon [img]="SearchIcon" [size]="14"
+            class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <input type="text" placeholder="Rechercher une zone ACJ…"
+            [value]="searchAcj()" (input)="setSearch('acj', $any($event.target).value)"
+            class="input-field pl-8 text-sm" />
+        </div>
+        <button type="button" (click)="openAcjCreate()"
+          class="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+          <lucide-icon [img]="PlusIcon" [size]="12" /> Ajouter
+        </button>
+      </div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (z of pagedAcj(); track z.id) {
+          <app-card>
+            <app-card-content>
+              <div class="flex items-start justify-between gap-2 py-1">
+                <div>
+                  <p class="text-sm font-medium text-foreground">{{ z.libelle }}</p>
+                  @if (z.description) { <p class="text-xs text-muted-foreground">{{ z.description }}</p> }
+                  @if (z.team) { <p class="text-xs text-muted-foreground">Équipe : {{ z.team.libelle }}</p> }
+                  @if (z.acj) { <p class="text-xs text-muted-foreground">ACJ : {{ z.acj.nom }} {{ z.acj.prenom }}</p> }
+                </div>
+                <button type="button" (click)="openAcjEdit(z)"
+                  class="inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted">
+                  <lucide-icon [img]="EditIcon" [size]="12" /> Modifier
+                </button>
+              </div>
+            </app-card-content>
+          </app-card>
+        }
+      </div>
+      @if (filteredAcj().length === 0) {
+        <p class="py-8 text-center text-sm text-muted-foreground">Aucune zone ACJ.</p>
+      }
+      @if (filteredAcj().length > PAGE_SIZE) {
+        <app-pagination [total]="filteredAcj().length" [pageSize]="PAGE_SIZE"
+          [currentPage]="pageAcj()" (pageChange)="pageAcj.set($event)" />
+      }
+    </div>
+  </app-tab>
+
+</app-tabs>
+}
+
+<!-- Drawer unique pour tous les formulaires zonification -->
+<app-drawer [open]="drawerOpen" (openChange)="drawerOpen = $event" panelClass="max-w-sm">
+  <app-drawer-header>
+    <app-drawer-title>{{ drawerTitle }}</app-drawer-title>
+  </app-drawer-header>
+
+  <app-drawer-content>
+
+    @if (drawerType === 'souszone') {
+      <div class="flex flex-col gap-4">
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Libellé *</label>
+          <input type="text" [(ngModel)]="szForm.libelle" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Zone</label>
+          <select [(ngModel)]="szForm.zone" class="input-field">
+            <option [value]="null">— Sélectionner —</option>
+            @for (z of zonesRef(); track z.id) {
+              <option [value]="z">{{ z.libelle }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Délimitation</label>
+          <input type="text" [(ngModel)]="szForm.delimitation" class="input-field" />
+        </div>
+      </div>
+    }
+
+    @if (drawerType === 'zone') {
+      <div class="flex flex-col gap-4">
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Libellé *</label>
+          <input type="text" [(ngModel)]="zoneForm.libelle" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Description</label>
+          <input type="text" [(ngModel)]="zoneForm.description" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Superviseur risque</label>
+          <select [(ngModel)]="zoneForm.sup" class="input-field">
+            <option [value]="null">— Sélectionner —</option>
+            @for (u of superviseurs(); track u.id) {
+              <option [value]="u">{{ u.nom }} {{ u.prenom }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Région</label>
+          <select [(ngModel)]="zoneForm.region" class="input-field">
+            <option [value]="null">— Sélectionner —</option>
+            @for (r of regionsRef(); track r.id) {
+              <option [value]="r">{{ r.libelle }}</option>
+            }
+          </select>
+        </div>
+      </div>
+    }
+
+    @if (drawerType === 'region') {
+      <div class="flex flex-col gap-4">
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Libellé *</label>
+          <input type="text" [(ngModel)]="regionForm.libelle" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Description</label>
+          <input type="text" [(ngModel)]="regionForm.description" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Responsable régional</label>
+          <select [(ngModel)]="regionForm.user" class="input-field">
+            <option [value]="null">— Sélectionner —</option>
+            @for (u of responsablesRegionaux(); track u.id) {
+              <option [value]="u">{{ u.nom }} {{ u.prenom }}</option>
+            }
+          </select>
+        </div>
+      </div>
+    }
+
+    @if (drawerType === 'team') {
+      <div class="flex flex-col gap-4">
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Libellé *</label>
+          <input type="text" [(ngModel)]="teamForm.libelle" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Chef d'équipe</label>
+          <select [(ngModel)]="teamForm.chefEquipe" class="input-field">
+            <option [value]="null">— Sélectionner —</option>
+            @for (u of chefEquipes(); track u.id) {
+              <option [value]="u">{{ u.nom }} {{ u.prenom }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">CDC</label>
+          <select [(ngModel)]="teamForm.cdc" class="input-field">
+            <option [value]="null">— Sélectionner —</option>
+            @for (u of cdcUsers(); track u.id) {
+              <option [value]="u">{{ u.nom }} {{ u.prenom }}</option>
+            }
+          </select>
+        </div>
+      </div>
+    }
+
+    @if (drawerType === 'acj') {
+      <div class="flex flex-col gap-4">
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Libellé *</label>
+          <input type="text" [(ngModel)]="acjForm.libelle" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Description</label>
+          <input type="text" [(ngModel)]="acjForm.description" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Équipe</label>
+          <select [(ngModel)]="acjForm.team" class="input-field">
+            <option [value]="null">— Sélectionner —</option>
+            @for (t of teamsRef(); track t.id) {
+              <option [value]="t">{{ t.libelle }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">ACJ</label>
+          <select [(ngModel)]="acjForm.acj" class="input-field">
+            <option [value]="null">— Sélectionner —</option>
+            @for (u of acjUsers(); track u.id) {
+              <option [value]="u">{{ u.nom }} {{ u.prenom }}</option>
+            }
+          </select>
+        </div>
+      </div>
+    }
+
+  </app-drawer-content>
+
+  <app-drawer-footer>
+    <div class="flex gap-2">
+      <button type="button" (click)="drawerOpen = false"
+        class="flex-1 rounded-md border border-border py-2 text-sm text-muted-foreground hover:bg-muted">
+        Annuler
+      </button>
+      <button type="button" (click)="save()" [disabled]="isSaving()"
+        class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+        <lucide-icon [img]="SaveIcon" [size]="14" /> Enregistrer
+      </button>
+    </div>
+  </app-drawer-footer>
+</app-drawer>

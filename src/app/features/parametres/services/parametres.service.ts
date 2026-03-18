@@ -11,6 +11,18 @@ import {
   UpdateUtilisateurDto,
   Utilisateur,
   ZoneItem,
+  AgenceInfo,
+  UtilisateurMin,
+  NaturePrestation,
+  TypeActivite,
+  TypeCredit,
+  TypeCharge,
+  FraisDossier,
+  SousZone,
+  Zone,
+  Region,
+  Team,
+  ZoneAcj,
 } from '../interfaces/parametres.interface';
 
 @Injectable({ providedIn: 'root' })
@@ -158,6 +170,172 @@ export class ParametresService {
     return this.api
       .post('/updateUserZone', data)
       .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  // ── Config Agences ────────────────────────────────────────────────────────
+  getAgencesInfos() {
+    return this.api.get<{ agences: AgenceInfo[] }>('/agence/listAgenceInfos')
+      .pipe(map((r) => r.agences ?? []), catchError((e) => throwError(() => e)));
+  }
+
+  getCAetCAA() {
+    return this.api.get<{ chefAgence: UtilisateurMin[]; chefAgenceAdjoint: UtilisateurMin[] }>('/users/caAndCaaListe')
+      .pipe(map((r) => ({ ca: r.chefAgence ?? [], caa: r.chefAgenceAdjoint ?? [] })), catchError((e) => throwError(() => e)));
+  }
+
+  getUsersSuperviseurPME() {
+    return this.api.get<{ superviseuPmes: UtilisateurMin[] }>('/users/superviseurPmeListe')
+      .pipe(map((r) => r.superviseuPmes ?? []), catchError((e) => throwError(() => e)));
+  }
+
+  getUsersResponsableReseau() {
+    return this.api.get<{ superviseuPmes: UtilisateurMin[] }>('/users/respoReseauliste')
+      .pipe(map((r) => r.superviseuPmes ?? []), catchError((e) => throwError(() => e)));
+  }
+
+  affecterUtilisateurAgence(data: { user: number; agence: number }) {
+    return this.api.post('/updateUserZone', data)
+      .pipe(catchError((e) => throwError(() => e)));
+  }
+
+  // ── Config ASC ────────────────────────────────────────────────────────────
+  getNaturesPrestationAsc() {
+    return this.api.get<{ naturePrestation: NaturePrestation[] }>('/cheque/liste_nature_prestation')
+      .pipe(map((r) => r.naturePrestation ?? []), catchError((e) => throwError(() => e)));
+  }
+
+  saveNaturePrestationAsc(data: NaturePrestation) {
+    return this.api.post('/cheque/creerNaturePrestation', data)
+      .pipe(catchError((e) => throwError(() => e)));
+  }
+
+  // ── Config Crédit ─────────────────────────────────────────────────────────
+  getTypesActivite() {
+    return this.api.get<{ TypeActivites: TypeActivite[] }>('/credit/gettypeactivite')
+      .pipe(map((r) => r.TypeActivites ?? []), catchError((e) => throwError(() => e)));
+  }
+
+  saveTypeActivite(data: TypeActivite) {
+    return this.api.post('/credit/saveTypeactivite', data)
+      .pipe(catchError((e) => throwError(() => e)));
+  }
+
+  getTypesCredit2() {
+    return this.api.get<{ typeCredits: TypeCredit[] }>('/credit/listeTypeCredit')
+      .pipe(map((r) => r.typeCredits ?? []), catchError((e) => throwError(() => e)));
+  }
+
+  saveTypeCredit(data: TypeCredit) {
+    return this.api.post('/credit/saveTypeCredit', data)
+      .pipe(catchError((e) => throwError(() => e)));
+  }
+
+  getTypesCharge() {
+    return this.api.get<{ crTypeCharges: TypeCharge[] }>('/credit/listeTypeCharge')
+      .pipe(map((r) => r.crTypeCharges ?? []), catchError((e) => throwError(() => e)));
+  }
+
+  saveTypeCharge(data: TypeCharge) {
+    return this.api.post('/credit/saveTypeCharge', data)
+      .pipe(catchError((e) => throwError(() => e)));
+  }
+
+  getFraisDossier() {
+    return this.api.get<{ taxe: FraisDossier[] }>('/credit/listeDroitTaxeCrd')
+      .pipe(map((r) => r.taxe ?? []), catchError((e) => throwError(() => e)));
+  }
+
+  saveFraisDossier(data: FraisDossier) {
+    return this.api.post('/credit/saveTaxeCrd', data)
+      .pipe(catchError((e) => throwError(() => e)));
+  }
+
+  // ── Config Zonification ───────────────────────────────────────────────────
+  getSousZones2() {
+    return this.api.get<{ zones: SousZone[] }>('/sousZones')
+      .pipe(map((r) => r.zones ?? []), catchError((e) => throwError(() => e)));
+  }
+
+  saveSousZone(data: Partial<SousZone>) {
+    return this.api.post('/saveSousZone', data)
+      .pipe(catchError((e) => throwError(() => e)));
+  }
+
+  updateSousZone(id: number, data: Partial<SousZone>) {
+    return this.api.post(`/updateSousZone/${id}`, data)
+      .pipe(catchError((e) => throwError(() => e)));
+  }
+
+  getZones2() {
+    return this.api.get<{ zones: Zone[] }>('/zones')
+      .pipe(map((r) => r.zones ?? []), catchError((e) => throwError(() => e)));
+  }
+
+  saveZone(data: Partial<Zone>) {
+    return this.api.post('/saveZone', data)
+      .pipe(catchError((e) => throwError(() => e)));
+  }
+
+  updateZone(id: number, data: Partial<Zone>) {
+    return this.api.post(`/updateZone/${id}`, data)
+      .pipe(catchError((e) => throwError(() => e)));
+  }
+
+  getRegions() {
+    return this.api.get<{ regions: Region[] }>('/listeRegion')
+      .pipe(map((r) => r.regions ?? []), catchError((e) => throwError(() => e)));
+  }
+
+  saveRegion(data: Partial<Region>) {
+    return this.api.post('/saveRegion', data)
+      .pipe(catchError((e) => throwError(() => e)));
+  }
+
+  // ── Config Zonification — Teams & Zone ACJ ────────────────────────────────
+  getTeams() {
+    return this.api.get<{ allTeams: Team[] }>('/geoloc/listeTeam')
+      .pipe(map((r) => r.allTeams ?? []), catchError((e) => throwError(() => e)));
+  }
+
+  saveTeam(data: Partial<Team>) {
+    return this.api.post('/geoloc/saveTeam', data)
+      .pipe(catchError((e) => throwError(() => e)));
+  }
+
+  getZonesAcj() {
+    return this.api.get<{ zones: ZoneAcj[] }>('/geoloc/zoneAcj')
+      .pipe(map((r) => r.zones ?? []), catchError((e) => throwError(() => e)));
+  }
+
+  saveZoneAcj(data: Partial<ZoneAcj>) {
+    return this.api.post('/geoloc/saveAcjZone', data)
+      .pipe(catchError((e) => throwError(() => e)));
+  }
+
+  // ── Listes utilisateurs pour zonification ────────────────────────────────
+  getResponsablesRegionaux() {
+    return this.api.get<{ regionnaux: UtilisateurMin[] }>('/users/regionnauxListe')
+      .pipe(map((r) => r.regionnaux ?? []), catchError((e) => throwError(() => e)));
+  }
+
+  getSuperviseurs() {
+    return this.api.get<{ superviseurs: UtilisateurMin[] }>('/users/superviseursListe')
+      .pipe(map((r) => r.superviseurs ?? []), catchError((e) => throwError(() => e)));
+  }
+
+  getChefEquipes() {
+    return this.api.get<{ chefEquipes: UtilisateurMin[] }>('/users/chefequipeListe')
+      .pipe(map((r) => r.chefEquipes ?? []), catchError((e) => throwError(() => e)));
+  }
+
+  getCDC() {
+    return this.api.get<{ cdc: UtilisateurMin[] }>('/users/cdcListe')
+      .pipe(map((r) => r.cdc ?? []), catchError((e) => throwError(() => e)));
+  }
+
+  getACJ() {
+    return this.api.get<{ data: UtilisateurMin[] }>('/geoloc/listeAcj')
+      .pipe(map((r) => r.data ?? []), catchError((e) => throwError(() => e)));
   }
 
   // ── Form data (forkJoin) ──────────────────────────────────────────────────

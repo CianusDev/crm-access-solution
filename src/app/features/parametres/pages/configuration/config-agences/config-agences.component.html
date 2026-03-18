@@ -1,0 +1,189 @@
+@if (isLoading()) {
+  <div class="flex justify-center py-16">
+    <span class="h-7 w-7 animate-spin rounded-full border-4 border-primary border-t-transparent"></span>
+  </div>
+} @else {
+  <div class="flex flex-col gap-4">
+
+    <!-- Barre recherche + actualiser -->
+    <div class="flex items-center gap-3">
+      <div class="relative flex-1">
+        <lucide-icon [img]="SearchIcon" [size]="14"
+          class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+        <input type="text" placeholder="Rechercher une agence…"
+          [value]="searchQuery()"
+          (input)="setSearch($any($event.target).value)"
+          class="input-field pl-8 text-sm" />
+      </div>
+      <button type="button" (click)="load()"
+        class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted">
+        <lucide-icon [img]="RefreshIcon" [size]="13" /> Actualiser
+      </button>
+    </div>
+
+    <!-- Grille 3 colonnes -->
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      @for (a of pagedAgences(); track a.id) {
+        <app-card>
+          <app-card-header>
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <app-card-title>{{ a.libelle }}</app-card-title>
+                @if (a.code) {
+                  <span class="mt-0.5 inline-block rounded bg-primary/10 px-1.5 py-0.5 text-xs font-mono text-primary">
+                    {{ a.code }}
+                  </span>
+                }
+              </div>
+              <button type="button" (click)="openDrawer(a)"
+                class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-muted">
+                <lucide-icon [img]="EditIcon" [size]="12" /> Modifier
+              </button>
+            </div>
+          </app-card-header>
+          <app-card-content class="!pt-0">
+
+            <!-- Coordonnées -->
+            <div class="mb-3 flex flex-col gap-1">
+              @if (a.email) {
+                <div class="flex items-center gap-2 text-xs text-muted-foreground">
+                  <lucide-icon [img]="MailIcon" [size]="12" />
+                  <span>{{ a.email }}</span>
+                </div>
+              }
+              @if (a.contact) {
+                <div class="flex items-center gap-2 text-xs text-muted-foreground">
+                  <lucide-icon [img]="PhoneIcon" [size]="12" />
+                  <span>{{ a.contact }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- Affectations (lecture seule) -->
+            <div class="flex flex-col divide-y divide-border">
+              @for (row of [
+                { label: 'Chef d\'agence',         user: a.ca },
+                { label: 'Chef d\'agence adjoint', user: a.caa },
+                { label: 'Superviseur PME',         user: a.suPme },
+                { label: 'Responsable réseau',      user: a.respoReseau }
+              ]; track row.label) {
+                <div class="flex items-center justify-between gap-2 py-1.5">
+                  <span class="text-xs text-muted-foreground">{{ row.label }}</span>
+                  <span class="text-xs font-medium text-foreground">
+                    {{ row.user ? (row.user.nom + ' ' + row.user.prenom) : '—' }}
+                  </span>
+                </div>
+              }
+            </div>
+
+          </app-card-content>
+        </app-card>
+      }
+    </div>
+
+    <!-- Vide -->
+    @if (filteredAgences().length === 0) {
+      <p class="py-12 text-center text-sm text-muted-foreground">Aucune agence trouvée.</p>
+    }
+
+    <!-- Pagination -->
+    @if (filteredAgences().length > PAGE_SIZE) {
+      <app-pagination
+        [total]="filteredAgences().length"
+        [pageSize]="PAGE_SIZE"
+        [currentPage]="currentPage()"
+        (pageChange)="currentPage.set($event)" />
+    }
+
+  </div>
+}
+
+<!-- Drawer d'affectation -->
+<app-drawer [open]="drawerOpen" (openChange)="drawerOpen = $event" panelClass="max-w-sm">
+  @if (selectedAgence) {
+    <app-drawer-header>
+      <app-drawer-title>{{ selectedAgence.libelle }}</app-drawer-title>
+    </app-drawer-header>
+
+    <app-drawer-content>
+      <div class="flex flex-col gap-5">
+
+        <!-- Chef d'agence -->
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Chef d'agence</label>
+          <div class="flex gap-2">
+            <select [(ngModel)]="form.ca" class="input-field flex-1">
+              <option [value]="null">— Sélectionner —</option>
+              @for (u of usersCA(); track u.id) {
+                <option [value]="u.id">{{ u.nom }} {{ u.prenom }}</option>
+              }
+            </select>
+            <button type="button" (click)="saveRole(form.ca)" [disabled]="isSaving() || !form.ca"
+              class="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+              <lucide-icon [img]="SaveIcon" [size]="12" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Chef d'agence adjoint -->
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Chef d'agence adjoint</label>
+          <div class="flex gap-2">
+            <select [(ngModel)]="form.caa" class="input-field flex-1">
+              <option [value]="null">— Sélectionner —</option>
+              @for (u of usersCAA(); track u.id) {
+                <option [value]="u.id">{{ u.nom }} {{ u.prenom }}</option>
+              }
+            </select>
+            <button type="button" (click)="saveRole(form.caa)" [disabled]="isSaving() || !form.caa"
+              class="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+              <lucide-icon [img]="SaveIcon" [size]="12" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Superviseur PME -->
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Superviseur PME</label>
+          <div class="flex gap-2">
+            <select [(ngModel)]="form.suPme" class="input-field flex-1">
+              <option [value]="null">— Sélectionner —</option>
+              @for (u of usersSuPme(); track u.id) {
+                <option [value]="u.id">{{ u.nom }} {{ u.prenom }}</option>
+              }
+            </select>
+            <button type="button" (click)="saveRole(form.suPme)" [disabled]="isSaving() || !form.suPme"
+              class="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+              <lucide-icon [img]="SaveIcon" [size]="12" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Responsable réseau -->
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Responsable réseau</label>
+          <div class="flex gap-2">
+            <select [(ngModel)]="form.respoReseau" class="input-field flex-1">
+              <option [value]="null">— Sélectionner —</option>
+              @for (u of usersRespoReseau(); track u.id) {
+                <option [value]="u.id">{{ u.nom }} {{ u.prenom }}</option>
+              }
+            </select>
+            <button type="button" (click)="saveRole(form.respoReseau)" [disabled]="isSaving() || !form.respoReseau"
+              class="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+              <lucide-icon [img]="SaveIcon" [size]="12" />
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </app-drawer-content>
+
+    <app-drawer-footer>
+      <button type="button" (click)="closeDrawer()"
+        class="w-full rounded-md border border-border py-2 text-sm text-muted-foreground hover:bg-muted">
+        Fermer
+      </button>
+    </app-drawer-footer>
+  }
+</app-drawer>

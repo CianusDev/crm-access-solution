@@ -92,3 +92,99 @@ export interface ZoneItem {
   id: number;
   libelle: string;
 }
+
+// ── Configuration ──────────────────────────────────────────────────────────
+export interface AgenceInfo {
+  id: number;
+  code?: string;
+  libelle: string;
+  email?: string;
+  contact?: string;
+  ca?: UtilisateurMin | null;
+  caa?: UtilisateurMin | null;
+  suPme?: UtilisateurMin | null;
+  respoReseau?: UtilisateurMin | null;
+}
+
+export interface UtilisateurMin {
+  id: number;
+  nom: string;
+  prenom: string;
+}
+
+export interface NaturePrestation {
+  id?: number;
+  libelle: string;
+}
+
+export interface TypeActivite {
+  id?: number;
+  libelle: string;
+  description?: string;
+  nb_jour?: number;
+}
+
+export interface TypeCredit {
+  id?: number;
+  code?: string;
+  libelle: string;
+  nbreEcheMax?: number;
+  mttPlafondCrd?: number;
+  taux?: number;
+  mttMin?: number;
+  cible?: string;
+}
+
+export interface TypeCharge {
+  id?: number;
+  libelle: string;
+}
+
+export interface FraisDossier {
+  id?: number;
+  montantMin?: number;
+  montantMax?: number;
+  droit?: number;
+  emolument?: number;
+  tva?: number;
+  honoraireTTC?: number;
+  hypotheque?: number;
+}
+
+export interface SousZone {
+  id?: number;
+  libelle: string;
+  delimitation?: string;
+  zone?: { id: number; libelle: string };
+  ar?: UtilisateurMin | null;
+}
+
+export interface Zone {
+  id?: number;
+  libelle: string;
+  description?: string;
+  sup?: UtilisateurMin | null;
+  region?: { id: number; libelle: string } | null;
+}
+
+export interface Region {
+  id?: number;
+  libelle: string;
+  description?: string;
+  user?: UtilisateurMin | null;
+}
+
+export interface Team {
+  id?: number;
+  libelle: string;
+  chefEquipe?: UtilisateurMin | null;
+  cdc?: UtilisateurMin | null;
+}
+
+export interface ZoneAcj {
+  id?: number;
+  libelle: string;
+  description?: string;
+  team?: { id: number; libelle: string } | null;
+  acj?: UtilisateurMin | null;
+}

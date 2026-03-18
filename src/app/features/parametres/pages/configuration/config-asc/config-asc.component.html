@@ -1,0 +1,79 @@
+<!-- Barre actions -->
+<div class="mb-4 flex items-center gap-3">
+  <div class="relative flex-1">
+    <lucide-icon [img]="SearchIcon" [size]="14"
+      class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+    <input type="text" placeholder="Rechercher une nature de prestation…"
+      [value]="searchQuery()"
+      (input)="setSearch($any($event.target).value)"
+      class="input-field pl-8 text-sm" />
+  </div>
+  <button type="button" (click)="openCreate()"
+    class="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+    <lucide-icon [img]="PlusIcon" [size]="12" /> Ajouter
+  </button>
+</div>
+
+@if (isLoading()) {
+  <div class="flex justify-center py-16">
+    <span class="h-7 w-7 animate-spin rounded-full border-4 border-primary border-t-transparent"></span>
+  </div>
+} @else {
+
+  <!-- Liste -->
+  <app-card>
+    <app-card-content>
+      <div class="divide-y divide-border">
+        @for (n of pagedNatures(); track n.id) {
+          <div class="flex items-center justify-between py-3">
+            <p class="text-sm font-medium text-foreground">{{ n.libelle }}</p>
+            <button type="button" (click)="openEdit(n)"
+              class="inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted">
+              <lucide-icon [img]="EditIcon" [size]="12" /> Modifier
+            </button>
+          </div>
+        }
+        @if (filteredNatures().length === 0) {
+          <p class="py-8 text-center text-sm text-muted-foreground">Aucune nature de prestation trouvée.</p>
+        }
+      </div>
+    </app-card-content>
+  </app-card>
+
+  @if (filteredNatures().length > PAGE_SIZE) {
+    <div class="mt-4">
+      <app-pagination
+        [total]="filteredNatures().length"
+        [pageSize]="PAGE_SIZE"
+        [currentPage]="currentPage()"
+        (pageChange)="currentPage.set($event)" />
+    </div>
+  }
+}
+
+<!-- Drawer -->
+<app-drawer [open]="drawerOpen" (openChange)="drawerOpen = $event" panelClass="max-w-sm">
+  <app-drawer-header>
+    <app-drawer-title>{{ editingId ? 'Modifier la nature' : 'Nouvelle nature de prestation' }}</app-drawer-title>
+  </app-drawer-header>
+  <app-drawer-content>
+    <div class="flex flex-col gap-4">
+      <div>
+        <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Libellé *</label>
+        <input type="text" [(ngModel)]="form.libelle" class="input-field" placeholder="Ex: Chèque bancaire" />
+      </div>
+    </div>
+  </app-drawer-content>
+  <app-drawer-footer>
+    <div class="flex gap-2">
+      <button type="button" (click)="drawerOpen = false"
+        class="flex-1 rounded-md border border-border py-2 text-sm text-muted-foreground hover:bg-muted">
+        Annuler
+      </button>
+      <button type="button" (click)="save()" [disabled]="isSaving() || !form.libelle.trim()"
+        class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+        <lucide-icon [img]="SaveIcon" [size]="14" /> Enregistrer
+      </button>
+    </div>
+  </app-drawer-footer>
+</app-drawer>

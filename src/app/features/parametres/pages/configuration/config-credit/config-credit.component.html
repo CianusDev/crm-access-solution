@@ -1,0 +1,327 @@
+@if (isLoading()) {
+  <div class="flex justify-center py-16">
+    <span class="h-7 w-7 animate-spin rounded-full border-4 border-primary border-t-transparent"></span>
+  </div>
+} @else {
+<app-tabs>
+
+  <!-- ── Secteurs d'activité ── -->
+  <app-tab label="Secteurs d'activité">
+    <div class="flex flex-col gap-4">
+      <!-- Barre -->
+      <div class="flex items-center gap-3">
+        <div class="relative flex-1">
+          <lucide-icon [img]="SearchIcon" [size]="14"
+            class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <input type="text" placeholder="Rechercher…"
+            [value]="searchActivite()"
+            (input)="setSearch('activite', $any($event.target).value)"
+            class="input-field pl-8 text-sm" />
+        </div>
+        <button type="button" (click)="openActiviteCreate()"
+          class="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+          <lucide-icon [img]="PlusIcon" [size]="12" /> Ajouter
+        </button>
+      </div>
+      <!-- Grille -->
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (a of pagedActivite(); track a.id) {
+          <app-card>
+            <app-card-content>
+              <div class="flex items-start justify-between gap-2 py-1">
+                <div>
+                  <p class="text-sm font-medium text-foreground">{{ a.libelle }}</p>
+                  @if (a.description) { <p class="text-xs text-muted-foreground">{{ a.description }}</p> }
+                  @if (a.nb_jour) { <p class="text-xs text-muted-foreground">{{ a.nb_jour }} jour(s)</p> }
+                </div>
+                <button type="button" (click)="openActiviteEdit(a)"
+                  class="inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted">
+                  <lucide-icon [img]="EditIcon" [size]="12" /> Modifier
+                </button>
+              </div>
+            </app-card-content>
+          </app-card>
+        }
+      </div>
+      @if (filteredActivite().length === 0) {
+        <p class="py-8 text-center text-sm text-muted-foreground">Aucun secteur d'activité.</p>
+      }
+      @if (filteredActivite().length > PAGE_SIZE) {
+        <app-pagination [total]="filteredActivite().length" [pageSize]="PAGE_SIZE"
+          [currentPage]="pageActivite()" (pageChange)="pageActivite.set($event)" />
+      }
+    </div>
+  </app-tab>
+
+  <!-- ── Types de crédit ── -->
+  <app-tab label="Types de crédit">
+    <div class="flex flex-col gap-4">
+      <!-- Barre -->
+      <div class="flex items-center gap-3">
+        <div class="relative flex-1">
+          <lucide-icon [img]="SearchIcon" [size]="14"
+            class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <input type="text" placeholder="Rechercher…"
+            [value]="searchCredit()"
+            (input)="setSearch('credit', $any($event.target).value)"
+            class="input-field pl-8 text-sm" />
+        </div>
+        <button type="button" (click)="openCreditCreate()"
+          class="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+          <lucide-icon [img]="PlusIcon" [size]="12" /> Ajouter
+        </button>
+      </div>
+      <!-- Grille -->
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (t of pagedCredit(); track t.id) {
+          <app-card>
+            <app-card-content>
+              <div class="flex items-start justify-between gap-2 py-1">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    @if (t.code) {
+                      <span class="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-mono text-primary">{{ t.code }}</span>
+                    }
+                    @if (t.cible) {
+                      <span class="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">{{ t.cible }}</span>
+                    }
+                  </div>
+                  <p class="mt-1 text-sm font-medium text-foreground">{{ t.libelle }}</p>
+                  <p class="text-xs text-muted-foreground">
+                    @if (t.taux) { Taux : {{ t.taux }}% }
+                    @if (t.taux && t.mttPlafondCrd) { · }
+                    @if (t.mttPlafondCrd) { Plafond : {{ t.mttPlafondCrd | number }} }
+                  </p>
+                </div>
+                <button type="button" (click)="openCreditEdit(t)"
+                  class="inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted">
+                  <lucide-icon [img]="EditIcon" [size]="12" /> Modifier
+                </button>
+              </div>
+            </app-card-content>
+          </app-card>
+        }
+      </div>
+      @if (filteredCredit().length === 0) {
+        <p class="py-8 text-center text-sm text-muted-foreground">Aucun type de crédit.</p>
+      }
+      @if (filteredCredit().length > PAGE_SIZE) {
+        <app-pagination [total]="filteredCredit().length" [pageSize]="PAGE_SIZE"
+          [currentPage]="pageCredit()" (pageChange)="pageCredit.set($event)" />
+      }
+    </div>
+  </app-tab>
+
+  <!-- ── Types de charge ── -->
+  <app-tab label="Types de charge">
+    <div class="flex flex-col gap-4">
+      <!-- Barre -->
+      <div class="flex items-center gap-3">
+        <div class="relative flex-1">
+          <lucide-icon [img]="SearchIcon" [size]="14"
+            class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <input type="text" placeholder="Rechercher…"
+            [value]="searchCharge()"
+            (input)="setSearch('charge', $any($event.target).value)"
+            class="input-field pl-8 text-sm" />
+        </div>
+        <button type="button" (click)="openChargeCreate()"
+          class="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+          <lucide-icon [img]="PlusIcon" [size]="12" /> Ajouter
+        </button>
+      </div>
+      <!-- Liste -->
+      <app-card>
+        <app-card-content>
+          <div class="divide-y divide-border">
+            @for (c of pagedCharge(); track c.id) {
+              <div class="flex items-center justify-between py-3">
+                <p class="text-sm font-medium text-foreground">{{ c.libelle }}</p>
+                <button type="button" (click)="openChargeEdit(c)"
+                  class="inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted">
+                  <lucide-icon [img]="EditIcon" [size]="12" /> Modifier
+                </button>
+              </div>
+            }
+            @if (filteredCharge().length === 0) {
+              <p class="py-8 text-center text-sm text-muted-foreground">Aucun type de charge.</p>
+            }
+          </div>
+        </app-card-content>
+      </app-card>
+      @if (filteredCharge().length > PAGE_SIZE) {
+        <app-pagination [total]="filteredCharge().length" [pageSize]="PAGE_SIZE"
+          [currentPage]="pageCharge()" (pageChange)="pageCharge.set($event)" />
+      }
+    </div>
+  </app-tab>
+
+  <!-- ── Frais de dossier ── -->
+  <app-tab label="Frais de dossier">
+    <div class="flex flex-col gap-4">
+      <!-- Barre -->
+      <div class="flex items-center gap-3">
+        <div class="relative flex-1">
+          <lucide-icon [img]="SearchIcon" [size]="14"
+            class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <input type="text" placeholder="Rechercher par montant…"
+            [value]="searchFrais()"
+            (input)="setSearch('frais', $any($event.target).value)"
+            class="input-field pl-8 text-sm" />
+        </div>
+        <button type="button" (click)="openFraisCreate()"
+          class="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+          <lucide-icon [img]="PlusIcon" [size]="12" /> Ajouter
+        </button>
+      </div>
+      <!-- Grille -->
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (f of pagedFrais(); track f.id) {
+          <app-card>
+            <app-card-content>
+              <div class="flex items-start justify-between gap-2 py-1">
+                <div>
+                  <p class="text-sm font-medium text-foreground">
+                    {{ f.montantMin | number }} — {{ f.montantMax | number }} FCFA
+                  </p>
+                  <p class="text-xs text-muted-foreground">Droit : {{ f.droit | number }} · TVA : {{ f.tva }}%</p>
+                  @if (f.honoraireTTC) {
+                    <p class="text-xs text-muted-foreground">Honoraire TTC : {{ f.honoraireTTC | number }}</p>
+                  }
+                </div>
+                <button type="button" (click)="openFraisEdit(f)"
+                  class="inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted">
+                  <lucide-icon [img]="EditIcon" [size]="12" /> Modifier
+                </button>
+              </div>
+            </app-card-content>
+          </app-card>
+        }
+      </div>
+      @if (filteredFrais().length === 0) {
+        <p class="py-8 text-center text-sm text-muted-foreground">Aucun frais de dossier.</p>
+      }
+      @if (filteredFrais().length > PAGE_SIZE) {
+        <app-pagination [total]="filteredFrais().length" [pageSize]="PAGE_SIZE"
+          [currentPage]="pageFrais()" (pageChange)="pageFrais.set($event)" />
+      }
+    </div>
+  </app-tab>
+
+</app-tabs>
+}
+
+<!-- Drawer unique pour tous les formulaires crédit -->
+<app-drawer [open]="drawerOpen" (openChange)="drawerOpen = $event" panelClass="max-w-sm">
+  <app-drawer-header>
+    <app-drawer-title>{{ drawerTitle }}</app-drawer-title>
+  </app-drawer-header>
+
+  <app-drawer-content>
+
+    @if (drawerType === 'activite') {
+      <div class="flex flex-col gap-4">
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Libellé *</label>
+          <input type="text" [(ngModel)]="activiteForm.libelle" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Description</label>
+          <input type="text" [(ngModel)]="activiteForm.description" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Nb jours</label>
+          <input type="number" [(ngModel)]="activiteForm.nb_jour" class="input-field" />
+        </div>
+      </div>
+    }
+
+    @if (drawerType === 'credit') {
+      <div class="flex flex-col gap-4">
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Code</label>
+          <input type="text" [(ngModel)]="creditForm.code" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Libellé *</label>
+          <input type="text" [(ngModel)]="creditForm.libelle" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Nb échéances max</label>
+          <input type="number" [(ngModel)]="creditForm.nbreEcheMax" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Montant min</label>
+          <input type="number" [(ngModel)]="creditForm.mttMin" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Plafond</label>
+          <input type="number" [(ngModel)]="creditForm.mttPlafondCrd" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Taux (%)</label>
+          <input type="number" [(ngModel)]="creditForm.taux" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Cible</label>
+          <select [(ngModel)]="creditForm.cible" class="input-field">
+            <option value="">—</option>
+            <option value="PP">PP</option>
+            <option value="PM">PM</option>
+            <option value="PP/PM">PP/PM</option>
+          </select>
+        </div>
+      </div>
+    }
+
+    @if (drawerType === 'charge') {
+      <div>
+        <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Libellé *</label>
+        <input type="text" [(ngModel)]="chargeForm.libelle" class="input-field" />
+      </div>
+    }
+
+    @if (drawerType === 'frais') {
+      <div class="flex flex-col gap-4">
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Montant min</label>
+          <input type="number" [(ngModel)]="fraisForm.montantMin" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Montant max</label>
+          <input type="number" [(ngModel)]="fraisForm.montantMax" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Droit</label>
+          <input type="number" [(ngModel)]="fraisForm.droit" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Émolument</label>
+          <input type="number" [(ngModel)]="fraisForm.emolument" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">TVA (%)</label>
+          <input type="number" [(ngModel)]="fraisForm.tva" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Honoraire TTC</label>
+          <input type="number" [(ngModel)]="fraisForm.honoraireTTC" class="input-field" />
+        </div>
+      </div>
+    }
+
+  </app-drawer-content>
+
+  <app-drawer-footer>
+    <div class="flex gap-2">
+      <button type="button" (click)="drawerOpen = false"
+        class="flex-1 rounded-md border border-border py-2 text-sm text-muted-foreground hover:bg-muted">
+        Annuler
+      </button>
+      <button type="button" (click)="save()" [disabled]="isSaving()"
+        class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+        <lucide-icon [img]="SaveIcon" [size]="14" /> Enregistrer
+      </button>
+    </div>
+  </app-drawer-footer>
+</app-drawer>

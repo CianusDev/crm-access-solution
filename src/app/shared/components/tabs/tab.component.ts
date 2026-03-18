@@ -13,6 +13,9 @@ import { LucideIconData } from 'lucide-angular';
 export class TabComponent {
   @Input({ required: true }) label!: string;
 
+  /** Courte description affichée sous le label, ex: "A.Risque" */
+  @Input() sublabel?: string;
+
   /** Icône lucide-angular optionnelle, ex: [icon]="HomeIcon" */
   @Input() icon?: LucideIconData;
 

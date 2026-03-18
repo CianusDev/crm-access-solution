@@ -41,7 +41,12 @@ import { TabComponent } from './tab.component';
             @if (tab.icon) {
               <lucide-icon [img]="tab.icon" [size]="15" [strokeWidth]="2" class="shrink-0" />
             }
-            {{ tab.label }}
+            <span class="flex flex-col items-start leading-tight">
+              <span>{{ tab.label }}</span>
+              @if (tab.sublabel) {
+                <span class="text-[10px] font-normal opacity-60">{{ tab.sublabel }}</span>
+              }
+            </span>
           </button>
         }
       </div>

@@ -1,6 +1,6 @@
 # CRM Access Solution — Liste des tâches
 
-> Dernière mise à jour : 2026-03-18 (session 7)
+> Dernière mise à jour : 2026-03-18 (session 8)
 > Les tâches sont ordonnées du plus prioritaire au moins prioritaire.
 > Mettre à jour le statut et la date à chaque complétion.
 
@@ -349,26 +349,30 @@
   - Bouton activation/désactivation dans le header via `POST /users/activ_desactiv_employe`
   - Classe utilitaire `.input-field` ajoutée dans `styles.css`
 
-- [ ] **T37** — Implémenter page "Configuration générale" (squelette onglets) `[0.5 j]`
+- [x] **T37** — Implémenter page "Configuration générale" (squelette onglets) `[0.5 j]`
   - Route : `/app/parametres/configuration`
   - FrontEnd ref : `parametrage-page`
   - Onglets : Agences / ASC / Crédit / Zonification
 
-- [ ] **T38** — Sous-onglet "Configuration agences" `[1.5 j]`
+- [x] **T38** — Sous-onglet "Configuration agences" `[1.5 j]`
   - FrontEnd ref : `agence-parametrage`
-  - Dépend de : **T37**
+  - Grille d'agences : 4 postes éditables par agence (CA, CAA, Superviseur PME, Responsable Réseau)
+  - Endpoints : `GET /agence/listAgenceInfos`, `GET /utilisateur/recuperationListeCAetCAA`, `GET /utilisateur/recuperationListeSuperviseurPME`, `GET /utilisateur/recuperationListeResponsableReseau`, `POST /updateUserZone`
 
-- [ ] **T39** — Sous-onglet "Configuration ASC" `[1.5 j]`
+- [x] **T39** — Sous-onglet "Configuration ASC" `[1.5 j]`
   - FrontEnd ref : `asc-parametrage`
-  - Dépend de : **T37**
+  - Liste + CRUD inline des natures de prestation
+  - Endpoints : `GET /cheque/liste_nature_prestation`, `POST /cheque/creerNaturePrestation`
 
-- [ ] **T40** — Sous-onglet "Configuration crédit" `[1.5 j]`
+- [x] **T40** — Sous-onglet "Configuration crédit" `[1.5 j]`
   - FrontEnd ref : `credit-parametrage`
-  - Dépend de : **T37**
+  - 4 sous-onglets : Secteurs d'activité, Types de crédit, Types de charge, Frais de dossier
+  - CRUD inline pour chaque section
 
-- [ ] **T41** — Sous-onglet "Zonification" `[1.5 j]`
+- [x] **T41** — Sous-onglet "Zonification" `[1.5 j]`
   - FrontEnd ref : `zonification-parametrage`
-  - Dépend de : **T37**
+  - 3 sous-onglets : Sous-zones, Zones, Régions (CRUD inline)
+  - Endpoints : `GET/POST /saveSousZone`, `POST /updateSousZone/{id}`, `GET/POST /saveZone`, `POST /updateZone/{id}`, `POST /saveRegion`
 
 ---
 
@@ -382,5 +386,5 @@
 | 🟡 P4 — Exports | T23 → T29 | 8.5 j | ✅ 7 / 7 (T23–T29) |
 | 🟢 P5 — ASC | T30 → T31 | 3 j | ✅ 2 / 2 (T30, T31) |
 | 🟢 P6 — CORA | T32 → T33 | 2 j | ✅ 2 / 2 (T32, T33) |
-| 🔵 P7 — Paramètres | T34 → T41 | 9.75 j | 3 / 8 (T34, T35, T36) |
-| **TOTAL** | **43 tâches** | **~61.5 j** | **41 / 43** |
+| 🔵 P7 — Paramètres | T34 → T41 | 9.75 j | ✅ 8 / 8 (T34–T41) |
+| **TOTAL** | **43 tâches** | **~61.5 j** | **✅ 43 / 43** |
