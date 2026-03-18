@@ -236,3 +236,8 @@
     transform: scale(var(--tw-exit-scale, 0.95));
   }
 }
+
+/* Utilitaire champ de formulaire réutilisable */
+.input-field {
+  @apply w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary;
+}

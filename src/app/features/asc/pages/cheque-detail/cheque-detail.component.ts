@@ -13,6 +13,8 @@ import {
   CardTitleComponent,
 } from '@/shared/components/card/card.component';
 import { AscService } from '../../services/asc/asc.service';
+import { Avatar } from '@/shared/components/avatar/avatar.component';
+import { InitialesPipe } from '@/shared/pipes/initiales.pipe';
 import { AscCheque } from '../../interfaces/asc.interface';
 
 const STATUT_INFO: Record<number, { label: string; cls: string }> = {
@@ -50,6 +52,8 @@ const CHECKLIST_LABELS = [
     CardContentComponent,
     CardHeaderComponent,
     CardTitleComponent,
+    Avatar,
+    InitialesPipe,
   ],
   templateUrl: './cheque-detail.component.html',
 })

@@ -133,7 +133,7 @@
                 class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold"
                 [class]="avatarColor(cora.statut)"
               >
-                {{ initiales(cora.designation) }}
+                {{ cora.designation | initiales }}
               </div>
               <div class="flex flex-col min-w-0">
                 <span class="font-semibold text-foreground truncate">{{ cora.designation }}</span>

@@ -32,6 +32,8 @@ import {
 } from 'lucide-angular';
 import { Cora, CoraAgent } from '../../interfaces/cora.interface';
 import { DatePipe, DecimalPipe, UpperCasePipe } from '@angular/common';
+import { Avatar } from '@/shared/components/avatar/avatar.component';
+import { getInitiales, InitialesPipe } from '@/shared/pipes/initiales.pipe';
 
 const FORME_JURIDIQUE: Record<number, string> = {
   1: 'ENTREPRISE INDIVIDUELLE',
@@ -88,6 +90,8 @@ const AGENT_STATUT_VARIANT: Record<number, BadgeVariant> = {
     DatePipe,
     DecimalPipe,
     UpperCasePipe,
+    Avatar,
+    InitialesPipe,
   ],
 })
 export class DetailCoraComponent {
@@ -106,14 +110,7 @@ export class DetailCoraComponent {
   // Resolver data
   readonly cora = input<Cora>();
 
-  readonly initiales = computed(() => {
-    return (this.cora()?.designation ?? '')
-      .split(' ')
-      .slice(0, 2)
-      .map((w) => w[0] ?? '')
-      .join('')
-      .toUpperCase();
-  });
+  readonly initiales = computed(() => getInitiales(this.cora()?.designation));
 
   readonly formeJuridique = computed(() =>
     FORME_JURIDIQUE[this.cora()?.formuleJuridique ?? 0] ?? '—',

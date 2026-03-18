@@ -314,12 +314,12 @@
 
 ---
 
-## 🔵 PRIORITÉ 7 — Paramétrage
+## 🔵 PRIORITÉ 7 — Paramètres
 > Accès réservé Admin/DG/DGA. Dépend de T01/T03.
 
 | ID | Tâche | Estimation |
 |---|---|---|
-| T34 | Entrée Paramétrage dans la sidebar | 0.25 j |
+| T34 | Entrée Paramètres dans la sidebar | 0.25 j |
 | T35 | Liste des utilisateurs | 1.5 j |
 | T36 | Détail d'un utilisateur | 1.5 j |
 | T37 | Page configuration générale (squelette onglets) | 0.5 j |
@@ -329,21 +329,28 @@
 | T41 | Sous-onglet zonification | 1.5 j |
 | | **Sous-total P7** | **9.75 j** |
 
-- [ ] **T34** — Ajouter module Paramétrage dans la sidebar (conditionné par rôle) `[0.25 j]`
-  - Dépend de : **T01**, **T02**
+- [x] **T34** — Ajouter module Paramètres dans la sidebar (conditionné par rôle) `[0.25 j]`
+  - Feature `parametres` créée : `interfaces/`, `services/`, `pages/`, `parametres.route.ts`
+  - Route `/app/parametres` protégée par `roleGuard([Admin, DG, DGA])`
+  - Sidebar : section "Paramètres" avec icône `SlidersHorizontal` (Utilisateurs + Configuration)
+  - `PARAMETRES_ROUTES` enregistré dans `app.routes.ts`
 
-- [ ] **T35** — Implémenter page "Liste des utilisateurs" `[1.5 j]`
-  - Route : `/app/parametrage/utilisateurs`
-  - FrontEnd ref : `utilisateur-liste`
-  - Tableau avec filtres + pagination
-  - Dépend de : **T03**
+- [x] **T35** — Implémenter page "Liste des utilisateurs" `[1.5 j]`
+  - Route : `/app/parametres/utilisateurs`
+  - Endpoint : `GET /users/all` → `data.data`
+  - Tableau paginé (15/page) : avatar initiales, nom/email, profil badge, agence, service, statut
+  - Recherche inline (nom, email, profil, agence, matricule), bouton refresh
+  - Click ligne → `/app/parametres/utilisateurs/:id`
 
-- [ ] **T36** — Implémenter page "Détail d'un utilisateur" `[1.5 j]`
-  - Route : `/app/parametrage/utilisateurs/:id`
-  - FrontEnd ref : `utilisateur-detail`
+- [x] **T36** — Implémenter page "Détail d'un utilisateur" `[1.5 j]`
+  - Route : `/app/parametres/utilisateurs/:id`
+  - Endpoint : `GET /users/show_user/{id}` + forkJoin profils/services/agences/communes
+  - 4 onglets : Informations (form complet) | Sécurité (mdp + code AR/GP) | Permissions crédit (AR/GP/CHARGE_COMIT) | Zonification (AR/SUP_RISQ_ZONE)
+  - Bouton activation/désactivation dans le header via `POST /users/activ_desactiv_employe`
+  - Classe utilitaire `.input-field` ajoutée dans `styles.css`
 
 - [ ] **T37** — Implémenter page "Configuration générale" (squelette onglets) `[0.5 j]`
-  - Route : `/app/parametrage/configuration`
+  - Route : `/app/parametres/configuration`
   - FrontEnd ref : `parametrage-page`
   - Onglets : Agences / ASC / Crédit / Zonification
 
@@ -375,5 +382,5 @@
 | 🟡 P4 — Exports | T23 → T29 | 8.5 j | ✅ 7 / 7 (T23–T29) |
 | 🟢 P5 — ASC | T30 → T31 | 3 j | ✅ 2 / 2 (T30, T31) |
 | 🟢 P6 — CORA | T32 → T33 | 2 j | ✅ 2 / 2 (T32, T33) |
-| 🔵 P7 — Paramétrage | T34 → T41 | 9.75 j | 0 / 8 |
-| **TOTAL** | **43 tâches** | **~61.5 j** | **38 / 43** |
+| 🔵 P7 — Paramètres | T34 → T41 | 9.75 j | 3 / 8 (T34, T35, T36) |
+| **TOTAL** | **43 tâches** | **~61.5 j** | **41 / 43** |

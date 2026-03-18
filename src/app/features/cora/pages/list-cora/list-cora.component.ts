@@ -22,6 +22,7 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { FormSelect } from '@/shared/components/form-select/form-select.component';
 import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { CoraMapComponent } from '../../components/cora-map/cora-map.component';
+import { InitialesPipe } from '@/shared/pipes/initiales.pipe';
 
 const PAGE_SIZE = 10;
 
@@ -62,6 +63,7 @@ const STATUT_LABELS: Record<number, string> = {
     FormSelect,
     FormInput,
     CoraMapComponent,
+    InitialesPipe,
   ],
 })
 export class ListCoraComponent implements OnInit {
@@ -317,15 +319,6 @@ export class ListCoraComponent implements OnInit {
     URL.revokeObjectURL(url);
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
-  initiales(designation: string): string {
-    return (designation ?? '')
-      .split(' ')
-      .slice(0, 2)
-      .map((w) => w[0] ?? '')
-      .join('')
-      .toUpperCase();
-  }
 
   avatarColor(statut: number): string {
     return STATUT_COLORS[statut] ?? 'bg-muted text-muted-foreground';

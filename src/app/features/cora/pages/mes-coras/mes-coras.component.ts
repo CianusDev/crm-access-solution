@@ -11,6 +11,8 @@ import { PaginationComponent } from '@/shared/components/pagination/pagination.c
 import { Cora } from '../../interfaces/cora.interface';
 import { CoraService } from '../../services/cora/cora.service';
 import { ToastService } from '@/core/services/toast/toast.service';
+import { Avatar } from '@/shared/components/avatar/avatar.component';
+import { InitialesPipe } from '@/shared/pipes/initiales.pipe';
 
 const STATUT_LABELS: Record<number, string> = {
   0: 'Inactif',
@@ -42,6 +44,8 @@ const PAGE_SIZE = 10;
     CardHeaderComponent,
     CardTitleComponent,
     PaginationComponent,
+    Avatar,
+    InitialesPipe,
   ],
 })
 export class MesCoras implements OnInit {
@@ -99,9 +103,6 @@ export class MesCoras implements OnInit {
 
   viewDetail(id: number) { this.router.navigate(['/app/cora', id]); }
 
-  initiales(designation: string): string {
-    return (designation ?? '').split(' ').slice(0, 2).map((w) => w[0] ?? '').join('').toUpperCase();
-  }
 
   statutLabel(s: number): string  { return STATUT_LABELS[s]  ?? '—'; }
   statutClass(s: number): string  { return STATUT_CLASSES[s] ?? 'bg-muted text-muted-foreground'; }

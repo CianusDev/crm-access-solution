@@ -9,6 +9,8 @@ import {
   CardTitleComponent,
 } from '@/shared/components/card/card.component';
 import { PaginationComponent } from '@/shared/components/pagination/pagination.component';
+import { Avatar } from '@/shared/components/avatar/avatar.component';
+import { InitialesPipe } from '@/shared/pipes/initiales.pipe';
 import { AscDemande } from '../../interfaces/asc.interface';
 
 @Component({
@@ -23,6 +25,8 @@ import { AscDemande } from '../../interfaces/asc.interface';
     CardHeaderComponent,
     CardTitleComponent,
     PaginationComponent,
+    Avatar,
+    InitialesPipe,
   ],
 })
 export class ChequesAttenteComponent {

@@ -29,9 +29,7 @@
         <app-card-content class="!pt-6">
           <!-- Avatar + nom -->
           <div class="flex items-center gap-4">
-            <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary">
-              {{ initiales() }}
-            </div>
+            <app-avatar [initials]="initiales()" size="xl" />
             <div>
               <h2 class="text-lg font-bold text-foreground">{{ c.designation }}</h2>
               <p class="text-sm text-muted-foreground">{{ c.email }}</p>
@@ -133,9 +131,7 @@
         </app-card-header>
         <app-card-content>
           <div class="flex flex-col items-center gap-3 text-center">
-            <div class="flex h-14 w-14 items-center justify-center rounded-full bg-muted text-lg font-bold text-foreground">
-              {{ (c.user.nom[0] + c.user.prenom[0]) | uppercase }}
-            </div>
+            <app-avatar [initials]="c.user.nom | initiales:c.user.prenom" size="lg" />
             <div>
               <p class="font-bold text-foreground uppercase">{{ c.user.nom }}</p>
               <p class="text-sm text-foreground">{{ c.user.prenom }}</p>

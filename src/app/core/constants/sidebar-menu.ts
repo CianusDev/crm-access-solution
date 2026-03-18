@@ -13,6 +13,7 @@ import {
   AlarmClock,
   CreditCard,
   FilePlus,
+  SlidersHorizontal,
 } from 'lucide-angular';
 
 export const DEFAULT_MENU: SidebarGroup[] = [
@@ -57,6 +58,14 @@ export const DEFAULT_MENU: SidebarGroup[] = [
       { label: 'Liste des chèques', href: '/app/asc/list', icon: List },
       { label: 'Liste des tireurs', href: '/app/asc/tireurs', icon: Users },
       { label: 'Chèques en attente (7j)', href: '/app/asc/cheques-attente', icon: AlarmClock },
+    ],
+  },
+  {
+    label: 'Paramètres',
+    icon: SlidersHorizontal,
+    items: [
+      { label: 'Utilisateurs', href: '/app/parametres/utilisateurs', icon: Users },
+      { label: 'Configuration', href: '/app/parametres/configuration', icon: Settings },
     ],
   },
 ];

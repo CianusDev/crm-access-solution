@@ -10,6 +10,7 @@ import { coraRoutes } from './features/cora/cora.route';
 import { CoraService } from './features/cora/services/cora/cora.service';
 import { ASC_ROUTES } from './features/asc/asc.route';
 import { CREDIT_ROUTES } from './features/credit/credit.route';
+import { PARAMETRES_ROUTES } from './features/parametres/parametres.route';
 
 export const routes: Routes = [
   {
@@ -77,6 +78,7 @@ export const routes: Routes = [
             path: 'credit',
             children: CREDIT_ROUTES,
           },
+          PARAMETRES_ROUTES,
         ],
       },
     ],

@@ -15,6 +15,7 @@ import { LucideAngularModule, Search, Eye, RefreshCw } from 'lucide-angular';
 import { AgentEnAttente } from '../../interfaces/cora.interface';
 import { CoraService } from '../../services/cora/cora.service';
 import { ToastService } from '@/core/services/toast/toast.service';
+import { InitialesPipe } from '@/shared/pipes/initiales.pipe';
 
 const PAGE_SIZE = 10;
 
@@ -52,6 +53,7 @@ const STATUT_VARIANT: Record<number, BadgeVariant> = {
     PaginationComponent,
     ButtonDirective,
     LucideAngularModule,
+    InitialesPipe,
   ],
 })
 export class PendingCoraComponent implements OnInit {
@@ -138,12 +140,4 @@ export class PendingCoraComponent implements OnInit {
       : 'bg-muted text-muted-foreground';
   }
 
-  initiales(designation?: string): string {
-    return (designation ?? '')
-      .split(' ')
-      .slice(0, 2)
-      .map((w) => w[0] ?? '')
-      .join('')
-      .toUpperCase();
-  }
 }

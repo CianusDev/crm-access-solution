@@ -1,10 +1,17 @@
-<div class="shrink-0 rounded-full border border-gray-400 overflow-hidden relative" [class]="sizeClasses()">
-  <img
-    [ngSrc]="imgSrc()"
-    alt="Avatar"
-    width="50"
-    height="50"
-    priority
-    class="size-full object-contain"
-  />
-</div>
+@if (initials()) {
+  <div class="shrink-0 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center select-none"
+    [class]="sizeClasses()">
+    {{ initials() }}
+  </div>
+} @else {
+  <div class="shrink-0 rounded-full border border-gray-400 overflow-hidden relative" [class]="sizeClasses()">
+    <img
+      [ngSrc]="src() ?? '/assets/illustrations/user-placeholder.png'"
+      alt="Avatar"
+      width="50"
+      height="50"
+      priority
+      class="size-full object-contain"
+    />
+  </div>
+}

@@ -18,6 +18,8 @@ import {
 import { AgentCoraDetail, Decision, Evaluation, FileCoraModel } from '../../interfaces/cora.interface';
 import { CoraService } from '../../services/cora/cora.service';
 import { ToastService } from '@/core/services/toast/toast.service';
+import { Avatar } from '@/shared/components/avatar/avatar.component';
+import { getInitiales } from '@/shared/pipes/initiales.pipe';
 import { DatePipe, UpperCasePipe } from '@angular/common';
 
 const STATUT_LABEL: Record<number, string> = {
@@ -69,6 +71,7 @@ const IMG_TYPES = [
     TabsComponent, TabComponent,
     GoogleMap, MapMarker,
     LucideAngularModule, DatePipe, UpperCasePipe,
+    Avatar,
   ],
 })
 export class DetailAgentComponent {
@@ -96,10 +99,7 @@ export class DetailAgentComponent {
   readonly isSubmitting = signal(false);
 
   // ── Computed ──────────────────────────────────────────────────────────────
-  readonly initiales = computed(() =>
-    (this.agent()?.cora?.designation ?? '')
-      .split(' ').slice(0, 2).map((w) => w[0] ?? '').join('').toUpperCase(),
-  );
+  readonly initiales = computed(() => getInitiales(this.agent()?.cora?.designation));
 
   readonly mapCenter = computed((): google.maps.LatLngLiteral | null => {
     const a = this.agent();

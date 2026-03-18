@@ -1,0 +1,346 @@
+@if (isLoading()) {
+  <div class="flex items-center justify-center py-32">
+    <span class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></span>
+  </div>
+} @else if (user()) {
+<div class="flex flex-col gap-6 mt-4">
+
+  <!-- Header -->
+  <div class="flex items-center gap-4">
+    <button type="button" (click)="goBack()"
+      class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted">
+      <lucide-icon [img]="ArrowLeftIcon" [size]="16" />
+    </button>
+    <div class="flex items-center gap-3">
+      <app-avatar [initials]="initiales()" size="md" />
+      <div>
+        <h1 class="text-xl font-bold text-foreground">{{ user()!.nom | uppercase }} {{ user()!.prenom }}</h1>
+        <p class="text-sm text-muted-foreground">{{ user()!.email }}</p>
+      </div>
+    </div>
+    <div class="ml-auto flex items-center gap-2">
+      <span class="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+        {{ user()!.profil?.name ?? '—' }}
+      </span>
+      <span class="rounded-full px-2.5 py-0.5 text-xs font-medium" [ngClass]="statutInfo(user()!.statut).class">
+        {{ statutInfo(user()!.statut).label }}
+      </span>
+      <!-- Toggle statut -->
+      <button type="button" (click)="changerStatut()" [disabled]="isSaving()"
+        class="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted disabled:opacity-50">
+        <lucide-icon [img]="user()!.statut === 1 ? ToggleRightIcon : ToggleLeftIcon" [size]="14" />
+        {{ user()!.statut === 1 ? 'Désactiver' : 'Activer' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <app-tabs>
+
+    <!-- ── Informations ── -->
+    <app-tab label="Informations">
+      <app-card>
+        <app-card-header>
+          <app-card-title>Informations générales</app-card-title>
+        </app-card-header>
+        <app-card-content>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted-foreground">Nom *</label>
+              <input type="text" [(ngModel)]="infoForm.nom" class="input-field" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted-foreground">Prénom *</label>
+              <input type="text" [(ngModel)]="infoForm.prenom" class="input-field" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted-foreground">Email *</label>
+              <input type="email" [(ngModel)]="infoForm.email" class="input-field" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted-foreground">Téléphone</label>
+              <input type="text" [(ngModel)]="infoForm.phone" class="input-field" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted-foreground">Flotte</label>
+              <input type="text" [(ngModel)]="infoForm.flotte" class="input-field" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted-foreground">Matricule</label>
+              <input type="text" [(ngModel)]="infoForm.matricule" class="input-field" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted-foreground">Sexe</label>
+              <select [(ngModel)]="infoForm.sexe" class="input-field">
+                <option value="">—</option>
+                <option value="M">Masculin</option>
+                <option value="F">Féminin</option>
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted-foreground">Date de naissance</label>
+              <input type="date" [(ngModel)]="infoForm.dateNaissance" class="input-field" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted-foreground">Fonction</label>
+              <input type="text" [(ngModel)]="infoForm.fonction" class="input-field" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted-foreground">Profil *</label>
+              <select [(ngModel)]="infoForm.profil" class="input-field">
+                @for (p of profils(); track p.id) {
+                  <option [value]="p.id">{{ p.name }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted-foreground">Service *</label>
+              <select [(ngModel)]="infoForm.service" class="input-field">
+                @for (s of services(); track s.id) {
+                  <option [value]="s.id">{{ s.libelle }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted-foreground">Agence *</label>
+              <select [(ngModel)]="infoForm.agence" class="input-field">
+                @for (a of agences(); track a.id) {
+                  <option [value]="a.id">{{ a.libelle }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted-foreground">Commune *</label>
+              <select [(ngModel)]="infoForm.commune" class="input-field">
+                @for (c of communes(); track c.id) {
+                  <option [value]="c.id">{{ c.libelle }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted-foreground">Situation matrimoniale</label>
+              <select [(ngModel)]="infoForm.situationMatri" class="input-field">
+                <option value="">—</option>
+                <option value="Célibataire">Célibataire</option>
+                <option value="Marié(e)">Marié(e)</option>
+                <option value="Divorcé(e)">Divorcé(e)</option>
+                <option value="Veuf(ve)">Veuf(ve)</option>
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted-foreground">Nationalité</label>
+              <input type="text" [(ngModel)]="infoForm.nationalite" class="input-field" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted-foreground">Type pièce</label>
+              <select [(ngModel)]="infoForm.typPiece" class="input-field">
+                <option value="">—</option>
+                <option value="CNI">CNI</option>
+                <option value="Passeport">Passeport</option>
+                <option value="Carte de séjour">Carte de séjour</option>
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted-foreground">N° pièce</label>
+              <input type="text" [(ngModel)]="infoForm.numPiece" class="input-field" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted-foreground">Adresse</label>
+              <input type="text" [(ngModel)]="infoForm.adresse" class="input-field" />
+            </div>
+
+          </div>
+
+          <div class="mt-6 flex justify-end">
+            <button type="button" (click)="saveInfo()" [disabled]="isSaving()"
+              class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+              <lucide-icon [img]="SaveIcon" [size]="14" />
+              {{ isSaving() ? 'Enregistrement…' : 'Enregistrer' }}
+            </button>
+          </div>
+        </app-card-content>
+      </app-card>
+    </app-tab>
+
+    <!-- ── Sécurité ── -->
+    <app-tab label="Sécurité">
+      <div class="flex flex-col gap-4">
+
+        <!-- Mot de passe -->
+        <app-card>
+          <app-card-header>
+            <app-card-title>Mot de passe</app-card-title>
+          </app-card-header>
+          <app-card-content>
+            @if (isAdmin()) {
+              <p class="text-sm text-muted-foreground mb-4">
+                En tant qu'administrateur, vous pouvez générer un nouveau mot de passe aléatoire pour cet utilisateur.
+              </p>
+              <button type="button" (click)="changerMotPasse()" [disabled]="isSaving()"
+                class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                <lucide-icon [img]="KeyRoundIcon" [size]="14" />
+                Générer un nouveau mot de passe
+              </button>
+            } @else {
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-muted-foreground">Ancien mot de passe</label>
+                  <input type="password" [(ngModel)]="pwdForm.old_password" class="input-field" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-muted-foreground">Nouveau mot de passe</label>
+                  <input type="password" [(ngModel)]="pwdForm.password" class="input-field" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-muted-foreground">Confirmer</label>
+                  <input type="password" [(ngModel)]="pwdForm.password_confirmation" class="input-field" />
+                </div>
+              </div>
+              <div class="mt-4 flex justify-end">
+                <button type="button" (click)="changerMotPasse()" [disabled]="isSaving()"
+                  class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                  <lucide-icon [img]="SaveIcon" [size]="14" />
+                  Changer le mot de passe
+                </button>
+              </div>
+            }
+          </app-card-content>
+        </app-card>
+
+        <!-- Code utilisateur (AR / GP) -->
+        @if (showCode()) {
+          <app-card>
+            <app-card-header>
+              <app-card-title>Code utilisateur</app-card-title>
+            </app-card-header>
+            <app-card-content>
+              <div class="flex items-end gap-3">
+                <div class="flex-1 max-w-xs">
+                  <label class="mb-1 block text-xs font-medium text-muted-foreground">Code</label>
+                  <input type="text" [(ngModel)]="codeForm.code" class="input-field" />
+                </div>
+                <button type="button" (click)="updateCode()" [disabled]="isSaving()"
+                  class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                  <lucide-icon [img]="SaveIcon" [size]="14" />
+                  Mettre à jour
+                </button>
+              </div>
+            </app-card-content>
+          </app-card>
+        }
+
+      </div>
+    </app-tab>
+
+    <!-- ── Permissions crédit ── -->
+    @if (showPermissions()) {
+      <app-tab label="Permissions crédit">
+        <app-card>
+          <app-card-header>
+            <div class="flex items-center justify-between">
+              <app-card-title>Types de crédit</app-card-title>
+              @if (canEditPermissions()) {
+                <button type="button" (click)="savePermissions()" [disabled]="isSaving()"
+                  class="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                  <lucide-icon [img]="SaveIcon" [size]="12" />
+                  Enregistrer
+                </button>
+              }
+            </div>
+          </app-card-header>
+          <app-card-content class="!p-0 !pt-0">
+            @if (permissions().length === 0) {
+              <p class="px-4 py-8 text-center text-sm text-muted-foreground">Chargement des types de crédit…</p>
+            } @else {
+              <!-- Header -->
+              <div class="flex items-center border-b border-border px-4 py-2 text-xs font-medium text-muted-foreground">
+                <span class="flex-1">Type de crédit</span>
+                <span class="w-28 text-center">Principal</span>
+                <span class="w-28 text-center">Back-up</span>
+                <span class="w-28 text-center">Aucune</span>
+              </div>
+              <div class="divide-y divide-border">
+                @for (p of permissions(); track p.typeCredit; let i = $index) {
+                  <div class="flex items-center px-4 py-3">
+                    <span class="flex-1 text-sm text-foreground">{{ p.libelle }}</span>
+                    <!-- Principal -->
+                    <div class="w-28 flex justify-center">
+                      <input type="radio"
+                        [name]="'perm-' + p.typeCredit"
+                        value="1"
+                        [ngModel]="p.type"
+                        (ngModelChange)="updatePermType(i, $event)"
+                        [disabled]="!canEditPermissions()"
+                        class="h-4 w-4 accent-primary" />
+                    </div>
+                    <!-- Back-up -->
+                    <div class="w-28 flex justify-center">
+                      <input type="radio"
+                        [name]="'perm-' + p.typeCredit"
+                        value="2"
+                        [ngModel]="p.type"
+                        (ngModelChange)="updatePermType(i, $event)"
+                        [disabled]="!canEditPermissions()"
+                        class="h-4 w-4 accent-primary" />
+                    </div>
+                    <!-- Aucune -->
+                    <div class="w-28 flex justify-center">
+                      <input type="radio"
+                        [name]="'perm-' + p.typeCredit"
+                        value="0"
+                        [ngModel]="p.type"
+                        (ngModelChange)="updatePermType(i, $event)"
+                        [disabled]="!canEditPermissions()"
+                        class="h-4 w-4 accent-primary" />
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </app-card-content>
+        </app-card>
+      </app-tab>
+    }
+
+    <!-- ── Zonification ── -->
+    @if (showZonification()) {
+      <app-tab label="Zonification">
+        <app-card>
+          <app-card-header>
+            <app-card-title>{{ showSousZone() ? 'Sous-zone' : 'Zone' }}</app-card-title>
+          </app-card-header>
+          <app-card-content>
+            <div class="flex items-end gap-3">
+              <div class="flex-1 max-w-xs">
+                <label class="mb-1 block text-xs font-medium text-muted-foreground">
+                  {{ showSousZone() ? 'Sous-zone assignée' : 'Zone assignée' }}
+                </label>
+                <select [ngModel]="zoneId()" (ngModelChange)="zoneId.set($event)" class="input-field">
+                  <option [value]="null">— Sélectionner —</option>
+                  @for (z of showSousZone() ? sousZones() : zones(); track z.id) {
+                    <option [value]="z.id">{{ z.libelle }}</option>
+                  }
+                </select>
+              </div>
+              <button type="button" (click)="saveZone()" [disabled]="isSaving() || !zoneId()"
+                class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                <lucide-icon [img]="SaveIcon" [size]="14" />
+                Affecter
+              </button>
+            </div>
+          </app-card-content>
+        </app-card>
+      </app-tab>
+    }
+
+  </app-tabs>
+
+</div>
+} @else {
+  <div class="flex flex-col items-center gap-3 py-24 text-center">
+    <lucide-icon [img]="UserIcon" [size]="40" class="text-muted-foreground/30" />
+    <p class="text-sm text-muted-foreground">Utilisateur introuvable.</p>
+    <button type="button" (click)="goBack()" class="text-xs text-primary underline">Retour</button>
+  </div>
+}

@@ -23,9 +23,7 @@
         <app-card>
           <app-card-content class="!pt-6">
             <div class="flex flex-col items-center gap-2 text-center">
-              <div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary">
-                {{ initiales() }}
-              </div>
+              <app-avatar [initials]="initiales()" size="xl" />
               <div>
                 <h2 class="font-bold text-foreground">{{ a.cora?.designation ?? '—' }}</h2>
                 <p class="text-sm text-muted-foreground">{{ a.nomPrenom }}</p>

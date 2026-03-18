@@ -181,9 +181,7 @@
             @if (c.client; as cl) {
               <div class="flex flex-col gap-3">
                 <div class="flex items-center gap-3">
-                  <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                    {{ cl.nomPrenom.slice(0, 2).toUpperCase() }}
-                  </div>
+                  <app-avatar [initials]="cl.nomPrenom | initiales" size="md" />
                   <div class="min-w-0">
                     <p class="text-sm font-semibold text-foreground truncate">{{ cl.nomPrenom }}</p>
                     <p class="text-xs text-muted-foreground font-mono">{{ cl.codeClient }}</p>
