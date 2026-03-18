@@ -71,6 +71,9 @@ export class AnalyseCreditComponent implements OnInit {
   // ── State ──────────────────────────────────────────────────────────────
   readonly ref = signal('');
   readonly isLoading = signal(false);
+  /** Données d'en-tête (client, statut) depuis getFicheCredit */
+  readonly ficheHeader = signal<CreditFicheDemandeDetail | null>(null);
+  /** Données d'analyse (activités, achats…) depuis getAnalyseFinanciere */
   readonly demande = signal<CreditFicheDemandeDetail | null>(null);
   readonly error = signal<string | null>(null);
   readonly activeTab = signal<TabId>('activite');
@@ -86,6 +89,13 @@ export class AnalyseCreditComponent implements OnInit {
   loadHeader() {
     this.isLoading.set(true);
     this.error.set(null);
+
+    // Chargement en parallèle : fiche (en-tête) + analyse (sections)
+    this.creditService.getFicheCredit(this.ref()).subscribe({
+      next: (fiche) => this.ficheHeader.set(fiche.demande),
+      error: () => {},
+    });
+
     this.creditService.getAnalyseFinanciere(this.ref()).subscribe({
       next: (data) => {
         if (!data?.demande) {
@@ -93,7 +103,7 @@ export class AnalyseCreditComponent implements OnInit {
           this.isLoading.set(false);
           return;
         }
-        this.demande.set(data.demande);
+        this.demande.set(data.demande as CreditFicheDemandeDetail);
         this.isLoading.set(false);
       },
       error: () => {

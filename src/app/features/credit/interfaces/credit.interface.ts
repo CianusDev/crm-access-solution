@@ -205,6 +205,85 @@ export interface CreditTbProduit {
   valide: CreditTbStatut;
 }
 
+// ── Tirage découvert ──────────────────────────────────────────────────────────
+export interface CreditDemandeDecouvert extends CreditDemande {
+  dateEffet?: string;
+}
+
+export interface CreditTirageSearch {
+  demande: CreditDemandeDecouvert;
+  decision: { montantEmprunte?: number; montantPropose?: number };
+  tirages: CreditDemande[];
+}
+
+export interface CreditSaveTirage {
+  codeClient: string;
+  typeCredit: number;
+  objetCredit: string;
+  typeActivite: number;
+  montantSollicite: number;
+  nbreEcheanceSollicite: number;
+  montantEcheSouhaite: number;
+  nbreEcheDiffere?: number | null;
+  description: string;
+  numDmde: string;
+}
+
+// ── Employeurs éligibles ──────────────────────────────────────────────────────
+
+export interface EmployeurSecteurActivite {
+  id: number;
+  libelle: string;
+}
+
+export interface EmployeurObservation {
+  id?: number;
+  action?: string;
+  observation?: string;
+  date?: string;
+  user?: { nomPrenom?: string; profil?: { libelle?: string } };
+}
+
+export interface EmployeurDocument {
+  id: number;
+  libelle: string;
+  description?: string;
+  lien?: string;
+  createdAt?: string;
+}
+
+export interface Employeur {
+  id?: number;
+  nomEntreprise?: string;
+  secteurActivite?: EmployeurSecteurActivite | EmployeurSecteurActivite[];
+  capitalSocial?: number;
+  formuleJuridique?: number;
+  dateCreation?: string;
+  associes?: number;
+  banque?: string | string[];
+  clients?: string[];
+  fournisseurs?: string[];
+  masseSalariale?: number;
+  chiffreAffaire?: number;
+  nbreCddEnt?: number;
+  nbreCddCA?: number;
+  nbreCdiEnt?: number;
+  nbreCdiCA?: number;
+  nbreAgentmEnt?: number;
+  nbreAgentmCA?: number;
+  nbreCadreEnt?: number;
+  nbreCadreCA?: number;
+  nbreEmplEnt?: number;
+  nbreEmplCA?: number;
+  nbreEmplBacarise?: number;
+  commentaire?: string;
+  codeAdh?: string;
+  statut?: number;
+  // Documents et observations chargés dans le détail
+  documents?: EmployeurDocument[];
+  observations?: EmployeurObservation[];
+}
+
 // ── Création de demande ───────────────────────────────────────────────────────
 export interface CreditClientEntreprise {
   nomDirigeant: string;

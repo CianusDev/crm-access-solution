@@ -25,8 +25,7 @@ export function navigateByStatut(router: Router, demande: CreditDemande): void {
 
   if (tirage === 1) {
     if (STATUTS_TIRAGE_DETAIL.includes(statut)) {
-      // TODO T15 : détail tirage — fiche pour l'instant
-      router.navigate(['/app/credit', refDemande]);
+      router.navigate(['/app/credit/tirage', refDemande]);
     } else {
       router.navigate(['/app/credit', refDemande]);
     }

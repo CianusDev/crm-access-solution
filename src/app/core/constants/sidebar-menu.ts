@@ -41,6 +41,8 @@ export const DEFAULT_MENU: SidebarGroup[] = [
       { label: 'Tableau de bord agence', href: '/app/credit/dashboard-agence', icon: LayoutDashboard },
       { label: 'Nouvelle demande', href: '/app/credit/create', icon: FilePlus },
       { label: 'Liste des demandes', href: '/app/credit/list', icon: List },
+      { label: 'Tirages découvert', href: '/app/credit/tirage/list', icon: CreditCard },
+      { label: 'Employeurs éligibles', href: '/app/credit/employeur/list', icon: Users },
     ],
   },
   {

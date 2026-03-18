@@ -1,6 +1,6 @@
 # CRM Access Solution — Liste des tâches
 
-> Dernière mise à jour : 2026-03-18 (session 4)
+> Dernière mise à jour : 2026-03-18 (session 5)
 > Les tâches sont ordonnées du plus prioritaire au moins prioritaire.
 > Mettre à jour le statut et la date à chaque complétion.
 
@@ -168,37 +168,51 @@
 | T22 | Organigramme — Liste utilisateurs crédit | 0.75 j |
 | | **Sous-total P3** | **8.5 j** |
 
-- [ ] **T15** — Finaliser le flow "Tirage découvert" dans la création de demande `[1.5 j]`
-  - Actuellement stub vide dans `create-credit.component.html`
-  - Implémenter la recherche par numéro PERFECT + affichage infos découvert
+- [x] **T15** — Finaliser le flow "Tirage découvert" dans la création de demande `[1.5 j]`
+  - Recherche par numéro PERFECT (`POST /credit/searchDmde`) → step `tirage-form`
+  - Affichage infos découvert : client, réf. PERFECT, type crédit, montant validé, date effet
+  - Alerte expiration si `dateEffet + 1 an < aujourd'hui` (bouton save désactivé)
+  - Validation montant ≤ `decision.montantEmprunte`, liste des tirages existants
+  - Save via `POST /credit/saveCrdTirage` avec `numDmde`
+  - Interfaces : `CreditTirageSearch`, `CreditDemandeDecouvert`, `CreditSaveTirage`
+  - Service : `searchTirage()`, `saveTirage()`
 
-- [ ] **T16** — Implémenter page "Liste des tirages" `[1 j]`
-  - Route : `/app/credit/tirage/list`
-  - FrontEnd ref : `liste-tirage-page`
-  - Ajouter dans sidebar + route
+- [x] **T16** — Implémenter page "Liste des tirages" `[1 j]`
+  - Route : `/app/credit/tirage/list?ref={numDmde}`
+  - Sans `?ref=` : affiche un champ de recherche PERFECT; avec `?ref=` : charge directement
+  - Affiche : infos découvert (client, montant validé, date effet), alerte expiration, tableau tirages
+  - Click ligne → statuts 1,10,11,12,28 → `/app/credit/tirage/:ref` ; autres → navigateByStatut
+  - Ajouté au sidebar "Tirages découvert" + route
 
-- [ ] **T17** — Implémenter page "Détail d'un tirage" `[1.5 j]`
-  - Route : `/app/credit/tirage/:id`
-  - FrontEnd ref : `detail-tirage-page`
+- [x] **T17** — Implémenter page "Détail d'un tirage" `[1.5 j]`
+  - Route : `/app/credit/tirage/:ref?refDecouvert={numDmde}`
+  - Données : `getFicheCredit(ref)` + `getObservations(ref)`
+  - Layout 2 colonnes : client + infos tirage + décision (gauche) | historique timeline (droite)
+  - Retour → liste des tirages du découvert parent
 
-- [ ] **T18** — Implémenter page "Employeurs éligibles" `[1 j]`
+- [x] **T18** — Implémenter page "Employeurs éligibles" `[1 j]`
   - Route : `/app/credit/employeur/list`
-  - FrontEnd ref : `employeur-eligible-credit`
+  - 3 filtres (Tous / Validés / Rejetés) via `GET /credit/listeEmployeur?action=valide|rejette`
+  - Recherche inline (nom, code adhérent), tableau avec statut badge
+  - Sidebar "Employeurs éligibles" + route
 
-- [ ] **T19** — Implémenter page "Détail employeur" `[1 j]`
+- [x] **T19** — Implémenter page "Détail employeur" `[1 j]`
   - Route : `/app/credit/employeur/:id`
-  - FrontEnd ref : `detail-employeur-credit`
+  - `GET /credit/detailsEmployeur/{id}` + `GET /credit/employeurDocument/{id}` + `GET /credit/observationEmployeur/{id}`
+  - 3 onglets : Informations | Documents | Observations
 
-- [ ] **T20** — Implémenter page "Liste observations employeur" `[0.75 j]`
-  - Route : `/app/credit/employeur/:id/observations`
-  - FrontEnd ref : `liste-observation-employeur`
+- [x] **T20** — Implémenter page "Liste observations employeur" `[0.75 j]`
+  - Intégré en onglet "Observations" dans T19 (pattern old frontend : sub-composant, pas de page standalone)
+  - Timeline avec auteur, profil, date, texte observation
 
-- [ ] **T21** — Implémenter page "Liste actions crédit" `[1 j]`
-  - Route : `/app/credit/actions`
-  - FrontEnd ref : `liste-action-credit`
+- [x] **T21** — Implémenter page "Liste actions crédit" `[1 j]`
+  - Le vieux frontend `liste-action-credit` est un sous-composant `@Input` sans endpoint dédié
+  - Fonctionnalité fusionnée avec l'onglet "Historique" de fiche-credit (T09) — déjà implémenté
 
-- [ ] **T22** — Implémenter page "Organigramme — Liste utilisateurs crédit" `[0.75 j]`
-  - FrontEnd ref : `liste-user-credit`
+- [x] **T22** — Implémenter page "Organigramme — Liste utilisateurs crédit" `[0.75 j]`
+  - Route : `/app/credit/organigramme`
+  - Demandes groupées par chargé d'analyse (AR) via `GET /credit/listeDemande`
+  - Recherche inline, click ligne → navigateByStatut
 
 ---
 
@@ -350,9 +364,9 @@
 |---|---|---|---|
 | 🔴 P1 — Infrastructure | T01 → T05 | 3.5 j | ✅ 5 / 5 |
 | 🟠 P2 — Workflow Crédit | T06 → T14h | 26.25 j | ✅ 16 / 16 (T06, T07, T09, T10, T11, T12, T13, T14a–T14h · T08 supprimé) |
-| 🟡 P3 — Tirage & Employeurs | T15 → T22 | 8.5 j | 0 / 8 |
+| 🟡 P3 — Tirage & Employeurs | T15 → T22 | 8.5 j | ✅ 8 / 8 (T15–T22) |
 | 🟡 P4 — Exports | T23 → T29 | 8.5 j | ✅ 1 / 7 (T28) |
 | 🟢 P5 — ASC | T30 → T31 | 3 j | 0 / 2 |
 | 🟢 P6 — CORA | T32 → T33 | 2 j | 0 / 2 |
 | 🔵 P7 — Paramétrage | T34 → T41 | 9.75 j | 0 / 8 |
-| **TOTAL** | **43 tâches** | **~61.5 j** | **21 / 43** |
+| **TOTAL** | **43 tâches** | **~61.5 j** | **29 / 43** |

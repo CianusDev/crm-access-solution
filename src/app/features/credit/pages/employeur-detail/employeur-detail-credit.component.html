@@ -1,0 +1,258 @@
+<div class="flex flex-col gap-6 mt-4">
+
+  <!-- En-tête -->
+  <div class="flex items-center gap-3">
+    <button type="button" (click)="goBack()"
+      class="flex items-center justify-center h-8 w-8 rounded-md border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer">
+      <lucide-icon [img]="ChevronLeftIcon" [size]="16" />
+    </button>
+    <div class="flex-1">
+      <h1 class="text-xl font-bold text-foreground">
+        {{ employeur()?.nomEntreprise ?? 'Détail employeur' }}
+      </h1>
+      @if (employeur()?.codeAdh) {
+        <p class="text-sm text-muted-foreground font-mono">{{ employeur()!.codeAdh }}</p>
+      }
+    </div>
+    @if (employeur(); as e) {
+      <app-badge [variant]="statutVariant(e.statut)">{{ statutLabel(e.statut) }}</app-badge>
+    }
+  </div>
+
+  @if (isLoading()) {
+    <div class="flex items-center justify-center py-20">
+      <span class="h-7 w-7 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+      <span class="ml-3 text-sm text-muted-foreground">Chargement…</span>
+    </div>
+  }
+
+  @if (!isLoading() && employeur(); as e) {
+
+    <!-- Onglets -->
+    <div class="flex gap-1 border-b border-border">
+      @for (tab of tabs; track tab.id) {
+        <button
+          type="button"
+          (click)="activeTab.set(tab.id)"
+          class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors cursor-pointer -mb-px"
+          [class.border-primary]="activeTab() === tab.id"
+          [class.text-primary]="activeTab() === tab.id"
+          [class.border-transparent]="activeTab() !== tab.id"
+          [class.text-muted-foreground]="activeTab() !== tab.id"
+          [class.hover:text-foreground]="activeTab() !== tab.id"
+        >
+          {{ tab.label }}
+          @if (tab.id === 'documents' && documents().length > 0) {
+            <span class="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs">{{ documents().length }}</span>
+          }
+          @if (tab.id === 'observations' && observations().length > 0) {
+            <span class="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs">{{ observations().length }}</span>
+          }
+        </button>
+      }
+    </div>
+
+    <!-- Onglet Informations -->
+    @if (activeTab() === 'infos') {
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+
+        <!-- Identité -->
+        <app-card>
+          <app-card-header><app-card-title>Identité</app-card-title></app-card-header>
+          <app-card-content>
+            <div class="flex flex-col gap-2">
+              @if (e.nomEntreprise) {
+                <div class="flex justify-between py-1 border-b border-border/50">
+                  <span class="text-xs text-muted-foreground">Nom entreprise</span>
+                  <span class="text-xs font-medium text-foreground">{{ e.nomEntreprise }}</span>
+                </div>
+              }
+              @if (e.codeAdh) {
+                <div class="flex justify-between py-1 border-b border-border/50">
+                  <span class="text-xs text-muted-foreground">Code adhérent</span>
+                  <span class="text-xs font-medium text-foreground font-mono">{{ e.codeAdh }}</span>
+                </div>
+              }
+              @if (e.capitalSocial) {
+                <div class="flex justify-between py-1 border-b border-border/50">
+                  <span class="text-xs text-muted-foreground">Capital social</span>
+                  <span class="text-xs font-medium text-foreground">{{ e.capitalSocial | number:'1.0-0':'fr-FR' }} FCFA</span>
+                </div>
+              }
+              @if (e.dateCreation) {
+                <div class="flex justify-between py-1 border-b border-border/50">
+                  <span class="text-xs text-muted-foreground">Date de création</span>
+                  <span class="text-xs font-medium text-foreground">{{ e.dateCreation | date:'dd/MM/yyyy' }}</span>
+                </div>
+              }
+              @if (e.associes) {
+                <div class="flex justify-between py-1">
+                  <span class="text-xs text-muted-foreground">Nombre d'associés</span>
+                  <span class="text-xs font-medium text-foreground">{{ e.associes }}</span>
+                </div>
+              }
+            </div>
+          </app-card-content>
+        </app-card>
+
+        <!-- Données financières -->
+        <app-card>
+          <app-card-header><app-card-title>Données financières</app-card-title></app-card-header>
+          <app-card-content>
+            <div class="flex flex-col gap-2">
+              @if (e.masseSalariale) {
+                <div class="flex justify-between py-1 border-b border-border/50">
+                  <span class="text-xs text-muted-foreground">Masse salariale</span>
+                  <span class="text-xs font-semibold text-primary">{{ e.masseSalariale | number:'1.0-0':'fr-FR' }} FCFA</span>
+                </div>
+              }
+              @if (e.chiffreAffaire) {
+                <div class="flex justify-between py-1 border-b border-border/50">
+                  <span class="text-xs text-muted-foreground">Chiffre d'affaires</span>
+                  <span class="text-xs font-medium text-foreground">{{ e.chiffreAffaire | number:'1.0-0':'fr-FR' }} FCFA</span>
+                </div>
+              }
+              @if (e.nbreEmplBacarise) {
+                <div class="flex justify-between py-1 border-b border-border/50">
+                  <span class="text-xs text-muted-foreground">Employés bacarisés</span>
+                  <span class="text-xs font-medium text-foreground">{{ e.nbreEmplBacarise }}</span>
+                </div>
+              }
+            </div>
+          </app-card-content>
+        </app-card>
+
+        <!-- Effectifs -->
+        <app-card>
+          <app-card-header><app-card-title>Effectifs</app-card-title></app-card-header>
+          <app-card-content>
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs">
+                <thead>
+                  <tr class="border-b border-border">
+                    <th class="pb-2 text-left text-muted-foreground font-medium">Catégorie</th>
+                    <th class="pb-2 text-right text-muted-foreground font-medium">Entreprise</th>
+                    <th class="pb-2 text-right text-muted-foreground font-medium">Compte agent</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-border/50">
+                  <tr><td class="py-1.5 text-muted-foreground">CDD</td>
+                    <td class="py-1.5 text-right font-medium text-foreground">{{ e.nbreCddEnt ?? '—' }}</td>
+                    <td class="py-1.5 text-right font-medium text-foreground">{{ e.nbreCddCA ?? '—' }}</td></tr>
+                  <tr><td class="py-1.5 text-muted-foreground">CDI</td>
+                    <td class="py-1.5 text-right font-medium text-foreground">{{ e.nbreCdiEnt ?? '—' }}</td>
+                    <td class="py-1.5 text-right font-medium text-foreground">{{ e.nbreCdiCA ?? '—' }}</td></tr>
+                  <tr><td class="py-1.5 text-muted-foreground">Agents de maîtrise</td>
+                    <td class="py-1.5 text-right font-medium text-foreground">{{ e.nbreAgentmEnt ?? '—' }}</td>
+                    <td class="py-1.5 text-right font-medium text-foreground">{{ e.nbreAgentmCA ?? '—' }}</td></tr>
+                  <tr><td class="py-1.5 text-muted-foreground">Cadres</td>
+                    <td class="py-1.5 text-right font-medium text-foreground">{{ e.nbreCadreEnt ?? '—' }}</td>
+                    <td class="py-1.5 text-right font-medium text-foreground">{{ e.nbreCadreCA ?? '—' }}</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </app-card-content>
+        </app-card>
+
+        <!-- Commentaire -->
+        @if (e.commentaire) {
+          <app-card>
+            <app-card-header><app-card-title>Commentaire</app-card-title></app-card-header>
+            <app-card-content>
+              <p class="text-sm text-foreground/80 leading-relaxed">{{ e.commentaire }}</p>
+            </app-card-content>
+          </app-card>
+        }
+
+      </div>
+    }
+
+    <!-- Onglet Documents -->
+    @if (activeTab() === 'documents') {
+      <app-card>
+        <app-card-header><app-card-title>Documents</app-card-title></app-card-header>
+        <app-card-content>
+          @if (documents().length === 0) {
+            <div class="flex flex-col items-center justify-center py-10 gap-3">
+              <lucide-icon [img]="FileTextIcon" [size]="24" class="text-muted-foreground" />
+              <p class="text-sm text-muted-foreground">Aucun document chargé</p>
+            </div>
+          } @else {
+            <div class="flex flex-col gap-2">
+              @for (doc of documents(); track doc.id) {
+                <div class="flex items-center justify-between rounded-md border border-border px-3 py-2.5">
+                  <div class="flex items-center gap-2.5">
+                    <lucide-icon [img]="FileTextIcon" [size]="15" class="text-muted-foreground shrink-0" />
+                    <div>
+                      <p class="text-sm font-medium text-foreground">{{ doc.libelle }}</p>
+                      @if (doc.description) {
+                        <p class="text-xs text-muted-foreground">{{ doc.description }}</p>
+                      }
+                    </div>
+                  </div>
+                  @if (doc.lien) {
+                    <a [href]="doc.lien" target="_blank"
+                      class="text-xs text-primary hover:underline shrink-0">Télécharger</a>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </app-card-content>
+      </app-card>
+    }
+
+    <!-- Onglet Observations -->
+    @if (activeTab() === 'observations') {
+      <app-card>
+        <app-card-header><app-card-title>Historique des observations</app-card-title></app-card-header>
+        <app-card-content>
+          @if (observations().length === 0) {
+            <div class="flex flex-col items-center justify-center py-10 gap-3">
+              <lucide-icon [img]="ClockIcon" [size]="24" class="text-muted-foreground" />
+              <p class="text-sm text-muted-foreground">Aucune observation enregistrée</p>
+            </div>
+          } @else {
+            <div class="flex flex-col gap-0">
+              @for (obs of observations(); track obs.id; let last = $last) {
+                <div class="flex gap-3" [class.pb-6]="!last">
+                  <div class="flex flex-col items-center">
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-background">
+                      <lucide-icon [img]="ClockIcon" [size]="13" class="text-primary" />
+                    </div>
+                    @if (!last) {
+                      <div class="flex-1 w-px bg-border mt-1"></div>
+                    }
+                  </div>
+                  <div class="flex-1 pb-1">
+                    <div class="flex items-center justify-between gap-2">
+                      <p class="text-sm font-medium text-foreground">{{ obs.action ?? 'Action' }}</p>
+                      @if (obs.date) {
+                        <span class="text-xs text-muted-foreground whitespace-nowrap">
+                          {{ obs.date | date:'dd/MM/yyyy HH:mm' }}
+                        </span>
+                      }
+                    </div>
+                    @if (obs.user?.nomPrenom) {
+                      <p class="text-xs text-muted-foreground mt-0.5">
+                        par {{ obs.user!.nomPrenom }}
+                        @if (obs.user?.profil?.libelle) { · {{ obs.user!.profil!.libelle }} }
+                      </p>
+                    }
+                    @if (obs.observation) {
+                      <p class="mt-1.5 text-xs text-foreground/80 rounded-md bg-muted px-3 py-2">
+                        {{ obs.observation }}
+                      </p>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </app-card-content>
+      </app-card>
+    }
+
+  }
+
+</div>

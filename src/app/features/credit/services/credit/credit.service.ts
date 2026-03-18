@@ -18,8 +18,13 @@ import {
   CreditObservation,
   CreditResume,
   CreditSaveDemande,
+  CreditSaveTirage,
+  Employeur,
+  EmployeurDocument,
+  EmployeurObservation,
   CreditStatAgence,
   CreditStatRegion,
+  CreditTirageSearch,
   GarantiesData,
   CreditStatZone,
   CreditTbProduit,
@@ -460,6 +465,61 @@ export class CreditService {
     return this.api
       .post<{ status: number; message?: string }>(this.endpoint + '/check_acte_or_visite', data)
       .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  searchTirage(numDmde: string) {
+    return this.api
+      .post<CreditTirageSearch>(this.endpoint + '/searchDmde', { numDmde })
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveTirage(data: CreditSaveTirage) {
+    return this.api
+      .post<{ status: number; demande: { refDemande: string }; message?: string }>(
+        this.endpoint + '/saveCrdTirage',
+        data,
+      )
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  // ── Employeurs ────────────────────────────────────────────────────────────
+  getListeEmployeurs(action?: 'valide' | 'rejette') {
+    const url = action
+      ? `${this.endpoint}/listeEmployeur?action=${action}`
+      : `${this.endpoint}/listeEmployeur`;
+    return this.api
+      .get<{ employeurs: Employeur[] }>(url)
+      .pipe(
+        map((res) => res.employeurs ?? []),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  getDetailEmployeur(id: number) {
+    return this.api
+      .get<{ employeur: Employeur }>(this.endpoint + '/detailsEmployeur/' + id)
+      .pipe(
+        map((res) => res.employeur),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  getObservationsEmployeur(id: number) {
+    return this.api
+      .get<{ observations: EmployeurObservation[] }>(this.endpoint + '/observationEmployeur/' + id)
+      .pipe(
+        map((res) => res.observations ?? []),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  getDocumentsEmployeur(id: number) {
+    return this.api
+      .get<{ documents: EmployeurDocument[] }>(this.endpoint + '/employeurDocument/' + id)
+      .pipe(
+        map((res) => res.documents ?? []),
+        catchError((err) => throwError(() => err)),
+      );
   }
 
   saveDemandeCredit(data: CreditSaveDemande) {

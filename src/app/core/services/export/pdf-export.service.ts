@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import type { TDocumentDefinitions, TCreatedPdf } from 'pdfmake/interfaces';
+import type { TDocumentDefinitions, TCreatedPdf, Content, TableCell } from 'pdfmake/interfaces';
 
 @Injectable({ providedIn: 'root' })
 export class PdfExportService {
@@ -63,7 +63,7 @@ export class PdfExportService {
   }
 
   /** Pied de page standard avec numérotation */
-  footer(currentPage: number, pageCount: number): object {
+  footer(currentPage: number, pageCount: number): Content {
     return {
       margin: [40, 10, 40, 0],
       columns: [
@@ -139,7 +139,7 @@ export class PdfExportService {
   }
 
   /** Génère une ligne de tableau stylée avec alternance de couleurs */
-  tableRow(cells: string[], isEven: boolean): object[] {
+  tableRow(cells: string[], isEven: boolean): TableCell[] {
     return cells.map((text) => ({
       text,
       style: isEven ? 'tableCellAlt' : 'tableCell',

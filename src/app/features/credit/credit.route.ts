@@ -51,6 +51,41 @@ export const CREDIT_ROUTES: Routes = [
       ),
   },
   {
+    path: 'organigramme',
+    loadComponent: () =>
+      import('./pages/organigramme/organigramme-credit.component').then(
+        (m) => m.OrganigrammeCreditComponent,
+      ),
+  },
+  {
+    path: 'employeur/list',
+    loadComponent: () =>
+      import('./pages/employeur-list/employeur-list-credit.component').then(
+        (m) => m.EmployeurListCreditComponent,
+      ),
+  },
+  {
+    path: 'employeur/:id',
+    loadComponent: () =>
+      import('./pages/employeur-detail/employeur-detail-credit.component').then(
+        (m) => m.EmployeurDetailCreditComponent,
+      ),
+  },
+  {
+    path: 'tirage/list',
+    loadComponent: () =>
+      import('./pages/tirage-list/tirage-list-credit.component').then(
+        (m) => m.TirageListCreditComponent,
+      ),
+  },
+  {
+    path: 'tirage/:ref',
+    loadComponent: () =>
+      import('./pages/tirage-detail/tirage-detail-credit.component').then(
+        (m) => m.TirageDetailCreditComponent,
+      ),
+  },
+  {
     path: ':ref',
     loadComponent: () =>
       import('./pages/fiche/fiche-credit.component').then(

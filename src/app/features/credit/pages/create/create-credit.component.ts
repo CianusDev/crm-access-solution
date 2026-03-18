@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { DatePipe, JsonPipe } from '@angular/common';
+import { DatePipe, DecimalPipe, JsonPipe } from '@angular/common';
 import {
   LucideAngularModule,
   Search,
@@ -31,6 +31,7 @@ import { PermissionService } from '@/core/services/permission/permission.service
 import { CreditService } from '../../services/credit/credit.service';
 import {
   CreditClientDetail,
+  CreditTirageSearch,
   CreditTypeActivite,
   CreditTypeCredit,
 } from '../../interfaces/credit.interface';
@@ -57,6 +58,7 @@ const OBJETS_CREDIT: SelectOption[] = [
   imports: [
     FormsModule,
     DatePipe,
+    DecimalPipe,
     LucideAngularModule,
     CardComponent,
     CardContentComponent,
@@ -86,11 +88,17 @@ export class CreateCreditComponent implements OnInit {
 
   // ── State ──────────────────────────────────────────────────────────────
   readonly choix = signal<'1' | '2'>('1');
-  readonly step = signal<'search' | 'form'>('search');
+  readonly step = signal<'search' | 'form' | 'tirage-form'>('search');
 
+  // ── Nouvelle demande ───────────────────────────────────────────────────
   readonly codeClient = signal('');
   readonly isSearching = signal(false);
   readonly client = signal<CreditClientDetail | null>(null);
+
+  // ── Tirage découvert ───────────────────────────────────────────────────
+  readonly numPerfect = signal('');
+  readonly isSearchingTirage = signal(false);
+  readonly tirageData = signal<CreditTirageSearch | null>(null);
 
   readonly isLoadingRefs = signal(true);
   readonly typesCredit = signal<CreditTypeCredit[]>([]);
@@ -144,9 +152,13 @@ export class CreateCreditComponent implements OnInit {
     const duree = Number(this.fcDuree());
     const montantEche = Number(this.fcMontantEche());
     const differe = String(this.fcDiffere()).trim();
+    const isTirage = this.choix() === '2';
+    const max = this.montantMax();
 
     return {
-      typeCredit: this.fcTypeCredit() === null ? 'Veuillez sélectionner un type de crédit' : null,
+      typeCredit: !isTirage && this.fcTypeCredit() === null
+        ? 'Veuillez sélectionner un type de crédit'
+        : null,
 
       objetCredit: !this.fcObjetCredit() ? "Veuillez sélectionner l'objet du crédit" : null,
 
@@ -157,7 +169,9 @@ export class CreateCreditComponent implements OnInit {
         ? 'Le montant est obligatoire'
         : isNaN(montant) || montant <= 0
           ? 'Le montant doit être un nombre positif'
-          : null,
+          : isTirage && max > 0 && montant > max
+            ? `Le montant ne peut pas excéder ${new Intl.NumberFormat('fr-FR').format(max)} FCFA`
+            : null,
 
       duree: !String(this.fcDuree()).trim()
         ? 'La durée est obligatoire'
@@ -187,6 +201,18 @@ export class CreateCreditComponent implements OnInit {
   readonly formValid = computed(() => Object.values(this.errors()).every((e) => e === null));
 
   readonly isPersonneMorale = computed(() => this.client()?.typeAgent !== 'PP');
+
+  // ── Tirage — computed ──────────────────────────────────────────────────
+  readonly montantMax = computed(() => this.tirageData()?.decision?.montantEmprunte ?? 0);
+
+  readonly isTirageExpire = computed(() => {
+    const d = this.tirageData();
+    if (!d?.demande.dateEffet) return false;
+    const dateEffet = new Date(d.demande.dateEffet);
+    const expiration = new Date(dateEffet);
+    expiration.setFullYear(dateEffet.getFullYear() + 1);
+    return new Date() > expiration;
+  });
 
   // ── Lifecycle ──────────────────────────────────────────────────────────
   ngOnInit() {
@@ -238,7 +264,70 @@ export class CreateCreditComponent implements OnInit {
   resetSearch() {
     this.step.set('search');
     this.client.set(null);
+    this.tirageData.set(null);
+    this.numPerfect.set('');
     this.resetForm();
+  }
+
+  searchTirage() {
+    const num = this.numPerfect().trim();
+    if (!num) return;
+    this.isSearchingTirage.set(true);
+    this.tirageData.set(null);
+    this.creditService.searchTirage(num).subscribe({
+      next: (data) => {
+        this.tirageData.set(data);
+        this.fcTypeCredit.set(data.demande.typeCredit.id);
+        this.step.set('tirage-form');
+        this.isSearchingTirage.set(false);
+      },
+      error: () => {
+        this.toast.error('Numéro PERFECT introuvable. Vérifiez le numéro saisi.');
+        this.isSearchingTirage.set(false);
+      },
+    });
+  }
+
+  saveTirage() {
+    this.submitted.set(true);
+    if (!this.formValid()) return;
+
+    const d = this.tirageData();
+    const typeCredit = this.fcTypeCredit();
+    const typeActivite = this.fcTypeActivite();
+    const objetCredit = this.fcObjetCredit();
+    if (!d || typeCredit === null || typeActivite === null || !objetCredit) return;
+
+    this.isSaving.set(true);
+    this.creditService
+      .saveTirage({
+        codeClient: d.demande.client.codeClient,
+        typeCredit,
+        objetCredit,
+        typeActivite,
+        montantSollicite: Number(this.fcMontant()),
+        nbreEcheanceSollicite: Number(this.fcDuree()),
+        montantEcheSouhaite: Number(this.fcMontantEche()),
+        nbreEcheDiffere: String(this.fcDiffere()).trim() ? Number(this.fcDiffere()) : null,
+        description: String(this.fcDescription()).trim(),
+        numDmde: this.numPerfect(),
+      })
+      .subscribe({
+        next: (res) => {
+          if (res.status === 200) {
+            this.toast.success('Tirage enregistré avec succès.');
+            this.isSaving.set(false);
+            this.router.navigate(['/app/credit/list']);
+          } else {
+            this.toast.error(res.message ?? "Erreur lors de l'enregistrement.");
+            this.isSaving.set(false);
+          }
+        },
+        error: (err) => {
+          this.toast.error(err.message ?? "Erreur lors de l'enregistrement.");
+          this.isSaving.set(false);
+        },
+      });
   }
 
   save() {

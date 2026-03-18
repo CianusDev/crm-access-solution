@@ -10,6 +10,9 @@ import { PaginationComponent } from '@/shared/components/pagination/pagination.c
 import { ButtonComponent } from '@/shared/components/button/button.component';
 import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import { ToastService } from '@/core/services/toast/toast.service';
+import { ExcelExportService, ExcelColumn } from '@/core/services/export/excel-export.service';
+import { PdfExportService } from '@/core/services/export/pdf-export.service';
+import type { TableCell } from 'pdfmake/interfaces';
 import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { LucideAngularModule, Plus, Search, Eye, Filter, Download, RefreshCw, X } from 'lucide-angular';
@@ -75,6 +78,8 @@ export class ListCoraComponent implements OnInit {
   private readonly coraService = inject(CoraService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder);
+  private readonly excelService = inject(ExcelExportService);
+  private readonly pdfService = inject(PdfExportService);
 
   // ── Resolver data ──────────────────────────────────────────────────────────
   readonly listData = input<ListCoraData>();
@@ -202,6 +207,88 @@ export class ListCoraComponent implements OnInit {
 
   goToCreate() {
     this.router.navigate(['/app/cora/create']);
+  }
+
+  async exportExcel() {
+    const columns: ExcelColumn[] = [
+      { header: 'Référence', key: 'reference', width: 16 },
+      { header: 'Désignation', key: 'designation', width: 30 },
+      { header: 'Email', key: 'email', width: 28 },
+      { header: 'N. PERFECT', key: 'perfect', width: 16 },
+      { header: 'Téléphone', key: 'telephone', width: 16 },
+      { header: 'Commune', key: 'commune', width: 18 },
+      { header: 'Quartier', key: 'quartier', width: 18 },
+      { header: 'Rue', key: 'rue', width: 22 },
+      { header: 'Gestionnaire', key: 'gestionnaire', width: 24 },
+      { header: 'Statut', key: 'statut', width: 14 },
+    ];
+    const data = this.filtered().map((c) => ({
+      reference: c.reference ?? '',
+      designation: c.designation ?? '',
+      email: c.email ?? '',
+      perfect: c.perfect ?? '',
+      telephone: c.pmobile ?? '',
+      commune: c.commune?.libelle ?? '',
+      quartier: c.quartier ?? '',
+      rue: c.rue ?? '',
+      gestionnaire: c.user ? `${c.user.nom} ${c.user.prenom}` : '',
+      statut: STATUT_LABELS[c.statut] ?? '',
+    }));
+    await this.excelService.export(data, columns, 'liste-coras', 'CORAs');
+  }
+
+  async exportPdf() {
+    const rows = this.filtered();
+    const tableBody: TableCell[][] = [
+      [
+        { text: 'Référence', style: 'tableHeader' },
+        { text: 'Désignation', style: 'tableHeader' },
+        { text: 'PERFECT', style: 'tableHeader' },
+        { text: 'Téléphone', style: 'tableHeader' },
+        { text: 'Commune', style: 'tableHeader' },
+        { text: 'Gestionnaire', style: 'tableHeader' },
+        { text: 'Statut', style: 'tableHeader' },
+      ],
+      ...rows.map((c, i) =>
+        this.pdfService.tableRow(
+          [
+            c.reference ?? '',
+            c.designation ?? '',
+            c.perfect ?? '',
+            c.pmobile ?? '',
+            c.commune?.libelle ?? '',
+            c.user ? `${c.user.nom} ${c.user.prenom}` : '',
+            STATUT_LABELS[c.statut] ?? '',
+          ],
+          i % 2 === 1,
+        ),
+      ),
+    ];
+
+    await this.pdfService.download(
+      {
+        pageOrientation: 'landscape',
+        pageMargins: [40, 70, 40, 50],
+        header: this.pdfService.header('Liste des CORAs', `${rows.length} résultat(s) — ${new Date().toLocaleDateString('fr-FR')}`),
+        footer: (currentPage, pageCount) => this.pdfService.footer(currentPage, pageCount),
+        content: [
+          {
+            table: {
+              headerRows: 1,
+              widths: ['auto', '*', 'auto', 'auto', 'auto', '*', 'auto'],
+              body: tableBody,
+            },
+            layout: {
+              hLineWidth: () => 0.5,
+              vLineWidth: () => 0,
+              hLineColor: () => '#e5e7eb',
+            },
+          },
+        ],
+        styles: this.pdfService.baseStyles,
+      },
+      'liste-coras',
+    );
   }
 
   exportCSV() {

@@ -18,9 +18,13 @@
       >
         <lucide-icon [img]="RefreshIcon" [size]="16" [class.animate-spin]="isRefreshing()" />
       </button>
-      <button appButton variant="outline" type="button" (click)="exportCSV()" class="gap-2">
+      <button appButton variant="outline" type="button" (click)="exportExcel()" class="gap-2">
         <lucide-icon [img]="DownloadIcon" [size]="16" />
-        Export CSV
+        Export Excel
+      </button>
+      <button appButton variant="outline" type="button" (click)="exportPdf()" class="gap-2">
+        <lucide-icon [img]="DownloadIcon" [size]="16" />
+        Export PDF
       </button>
       <button appButton type="button" (click)="goToCreate()" class="gap-2">
         <lucide-icon [img]="PlusIcon" [size]="16" />

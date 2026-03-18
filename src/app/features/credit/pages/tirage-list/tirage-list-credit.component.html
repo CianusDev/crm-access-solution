@@ -1,0 +1,209 @@
+<div class="flex flex-col gap-6 mt-4">
+
+  <!-- En-tête -->
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <button
+        type="button"
+        (click)="goBack()"
+        class="flex items-center justify-center h-8 w-8 rounded-md border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+      >
+        <lucide-icon [img]="ChevronLeftIcon" [size]="16" />
+      </button>
+      <div>
+        <h1 class="text-xl font-bold text-foreground">Tirages découvert</h1>
+        @if (data(); as d) {
+          <p class="text-sm text-muted-foreground">{{ d.demande.refDemande }} — {{ d.demande.client.nomPrenom }}</p>
+        } @else {
+          <p class="text-sm text-muted-foreground">Recherchez un découvert par numéro PERFECT</p>
+        }
+      </div>
+    </div>
+    @if (data()) {
+      <button
+        type="button"
+        (click)="refresh()"
+        [disabled]="isSearching()"
+        class="flex items-center gap-2 h-9 rounded-md border border-border bg-background px-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
+      >
+        <lucide-icon [img]="RefreshCwIcon" [size]="14" [class.animate-spin]="isSearching()" />
+        Actualiser
+      </button>
+    }
+  </div>
+
+  <!-- Recherche PERFECT -->
+  <app-card>
+    <app-card-content class="!pt-6">
+      <div class="flex gap-2 max-w-lg">
+        <div class="relative flex-1">
+          <lucide-icon
+            [img]="SearchIcon"
+            [size]="15"
+            class="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+          />
+          <input
+            type="text"
+            placeholder="Numéro PERFECT du découvert…"
+            [ngModel]="searchInput()"
+            (ngModelChange)="searchInput.set($event)"
+            (keydown.enter)="search()"
+            class="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/50"
+          />
+        </div>
+        <button appButton type="button" (click)="search()" [disabled]="!searchInput() || isSearching()">
+          @if (isSearching()) {
+            <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+          } @else {
+            <lucide-icon [img]="SearchIcon" [size]="15" />
+          }
+          Rechercher
+        </button>
+      </div>
+    </app-card-content>
+  </app-card>
+
+  @if (isSearching()) {
+    <div class="flex items-center justify-center py-20">
+      <span class="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+      <span class="ml-3 text-sm text-muted-foreground">Chargement…</span>
+    </div>
+  }
+
+  @if (!isSearching() && data(); as td) {
+
+    <!-- Alerte expiration -->
+    @if (isTirageExpire()) {
+      <div class="flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3">
+        <lucide-icon [img]="AlertTriangleIcon" [size]="18" class="text-destructive shrink-0 mt-0.5" />
+        <div>
+          <p class="text-sm font-semibold text-destructive">Découvert expiré</p>
+          <p class="text-xs text-destructive/80 mt-0.5">
+            Ce découvert (souscrit le {{ td.demande.dateEffet | date:'dd/MM/yyyy' }}) a dépassé sa durée de validité d'un an. Aucun nouveau tirage ne peut être effectué.
+          </p>
+        </div>
+      </div>
+    }
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]">
+
+      <!-- Infos découvert -->
+      <app-card>
+        <app-card-header>
+          <app-card-title>Découvert validé</app-card-title>
+        </app-card-header>
+        <app-card-content>
+          <div class="flex flex-col gap-3">
+
+            <!-- Client -->
+            <div class="flex flex-col items-center gap-2 pb-3 border-b border-border">
+              <div class="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                <lucide-icon [img]="UserIcon" [size]="24" class="text-primary" />
+              </div>
+              <div class="text-center">
+                <p class="text-sm font-semibold text-foreground">{{ td.demande.client.nomPrenom }}</p>
+                <p class="text-xs text-muted-foreground font-mono">{{ td.demande.client.codeClient }}</p>
+              </div>
+            </div>
+
+            <!-- Réf PERFECT -->
+            <div class="flex justify-between py-1 border-b border-border/50">
+              <span class="text-xs text-muted-foreground">Réf. PERFECT</span>
+              <span class="text-xs font-medium text-foreground font-mono">{{ td.demande.refDemande }}</span>
+            </div>
+
+            <!-- Type crédit -->
+            <div class="flex justify-between py-1 border-b border-border/50">
+              <span class="text-xs text-muted-foreground">Type de crédit</span>
+              <span class="text-xs font-medium text-foreground">{{ td.demande.typeCredit.libelle }}</span>
+            </div>
+
+            <!-- Montant validé -->
+            <div class="flex justify-between py-1 border-b border-border/50">
+              <span class="text-xs text-muted-foreground">Montant validé</span>
+              <span class="text-xs font-semibold text-primary">
+                {{ montantMax() | number:'1.0-0':'fr-FR' }} FCFA
+              </span>
+            </div>
+
+            <!-- Date d'effet -->
+            @if (td.demande.dateEffet) {
+              <div class="flex justify-between py-1">
+                <span class="text-xs text-muted-foreground">Date d'effet</span>
+                <span class="text-xs font-medium" [class.text-destructive]="isTirageExpire()" [class.text-foreground]="!isTirageExpire()">
+                  <lucide-icon [img]="CalendarIcon" [size]="11" class="inline mr-1" />
+                  {{ td.demande.dateEffet | date:'dd/MM/yyyy' }}
+                </span>
+              </div>
+            }
+
+          </div>
+        </app-card-content>
+      </app-card>
+
+      <!-- Liste des tirages -->
+      <app-card>
+        <app-card-header>
+          <app-card-title>
+            Liste des tirages
+            @if (tirages().length > 0) {
+              <span class="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                {{ tirages().length }}
+              </span>
+            }
+          </app-card-title>
+        </app-card-header>
+        <app-card-content>
+
+          @if (tirages().length === 0) {
+            <div class="flex flex-col items-center justify-center py-12 gap-3">
+              <div class="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                <lucide-icon [img]="CreditCardIcon" [size]="22" class="text-muted-foreground" />
+              </div>
+              <p class="text-sm text-muted-foreground">Aucun tirage enregistré pour ce découvert</p>
+            </div>
+          } @else {
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-border">
+                    <th class="pb-3 text-left text-xs font-medium text-muted-foreground">Référence</th>
+                    <th class="pb-3 text-left text-xs font-medium text-muted-foreground">Date</th>
+                    <th class="pb-3 text-right text-xs font-medium text-muted-foreground">Montant</th>
+                    <th class="pb-3 text-left text-xs font-medium text-muted-foreground pl-4">Statut</th>
+                    <th class="pb-3 w-8"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (t of tirages(); track t.id) {
+                    <tr
+                      class="border-b border-border/50 hover:bg-muted/40 transition-colors cursor-pointer"
+                      (click)="goToTirage(t)"
+                    >
+                      <td class="py-3 font-mono text-xs text-foreground font-medium">{{ t.refDemande }}</td>
+                      <td class="py-3 text-xs text-muted-foreground">{{ t.dateDemande | date:'dd/MM/yyyy' }}</td>
+                      <td class="py-3 text-xs font-semibold text-foreground text-right">
+                        {{ t.montantSollicite | number:'1.0-0':'fr-FR' }} FCFA
+                      </td>
+                      <td class="py-3 pl-4">
+                        <app-badge [variant]="statutVariant(t.statut)">
+                          {{ statutLabel(t.statut) }}
+                        </app-badge>
+                      </td>
+                      <td class="py-3 text-right">
+                        <lucide-icon [img]="ArrowRightIcon" [size]="14" class="text-muted-foreground" />
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+        </app-card-content>
+      </app-card>
+
+    </div>
+  }
+
+</div>

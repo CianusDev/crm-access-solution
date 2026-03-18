@@ -13,13 +13,16 @@
         <div class="h-5 w-48 rounded bg-muted animate-pulse mb-1"></div>
         <div class="h-4 w-32 rounded bg-muted/60 animate-pulse"></div>
       </div>
-    } @else if (demande()) {
-      @let d = demande()!;
+    } @else {
       <div class="flex-1 min-w-0">
-        <h1 class="text-xl font-bold text-foreground truncate">{{ d.refDemande }}</h1>
-        <p class="text-sm text-muted-foreground">{{ d.client.nomPrenom }}</p>
+        <h1 class="text-xl font-bold text-foreground truncate">{{ ref() }}</h1>
+        @if (ficheHeader(); as h) {
+          <p class="text-sm text-muted-foreground">{{ h.client?.nomPrenom }}</p>
+        }
       </div>
-      <app-badge [variant]="statutVariant(d.statut)">{{ statutLabel(d.statut) }}</app-badge>
+      @if (ficheHeader(); as h) {
+        <app-badge [variant]="statutVariant(h.statut)">{{ statutLabel(h.statut) }}</app-badge>
+      }
     }
 
     <div class="flex items-center gap-2 shrink-0">
