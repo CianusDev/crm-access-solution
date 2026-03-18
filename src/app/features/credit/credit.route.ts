@@ -23,6 +23,13 @@ export const CREDIT_ROUTES: Routes = [
       ),
   },
   {
+    path: 'analyse/:ref',
+    loadComponent: () =>
+      import('./pages/analyse/analyse-credit.component').then(
+        (m) => m.AnalyseCreditComponent,
+      ),
+  },
+  {
     path: 'resume/:ref',
     loadComponent: () =>
       import('./pages/resume/resume-credit.component').then(

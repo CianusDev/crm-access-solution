@@ -23,10 +23,8 @@ import {
   CardComponent,
   CardContentComponent,
   CardHeaderComponent,
-  CardTitleComponent,
 } from '@/shared/components/card/card.component';
 import { BadgeComponent } from '@/shared/components/badge/badge.component';
-import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { PermissionService } from '@/core/services/permission/permission.service';
 import { UserRole } from '@/core/models/user.model';
@@ -62,9 +60,7 @@ const ACTIONS_PAR_STATUT: Record<number, UserRole[]> = {
     CardComponent,
     CardContentComponent,
     CardHeaderComponent,
-    CardTitleComponent,
     BadgeComponent,
-    ButtonDirective,
   ],
 })
 export class ResumeCreditComponent implements OnInit {

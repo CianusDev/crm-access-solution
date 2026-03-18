@@ -4,6 +4,8 @@ import { throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { ApiService } from '@/core/services/api/api.service';
 import {
+  CreditActionPayload,
+  CreditAnalyseDemandeDetail,
   CreditClientDetail,
   CreditDashboard,
   CreditDashboardFiltre,
@@ -17,6 +19,7 @@ import {
   CreditSaveDemande,
   CreditStatAgence,
   CreditStatRegion,
+  GarantiesData,
   CreditStatZone,
   CreditTbProduit,
   CreditTypeActivite,
@@ -190,6 +193,15 @@ export class CreditService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
+  getGarantiesDemande(ref: string) {
+    return this.api
+      .get<{ demande: GarantiesData }>(this.endpoint + '/getGarantiesDemande/' + ref)
+      .pipe(
+        map((res) => res.demande),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
   getObservations(ref: string) {
     return this.api
       .get<{ observations: CreditObservation[] }>(this.endpoint + '/listeObservations/' + ref)
@@ -220,12 +232,245 @@ export class CreditService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
+  // ── Analyse financière ────────────────────────────────────────────────────
+  getAnalyseFinanciere(ref: string) {
+    return this.api
+      .get<{ data?: { demande: CreditAnalyseDemandeDetail }; demande?: CreditAnalyseDemandeDetail }>(this.endpoint + '/getAnalyseFinDemande/' + ref)
+      .pipe(
+        map((res) => ({ demande: (res.data?.demande ?? res.demande) as CreditAnalyseDemandeDetail })),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  saveActivite(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveActiviteDmde', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteActivite(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteActivite/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveVenteMensuelle(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveVenteMensuelle', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteVenteMensuelle(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteVenteMensuelle/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveVenteJournaliere(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveVenteJournaliere', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteVenteJournaliere(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteVenteJournaliere/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveAchatMensuel(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveAchatMensuel', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteAchatMensuel(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteAchatMensuel/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveChargeExploitation(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveChargeExploitation', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteChargeExploitation(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteChargeExploitation/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveTresorerie(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveTresorerie', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveCreance(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveCreance', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteCreance(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteCreance/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveStock(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveStock', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteStock(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteStock/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveDette(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveDette', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteDette(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteDette/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveProfilFamilial(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveProfilFamilial', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveMembreMenage(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveMembreMenage', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteMembreMenage(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteMembreMenage/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveActifGarantie(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveActifGarantie', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteActifGarantie(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteActifGarantie/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveCautionSolidaire(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveCautionSolidaire', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteCautionSolidaire(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteCautionSolidaire/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  uploadDocumentAnalyse(formData: FormData) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveDocAnalyse', formData)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteDocumentAnalyse(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteDocAnalyse/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveSWOT(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveSWOT', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  savePropositionAR(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/savePropositionAR', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  submitAnalyse(data: { refDemande: string; observation: string; password: string }) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/submitAnalyse', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  // ── Actions workflow ─────────────────────────────────────────────────────
+  saveCrdObservation(data: CreditActionPayload) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveCrdObservation', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  clotureDemande(data: CreditActionPayload) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/clotureDemande', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  checkActeOrVisite(data: CreditActionPayload) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/check_acte_or_visite', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
   saveDemandeCredit(data: CreditSaveDemande) {
     return this.api
       .post<{ status: number; demande: { refDemande: string }; message?: string }>(
         this.endpoint + '/saveDemandeCredit',
         data,
       )
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  annulerDecaissement(data: CreditActionPayload) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/annulerPrDesistement', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  workByDerogation(data: CreditActionPayload) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/workByDerogation', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveAvsf(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveAvsf', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveDecaissement(data: { refDemande: string; numPret: string; numContrat: string }) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveDecaissement', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  updateMontantEmprunte(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/mis_a_jour_montant_emprunter', data)
       .pipe(catchError((err) => throwError(() => err)));
   }
 }

@@ -1,0 +1,235 @@
+<div class="flex flex-col gap-6">
+
+  <!-- Erreur -->
+  @if (error()) {
+    <div class="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3">
+      <lucide-icon [img]="AlertCircleIcon" [size]="16" class="text-destructive shrink-0" />
+      <p class="text-sm text-destructive">{{ error() }}</p>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="space-y-3">
+      @for (_ of [1, 2]; track $index) {
+        <div class="h-48 rounded-xl border border-border bg-muted/30 animate-pulse"></div>
+      }
+    </div>
+  } @else {
+
+    <!-- ══ CAUTIONS SOLIDAIRES ════════════════════════════════════════════ -->
+    <app-card>
+      <app-card-header>
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <app-card-title>Cautions solidaires</app-card-title>
+            @if (cautions().length > 0) {
+              <span class="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
+                {{ cautions().length }} caution{{ cautions().length > 1 ? 's' : '' }}
+              </span>
+            }
+          </div>
+          <button type="button" (click)="openAddCaution()" appButton size="sm">
+            <lucide-icon [img]="PlusIcon" [size]="14" />
+            Ajouter
+          </button>
+        </div>
+      </app-card-header>
+      <app-card-content>
+        @if (cautions().length === 0) {
+          <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
+            <lucide-icon [img]="UserCheckIcon" [size]="32" class="text-muted-foreground/40" />
+            <p class="text-sm text-muted-foreground">Aucune caution solidaire enregistrée</p>
+            <button type="button" (click)="openAddCaution()" appButton size="sm">
+              <lucide-icon [img]="PlusIcon" [size]="14" />
+              Ajouter une caution
+            </button>
+          </div>
+        } @else {
+          <div class="flex flex-col gap-3">
+            @for (caution of cautions(); track caution.id) {
+              <div class="flex items-start justify-between rounded-xl border border-border bg-card px-4 py-3">
+                <div class="flex flex-col gap-0.5 min-w-0">
+                  <p class="font-semibold text-foreground">{{ caution.prenom }} {{ caution.nom }}</p>
+                  <div class="flex items-center gap-3 text-xs text-muted-foreground flex-wrap mt-0.5">
+                    @if (caution.profession) {
+                      <span>{{ caution.profession }}</span>
+                    }
+                    @if (caution.telephone) {
+                      <span>{{ caution.telephone }}</span>
+                    }
+                    @if (caution.adresse) {
+                      <span>{{ caution.adresse }}</span>
+                    }
+                  </div>
+                  @if (caution.montantCaution) {
+                    <p class="text-sm font-semibold text-primary mt-1">{{ formatMontant(caution.montantCaution) }}</p>
+                  }
+                </div>
+                <button type="button"
+                  (click)="openDelete('caution', caution.id!, (caution.prenom ?? '') + ' ' + (caution.nom ?? ''))"
+                  class="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0 ml-3 cursor-pointer">
+                  <lucide-icon [img]="Trash2Icon" [size]="14" />
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </app-card-content>
+    </app-card>
+
+    <!-- ══ DOCUMENTS ANNEXES ═════════════════════════════════════════════ -->
+    <app-card>
+      <app-card-header>
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <app-card-title>Documents annexes</app-card-title>
+            @if (documents().length > 0) {
+              <span class="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
+                {{ documents().length }} document{{ documents().length > 1 ? 's' : '' }}
+              </span>
+            }
+          </div>
+          <button type="button" (click)="openUploadDoc()" appButton size="sm">
+            <lucide-icon [img]="UploadIcon" [size]="14" />
+            Ajouter
+          </button>
+        </div>
+      </app-card-header>
+      <app-card-content>
+        @if (documents().length === 0) {
+          <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
+            <lucide-icon [img]="FileTextIcon" [size]="32" class="text-muted-foreground/40" />
+            <p class="text-sm text-muted-foreground">Aucun document annexe enregistré</p>
+            <button type="button" (click)="openUploadDoc()" appButton size="sm">
+              <lucide-icon [img]="UploadIcon" [size]="14" />
+              Ajouter un document
+            </button>
+          </div>
+        } @else {
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border bg-muted/10">
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Libellé</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Ajouté par</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Date</th>
+                <th class="px-4 py-2 w-20"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (doc of documents(); track doc.id) {
+                <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
+                  <td class="px-4 py-2.5 font-medium">{{ doc.libelle }}</td>
+                  <td class="px-4 py-2.5 text-muted-foreground">{{ doc.user?.nomPrenom ?? '—' }}</td>
+                  <td class="px-4 py-2.5 text-muted-foreground">{{ doc.createdAt | date:'dd/MM/yyyy' }}</td>
+                  <td class="px-4 py-2.5">
+                    <div class="flex items-center gap-0.5 justify-end">
+                      @if (doc.document) {
+                        <button type="button"
+                          (click)="downloadDocument(doc.document, doc.libelle ?? 'document')"
+                          title="Télécharger"
+                          class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer">
+                          <lucide-icon [img]="FileTextIcon" [size]="13" />
+                        </button>
+                      }
+                      <button type="button"
+                        (click)="openDelete('doc', doc.id!, doc.libelle ?? '')"
+                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                        <lucide-icon [img]="Trash2Icon" [size]="13" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </app-card-content>
+    </app-card>
+
+  }
+
+</div>
+
+<!-- ══ DRAWER — Caution solidaire ═════════════════════════════════════════ -->
+<app-drawer [(open)]="cautionDrawerOpen">
+  <app-drawer-header>
+    <app-drawer-title>Ajouter une caution solidaire</app-drawer-title>
+  </app-drawer-header>
+  <app-drawer-content>
+    <form [formGroup]="cautionForm" class="flex flex-col gap-4">
+      <div class="grid grid-cols-2 gap-4">
+        <app-form-input name="prenom" label="Prénom" placeholder="Ex: Konan" required />
+        <app-form-input name="nom" label="Nom" placeholder="Ex: Yao" required />
+      </div>
+      <app-form-input name="telephone" label="Téléphone" placeholder="Ex: 07 00 00 00 00" />
+      <app-form-input name="profession" label="Profession" placeholder="Ex: Commerçant(e)" />
+      <app-form-input name="adresse" label="Adresse" placeholder="Ex: Cocody, Abidjan" />
+      <app-form-input name="montantCaution" label="Montant de caution (FCFA)" type="number" placeholder="Ex: 500000" />
+    </form>
+  </app-drawer-content>
+  <app-drawer-footer>
+    <div class="flex gap-2 justify-end">
+      <button type="button" (click)="cautionDrawerOpen = false" appButton variant="outline">Annuler</button>
+      <button type="button" (click)="saveCaution()" appButton [disabled]="isSavingCaution()">
+        @if (isSavingCaution()) { Enregistrement… } @else { Enregistrer }
+      </button>
+    </div>
+  </app-drawer-footer>
+</app-drawer>
+
+<!-- ══ DRAWER — Upload document ════════════════════════════════════════════ -->
+<app-drawer [(open)]="docDrawerOpen">
+  <app-drawer-header>
+    <app-drawer-title>Ajouter un document annexe</app-drawer-title>
+  </app-drawer-header>
+  <app-drawer-content>
+    <div class="flex flex-col gap-4">
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm font-medium">Libellé <span class="text-destructive">*</span></label>
+        <input
+          type="text"
+          [value]="docLibelle()"
+          (input)="docLibelle.set($any($event.target).value)"
+          class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          placeholder="Ex: CNI recto-verso" />
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm font-medium">Fichier <span class="text-destructive">*</span></label>
+        <input
+          type="file"
+          (change)="onFileSelected($event)"
+          class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium" />
+        @if (selectedFile) {
+          <p class="text-xs text-muted-foreground">{{ selectedFile.name }}</p>
+        }
+      </div>
+    </div>
+  </app-drawer-content>
+  <app-drawer-footer>
+    <div class="flex gap-2 justify-end">
+      <button type="button" (click)="docDrawerOpen = false" appButton variant="outline">Annuler</button>
+      <button type="button" (click)="uploadDocument()" appButton
+        [disabled]="isUploadingDoc() || !selectedFile || !docLibelle().trim()">
+        @if (isUploadingDoc()) { Upload en cours… } @else { Enregistrer }
+      </button>
+    </div>
+  </app-drawer-footer>
+</app-drawer>
+
+<!-- ══ DIALOG — Suppression ════════════════════════════════════════════════ -->
+<app-dialog [(open)]="deleteDialogOpen">
+  <app-dialog-header>
+    <app-dialog-title>Confirmer la suppression</app-dialog-title>
+    <app-dialog-description>
+      @if (deleteTarget) {
+        Supprimer « {{ deleteTarget.label }} » ? Cette action est irréversible.
+      }
+    </app-dialog-description>
+  </app-dialog-header>
+  <app-dialog-footer>
+    <button type="button" (click)="deleteDialogOpen = false" appButton variant="outline">Annuler</button>
+    <button type="button" (click)="confirmDelete()" appButton variant="destructive" [disabled]="isDeleting()">
+      @if (isDeleting()) { Suppression… } @else { Supprimer }
+    </button>
+  </app-dialog-footer>
+</app-dialog>

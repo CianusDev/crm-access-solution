@@ -1,0 +1,147 @@
+<div class="flex flex-col gap-6">
+
+  <!-- Erreur -->
+  @if (error()) {
+    <div class="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3">
+      <lucide-icon [img]="AlertCircleIcon" [size]="16" class="text-destructive shrink-0" />
+      <p class="text-sm text-destructive">{{ error() }}</p>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="space-y-3">
+      @for (_ of [1, 2]; track $index) {
+        <div class="h-48 rounded-xl border border-border bg-muted/30 animate-pulse"></div>
+      }
+    </div>
+  } @else {
+
+    <!-- ══ RÉCAPITULATIF ══════════════════════════════════════════════════ -->
+    <app-card>
+      <app-card-header>
+        <div class="flex items-center gap-2">
+          <app-card-title>État de complétion de l'analyse</app-card-title>
+          <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+            [class]="allDone() ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'">
+            {{ doneCount() }} / {{ checklist().length }}
+          </span>
+        </div>
+      </app-card-header>
+      <app-card-content>
+
+        <!-- Barre de progression -->
+        <div class="h-2 w-full rounded-full bg-muted mb-4 overflow-hidden">
+          <div
+            class="h-full rounded-full transition-all duration-500"
+            [class]="allDone() ? 'bg-green-500' : 'bg-primary'"
+            [style.width.%]="(doneCount() / checklist().length) * 100">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          @for (item of checklist(); track item.label) {
+            <div class="flex items-center gap-3 rounded-lg border px-3 py-2.5"
+              [class]="item.done ? 'border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/20' : 'border-border bg-muted/20'">
+              @if (item.done) {
+                <lucide-icon [img]="CheckCircle2Icon" [size]="16" class="text-green-600 dark:text-green-400 shrink-0" />
+              } @else {
+                <lucide-icon [img]="XCircleIcon" [size]="16" class="text-muted-foreground/50 shrink-0" />
+              }
+              <span class="text-sm" [class]="item.done ? 'font-medium text-foreground' : 'text-muted-foreground'">
+                {{ item.label }}
+              </span>
+            </div>
+          }
+        </div>
+
+      </app-card-content>
+    </app-card>
+
+    <!-- ══ ENVOI ══════════════════════════════════════════════════════════ -->
+    <app-card>
+      <app-card-header>
+        <app-card-title>Soumettre l'analyse</app-card-title>
+      </app-card-header>
+      <app-card-content>
+        <div class="flex flex-col gap-4">
+
+          @if (!allDone()) {
+            <div class="flex items-start gap-3 rounded-lg border border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-950/20 px-4 py-3">
+              <lucide-icon [img]="AlertCircleIcon" [size]="16" class="text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
+              <p class="text-sm text-orange-700 dark:text-orange-300">
+                {{ checklist().length - doneCount() }} section{{ (checklist().length - doneCount()) > 1 ? 's' : '' }}
+                incomplète{{ (checklist().length - doneCount()) > 1 ? 's' : '' }}.
+                Vous pouvez soumettre, mais assurez-vous que l'analyse est suffisamment complète.
+              </p>
+            </div>
+          } @else {
+            <div class="flex items-center gap-3 rounded-lg border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/20 px-4 py-3">
+              <lucide-icon [img]="CheckCircle2Icon" [size]="16" class="text-green-600 dark:text-green-400 shrink-0" />
+              <p class="text-sm text-green-700 dark:text-green-300 font-medium">
+                Toutes les sections sont complètes. L'analyse est prête à être soumise.
+              </p>
+            </div>
+          }
+
+          <div class="flex justify-end">
+            <button type="button" (click)="openConfirm()" appButton>
+              <lucide-icon [img]="SendIcon" [size]="14" />
+              Soumettre l'analyse
+            </button>
+          </div>
+
+        </div>
+      </app-card-content>
+    </app-card>
+
+  }
+
+</div>
+
+<!-- ══ DIALOG — Confirmation envoi ════════════════════════════════════════ -->
+<app-dialog [(open)]="confirmDialogOpen">
+  <app-dialog-header>
+    <app-dialog-title>Confirmer l'envoi de l'analyse</app-dialog-title>
+    <app-dialog-description>
+      Le dossier <strong>{{ ref() }}</strong> sera soumis pour traitement.
+      Cette action fait passer le dossier à l'étape suivante.
+    </app-dialog-description>
+  </app-dialog-header>
+
+  <div class="px-6 flex flex-col gap-4">
+    <!-- Observation -->
+    <div class="flex flex-col gap-1.5">
+      <label class="text-sm font-medium">Observation finale</label>
+      <textarea
+        [(ngModel)]="observation"
+        rows="3"
+        class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+        placeholder="Synthèse ou remarques finales…"></textarea>
+    </div>
+
+    <!-- Mot de passe -->
+    <div class="flex flex-col gap-1.5">
+      <label class="text-sm font-medium flex items-center gap-1.5">
+        <lucide-icon [img]="LockIcon" [size]="13" />
+        Mot de passe <span class="text-destructive">*</span>
+      </label>
+      <input
+        type="password"
+        [(ngModel)]="password"
+        class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+        placeholder="Confirmez avec votre mot de passe" />
+    </div>
+  </div>
+
+  <app-dialog-footer>
+    <button type="button" (click)="confirmDialogOpen = false" appButton variant="outline">Annuler</button>
+    <button type="button" (click)="submit()" appButton [disabled]="isSubmitting() || !password.trim()">
+      @if (isSubmitting()) {
+        Envoi en cours…
+      } @else {
+        <lucide-icon [img]="SendIcon" [size]="14" />
+        Soumettre
+      }
+    </button>
+  </app-dialog-footer>
+</app-dialog>

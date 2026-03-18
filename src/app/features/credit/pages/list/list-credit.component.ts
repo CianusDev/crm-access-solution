@@ -72,7 +72,7 @@ export class ListCreditComponent implements OnInit {
         d.refDemande.toLowerCase().includes(q) ||
         d.client.nomPrenom.toLowerCase().includes(q) ||
         d.client.codeClient.toLowerCase().includes(q) ||
-        (d.client as any).agence?.libelle?.toLowerCase().includes(q) ||
+        d.client.agence?.libelle?.toLowerCase().includes(q) ||
         d.typeCredit.libelle.toLowerCase().includes(q),
     );
   });

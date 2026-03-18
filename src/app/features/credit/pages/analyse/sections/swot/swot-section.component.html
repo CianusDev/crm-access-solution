@@ -1,0 +1,239 @@
+<div class="flex flex-col gap-6">
+
+  <!-- Erreur -->
+  @if (error()) {
+    <div class="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3">
+      <lucide-icon [img]="AlertCircleIcon" [size]="16" class="text-destructive shrink-0" />
+      <p class="text-sm text-destructive">{{ error() }}</p>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="space-y-3">
+      @for (_ of [1, 2, 3]; track $index) {
+        <div class="h-48 rounded-xl border border-border bg-muted/30 animate-pulse"></div>
+      }
+    </div>
+  } @else {
+
+    <!-- ══ ANALYSE SWOT ════════════════════════════════════════════════════ -->
+    <app-card>
+      <app-card-header>
+        <app-card-title>Analyse SWOT</app-card-title>
+      </app-card-header>
+      <app-card-content>
+        <form [formGroup]="swotForm" class="flex flex-col gap-4">
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            <!-- Forces -->
+            <div class="rounded-xl border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/30 p-4 flex flex-col gap-2">
+              <div class="flex items-center gap-2">
+                <lucide-icon [img]="TrendingUpIcon" [size]="15" class="text-green-600 dark:text-green-400 shrink-0" />
+                <span class="text-sm font-semibold text-green-700 dark:text-green-300">Forces</span>
+              </div>
+              <textarea
+                formControlName="forces"
+                rows="5"
+                class="w-full rounded-md border border-green-200 dark:border-green-800 bg-white dark:bg-transparent px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-green-400 placeholder:text-muted-foreground"
+                placeholder="Une force par ligne…"></textarea>
+            </div>
+
+            <!-- Faiblesses -->
+            <div class="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 p-4 flex flex-col gap-2">
+              <div class="flex items-center gap-2">
+                <lucide-icon [img]="TrendingDownIcon" [size]="15" class="text-red-600 dark:text-red-400 shrink-0" />
+                <span class="text-sm font-semibold text-red-700 dark:text-red-300">Faiblesses</span>
+              </div>
+              <textarea
+                formControlName="faiblesses"
+                rows="5"
+                class="w-full rounded-md border border-red-200 dark:border-red-800 bg-white dark:bg-transparent px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-red-400 placeholder:text-muted-foreground"
+                placeholder="Une faiblesse par ligne…"></textarea>
+            </div>
+
+            <!-- Opportunités -->
+            <div class="rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 p-4 flex flex-col gap-2">
+              <div class="flex items-center gap-2">
+                <lucide-icon [img]="ZapIcon" [size]="15" class="text-blue-600 dark:text-blue-400 shrink-0" />
+                <span class="text-sm font-semibold text-blue-700 dark:text-blue-300">Opportunités</span>
+              </div>
+              <textarea
+                formControlName="opportunites"
+                rows="5"
+                class="w-full rounded-md border border-blue-200 dark:border-blue-800 bg-white dark:bg-transparent px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-blue-400 placeholder:text-muted-foreground"
+                placeholder="Une opportunité par ligne…"></textarea>
+            </div>
+
+            <!-- Menaces -->
+            <div class="rounded-xl border border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-950/30 p-4 flex flex-col gap-2">
+              <div class="flex items-center gap-2">
+                <lucide-icon [img]="ShieldAlertIcon" [size]="15" class="text-orange-600 dark:text-orange-400 shrink-0" />
+                <span class="text-sm font-semibold text-orange-700 dark:text-orange-300">Menaces</span>
+              </div>
+              <textarea
+                formControlName="menaces"
+                rows="5"
+                class="w-full rounded-md border border-orange-200 dark:border-orange-800 bg-white dark:bg-transparent px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-orange-400 placeholder:text-muted-foreground"
+                placeholder="Une menace par ligne…"></textarea>
+            </div>
+
+          </div>
+
+          <div class="flex justify-end">
+            <button type="button" (click)="saveSWOT()" appButton size="sm" [disabled]="isSavingSwot()">
+              <lucide-icon [img]="SaveIcon" [size]="14" />
+              @if (isSavingSwot()) { Enregistrement… } @else { Enregistrer le SWOT }
+            </button>
+          </div>
+
+        </form>
+      </app-card-content>
+    </app-card>
+
+    <!-- ══ PROPOSITION AR ════════════════════════════════════════════════ -->
+    <app-card>
+      <app-card-header>
+        <app-card-title>Proposition de l'analyste risque</app-card-title>
+      </app-card-header>
+      <app-card-content>
+        <form [formGroup]="propositionForm" class="flex flex-col gap-4">
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <app-form-input name="montantPropose" label="Montant proposé (FCFA)" type="number" placeholder="Ex: 2000000" />
+            <app-form-input name="duree" label="Durée (mois)" type="number" placeholder="Ex: 24" />
+            <app-form-input name="mensualite" label="Mensualité (FCFA)" type="number" placeholder="Ex: 95000" />
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium">Motivation</label>
+            <textarea
+              formControlName="motivation"
+              rows="3"
+              class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+              placeholder="Justification de la proposition…"></textarea>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium">Commentaire</label>
+            <textarea
+              formControlName="commentaire"
+              rows="3"
+              class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+              placeholder="Commentaires additionnels…"></textarea>
+          </div>
+
+          <div class="flex justify-end">
+            <button type="button" (click)="saveProposition()" appButton size="sm" [disabled]="isSavingProposition()">
+              <lucide-icon [img]="SaveIcon" [size]="14" />
+              @if (isSavingProposition()) { Enregistrement… } @else { Enregistrer la proposition }
+            </button>
+          </div>
+
+        </form>
+      </app-card-content>
+    </app-card>
+
+    <!-- ══ PRÉ-COMITÉS ═══════════════════════════════════════════════════ -->
+    @if (precomites().length > 0) {
+      <app-card>
+        <app-card-header>
+          <div class="flex items-center gap-2">
+            <app-card-title>Pré-comités</app-card-title>
+            <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{{ precomites().length }}</span>
+          </div>
+        </app-card-header>
+        <app-card-content>
+          <div class="flex flex-col gap-3">
+            @for (pc of precomites(); track $index) {
+              <div class="rounded-xl border border-border bg-card p-4">
+                <div class="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <p class="text-sm font-semibold">{{ pc.user?.nomPrenom ?? 'Décideur inconnu' }}</p>
+                    @if (pc.user?.profil?.libelle) {
+                      <p class="text-xs text-muted-foreground">{{ pc.user!.profil!.libelle }}</p>
+                    }
+                  </div>
+                  @if (pc.statut != null) {
+                    <app-badge [variant]="pc.statut === 1 ? 'success' : pc.statut === 2 ? 'destructive' : 'warning'">
+                      {{ statutComiteLabel(pc.statut) }}
+                    </app-badge>
+                  }
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm mb-3">
+                  @if (pc.montantPropose) {
+                    <div><p class="text-xs text-muted-foreground">Montant proposé</p><p class="font-semibold">{{ formatMontant(pc.montantPropose) }}</p></div>
+                  }
+                  @if (pc.duree) {
+                    <div><p class="text-xs text-muted-foreground">Durée</p><p class="font-semibold">{{ pc.duree }} mois</p></div>
+                  }
+                  @if (pc.mensualite) {
+                    <div><p class="text-xs text-muted-foreground">Mensualité</p><p class="font-semibold">{{ formatMontant(pc.mensualite) }}</p></div>
+                  }
+                  @if (pc.montantEmprunte) {
+                    <div><p class="text-xs text-muted-foreground">Montant accordé</p><p class="font-semibold">{{ formatMontant(pc.montantEmprunte) }}</p></div>
+                  }
+                </div>
+                @if (pc.motivation) {
+                  <p class="text-sm text-muted-foreground border-t border-border pt-2 mt-2">{{ pc.motivation }}</p>
+                }
+              </div>
+            }
+          </div>
+        </app-card-content>
+      </app-card>
+    }
+
+    <!-- ══ COMITÉS ═══════════════════════════════════════════════════════ -->
+    @if (comites().length > 0) {
+      <app-card>
+        <app-card-header>
+          <div class="flex items-center gap-2">
+            <app-card-title>Comités</app-card-title>
+            <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{{ comites().length }}</span>
+          </div>
+        </app-card-header>
+        <app-card-content>
+          <div class="flex flex-col gap-3">
+            @for (c of comites(); track $index) {
+              <div class="rounded-xl border border-border bg-card p-4">
+                <div class="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <p class="text-sm font-semibold">{{ c.user?.nomPrenom ?? 'Décideur inconnu' }}</p>
+                    @if (c.user?.profil?.libelle) {
+                      <p class="text-xs text-muted-foreground">{{ c.user!.profil!.libelle }}</p>
+                    }
+                  </div>
+                  @if (c.statut != null) {
+                    <app-badge [variant]="c.statut === 1 ? 'success' : c.statut === 2 ? 'destructive' : 'warning'">
+                      {{ statutComiteLabel(c.statut) }}
+                    </app-badge>
+                  }
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm mb-3">
+                  @if (c.montantPropose) {
+                    <div><p class="text-xs text-muted-foreground">Montant proposé</p><p class="font-semibold">{{ formatMontant(c.montantPropose) }}</p></div>
+                  }
+                  @if (c.duree) {
+                    <div><p class="text-xs text-muted-foreground">Durée</p><p class="font-semibold">{{ c.duree }} mois</p></div>
+                  }
+                  @if (c.mensualite) {
+                    <div><p class="text-xs text-muted-foreground">Mensualité</p><p class="font-semibold">{{ formatMontant(c.mensualite) }}</p></div>
+                  }
+                  @if (c.montantEmprunte) {
+                    <div><p class="text-xs text-muted-foreground">Montant accordé</p><p class="font-semibold">{{ formatMontant(c.montantEmprunte) }}</p></div>
+                  }
+                </div>
+                @if (c.motivation) {
+                  <p class="text-sm text-muted-foreground border-t border-border pt-2 mt-2">{{ c.motivation }}</p>
+                }
+              </div>
+            }
+          </div>
+        </app-card-content>
+      </app-card>
+    }
+
+  }
+
+</div>

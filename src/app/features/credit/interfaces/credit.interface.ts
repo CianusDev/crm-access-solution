@@ -4,15 +4,79 @@ export interface CreditTypeCredit {
   libelle: string;
 }
 
+export interface CreditNationalite {
+  id?: number;
+  nationalite?: string;
+}
+
+export interface CreditCommune {
+  id?: number;
+  libelle?: string;
+}
+
+export interface CreditSignataire {
+  nom?: string;
+  prenom?: string;
+  numPiece?: string;
+  nationalite?: CreditNationalite;
+  lieuNaiss?: string;
+  rue?: string;
+  commune?: CreditCommune;
+  dateNaissance?: string;
+  dateDelivrancePiece?: string;
+  dateExpirationPiece?: string;
+  lieuDelivrance?: string;
+  numTelephone?: string;
+}
+
 export interface CreditClient {
   codeClient: string;
   nomPrenom: string;
   typeAgent: 'PP' | 'PM' | string;
   agence?: { libelle: string };
+  // Contact (PP & PM)
+  indicatifCel?: string;
+  numCel?: string;
+  telFixe?: string;
+  email?: string;
+  nationalite?: CreditNationalite;
+  // PP spécifique
+  commune?: CreditCommune;
+  quartier?: string;
+  rue?: string;
+  lot?: string;
+  villa?: string;
+  adresse?: string;
+  batimentProche?: string;
+  domicille?: string;
+  dataNaiss?: string;
+  dateInscription?: string;
+  // PP signataires PM
+  signataires?: CreditSignataire[];
+  // PM spécifique
+  denomination?: string;
+  rccm?: string;
+  entreprise?: {
+    rccm?: string;
+    denomination?: string;
+    statutJuridique?: string | number;
+    nomDirigeant?: string;
+    NumEnregistrement?: string;
+    capitalSocial?: number;
+    ncc?: string;
+    dateCreation?: string;
+  };
 }
 
 export interface CreditAvsFond {
-  statut: number;
+  id?: number;
+  statut: number; // 1 = enregistré, 2 = en validation FO, 3 = validé
+  dateDemande?: string;
+  mtDepositExige?: number;
+  mtAvsfSollicite?: number;
+  motif?: string;
+  mtAvsf?: number;
+  numPerfect?: string;
 }
 
 export interface CreditDemande {
@@ -188,23 +252,30 @@ export interface CreditDecisionFinale {
   assurMultiRisk?: number;
   deposit?: number;
   tauxCouverture?: number;
+  hypotheque?: number; // 1 = oui, 2 = non
+  montantActeNotarie?: number;
   commentaire?: string;
 }
 
+export interface CreditObservationUser {
+  id?: number;
+  nom?: string;
+  prenom?: string;
+  nomPrenom?: string;
+  profil?: { name?: string; libelle?: string };
+  libelleAgence?: string;
+}
+
 export interface CreditObservation {
+  id?: number;
   reference: string;
   libelle?: string;
   decision?: string;
   observation: string;
   operation?: string;
   date: string;
-  user?: {
-    id?: number;
-    nom?: string;
-    prenom?: string;
-    profil?: string;
-    libelleAgence?: string;
-  };
+  createdAt?: string;
+  user?: CreditObservationUser;
 }
 
 export interface CreditDocumentAnnexe {
@@ -219,19 +290,35 @@ export interface CreditDocumentAnnexe {
 
 export interface CreditFicheDemandeDetail extends CreditDemande {
   description?: string;
-  objetCredit?: string;
+  objetCredit?: string | number;
   nbreEcheDiffere?: number;
   ar?: { nomPrenom?: string };
   typeActivite?: { libelle: string };
+  numTransaction?: string; // N° demande Perfect
+  acteNotarie?: number;    // 0 = non signé, 1 = signé (sur la demande)
+  derogation?: number;     // 0 = normal, 1 = en dérogation, 2 = dérogation validée
+}
+
+export interface CreditUserGarantie {
+  id?: number;
+  nom?: string;
+  prenom?: string;
+}
+
+export interface CreditMagasin {
+  id?: number;
+  numMagasin?: string;
+  adresse?: string;
+  telephone?: string;
 }
 
 export interface CreditFiche {
   demande: CreditFicheDemandeDetail;
   decision?: CreditDecisionFinale;
-  garantieDecision?: unknown;
+  garantieDecision?: CreditDecisionFinale;
   pret?: { numPret?: string; numContrat?: string };
-  usersGaranties?: unknown[];
-  magasins?: unknown[];
+  usersGaranties?: CreditUserGarantie[];
+  magasins?: CreditMagasin[];
   nombreDemandes?: number;
 }
 
@@ -307,6 +394,305 @@ export interface CreditResume {
   garantieDecision?: unknown;
   observations?: CreditObservation[];
 }
+
+// ── Analyse financière ────────────────────────────────────────────────────────
+export interface ActiviteVenteMensuelle {
+  id?: number;
+  mois?: string;
+  montant?: number;
+  statut?: string | number;
+  refDemande?: string;
+}
+
+export interface ActiviteVenteJournaliere {
+  id?: number;
+  jour?: string;
+  montant?: number;
+  statut?: string | number;
+  refDemande?: string;
+}
+
+export interface ActiviteCredit {
+  id?: number;
+  refDemande?: string;
+  libelle?: string;
+  typeAnalyse?: string;
+  commune?: string | { id?: number; libelle?: string };
+  quartier?: string;
+  rue?: string;
+  boitePostale?: string;
+  typeActivite?: CreditTypeActivite;
+  niveauActivite?: number;
+  margePondere?: number;
+  valDernierAchat?: number;
+  dateDernierAchat?: string;
+  venteJournalieres?: ActiviteVenteJournaliere[];
+  venteMensuelles?: ActiviteVenteMensuelle[];
+  achatsMensuels?: AchatMensuel[];
+}
+
+export interface AchatMensuel {
+  id?: number;
+  mois?: string;
+  montant?: number;
+  statut?: string | number;
+  refDemande?: string;
+  activite?: number;
+}
+
+export interface ChargeExploitation {
+  id?: number;
+  libelle?: string;
+  typeCharge?: string;
+  montant?: number;
+  statut?: string | number;
+  refDemande?: string;
+}
+
+export interface CreanceClient {
+  id?: number;
+  libelle?: string;
+  montant?: number;
+  echeance?: string;
+  statut?: string | number;
+  refDemande?: string;
+}
+
+export interface StockItem {
+  id?: number;
+  libelle?: string;
+  montant?: number;
+  statut?: string | number;
+  refDemande?: string;
+}
+
+export interface DetteFournisseur {
+  id?: number;
+  libelle?: string;
+  montant?: number;
+  echeance?: string;
+  statut?: string | number;
+  refDemande?: string;
+}
+
+export interface TresorerieDisponible {
+  caisse?: number;
+  banque?: number;
+  mobileMoney?: number;
+}
+
+export interface ProfilFamilial {
+  situationMatrimoniale?: string;
+  nbreEpouses?: number;
+  nbreEnfants?: number;
+  niveauInstruction?: string;
+  regimeMatrimonial?: string;
+  loyerMensuel?: number;
+  scolarite?: number;
+  sante?: number;
+  autresChargesFamiliales?: number;
+}
+
+export interface MembreMenage {
+  id?: number;
+  nom?: string;
+  relation?: string;
+  age?: number;
+  activite?: string;
+  revenu?: number;
+  refDemande?: string;
+}
+
+export type TypeActif = 'IMMOBILIER' | 'VEHICULE' | 'EQUIPEMENT' | 'DAT' | 'AUTRE';
+
+export interface ActifGarantie {
+  id?: number;
+  type?: TypeActif;
+  libelle?: string;
+  valeurEstimee?: number;
+  localisation?: string;
+  superficie?: number;
+  marque?: string;
+  annee?: number;
+  banque?: string;
+  echeance?: string;
+  statut?: string;
+  refDemande?: string;
+}
+
+export interface CautionSolidaire {
+  id?: number;
+  nom?: string;
+  prenom?: string;
+  telephone?: string;
+  profession?: string;
+  adresse?: string;
+  montantCaution?: number;
+  refDemande?: string;
+}
+
+export interface DocumentAnalyse {
+  id?: number;
+  libelle?: string;
+  typeDocument?: string;
+  document?: string;
+  refDemande?: string;
+  createdAt?: string;
+  user?: { nomPrenom?: string };
+}
+
+export interface CreditAnalyseDemandeDetail extends CreditFicheDemandeDetail {
+  activites?: ActiviteCredit[];
+  chargesExploitation?: ChargeExploitation[];
+  creances?: CreanceClient[];
+  stocks?: StockItem[];
+  dettes?: DetteFournisseur[];
+  tresorerie?: TresorerieDisponible;
+  profilFamilial?: ProfilFamilial;
+  membresMenage?: MembreMenage[];
+  actifsGaranties?: ActifGarantie[];
+  cautionsSolidaires?: CautionSolidaire[];
+  documentsAnalyse?: DocumentAnalyse[];
+  swot?: CreditSWOT;
+  propositionAR?: CreditPropositionAR;
+  precomites?: CreditComiteDecision[];
+  comites?: CreditComiteDecision[];
+}
+
+// ── Action workflow payload ───────────────────────────────────────────────────
+export interface CreditActionPayload {
+  refDemande: string;
+  observation: string;
+  password: string;
+  decision?: number;
+  checkliste?: string[];
+}
+
+// ── Actifs & Garanties (endpoint: /getGarantiesDemande) ──────────────────────
+
+export interface GarantieMedia {
+  id?: number;
+  url?: string;
+  libelle?: string;
+}
+
+export interface GarantieVehicule {
+  id?: number;
+  marque?: string;
+  typeProPerso?: string;        // Professionnel / Particulier
+  immatriculation?: string;
+  couleur?: string;
+  typeCommercial?: string;
+  typeTechnique?: string;
+  evaluation?: string;
+  nouvelleAcquisition?: number; // 1=oui, 0=non
+  typeVehicule?: string;
+  dateMiseEnCirculation?: string;
+  valeurAchat?: number;
+  valeurEstime?: number;
+  miniComm?: number;            // 1=Oui, 2=Non
+  vehiculeVu?: number;          // 1=Oui, 2=Non
+  garantie?: number;            // 1=Oui, 2=Non
+  proprietaire?: 'D' | 'C' | string;
+  images?: GarantieMedia[];
+  documents?: GarantieMedia[];
+}
+
+export interface GarantieImmobilisation {
+  id?: number;
+  typePropriete?: number;       // 1=Local, 2=Terrain
+  dateAcquisition?: string;
+  titreFoncier?: string;
+  lot?: string;
+  ilot?: string;
+  quantite?: number;
+  garantie?: number;            // 1=Oui, 2=Non
+  superficie?: number;
+  adressDescr?: string;
+  valeurAchat?: number;
+  valeurEstime?: number;
+  proprietaire?: 'D' | 'C' | string;
+  images?: GarantieMedia[];
+  documents?: GarantieMedia[];
+}
+
+export interface GarantieMateriel {
+  id?: number;
+  designation?: string;
+  valeurAchat?: number;
+  dateAcquisition?: string;
+  quantite?: number;
+  valeurEstime?: number;
+  garantie?: number;
+  evaluation?: string;
+  proprietaire?: 'D' | 'C' | string;
+  images?: GarantieMedia[];
+  documents?: GarantieMedia[];
+}
+
+export interface GarantieDAT {
+  id?: number;
+  banque?: string;
+  montant?: number;
+  dateEcheance?: string;
+  dateEffet?: string;
+  duree?: number;
+  numeroPerfect?: string;
+  garantie?: number;
+  images?: GarantieMedia[];
+  documents?: GarantieMedia[];
+}
+
+export interface GarantieType {
+  id: number;
+  libelle?: string;
+  garanties: (GarantieVehicule | GarantieImmobilisation | GarantieMateriel | GarantieDAT)[];
+  total?: number;
+  total_prime?: number;
+}
+
+export interface GarantiesCautionSolidaire {
+  id?: number;
+  nom?: string;
+  prenom?: string;
+  genre?: string;
+  telephone?: string;
+  profession?: string;
+  adresse?: string;
+  quartier?: string;
+  rue?: string;
+  lieuNaissance?: string;
+  nationalite?: CreditNationalite;
+  revenu?: number;
+  montantCaution?: number;
+  photoProfil?: string;
+  images?: GarantieMedia[];
+  documents?: GarantieMedia[];
+}
+
+export interface CreditActifCirculantStock {
+  id?: number;
+  designation?: string;
+  description?: string;
+  quantite?: number;
+  cout?: number;
+  prix?: number;
+}
+
+export interface GarantiesData {
+  typeGaranties: GarantieType[];
+  crCaution: GarantiesCautionSolidaire[];
+  actifCirculantStock?: CreditActifCirculantStock[];
+}
+
+export const GARANTIE_TYPE_IDS = {
+  IMMOBILISATION: 1,
+  MATERIEL_PRO: 2,
+  BIEN_MOBILIER_FAMILLE: 3,
+  VEHICULE: 4,
+  DEPOSIT: 5,
+  DAT: 6,
+} as const;
 
 // ── Statuts ───────────────────────────────────────────────────────────────────
 export const CREDIT_STATUTS: Record<

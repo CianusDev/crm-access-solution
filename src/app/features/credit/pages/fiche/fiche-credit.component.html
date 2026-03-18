@@ -1,5 +1,4 @@
 <div class="flex flex-col gap-6 mt-4">
-
   <!-- En-tête -->
   <div class="flex items-center justify-between">
     <div class="flex items-center gap-3">
@@ -11,21 +10,19 @@
         <lucide-icon [img]="ChevronLeftIcon" [size]="16" />
       </button>
       <div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
           <h1 class="text-xl font-bold text-foreground">
             {{ demande()?.refDemande ?? 'Dossier crédit' }}
           </h1>
           @if (demande()?.tirage === 1) {
-            <span class="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-700">
-              Tirage
-            </span>
+            <span class="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-700">Tirage</span>
           }
           @if (demande()?.pause === 1) {
             <app-badge variant="warning">En pause</app-badge>
           }
         </div>
         <p class="text-sm text-muted-foreground">
-          {{ demande()?.typeCredit?.libelle ?? '…' }}
+          {{ demande()?.tirage === 1 ? 'Tirage / Découvert' : (demande()?.typeCredit?.libelle ?? '…') }}
           @if (demande()?.dateDemande) {
             · {{ demande()!.dateDemande | date:'dd/MM/yyyy' }}
           }
@@ -33,6 +30,9 @@
       </div>
     </div>
     <div class="flex items-center gap-2">
+      @if (demande()?.avsFond && demande()!.avsFond!.statut !== 3) {
+        <app-badge variant="warning">Avance de fonds en attente</app-badge>
+      }
       @if (demande()?.statut != null) {
         <app-badge [variant]="statutVariant(demande()!.statut)">
           {{ statutLabel(demande()!.statut) }}
@@ -69,6 +69,253 @@
   }
 
   @else if (fiche()) {
+
+    <!-- ── Barre d'actions (conditionnelle par statut + rôle) ──────── -->
+    @if (showActionsBar()) {
+      <div class="flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+        <lucide-icon [img]="AlertCircleIcon" [size]="15" class="text-amber-600 shrink-0" />
+        <span class="text-xs font-semibold text-amber-800 flex-1 min-w-0">Actions disponibles pour ce dossier</span>
+
+        <!-- Statut 13 — RC / CC / Admin : Avance sur fonds -->
+        @if (showAvsfButton()) {
+          <button type="button" appButton size="sm" variant="outline" (click)="openAvsf()">
+            <lucide-icon [img]="DollarSignIcon" [size]="13" />
+            Demander une avance
+          </button>
+        }
+
+        <!-- Statut 13 — RC / CC / Admin : Envoi pour suivi -->
+        @if (demande()!.statut === 13 && permissions.hasRole(UserRole.responsableClient, UserRole.conseilClientele, UserRole.Admin)) {
+          <button
+            type="button"
+            appButton
+            size="sm"
+            (click)="openAction({ title: 'Envoi pour suivi', endpoint: 'observation', decision: 1, hasLeveeCondition: true })"
+          >
+            Envoi pour suivi
+          </button>
+        }
+
+        <!-- Statut 13 — Juridique / Admin : Confirmer signature actes -->
+        @if (demande()!.statut === 13 && permissions.hasRole(UserRole.ResponsableJuridique, UserRole.Admin) && decision()?.acteNotarie === 1) {
+          <button
+            type="button"
+            appButton
+            size="sm"
+            (click)="openAction({ title: 'Confirmer la signature des actes', endpoint: 'juridique' })"
+          >
+            Confirmer signature actes
+          </button>
+        }
+
+        <!-- Statut 13 — Assurance / Admin : Valider visite médicale -->
+        @if (demande()!.statut === 13 && permissions.hasRole(UserRole.ResponsableAssurance, UserRole.Admin)) {
+          <button
+            type="button"
+            appButton
+            size="sm"
+            (click)="openAction({ title: 'Valider la visite médicale', endpoint: 'juridique' })"
+          >
+            Valider visite médicale
+          </button>
+        }
+
+        <!-- Statut 14 — FO / Admin : Ajourner / Autoriser décaissement -->
+        @if (demande()!.statut === 14 && permissions.hasRole(UserRole.ResponsableFrontOffice, UserRole.Admin)) {
+          <button
+            type="button"
+            class="h-8 px-3 rounded-md border border-border bg-background text-sm text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
+            (click)="openAction({ title: 'Ajourner le dossier', endpoint: 'observation', decision: 2 })"
+          >
+            Ajourner
+          </button>
+          <button
+            type="button"
+            appButton
+            size="sm"
+            (click)="openAction({ title: 'Autoriser le décaissement', endpoint: 'observation', decision: 1 })"
+          >
+            Autoriser le décaissement
+          </button>
+        }
+
+        <!-- Statut 16 — RC / CC / Admin : Confirmer décaissement et clôture -->
+        @if (demande()!.statut === 16 && permissions.hasRole(UserRole.responsableClient, UserRole.conseilClientele, UserRole.Admin)) {
+          <button
+            type="button"
+            appButton
+            size="sm"
+            (click)="openAction({ title: 'Confirmer le décaissement et la clôture', endpoint: 'cloture' })"
+          >
+            Confirmer décaissement et clôture
+          </button>
+        }
+
+        <!-- Statut 17 — RC / CC / Admin : Clôturer le dossier -->
+        @if (demande()!.statut === 17 && permissions.hasRole(UserRole.responsableClient, UserRole.conseilClientele, UserRole.Admin)) {
+          <button
+            type="button"
+            appButton
+            size="sm"
+            (click)="openAction({ title: 'Clôturer le dossier', endpoint: 'observation', decision: 1 })"
+          >
+            Clôturer le dossier
+          </button>
+        }
+
+        <!-- Statut 18 — ASSC_PME / Admin : Confirmer la clôture -->
+        @if (demande()!.statut === 18 && permissions.hasRole(UserRole.assistanteClientelePME, UserRole.Admin)) {
+          <button
+            type="button"
+            appButton
+            size="sm"
+            (click)="openAction({ title: 'Confirmer la clôture', endpoint: 'cloture' })"
+          >
+            Confirmer la clôture
+          </button>
+        }
+
+        <!-- ════════════════════════════════════════════════════════
+             Statut 22 — Authentification de gages
+             Rôles : CA, CAA, RC, CC, Admin
+             ════════════════════════════════════════════════════════ -->
+        @if (demande()!.statut === 22 && permissions.hasRole(
+          UserRole.ChefAgence, UserRole.ChefAgenceAdjoint,
+          UserRole.responsableClient, UserRole.conseilClientele, UserRole.Admin)) {
+          <!-- Annuler pour désistement -->
+          <button
+            type="button"
+            class="h-8 px-3 rounded-md border border-border bg-background text-sm text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
+            (click)="openAction({ title: 'Annuler pour désistement', endpoint: 'annulation' })"
+          >
+            Annuler pour désistement
+          </button>
+          <!-- Demander authentification des gages -->
+          <button
+            type="button"
+            appButton
+            size="sm"
+            (click)="openAction({ title: 'Demander l\'authentification des gages', endpoint: 'observation', decision: 1 })"
+          >
+            Authentification des gages
+          </button>
+          <!-- Demander validation par dérogation -->
+          <button
+            type="button"
+            appButton
+            size="sm"
+            variant="outline"
+            (click)="openAction({ title: 'Demander validation par dérogation', endpoint: 'derogation', decision: 1 })"
+          >
+            Validation par dérogation
+          </button>
+        }
+
+        <!-- ════════════════════════════════════════════════════════
+             Statut 23 — En attente d'authentification des gages
+             Rôles : RESPO_FO, Admin
+             ════════════════════════════════════════════════════════ -->
+        @if (demande()!.statut === 23 && permissions.hasRole(UserRole.ResponsableFrontOffice, UserRole.Admin)) {
+          <button
+            type="button"
+            class="h-8 px-3 rounded-md border border-border bg-background text-sm text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
+            (click)="openAction({ title: 'Ajourner le dossier', endpoint: 'observation', decision: 2 })"
+          >
+            Ajourner
+          </button>
+          <button
+            type="button"
+            appButton
+            size="sm"
+            (click)="openAction({ title: 'Confirmer l\'authentification des gages', endpoint: 'observation', decision: 1 })"
+          >
+            Confirmer authentification gages
+          </button>
+        }
+
+        <!-- ════════════════════════════════════════════════════════
+             Statut 26 — Validation par dérogation
+             Rôles : DR, DGA, D_EXPL, CDCR, Admin
+             ════════════════════════════════════════════════════════ -->
+        @if (demande()!.statut === 26 && permissions.hasRole(
+          UserRole.DirecteurRisque, UserRole.DirecteurGeneralAdjoint,
+          UserRole.DirectriceExploitation, UserRole.Chargedepartementcredit, UserRole.Admin)) {
+          <button
+            type="button"
+            class="h-8 px-3 rounded-md border border-border bg-background text-sm text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
+            (click)="openAction({ title: 'Ajourner la dérogation', endpoint: 'derogation', decision: 2 })"
+          >
+            Ajourner
+          </button>
+          <button
+            type="button"
+            appButton
+            size="sm"
+            (click)="openAction({ title: 'Autoriser le décaissement par dérogation', endpoint: 'derogation', decision: 1 })"
+          >
+            Autoriser décaissement dérogation
+          </button>
+        }
+
+        <!-- ════════════════════════════════════════════════════════
+             Statut 27 — Suivi décaissement par dérogation
+             Rôles : RESPO_FO, Admin
+             ════════════════════════════════════════════════════════ -->
+        @if (demande()!.statut === 27 && permissions.hasRole(UserRole.ResponsableFrontOffice, UserRole.Admin)) {
+          <button
+            type="button"
+            class="h-8 px-3 rounded-md border border-border bg-background text-sm text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
+            (click)="openAction({ title: 'Ajourner le dossier', endpoint: 'derogation', decision: 2 })"
+          >
+            Ajourner
+          </button>
+          <button
+            type="button"
+            appButton
+            size="sm"
+            (click)="openAction({ title: 'Confirmer le décaissement par dérogation', endpoint: 'derogation', decision: 1 })"
+          >
+            Confirmer décaissement dérogation
+          </button>
+        }
+
+        <!-- ════════════════════════════════════════════════════════
+             Statut 13 + dérogation — Valider par dérogation
+             Rôles : DR, DGA, D_EXPL, CDCR, RESPO_FO, Admin
+             ════════════════════════════════════════════════════════ -->
+        @if (demande()!.statut === 13 && demande()!.derogation && permissions.hasRole(
+          UserRole.DirecteurRisque, UserRole.DirecteurGeneralAdjoint,
+          UserRole.DirectriceExploitation, UserRole.Chargedepartementcredit,
+          UserRole.ResponsableFrontOffice, UserRole.Admin)) {
+          <button
+            type="button"
+            appButton
+            size="sm"
+            variant="outline"
+            (click)="openAction({ title: 'Valider la dérogation', endpoint: 'derogation', decision: 1 })"
+          >
+            Valider par dérogation
+          </button>
+        }
+
+        <!-- N° Prêt / Contrat -->
+        @if (showNumPretButton()) {
+          <button type="button" appButton size="sm" variant="outline" (click)="openNumPret()">
+            <lucide-icon [img]="HashIcon" [size]="13" />
+            N° Prêt / Contrat
+          </button>
+        }
+
+        <!-- Modifier montant -->
+        @if (showModifMontantButton()) {
+          <button type="button" appButton size="sm" variant="outline" (click)="openModifMontant()">
+            <lucide-icon [img]="Edit3Icon" [size]="13" />
+            Modifier montant
+          </button>
+        }
+      </div>
+    }
+
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
 
       <!-- ── Colonne gauche (sticky) ─────────────────────────────── -->
@@ -82,7 +329,6 @@
           <app-card-content>
             @if (demande()?.client; as c) {
               <div class="flex flex-col items-center gap-3">
-                <!-- Avatar -->
                 <app-avatar size="lg" />
                 <div class="text-center">
                   <p class="font-semibold text-foreground text-sm">{{ c.nomPrenom }}</p>
@@ -96,26 +342,176 @@
               </div>
 
               <div class="mt-4 flex flex-col gap-2 border-t border-border pt-4">
+                <!-- Agence (commun) -->
                 @if (c.agence?.libelle) {
                   <div class="flex justify-between text-xs">
                     <span class="text-muted-foreground">Agence</span>
                     <span class="font-medium text-foreground">{{ c.agence!.libelle }}</span>
                   </div>
                 }
-                @if (demande()?.typeActivite?.libelle) {
+                <!-- Date inscription / création -->
+                @if (c.dateInscription) {
                   <div class="flex justify-between text-xs">
-                    <span class="text-muted-foreground">Activité</span>
-                    <span class="font-medium text-foreground">{{ demande()!.typeActivite!.libelle }}</span>
+                    <span class="text-muted-foreground">{{ isPersonneMorale() ? 'Date de création' : 'Ouverture compte' }}</span>
+                    <span class="font-medium text-foreground">{{ c.dateInscription | date:'dd/MM/yyyy' }}</span>
                   </div>
                 }
+                <!-- Analyste AR -->
                 @if (demande()?.ar?.nomPrenom) {
                   <div class="flex justify-between text-xs">
-                    <span class="text-muted-foreground">Analyste</span>
+                    <span class="text-muted-foreground">Analyste risque</span>
                     <span class="font-medium text-foreground">{{ demande()!.ar!.nomPrenom }}</span>
                   </div>
                 }
-                @if (fiche()?.nombreDemandes != null) {
+                <!-- Secteur d'activité -->
+                @if (demande()?.typeActivite?.libelle) {
                   <div class="flex justify-between text-xs">
+                    <span class="text-muted-foreground">Secteur</span>
+                    <span class="font-medium text-foreground">{{ demande()!.typeActivite!.libelle }}</span>
+                  </div>
+                }
+
+                <!-- ── PP spécifique ─────────────────────────── -->
+                @if (!isPersonneMorale()) {
+                  @if (c.dataNaiss) {
+                    <div class="flex justify-between text-xs">
+                      <span class="text-muted-foreground">Date naissance</span>
+                      <span class="font-medium text-foreground">{{ c.dataNaiss | date:'dd/MM/yyyy' }}</span>
+                    </div>
+                  }
+                  @if (c.quartier) {
+                    <div class="flex justify-between text-xs">
+                      <span class="text-muted-foreground">Quartier</span>
+                      <span class="font-medium text-foreground">{{ c.quartier }}</span>
+                    </div>
+                  }
+                  @if (c.rue) {
+                    <div class="flex justify-between text-xs">
+                      <span class="text-muted-foreground">Rue</span>
+                      <span class="font-medium text-foreground">{{ c.rue }}</span>
+                    </div>
+                  }
+                  @if (c.lot) {
+                    <div class="flex justify-between text-xs">
+                      <span class="text-muted-foreground">Lot</span>
+                      <span class="font-medium text-foreground">{{ c.lot }}</span>
+                    </div>
+                  }
+                  @if (c.villa) {
+                    <div class="flex justify-between text-xs">
+                      <span class="text-muted-foreground">Villa</span>
+                      <span class="font-medium text-foreground">{{ c.villa }}</span>
+                    </div>
+                  }
+                  @if (c.adresse) {
+                    <div class="flex justify-between text-xs">
+                      <span class="text-muted-foreground">Adresse</span>
+                      <span class="font-medium text-foreground truncate ml-2 text-right">{{ c.adresse }}</span>
+                    </div>
+                  }
+                  @if (c.batimentProche) {
+                    <div class="flex justify-between text-xs">
+                      <span class="text-muted-foreground">Bâtiment proche</span>
+                      <span class="font-medium text-foreground truncate ml-2 text-right">{{ c.batimentProche }}</span>
+                    </div>
+                  }
+                  @if (c.domicille) {
+                    <div class="flex justify-between text-xs">
+                      <span class="text-muted-foreground">Domicile</span>
+                      <span class="font-medium text-foreground truncate ml-2 text-right">{{ c.domicille }}</span>
+                    </div>
+                  }
+                }
+
+                <!-- ── PP spécifique + commune (aussi PM) ─────── -->
+                @if (c.commune?.libelle && !isPersonneMorale()) {
+                  <div class="flex justify-between text-xs">
+                    <span class="text-muted-foreground">Commune</span>
+                    <span class="font-medium text-foreground">{{ c.commune!.libelle }}</span>
+                  </div>
+                }
+
+                <!-- ── PM spécifique ─────────────────────────── -->
+                @if (isPersonneMorale()) {
+                  @if (c.denomination) {
+                    <div class="flex justify-between text-xs">
+                      <span class="text-muted-foreground">Dénomination</span>
+                      <span class="font-medium text-foreground truncate ml-2 text-right">{{ c.denomination }}</span>
+                    </div>
+                  }
+                  @if (c.entreprise?.statutJuridique) {
+                    <div class="flex justify-between text-xs">
+                      <span class="text-muted-foreground">Statut juridique</span>
+                      <span class="font-medium text-foreground">{{ statutJuridiqueLabel(c.entreprise!.statutJuridique) }}</span>
+                    </div>
+                  }
+                  @if (c.rccm || c.entreprise?.rccm) {
+                    <div class="flex justify-between text-xs">
+                      <span class="text-muted-foreground">RCCM</span>
+                      <span class="font-medium text-foreground truncate ml-2">{{ c.rccm ?? c.entreprise!.rccm }}</span>
+                    </div>
+                  }
+                  @if (c.entreprise?.nomDirigeant) {
+                    <div class="flex justify-between text-xs">
+                      <span class="text-muted-foreground">Mandataire social</span>
+                      <span class="font-medium text-foreground">{{ c.entreprise!.nomDirigeant }}</span>
+                    </div>
+                  }
+                  @if (c.entreprise?.NumEnregistrement) {
+                    <div class="flex justify-between text-xs">
+                      <span class="text-muted-foreground">N° Enregistrement</span>
+                      <span class="font-medium text-foreground">{{ c.entreprise!.NumEnregistrement }}</span>
+                    </div>
+                  }
+                  @if (c.entreprise?.capitalSocial) {
+                    <div class="flex justify-between text-xs">
+                      <span class="text-muted-foreground">Capital social</span>
+                      <span class="font-medium text-foreground">{{ formatMontant(c.entreprise!.capitalSocial) }}</span>
+                    </div>
+                  }
+                  @if (c.entreprise?.ncc) {
+                    <div class="flex justify-between text-xs">
+                      <span class="text-muted-foreground">N° Compte contribuable</span>
+                      <span class="font-medium text-foreground">{{ c.entreprise!.ncc }}</span>
+                    </div>
+                  }
+                  @if (c.entreprise?.dateCreation) {
+                    <div class="flex justify-between text-xs">
+                      <span class="text-muted-foreground">Date de création</span>
+                      <span class="font-medium text-foreground">{{ c.entreprise!.dateCreation | date:'dd/MM/yyyy' }}</span>
+                    </div>
+                  }
+                  @if (c.commune?.libelle) {
+                    <div class="flex justify-between text-xs">
+                      <span class="text-muted-foreground">Commune</span>
+                      <span class="font-medium text-foreground">{{ c.commune!.libelle }}</span>
+                    </div>
+                  }
+                }
+
+                <!-- Contact (commun PP & PM) -->
+                @if (c.numCel) {
+                  <div class="flex justify-between text-xs">
+                    <span class="text-muted-foreground">Téléphone</span>
+                    <span class="font-medium text-foreground">{{ c.indicatifCel ?? '' }}{{ c.numCel }}</span>
+                  </div>
+                }
+                @if (c.telFixe) {
+                  <div class="flex justify-between text-xs">
+                    <span class="text-muted-foreground">Tél. fixe</span>
+                    <span class="font-medium text-foreground">{{ c.telFixe }}</span>
+                  </div>
+                }
+                @if (c.email) {
+                  <div class="flex justify-between text-xs">
+                    <span class="text-muted-foreground">Email</span>
+                    <span class="font-medium text-foreground truncate ml-2 text-right">{{ c.email }}</span>
+                  </div>
+                }
+
+                <!-- Nb demandes -->
+                @if (fiche()?.nombreDemandes != null) {
+                  <div class="flex justify-between text-xs border-t border-border pt-2 mt-1">
                     <span class="text-muted-foreground">Nb demandes</span>
                     <span class="font-medium text-foreground">{{ fiche()!.nombreDemandes }}</span>
                   </div>
@@ -151,9 +547,7 @@
                     {{ formatMontant(decision()!.montantEmprunte) }}
                   </p>
                   @if (decision()?.duree) {
-                    <p class="text-xs text-green-700">
-                      sur {{ decision()!.duree }} mois
-                    </p>
+                    <p class="text-xs text-green-700">sur {{ decision()!.duree }} mois</p>
                   }
                   @if (decision()?.mensualite) {
                     <p class="text-xs text-green-700 mt-0.5">
@@ -189,30 +583,105 @@
       <!-- ── Colonne droite (onglets) ───────────────────────────── -->
       <app-card>
 
+        <!-- Navigation rapide + âge dossier -->
+        <div class="flex items-center justify-between gap-3 px-6 pt-5 pb-3 border-b border-border">
+          <div class="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              (click)="goAnalyse()"
+              class="flex items-center gap-1.5 h-8 px-3 rounded-md border border-border bg-background text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+            >
+              <lucide-icon [img]="TrendingUpIcon" [size]="13" />
+              Analyse financière
+            </button>
+            <button
+              type="button"
+              (click)="goResume()"
+              class="flex items-center gap-1.5 h-8 px-3 rounded-md border border-border bg-background text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+            >
+              <lucide-icon [img]="FileTextIcon" [size]="13" />
+              Résumé de l'analyse
+            </button>
+            <button
+              type="button"
+              (click)="switchTab('documents')"
+              class="flex items-center gap-1.5 h-8 px-3 rounded-md border border-border bg-background text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+            >
+              <lucide-icon [img]="PaperclipIcon" [size]="13" />
+              Documents
+              @if (documents().length > 0) {
+                <span class="rounded-full bg-muted px-1.5 text-[10px]">{{ documents().length }}</span>
+              }
+            </button>
+          </div>
+          @if (dosserAge()) {
+            <div class="flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
+              <lucide-icon [img]="ClockIcon" [size]="12" />
+              {{ dosserAge() }}
+            </div>
+          }
+        </div>
+
         <!-- Tabs navigation -->
         <app-card-header class="!pb-0">
           <div class="flex border-b border-border">
-            @for (tab of [
-              { id: 'details', label: 'Détails' },
-              { id: 'documents', label: 'Documents' }
-            ]; track tab.id) {
+            <button
+              type="button"
+              (click)="switchTab('details')"
+              class="flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px cursor-pointer"
+              [class.border-primary]="activeTab() === 'details'"
+              [class.text-primary]="activeTab() === 'details'"
+              [class.border-transparent]="activeTab() !== 'details'"
+              [class.text-muted-foreground]="activeTab() !== 'details'"
+            >Détails</button>
+            <button
+              type="button"
+              (click)="switchTab('documents')"
+              class="flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px cursor-pointer"
+              [class.border-primary]="activeTab() === 'documents'"
+              [class.text-primary]="activeTab() === 'documents'"
+              [class.border-transparent]="activeTab() !== 'documents'"
+              [class.text-muted-foreground]="activeTab() !== 'documents'"
+            >
+              Documents
+              <span class="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                {{ documents().length }}
+              </span>
+            </button>
+            @if (docChecklistItems().length > 0) {
               <button
                 type="button"
-                (click)="switchTab(tab.id)"
+                (click)="switchTab('checklist')"
                 class="flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px cursor-pointer"
-                [class.border-primary]="activeTab() === tab.id"
-                [class.text-primary]="activeTab() === tab.id"
-                [class.border-transparent]="activeTab() !== tab.id"
-                [class.text-muted-foreground]="activeTab() !== tab.id"
+                [class.border-primary]="activeTab() === 'checklist'"
+                [class.text-primary]="activeTab() === 'checklist'"
+                [class.border-transparent]="activeTab() !== 'checklist'"
+                [class.text-muted-foreground]="activeTab() !== 'checklist'"
               >
-                {{ tab.label }}
-                @if (tab.id === 'documents') {
-                  <span class="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                    {{ documents().length }}
-                  </span>
-                }
+                <lucide-icon [img]="ClipboardListIcon" [size]="13" />
+                Checklist
+                <span class="rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                  [class]="docChecklistDoneCount() === docChecklistItems().length
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-muted text-muted-foreground'">
+                  {{ docChecklistDoneCount() }}/{{ docChecklistItems().length }}
+                </span>
               </button>
             }
+
+            <!-- Garanties tab -->
+            <button
+              type="button"
+              (click)="switchTab('garanties')"
+              class="flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px cursor-pointer"
+              [class.border-primary]="activeTab() === 'garanties'"
+              [class.text-primary]="activeTab() === 'garanties'"
+              [class.border-transparent]="activeTab() !== 'garanties'"
+              [class.text-muted-foreground]="activeTab() !== 'garanties'"
+            >
+              <lucide-icon [img]="ShieldIcon" [size]="13" />
+              Actifs &amp; Garanties
+            </button>
           </div>
         </app-card-header>
 
@@ -238,8 +707,16 @@
                   </div>
                   <div>
                     <p class="text-xs text-muted-foreground">Type crédit</p>
-                    <p class="text-sm font-medium text-foreground">{{ demande()?.typeCredit?.libelle }}</p>
+                    <p class="text-sm font-medium text-foreground">
+                      {{ demande()?.tirage === 1 ? 'TIRAGE / DÉCOUVERT' : demande()?.typeCredit?.libelle }}
+                    </p>
                   </div>
+                  @if (demande()?.refTirage) {
+                    <div>
+                      <p class="text-xs text-muted-foreground">Réf. tirage</p>
+                      <p class="text-sm font-medium text-foreground">{{ demande()!.refTirage }}</p>
+                    </div>
+                  }
                   <div>
                     <p class="text-xs text-muted-foreground">Montant sollicité</p>
                     <p class="text-sm font-medium text-foreground">
@@ -261,15 +738,19 @@
                   @if (demande()?.nbreEcheDiffere) {
                     <div>
                       <p class="text-xs text-muted-foreground">Différé</p>
-                      <p class="text-sm font-medium text-foreground">
-                        {{ demande()!.nbreEcheDiffere }} mois
-                      </p>
+                      <p class="text-sm font-medium text-foreground">{{ demande()!.nbreEcheDiffere }} mois</p>
                     </div>
                   }
-                  @if (demande()?.objetCredit) {
+                  @if (demande()?.numTransaction) {
+                    <div>
+                      <p class="text-xs text-muted-foreground">N° demande Perfect</p>
+                      <p class="text-sm font-medium text-foreground">{{ demande()!.numTransaction }}</p>
+                    </div>
+                  }
+                  @if (demande()?.objetCredit != null) {
                     <div class="col-span-2 sm:col-span-3">
-                      <p class="text-xs text-muted-foreground">Objet</p>
-                      <p class="text-sm font-medium text-foreground">{{ demande()!.objetCredit }}</p>
+                      <p class="text-xs text-muted-foreground">Objet du crédit</p>
+                      <p class="text-sm font-medium text-foreground">{{ objetCreditLabel(demande()!.objetCredit) }}</p>
                     </div>
                   }
                   @if (demande()?.description) {
@@ -281,11 +762,71 @@
                 </div>
               </section>
 
-              <!-- Décision finale -->
+              <!-- ── Avance de fonds ─────────────────────────────── -->
+              @if (demande()?.avsFond; as avsFond) {
+                <section class="border-t border-border pt-6">
+                  <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-semibold text-foreground">Avance de fonds</h3>
+                    @if (avsFond.statut === 3) {
+                      <app-badge variant="success">Validée</app-badge>
+                    } @else if (avsFond.statut === 2) {
+                      <app-badge variant="warning">En validation FO</app-badge>
+                    } @else {
+                      <app-badge variant="warning">En attente de validation</app-badge>
+                    }
+                  </div>
+                  <div class="grid grid-cols-2 gap-x-8 gap-y-2 sm:grid-cols-3">
+                    @if (avsFond.dateDemande) {
+                      <div>
+                        <p class="text-xs text-muted-foreground">Date demande</p>
+                        <p class="text-sm font-medium text-foreground">{{ avsFond.dateDemande | date:'dd/MM/yyyy' }}</p>
+                      </div>
+                    }
+                    @if (avsFond.mtDepositExige) {
+                      <div>
+                        <p class="text-xs text-muted-foreground">Dépôt exigé</p>
+                        <p class="text-sm font-medium text-foreground">{{ formatMontant(avsFond.mtDepositExige) }}</p>
+                      </div>
+                    }
+                    @if (avsFond.mtAvsfSollicite) {
+                      <div>
+                        <p class="text-xs text-muted-foreground">Avance sollicitée</p>
+                        <p class="text-sm font-medium text-foreground">{{ formatMontant(avsFond.mtAvsfSollicite) }}</p>
+                      </div>
+                    }
+                    @if (avsFond.mtAvsf) {
+                      <div>
+                        <p class="text-xs text-muted-foreground">Avance accordée</p>
+                        <p class="text-sm font-medium text-foreground">{{ formatMontant(avsFond.mtAvsf) }}</p>
+                      </div>
+                    }
+                    @if (avsFond.numPerfect) {
+                      <div>
+                        <p class="text-xs text-muted-foreground">N° Perfect</p>
+                        <p class="text-sm font-medium text-foreground">{{ avsFond.numPerfect }}</p>
+                      </div>
+                    }
+                    @if (avsFond.motif) {
+                      <div class="col-span-2 sm:col-span-3">
+                        <p class="text-xs text-muted-foreground">Motif</p>
+                        <p class="text-sm text-foreground leading-relaxed">{{ avsFond.motif }}</p>
+                      </div>
+                    }
+                  </div>
+                </section>
+              }
+
+              <!-- ── Décision finale ─────────────────────────────── -->
               @if (decision()) {
                 <section class="border-t border-border pt-6">
                   <h3 class="text-sm font-semibold text-foreground mb-3">Décision finale</h3>
                   <div class="grid grid-cols-2 gap-x-8 gap-y-2 sm:grid-cols-3">
+                    @if (decision()!.montantPropose) {
+                      <div>
+                        <p class="text-xs text-muted-foreground">Montant proposé</p>
+                        <p class="text-sm font-medium text-foreground">{{ formatMontant(decision()!.montantPropose) }}</p>
+                      </div>
+                    }
                     <div>
                       <p class="text-xs text-muted-foreground">Montant emprunté</p>
                       <p class="text-sm font-medium text-green-700">{{ formatMontant(decision()!.montantEmprunte) }}</p>
@@ -314,6 +855,12 @@
                         <p class="text-sm font-medium text-foreground">{{ formatMontant(decision()!.commissionDeboursement) }}</p>
                       </div>
                     }
+                    @if (decision()!.assurDecesInvalidite) {
+                      <div>
+                        <p class="text-xs text-muted-foreground">Assur. décès/invalidité</p>
+                        <p class="text-sm font-medium text-foreground">{{ formatMontant(decision()!.assurDecesInvalidite) }}</p>
+                      </div>
+                    }
                     @if (decision()!.montantCaution) {
                       <div>
                         <p class="text-xs text-muted-foreground">Caution</p>
@@ -322,8 +869,20 @@
                     }
                     @if (decision()!.deposit) {
                       <div>
-                        <p class="text-xs text-muted-foreground">Dépôt</p>
+                        <p class="text-xs text-muted-foreground">Déposit</p>
                         <p class="text-sm font-medium text-foreground">{{ decision()!.deposit }}%</p>
+                      </div>
+                    }
+                    @if (totalDepositCalc() > 0) {
+                      <div>
+                        <p class="text-xs text-muted-foreground">Total du déposit</p>
+                        <p class="text-sm font-medium text-foreground">{{ formatMontant(totalDepositCalc()) }}</p>
+                      </div>
+                    }
+                    @if (decision()!.montantActeNotarie) {
+                      <div>
+                        <p class="text-xs text-muted-foreground">Montant acte notarié</p>
+                        <p class="text-sm font-medium text-foreground">{{ formatMontant(decision()!.montantActeNotarie) }}</p>
                       </div>
                     }
                     @if (decision()!.tauxCouverture) {
@@ -348,6 +907,15 @@
                           } @else {
                             <lucide-icon [img]="XCircleIcon" [size]="13" class="text-muted-foreground" />
                             <span class="text-muted-foreground">Acte notarié</span>
+                          }
+                        </span>
+                        <span class="flex items-center gap-1 text-xs">
+                          @if (decision()!.hypotheque === 1) {
+                            <lucide-icon [img]="CheckCircleIcon" [size]="13" class="text-green-600" />
+                            <span class="text-green-700">Hypothèque</span>
+                          } @else {
+                            <lucide-icon [img]="XCircleIcon" [size]="13" class="text-muted-foreground" />
+                            <span class="text-muted-foreground">Hypothèque</span>
                           }
                         </span>
                         <span class="flex items-center gap-1 text-xs">
@@ -380,12 +948,706 @@
                 </section>
               }
 
+              <!-- ── Garanties ───────────────────────────────────── -->
+              @if ((fiche()?.usersGaranties?.length ?? 0) > 0) {
+                <section class="border-t border-border pt-6">
+                  <h3 class="text-sm font-semibold text-foreground mb-2">Garanties</h3>
+                  <p class="text-sm text-muted-foreground">
+                    {{ fiche()!.usersGaranties!.length }} garantie{{ fiche()!.usersGaranties!.length > 1 ? 's' : '' }} enregistrée{{ fiche()!.usersGaranties!.length > 1 ? 's' : '' }}
+                  </p>
+                </section>
+              }
+
+              <!-- ── Signataires (PM) ────────────────────────────── -->
+              @if (isPersonneMorale() && (demande()?.client?.signataires?.length ?? 0) > 0) {
+                <section class="border-t border-border pt-6">
+                  <h3 class="text-sm font-semibold text-foreground mb-3">Signataires</h3>
+                  <div class="flex flex-col gap-4">
+                    @for (sig of demande()!.client.signataires!; track $index) {
+                      <div class="rounded-lg border border-border p-4">
+                        <p class="text-sm font-semibold text-foreground mb-3">
+                          {{ sig.nom }} {{ sig.prenom }}
+                        </p>
+                        <div class="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+                          @if (sig.numPiece) {
+                            <div>
+                              <p class="text-xs text-muted-foreground">N° Pièce</p>
+                              <p class="text-sm font-medium text-foreground">{{ sig.numPiece }}</p>
+                            </div>
+                          }
+                          @if (sig.nationalite) {
+                            <div>
+                              <p class="text-xs text-muted-foreground">Nationalité</p>
+                              <p class="text-sm font-medium text-foreground">
+                                {{ sig.nationalite.nationalite }}
+                              </p>
+                            </div>
+                          }
+                          @if (sig.lieuNaiss) {
+                            <div>
+                              <p class="text-xs text-muted-foreground">Lieu de naissance</p>
+                              <p class="text-sm font-medium text-foreground">{{ sig.lieuNaiss }}</p>
+                            </div>
+                          }
+                          @if (sig.dateNaissance) {
+                            <div>
+                              <p class="text-xs text-muted-foreground">Date naissance</p>
+                              <p class="text-sm font-medium text-foreground">{{ sig.dateNaissance | date:'dd/MM/yyyy' }}</p>
+                            </div>
+                          }
+                          @if (sig.rue) {
+                            <div>
+                              <p class="text-xs text-muted-foreground">Rue</p>
+                              <p class="text-sm font-medium text-foreground">{{ sig.rue }}</p>
+                            </div>
+                          }
+                          @if (sig.commune) {
+                            <div>
+                              <p class="text-xs text-muted-foreground">Commune</p>
+                              <p class="text-sm font-medium text-foreground">
+                                {{ sig.commune.libelle }}
+                              </p>
+                            </div>
+                          }
+                          @if (sig.numTelephone) {
+                            <div>
+                              <p class="text-xs text-muted-foreground">Téléphone</p>
+                              <p class="text-sm font-medium text-foreground">{{ sig.numTelephone }}</p>
+                            </div>
+                          }
+                          @if (sig.dateDelivrancePiece) {
+                            <div>
+                              <p class="text-xs text-muted-foreground">Date délivrance pièce</p>
+                              <p class="text-sm font-medium text-foreground">{{ sig.dateDelivrancePiece | date:'dd/MM/yyyy' }}</p>
+                            </div>
+                          }
+                          @if (sig.dateExpirationPiece) {
+                            <div>
+                              <p class="text-xs text-muted-foreground">Date expiration pièce</p>
+                              <p class="text-sm font-medium text-foreground">{{ sig.dateExpirationPiece | date:'dd/MM/yyyy' }}</p>
+                            </div>
+                          }
+                          @if (sig.lieuDelivrance) {
+                            <div>
+                              <p class="text-xs text-muted-foreground">Lieu de délivrance</p>
+                              <p class="text-sm font-medium text-foreground">{{ sig.lieuDelivrance }}</p>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </section>
+              }
+
+            </div>
+          }
+
+          <!-- ── Tab Checklist ─────────────────────────────────── -->
+          @if (activeTab() === 'checklist') {
+            <div class="flex flex-col gap-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-sm font-semibold text-foreground">Documents nécessaires</h3>
+                  <p class="text-xs text-muted-foreground mt-0.5">
+                    {{ demande()?.typeCredit?.libelle ?? 'Type crédit' }} · {{ docChecklistDoneCount() }}/{{ docChecklistItems().length }} collectés
+                  </p>
+                </div>
+                <!-- Progress bar -->
+                <div class="w-24 h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div
+                    class="h-full rounded-full transition-all duration-300"
+                    [class]="docChecklistDoneCount() === docChecklistItems().length ? 'bg-green-500' : 'bg-primary'"
+                    [style.width.%]="(docChecklistDoneCount() / docChecklistItems().length) * 100">
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-2">
+                @for (item of docChecklistItems(); track item.id; let i = $index) {
+                  <label
+                    class="flex items-center gap-3 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors"
+                    [class]="item.done
+                      ? 'border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/20'
+                      : 'border-border bg-muted/20 hover:bg-muted/40'"
+                  >
+                    <input
+                      type="checkbox"
+                      [checked]="item.done"
+                      (change)="toggleDocCheckItem(i)"
+                      class="h-4 w-4 rounded border-border accent-primary cursor-pointer"
+                    />
+                    <span class="text-sm flex-1" [class]="item.done ? 'line-through text-muted-foreground' : 'text-foreground'">
+                      {{ item.libelle }}
+                    </span>
+                    @if (!item.obligation) {
+                      <span class="text-[10px] text-muted-foreground rounded-full bg-muted px-1.5 py-0.5">Optionnel</span>
+                    }
+                    @if (item.done) {
+                      <lucide-icon [img]="CheckCircle2Icon" [size]="15" class="text-green-600 dark:text-green-400 shrink-0" />
+                    }
+                  </label>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- ── Tab Actifs & Garanties ────────────────────────── -->
+          @if (activeTab() === 'garanties') {
+            <div class="flex flex-col gap-4">
+
+              @if (isLoadingGaranties()) {
+                <div class="flex items-center justify-center py-16 text-muted-foreground">
+                  <span class="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent mr-2"></span>
+                  Chargement des actifs…
+                </div>
+              } @else if (!garanties()) {
+                <div class="flex flex-col items-center gap-2 py-16 text-center">
+                  <lucide-icon [img]="ShieldIcon" [size]="32" class="text-muted-foreground/30" />
+                  <p class="text-sm text-muted-foreground">Aucune donnée d'actifs disponible.</p>
+                </div>
+              } @else {
+
+                <!-- Layout: sidebar gauche + contenu droit -->
+                <div class="flex gap-4">
+
+                  <!-- Sidebar navigation -->
+                  <nav class="flex flex-col gap-0.5 w-48 shrink-0">
+                    @for (section of garantieSectionItems(); track section.id) {
+                      <button
+                        type="button"
+                        (click)="activeGarantiesSection.set(section.id)"
+                        class="flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-colors cursor-pointer text-left"
+                        [class.bg-primary]="activeGarantiesSection() === section.id"
+                        [class.text-primary-foreground]="activeGarantiesSection() === section.id"
+                        [class.text-muted-foreground]="activeGarantiesSection() !== section.id"
+                        [class.hover:bg-muted]="activeGarantiesSection() !== section.id"
+                      >
+                        <span>{{ section.label }}</span>
+                        @if (section.count !== null && section.count > 0) {
+                          <span class="rounded-full bg-white/20 px-1.5 text-[10px]" [class.bg-muted]="activeGarantiesSection() !== section.id">
+                            {{ section.count }}
+                          </span>
+                        }
+                      </button>
+                    }
+                  </nav>
+
+                  <!-- Content zone -->
+                  <div class="flex-1 min-w-0">
+
+                    <!-- TOTAUX -->
+                    @if (activeGarantiesSection() === 0) {
+                      <div class="flex flex-col gap-3">
+                        <h3 class="text-sm font-semibold text-foreground">Totaux des actifs et garanties</h3>
+                        @for (t of garanties()!.typeGaranties; track t.id) {
+                          @if (t.garanties.length) {
+                            <div class="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-sm">
+                              <span class="text-muted-foreground">{{ t.libelle ?? 'Type ' + t.id }}</span>
+                              <div class="flex gap-6 text-right">
+                                <div>
+                                  <p class="text-[10px] text-muted-foreground">Valeur</p>
+                                  <p class="font-semibold text-foreground">{{ formatMontant(t.total) }}</p>
+                                </div>
+                                <div>
+                                  <p class="text-[10px] text-muted-foreground">En garantie</p>
+                                  <p class="font-semibold text-primary">{{ formatMontant(t.total_prime) }}</p>
+                                </div>
+                              </div>
+                            </div>
+                          }
+                        }
+                        @if (totalGarantiesFixe() > 0) {
+                          <div class="flex justify-between rounded-lg bg-primary/5 border border-primary/20 px-4 py-3 text-sm font-semibold mt-2">
+                            <span>TOTAL GÉNÉRAL</span>
+                            <div class="flex gap-6 text-right">
+                              <div>
+                                <p class="text-[10px] text-muted-foreground font-normal">Valeur</p>
+                                <p>{{ formatMontant(totalGarantiesFixe()) }}</p>
+                              </div>
+                              <div>
+                                <p class="text-[10px] text-muted-foreground font-normal">En garantie</p>
+                                <p class="text-primary">{{ formatMontant(totalGarantiesPrime()) }}</p>
+                              </div>
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    }
+
+                    <!-- VÉHICULES -->
+                    @if (activeGarantiesSection() === GARANTIE_IDS.VEHICULE) {
+                      <div class="flex flex-col gap-4">
+                        <div class="flex items-center gap-2">
+                          <lucide-icon [img]="TruckIcon" [size]="18" class="text-primary" />
+                          <h3 class="text-sm font-semibold text-foreground">Véhicules</h3>
+                          <span class="text-xs text-muted-foreground">Actifs et garanties</span>
+                        </div>
+                        @if (!garantieVehicules().length) {
+                          <p class="text-sm text-muted-foreground py-6 text-center">Aucun véhicule enregistré.</p>
+                        } @else {
+                          @for (v of garantieVehicules(); track v.id; let i = $index) {
+                            <div class="rounded-xl border border-border bg-card/50 p-4">
+                              <div class="flex items-center justify-between mb-3">
+                                <div>
+                                  <p class="text-sm font-semibold text-foreground">Véhicule ({{ i + 1 }})</p>
+                                  <p class="text-xs text-muted-foreground">
+                                    {{ v.proprietaire === 'D' ? 'Demandeur' : v.proprietaire === 'C' ? 'Caution' : '' }}
+                                  </p>
+                                </div>
+                                <div class="flex gap-2">
+                                  @if (v.garantie === 1) {
+                                    <app-badge variant="success">En garantie</app-badge>
+                                  } @else {
+                                    <app-badge variant="default">Hors garantie</app-badge>
+                                  }
+                                </div>
+                              </div>
+                              <div class="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+                                @if (v.marque) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">Marque</p>
+                                    <p class="text-sm font-medium">{{ v.marque }}</p>
+                                  </div>
+                                }
+                                @if (v.typeProPerso) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">Type</p>
+                                    <p class="text-sm font-medium">{{ v.typeProPerso }}</p>
+                                  </div>
+                                }
+                                @if (v.immatriculation) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">N° immatriculation</p>
+                                    <p class="text-sm font-medium">{{ v.immatriculation }}</p>
+                                  </div>
+                                }
+                                @if (v.couleur) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">Couleur</p>
+                                    <p class="text-sm font-medium">{{ v.couleur }}</p>
+                                  </div>
+                                }
+                                @if (v.typeCommercial) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">Type commercial</p>
+                                    <p class="text-sm font-medium">{{ v.typeCommercial }}</p>
+                                  </div>
+                                }
+                                @if (v.typeTechnique) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">Type technique</p>
+                                    <p class="text-sm font-medium">{{ v.typeTechnique }}</p>
+                                  </div>
+                                }
+                                @if (v.typeVehicule) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">Type de véhicule</p>
+                                    <p class="text-sm font-medium">{{ v.typeVehicule }}</p>
+                                  </div>
+                                }
+                                @if (v.dateMiseEnCirculation) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">1ère mise en circulation</p>
+                                    <p class="text-sm font-medium">{{ v.dateMiseEnCirculation | date:'dd/MM/yyyy' }}</p>
+                                  </div>
+                                }
+                                @if (v.evaluation) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">Critères d'évaluation</p>
+                                    <p class="text-sm font-medium">{{ v.evaluation }}</p>
+                                  </div>
+                                }
+                                @if (v.valeurAchat) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">Valeur d'achat</p>
+                                    <p class="text-sm font-semibold text-destructive">{{ formatMontant(v.valeurAchat) }}</p>
+                                  </div>
+                                }
+                                @if (v.valeurEstime) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">Valeur estimée</p>
+                                    <p class="text-sm font-semibold text-primary">{{ formatMontant(v.valeurEstime) }}</p>
+                                  </div>
+                                }
+                                <div>
+                                  <p class="text-xs text-muted-foreground">MINI COMM ?</p>
+                                  <p class="text-sm font-medium"
+                                    [class.text-destructive]="v.miniComm === 2"
+                                    [class.text-green-600]="v.miniComm === 1">
+                                    {{ v.miniComm === 1 ? 'Oui' : 'Non' }}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p class="text-xs text-muted-foreground">Véhicule vu ?</p>
+                                  <p class="text-sm font-medium"
+                                    [class.text-green-600]="v.vehiculeVu === 1"
+                                    [class.text-destructive]="v.vehiculeVu === 2">
+                                    {{ v.vehiculeVu === 1 ? 'Oui' : 'Non' }}
+                                  </p>
+                                </div>
+                              </div>
+                              <!-- Totaux véhicule -->
+                              @if (v.valeurAchat || v.valeurEstime) {
+                                <div class="mt-3 pt-3 border-t border-border grid grid-cols-2 gap-4">
+                                  <div class="rounded-lg bg-destructive/10 px-3 py-2">
+                                    <p class="text-[10px] text-muted-foreground">TOTAL VÉHICULE (D)</p>
+                                    <p class="text-sm font-bold text-destructive">{{ formatMontant(v.valeurAchat) }}</p>
+                                  </div>
+                                  <div class="rounded-lg bg-primary/10 px-3 py-2">
+                                    <p class="text-[10px] text-muted-foreground">TOTAL EN GARANTIE (D')</p>
+                                    <p class="text-sm font-bold text-primary">{{ formatMontant(v.valeurEstime) }}</p>
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          }
+                        }
+                      </div>
+                    }
+
+                    <!-- IMMOBILISATIONS -->
+                    @if (activeGarantiesSection() === GARANTIE_IDS.IMMOBILISATION) {
+                      <div class="flex flex-col gap-3">
+                        <h3 class="text-sm font-semibold text-foreground">Immobilisations</h3>
+                        @if (!garantieImmobilisations().length) {
+                          <p class="text-sm text-muted-foreground py-6 text-center">Aucune immobilisation enregistrée.</p>
+                        } @else {
+                          @for (immo of garantieImmobilisations(); track $index; let i = $index) {
+                            <div class="rounded-xl border border-border bg-card/50 p-4">
+                              <p class="text-sm font-semibold text-foreground mb-2">Immobilisation ({{ i + 1 }})</p>
+                              <div class="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+                                @if (immo.typePropriete) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">Type de propriété</p>
+                                    <p class="text-sm font-medium">{{ immo.typePropriete === 1 ? 'Local' : 'Terrain' }}</p>
+                                  </div>
+                                }
+                                @if (immo.superficie) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">Superficie</p>
+                                    <p class="text-sm font-medium">{{ immo.superficie }} m²</p>
+                                  </div>
+                                }
+                                @if (immo.titreFoncier) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">Titre foncier</p>
+                                    <p class="text-sm font-medium">{{ immo.titreFoncier }}</p>
+                                  </div>
+                                }
+                                @if (immo.lot) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">Lot</p>
+                                    <p class="text-sm font-medium">{{ immo.lot }}</p>
+                                  </div>
+                                }
+                                @if (immo.ilot) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">Ilot</p>
+                                    <p class="text-sm font-medium">{{ immo.ilot }}</p>
+                                  </div>
+                                }
+                                @if (immo.dateAcquisition) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">Date d'acquisition</p>
+                                    <p class="text-sm font-medium">{{ immo.dateAcquisition | date:'dd/MM/yyyy' }}</p>
+                                  </div>
+                                }
+                                @if (immo.adressDescr) {
+                                  <div class="col-span-2 sm:col-span-3">
+                                    <p class="text-xs text-muted-foreground">Adresse</p>
+                                    <p class="text-sm font-medium">{{ immo.adressDescr }}</p>
+                                  </div>
+                                }
+                                @if (immo.valeurAchat) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">Valeur d'achat</p>
+                                    <p class="text-sm font-semibold text-destructive">{{ formatMontant(immo.valeurAchat) }}</p>
+                                  </div>
+                                }
+                                @if (immo.valeurEstime) {
+                                  <div>
+                                    <p class="text-xs text-muted-foreground">Valeur estimée</p>
+                                    <p class="text-sm font-semibold text-primary">{{ formatMontant(immo.valeurEstime) }}</p>
+                                  </div>
+                                }
+                              </div>
+                            </div>
+                          }
+                        }
+                      </div>
+                    }
+
+                    <!-- MATÉRIELS PROFESSIONNELS -->
+                    @if (activeGarantiesSection() === GARANTIE_IDS.MATERIEL_PRO) {
+                      <div class="flex flex-col gap-3">
+                        <h3 class="text-sm font-semibold text-foreground">Matériels professionnels</h3>
+                        @if (!garantieMateriels().length) {
+                          <p class="text-sm text-muted-foreground py-6 text-center">Aucun matériel professionnel enregistré.</p>
+                        } @else {
+                          @for (mat of garantieMateriels(); track $index; let i = $index) {
+                            <div class="rounded-xl border border-border bg-card/50 p-4">
+                              <p class="text-sm font-semibold text-foreground mb-2">Matériel ({{ i + 1 }})</p>
+                              <div class="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+                                @if (mat.designation) {
+                                  <div><p class="text-xs text-muted-foreground">Désignation</p><p class="text-sm font-medium">{{ mat.designation }}</p></div>
+                                }
+                                @if (mat.quantite) {
+                                  <div><p class="text-xs text-muted-foreground">Quantité</p><p class="text-sm font-medium">{{ mat.quantite }}</p></div>
+                                }
+                                @if (mat.dateAcquisition) {
+                                  <div><p class="text-xs text-muted-foreground">Date acquisition</p><p class="text-sm font-medium">{{ mat.dateAcquisition | date:'dd/MM/yyyy' }}</p></div>
+                                }
+                                @if (mat.valeurAchat) {
+                                  <div><p class="text-xs text-muted-foreground">Valeur d'achat</p><p class="text-sm font-semibold text-destructive">{{ formatMontant(mat.valeurAchat) }}</p></div>
+                                }
+                                @if (mat.valeurEstime) {
+                                  <div><p class="text-xs text-muted-foreground">Valeur estimée</p><p class="text-sm font-semibold text-primary">{{ formatMontant(mat.valeurEstime) }}</p></div>
+                                }
+                                @if (mat.evaluation) {
+                                  <div><p class="text-xs text-muted-foreground">Critères évaluation</p><p class="text-sm font-medium">{{ mat.evaluation }}</p></div>
+                                }
+                              </div>
+                            </div>
+                          }
+                        }
+                      </div>
+                    }
+
+                    <!-- BIENS MOBILIERS DE LA FAMILLE -->
+                    @if (activeGarantiesSection() === GARANTIE_IDS.BIEN_MOBILIER_FAMILLE) {
+                      <div class="flex flex-col gap-3">
+                        <h3 class="text-sm font-semibold text-foreground">Biens mobiliers de la famille</h3>
+                        @if (!garantieBiensMobiliers().length) {
+                          <p class="text-sm text-muted-foreground py-6 text-center">Aucun bien mobilier enregistré.</p>
+                        } @else {
+                          @for (bien of garantieBiensMobiliers(); track $index; let i = $index) {
+                            <div class="rounded-xl border border-border bg-card/50 p-4">
+                              <p class="text-sm font-semibold mb-2">Bien mobilier ({{ i + 1 }})</p>
+                              <div class="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+                                @if (bien.designation) {
+                                  <div><p class="text-xs text-muted-foreground">Désignation</p><p class="text-sm font-medium">{{ bien.designation }}</p></div>
+                                }
+                                @if (bien.quantite) {
+                                  <div><p class="text-xs text-muted-foreground">Quantité</p><p class="text-sm font-medium">{{ bien.quantite }}</p></div>
+                                }
+                                @if (bien.valeurAchat) {
+                                  <div><p class="text-xs text-muted-foreground">Valeur d'achat</p><p class="text-sm font-semibold text-destructive">{{ formatMontant(bien.valeurAchat) }}</p></div>
+                                }
+                                @if (bien.valeurEstime) {
+                                  <div><p class="text-xs text-muted-foreground">Valeur estimée</p><p class="text-sm font-semibold text-primary">{{ formatMontant(bien.valeurEstime) }}</p></div>
+                                }
+                              </div>
+                            </div>
+                          }
+                        }
+                      </div>
+                    }
+
+                    <!-- DAT -->
+                    @if (activeGarantiesSection() === GARANTIE_IDS.DAT) {
+                      <div class="flex flex-col gap-3">
+                        <h3 class="text-sm font-semibold text-foreground">Dépôts à terme (DAT)</h3>
+                        @if (!garantieDats().length) {
+                          <p class="text-sm text-muted-foreground py-6 text-center">Aucun DAT enregistré.</p>
+                        } @else {
+                          @for (dat of garantieDats(); track $index; let i = $index) {
+                            <div class="rounded-xl border border-border bg-card/50 p-4">
+                              <p class="text-sm font-semibold mb-2">DAT ({{ i + 1 }})</p>
+                              <div class="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+                                @if (dat.banque) {
+                                  <div><p class="text-xs text-muted-foreground">Banque</p><p class="text-sm font-medium">{{ dat.banque }}</p></div>
+                                }
+                                @if (dat.montant) {
+                                  <div><p class="text-xs text-muted-foreground">Montant</p><p class="text-sm font-semibold text-primary">{{ formatMontant(dat.montant) }}</p></div>
+                                }
+                                @if (dat.dateEcheance) {
+                                  <div><p class="text-xs text-muted-foreground">Échéance</p><p class="text-sm font-medium">{{ dat.dateEcheance | date:'dd/MM/yyyy' }}</p></div>
+                                }
+                              </div>
+                            </div>
+                          }
+                        }
+                      </div>
+                    }
+
+                    <!-- CAUTIONS SOLIDAIRES -->
+                    @if (activeGarantiesSection() === -1) {
+                      <div class="flex flex-col gap-3">
+                        <h3 class="text-sm font-semibold text-foreground">Cautions solidaires</h3>
+                        @if (!garanties()?.crCaution?.length) {
+                          <p class="text-sm text-muted-foreground py-6 text-center">Aucune caution solidaire enregistrée.</p>
+                        } @else {
+                          @for (caution of garanties()!.crCaution; track caution.id; let i = $index) {
+                            <div class="rounded-xl border border-border bg-card/50 p-4">
+                              <div class="flex items-center gap-3 mb-3">
+                                <app-avatar size="sm" />
+                                <div>
+                                  <p class="text-sm font-semibold">{{ caution.nom }} {{ caution.prenom }}</p>
+                                  <p class="text-xs text-muted-foreground">Caution solidaire {{ i + 1 }}</p>
+                                </div>
+                              </div>
+                              <div class="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+                                @if (caution.genre) {
+                                  <div><p class="text-xs text-muted-foreground">Genre</p><p class="text-sm font-medium">{{ caution.genre }}</p></div>
+                                }
+                                @if (caution.telephone) {
+                                  <div><p class="text-xs text-muted-foreground">Téléphone</p><p class="text-sm font-medium">{{ caution.telephone }}</p></div>
+                                }
+                                @if (caution.profession) {
+                                  <div><p class="text-xs text-muted-foreground">Profession</p><p class="text-sm font-medium">{{ caution.profession }}</p></div>
+                                }
+                                @if (caution.revenu) {
+                                  <div><p class="text-xs text-muted-foreground">Revenu</p><p class="text-sm font-medium">{{ formatMontant(caution.revenu) }}</p></div>
+                                }
+                                @if (caution.lieuNaissance) {
+                                  <div><p class="text-xs text-muted-foreground">Lieu de naissance</p><p class="text-sm font-medium">{{ caution.lieuNaissance }}</p></div>
+                                }
+                                @if (caution.nationalite) {
+                                  <div><p class="text-xs text-muted-foreground">Nationalité</p><p class="text-sm font-medium">{{ caution.nationalite.nationalite }}</p></div>
+                                }
+                                @if (caution.quartier) {
+                                  <div><p class="text-xs text-muted-foreground">Quartier</p><p class="text-sm font-medium">{{ caution.quartier }}</p></div>
+                                }
+                                @if (caution.rue) {
+                                  <div><p class="text-xs text-muted-foreground">Rue</p><p class="text-sm font-medium">{{ caution.rue }}</p></div>
+                                }
+                                @if (caution.adresse) {
+                                  <div class="col-span-2 sm:col-span-3"><p class="text-xs text-muted-foreground">Adresse</p><p class="text-sm font-medium">{{ caution.adresse }}</p></div>
+                                }
+                                @if (caution.montantCaution) {
+                                  <div><p class="text-xs text-muted-foreground">Montant caution</p><p class="text-sm font-semibold text-primary">{{ formatMontant(caution.montantCaution) }}</p></div>
+                                }
+                              </div>
+                            </div>
+                          }
+                        }
+                      </div>
+                    }
+
+                  </div><!-- /content zone -->
+                </div><!-- /layout -->
+              }
             </div>
           }
 
           <!-- ── Tab Documents ──────────────────────────────────── -->
           @if (activeTab() === 'documents') {
             <div class="flex flex-col gap-6">
+
+              <!-- ── Contrats & PDF ────────────────────────────── -->
+              @if (showFicheResumeButton()) {
+                <section class="rounded-xl border border-border bg-card p-5">
+                  <div class="flex items-center gap-2 mb-4">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                      <lucide-icon [img]="FileTextIcon" [size]="15" class="text-primary" />
+                    </div>
+                    <h3 class="text-sm font-semibold text-foreground">Contrats &amp; Documents PDF</h3>
+                  </div>
+
+                  <div class="flex flex-wrap gap-2">
+                    <!-- Fiche résumé — always visible from statut 13 -->
+                    <button
+                      appButton
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      (click)="imprimerFicheResume()"
+                    >
+                      <lucide-icon [img]="FileTextIcon" [size]="13" />
+                      Fiche résumé
+                    </button>
+
+                    <!-- Contrat de prêt (non credit-auto, non relais business) -->
+                    @if (showContratPretButton()) {
+                      <button
+                        appButton
+                        variant="outline"
+                        size="sm"
+                        type="button"
+                        (click)="imprimerContratDePret()"
+                      >
+                        <lucide-icon [img]="FileTextIcon" [size]="13" />
+                        Contrat de prêt
+                      </button>
+                    }
+
+                    <!-- Convention crédit auto -->
+                    @if (showConventionAutoButton()) {
+                      <button
+                        appButton
+                        variant="outline"
+                        size="sm"
+                        type="button"
+                        (click)="imprimerConventionCreditAuto()"
+                      >
+                        <lucide-icon [img]="FileTextIcon" [size]="13" />
+                        Convention crédit auto
+                      </button>
+
+                      <!-- Gage de véhicule (uniquement credit auto) -->
+                      @if (garanties()?.typeGaranties?.length) {
+                        @for (gv of garanties()!.typeGaranties; track gv) {
+                          @if (gv.libelle === 'VÉHICULES' && gv.garanties.length) {
+                            @for (veh of gv.garanties; track veh) {
+                              <button
+                                appButton
+                                variant="outline"
+                                size="sm"
+                                type="button"
+                                (click)="imprimerGageVehicule(veh)"
+                              >
+                                <lucide-icon [img]="FileTextIcon" [size]="13" />
+                                Gage véhicule
+                              </button>
+                            }
+                          }
+                        }
+                      }
+                    }
+
+                    <!-- Relais Business Magasin -->
+                    @if (showRelaisBusinessPDFButton()) {
+                      <button
+                        appButton
+                        variant="outline"
+                        size="sm"
+                        type="button"
+                        (click)="imprimerContratRelaisBusiness()"
+                      >
+                        <lucide-icon [img]="FileTextIcon" [size]="13" />
+                        Contrat relais business
+                      </button>
+                      <button
+                        appButton
+                        variant="outline"
+                        size="sm"
+                        type="button"
+                        (click)="imprimerEngagementRelaisBusiness()"
+                      >
+                        <lucide-icon [img]="FileTextIcon" [size]="13" />
+                        Engagement règlement relais business
+                      </button>
+                    }
+
+                    <!-- Convention de cautionnement (si montantCaution > 0 et statut >= 16) -->
+                    @if ((fiche()?.decision?.montantCaution ?? 0) > 0 && showContratPretButton()) {
+                      @for (caution of garanties()?.crCaution ?? []; track caution) {
+                        <button
+                          appButton
+                          variant="outline"
+                          size="sm"
+                          type="button"
+                          (click)="imprimerConventionCautionnement(caution)"
+                        >
+                          <lucide-icon [img]="FileTextIcon" [size]="13" />
+                          Convention cautionnement
+                        </button>
+                      }
+                    }
+                  </div>
+                </section>
+              }
 
               <!-- ── Ajouter un document ──────────────────────── -->
               <section class="rounded-xl border border-dashed border-border bg-muted/20 p-5">
@@ -449,7 +1711,6 @@
 
               <!-- ── Documents annexes ────────────────────────── -->
               <section>
-                <!-- En-tête + recherche -->
                 <div class="flex items-center justify-between gap-3 mb-4">
                   <div class="flex items-center gap-2">
                     <h3 class="text-sm font-semibold text-foreground">Documents annexes</h3>
@@ -478,7 +1739,6 @@
                   }
                 </div>
 
-                <!-- Contenu -->
                 @if (isLoadingDocs()) {
                   <div class="flex items-center gap-2 py-10 justify-center text-muted-foreground">
                     <span class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
@@ -495,26 +1755,22 @@
                     <p class="text-sm text-muted-foreground">Aucun document correspond à « {{ docSearch() }} ».</p>
                   </div>
                 } @else {
-                  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                     @for (doc of filteredDocs(); track doc.id) {
                       <div class="flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2.5 hover:bg-muted/40 transition-colors">
-
-                        <!-- Icône + infos -->
                         <div class="flex items-center gap-2.5 min-w-0">
                           <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                             <lucide-icon [img]="PaperclipIcon" [size]="14" class="text-primary" />
                           </div>
                           <div class="min-w-0">
                             <p class="text-xs font-medium text-foreground truncate" [title]="doc.libelle">{{ doc.libelle }}</p>
-                            @if (doc.user?.nomPrenom) {
-                              <p class="text-[10px] text-muted-foreground truncate">{{ doc.user!.nomPrenom }}</p>
+                            @if (doc.description) {
+                              <p class="text-[10px] text-muted-foreground truncate">{{ doc.description }}</p>
                             } @else if (doc.createdAt) {
                               <p class="text-[10px] text-muted-foreground">{{ doc.createdAt | date:'dd/MM/yy' }}</p>
                             }
                           </div>
                         </div>
-
-                        <!-- Actions -->
                         <div class="flex items-center gap-0.5 shrink-0">
                           <button
                             type="button"
@@ -538,7 +1794,6 @@
                             }
                           </button>
                         </div>
-
                       </div>
                     }
                   </div>
@@ -582,6 +1837,178 @@
     >
       <lucide-icon [img]="Trash2Icon" [size]="14" class="mr-1.5" />
       Supprimer
+    </button>
+  </app-dialog-footer>
+</app-dialog>
+
+<!-- ── Dialog : Action workflow ────────────────────────────────────────── -->
+<app-dialog [(open)]="actionDialogOpen">
+  <app-dialog-header>
+    <app-dialog-title>{{ currentAction?.title ?? "Confirmer l'action" }}</app-dialog-title>
+    <app-dialog-description>
+      Dossier {{ ref() }}. Cette action est définitive et sera enregistrée dans l'historique.
+    </app-dialog-description>
+  </app-dialog-header>
+
+  <div class="pb-2 flex flex-col gap-3">
+
+    <!-- Levée conditions (statut 13 RC/CC pour types GP) -->
+    @if (leveeConditions().length > 0) {
+      <div class="rounded-lg border border-border bg-muted/20 p-3 flex flex-col gap-2">
+        <p class="text-xs font-semibold text-foreground">Conditions à lever</p>
+        @for (item of leveeConditions(); track $index; let i = $index) {
+          <label class="flex items-center gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              [checked]="item.done"
+              (change)="toggleLeveeCondition(i)"
+              class="h-4 w-4 rounded border-border accent-primary cursor-pointer"
+            />
+            <span class="text-sm text-foreground">{{ item.libelle }}</span>
+          </label>
+        }
+      </div>
+    }
+
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-medium text-foreground">Observation</label>
+      <textarea
+        rows="3"
+        placeholder="Observation ou commentaire (optionnel)"
+        [ngModel]="actionObs()"
+        (ngModelChange)="actionObs.set($event)"
+        class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 resize-none"
+      ></textarea>
+    </div>
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-medium text-foreground">
+        Mot de passe <span class="text-destructive">*</span>
+      </label>
+      <input
+        type="password"
+        placeholder="Votre mot de passe pour confirmer"
+        [ngModel]="actionPwd()"
+        (ngModelChange)="actionPwd.set($event)"
+        class="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50"
+      />
+    </div>
+  </div>
+
+  <app-dialog-footer>
+    <button
+      type="button"
+      (click)="actionDialogOpen = false"
+      class="flex h-9 items-center rounded-md border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
+    >
+      Annuler
+    </button>
+    <button
+      type="button"
+      (click)="submitAction()"
+      [disabled]="!actionPwd().trim() || isSubmittingAction() || !allLeveeConditionsDone"
+      appButton
+    >
+      @if (isSubmittingAction()) {
+        <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+        Envoi…
+      } @else {
+        Confirmer
+      }
+    </button>
+  </app-dialog-footer>
+</app-dialog>
+
+<!-- ── Dialog : Avance sur fonds ────────────────────────────────────────── -->
+<app-dialog [(open)]="avsfDialogOpen">
+  <app-dialog-header>
+    <app-dialog-title>Demande d'avance sur fonds</app-dialog-title>
+    <app-dialog-description>Dossier {{ ref() }}</app-dialog-description>
+  </app-dialog-header>
+  <div class="pb-2 flex flex-col gap-3">
+    <div class="grid grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs font-medium text-foreground">Dépôt exigé (FCFA) <span class="text-destructive">*</span></label>
+        <input type="number" [(ngModel)]="avsfMtDepositExige" placeholder="Ex: 200000"
+          class="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50" />
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs font-medium text-foreground">Avance sollicitée (FCFA) <span class="text-destructive">*</span></label>
+        <input type="number" [(ngModel)]="avsfMtAvsfSollicite" placeholder="Ex: 150000"
+          class="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50" />
+      </div>
+    </div>
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-medium text-foreground">N° Perfect <span class="text-destructive">*</span></label>
+      <input type="text" [(ngModel)]="avsfNumPerfect" placeholder="Numéro Perfect"
+        class="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50" />
+    </div>
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-medium text-foreground">Motif <span class="text-destructive">*</span></label>
+      <textarea [(ngModel)]="avsfMotif" rows="3" placeholder="Motif de la demande…"
+        class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 resize-none"></textarea>
+    </div>
+  </div>
+  <app-dialog-footer>
+    <button type="button" (click)="avsfDialogOpen = false" appButton variant="outline">Annuler</button>
+    <button type="button" (click)="submitAvsf()" [disabled]="isSavingAvsf()" appButton>
+      @if (isSavingAvsf()) { Enregistrement… } @else { Soumettre }
+    </button>
+  </app-dialog-footer>
+</app-dialog>
+
+<!-- ── Dialog : N° Prêt / Contrat ───────────────────────────────────────── -->
+<app-dialog [(open)]="numPretDialogOpen" classContainer="max-w-md">
+  <app-dialog-header>
+    <app-dialog-title>N° Prêt / Contrat</app-dialog-title>
+    <app-dialog-description>Dossier {{ ref() }}</app-dialog-description>
+  </app-dialog-header>
+  <div class="pb-2 flex flex-col gap-3">
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-medium text-foreground">N° Prêt <span class="text-destructive">*</span></label>
+      <input type="text" [(ngModel)]="numPretValue" placeholder="Numéro de prêt"
+        class="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50" />
+    </div>
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-medium text-foreground">N° Contrat <span class="text-destructive">*</span></label>
+      <input type="text" [(ngModel)]="numContratValue" placeholder="Numéro de contrat"
+        class="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50" />
+    </div>
+  </div>
+  <app-dialog-footer>
+    <button type="button" (click)="numPretDialogOpen = false" appButton variant="outline">Annuler</button>
+    <button type="button" (click)="submitNumPret()" [disabled]="isSavingNumPret()" appButton>
+      @if (isSavingNumPret()) { Enregistrement… } @else { Enregistrer }
+    </button>
+  </app-dialog-footer>
+</app-dialog>
+
+<!-- ── Dialog : Modifier montant emprunté ───────────────────────────────── -->
+<app-dialog [(open)]="modifMontantDialogOpen" classContainer="max-w-md">
+  <app-dialog-header>
+    <app-dialog-title>Modifier le montant emprunté</app-dialog-title>
+    <app-dialog-description>Dossier {{ ref() }}</app-dialog-description>
+  </app-dialog-header>
+  <div class="pb-2 flex flex-col gap-3">
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-medium text-foreground">Montant emprunté (FCFA) <span class="text-destructive">*</span></label>
+      <input type="number" [(ngModel)]="modifMontantEmprunte" placeholder="Ex: 2000000"
+        class="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50" />
+    </div>
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-medium text-foreground">Mensualité (FCFA) <span class="text-destructive">*</span></label>
+      <input type="number" [(ngModel)]="modifMensualite" placeholder="Ex: 95000"
+        class="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50" />
+    </div>
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-medium text-foreground">Montant caution (FCFA)</label>
+      <input type="number" [(ngModel)]="modifMontantCaution" placeholder="Ex: 50000"
+        class="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50" />
+    </div>
+  </div>
+  <app-dialog-footer>
+    <button type="button" (click)="modifMontantDialogOpen = false" appButton variant="outline">Annuler</button>
+    <button type="button" (click)="submitModifMontant()" [disabled]="isSavingModifMontant()" appButton>
+      @if (isSavingModifMontant()) { Enregistrement… } @else { Mettre à jour }
     </button>
   </app-dialog-footer>
 </app-dialog>
@@ -632,22 +2059,16 @@
         @for (obs of observations(); track obs.reference) {
           <li class="relative pl-5">
             <span class="absolute -left-[5px] top-0 h-2.5 w-2.5 rounded-full bg-primary ring-[3px] ring-primary/20"></span>
-
             <div class="rounded-xl border border-border bg-card p-3.5 shadow-sm">
-              <!-- Header : décision + date -->
               <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 mb-2">
                 <h6 class="text-sm font-semibold text-foreground">{{ obs.decision ?? '—' }}</h6>
                 <time class="text-xs text-muted-foreground whitespace-nowrap">
                   {{ obs.date | date:'dd MMM yyyy' }} à {{ obs.date | date:'HH:mm' }}
                 </time>
               </div>
-
-              <!-- Texte -->
               @if (obs.observation) {
                 <p class="text-sm text-muted-foreground mb-3 leading-relaxed">{{ obs.observation }}</p>
               }
-
-              <!-- Footer : avatar + nom + profil -->
               @if (obs.user) {
                 <div class="border-t border-border pt-2.5 mt-2.5 flex items-center gap-2">
                   <app-avatar size="sm" />
@@ -656,9 +2077,7 @@
                       {{ obs.user.nom }} {{ obs.user.prenom }}
                     </p>
                     @if (obs.user.profil) {
-                      <p class="text-xs text-muted-foreground leading-tight truncate">
-                        {{ obs.user.profil }}
-                      </p>
+                      <p class="text-xs text-muted-foreground leading-tight truncate">{{ obs.user.profil }}</p>
                     }
                   </div>
                 </div>

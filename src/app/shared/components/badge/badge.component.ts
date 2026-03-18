@@ -29,7 +29,7 @@ export type BadgeVariant =
   imports: [CommonModule],
   template: `
     <span
-      class="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
+      class="inline-flex justify-center text-center items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
       [class]="variantClasses[variant]"
     >
       <ng-content />

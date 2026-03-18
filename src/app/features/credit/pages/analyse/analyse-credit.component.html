@@ -1,0 +1,93 @@
+<div class="flex flex-col gap-4 mt-4">
+
+  <!-- En-tête -->
+  <div class="flex items-center gap-3 flex-wrap">
+    <button type="button" (click)="goBack()" appButton variant="ghost" size="sm"
+      class="flex items-center gap-1.5 shrink-0">
+      <lucide-icon [img]="ChevronLeftIcon" [size]="16" />
+      Retour
+    </button>
+
+    @if (isLoading()) {
+      <div class="flex-1 min-w-0">
+        <div class="h-5 w-48 rounded bg-muted animate-pulse mb-1"></div>
+        <div class="h-4 w-32 rounded bg-muted/60 animate-pulse"></div>
+      </div>
+    } @else if (demande()) {
+      @let d = demande()!;
+      <div class="flex-1 min-w-0">
+        <h1 class="text-xl font-bold text-foreground truncate">{{ d.refDemande }}</h1>
+        <p class="text-sm text-muted-foreground">{{ d.client.nomPrenom }}</p>
+      </div>
+      <app-badge [variant]="statutVariant(d.statut)">{{ statutLabel(d.statut) }}</app-badge>
+    }
+
+    <div class="flex items-center gap-2 shrink-0">
+      <button type="button" (click)="loadHeader()" [disabled]="isLoading()"
+        class="flex items-center justify-center h-9 w-9 rounded-md border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50">
+        <lucide-icon [img]="RefreshIcon" [size]="15" [class.animate-spin]="isLoading()" />
+      </button>
+      <button type="button" (click)="goFiche()" appButton variant="outline" size="sm"
+        class="flex items-center gap-1.5">
+        <lucide-icon [img]="FileTextIcon" [size]="14" />
+        Voir la fiche
+      </button>
+    </div>
+  </div>
+
+  <!-- Erreur -->
+  @if (error()) {
+    <div class="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3">
+      <lucide-icon [img]="AlertCircleIcon" [size]="16" class="text-destructive shrink-0" />
+      <p class="text-sm text-destructive">{{ error() }}</p>
+    </div>
+  }
+
+  <!-- Tabs -->
+  <div class="overflow-x-auto">
+    <div class="flex gap-1 border-b border-border min-w-max">
+      @for (tab of tabs; track tab.id) {
+        <button
+          type="button"
+          (click)="switchTab(tab.id)"
+          class="px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px"
+          [class.border-primary]="activeTab() === tab.id"
+          [class.text-primary]="activeTab() === tab.id"
+          [class.border-transparent]="activeTab() !== tab.id"
+          [class.text-muted-foreground]="activeTab() !== tab.id"
+          [class.hover:text-foreground]="activeTab() !== tab.id">
+          {{ tab.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Contenu selon l'onglet actif -->
+  @switch (activeTab()) {
+    @case ('activite') {
+      <app-activite-section [ref]="ref()" />
+    }
+    @case ('achats') {
+      <app-achats-section [ref]="ref()" />
+    }
+    @case ('tresorerie') {
+      <app-tresorerie-section [ref]="ref()" />
+    }
+    @case ('familial') {
+      <app-familial-section [ref]="ref()" />
+    }
+    @case ('garanties') {
+      <app-garanties-section [ref]="ref()" />
+    }
+    @case ('cautions') {
+      <app-cautions-section [ref]="ref()" />
+    }
+    @case ('swot') {
+      <app-swot-section [ref]="ref()" />
+    }
+    @case ('envoi') {
+      <app-envoi-section [ref]="ref()" />
+    }
+  }
+
+</div>

@@ -87,14 +87,14 @@
               <div class="flex items-center gap-2 rounded-lg border border-border bg-muted/30 p-3">
                 <lucide-icon [img]="CheckCircleIcon" [size]="18" class="text-green-600 shrink-0" />
                 <div>
-                  <p class="text-lg font-bold text-foreground">{{ c.nbreAvChequeBenef ?? 0 }}</p>
+                  <p class="text-lg font-bold text-foreground">{{ c.nbreAvChequeBenef }}</p>
                   <p class="text-xs text-muted-foreground">Avance(s) obtenue(s)</p>
                 </div>
               </div>
               <div class="flex items-center gap-2 rounded-lg border border-border bg-muted/30 p-3">
                 <lucide-icon [img]="DollarSignIcon" [size]="18" class="text-primary shrink-0" />
                 <div>
-                  <p class="text-sm font-bold text-foreground">{{ c.montantChequeAccordeAsc ?? 0 | number }} FCFA</p>
+                  <p class="text-sm font-bold text-foreground">{{ c.montantChequeAccordeAsc | number }} FCFA</p>
                   <p class="text-xs text-muted-foreground">Montant max accordé</p>
                 </div>
               </div>

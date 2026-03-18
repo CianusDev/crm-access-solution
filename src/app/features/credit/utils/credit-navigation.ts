@@ -34,8 +34,7 @@ export function navigateByStatut(router: Router, demande: CreditDemande): void {
   }
 
   if (STATUTS_ANALYSE.includes(statut)) {
-    // TODO T14 : analyse financière — fiche pour l'instant
-    router.navigate(['/app/credit', refDemande]);
+    router.navigate(['/app/credit/analyse', refDemande]);
     return;
   }
 

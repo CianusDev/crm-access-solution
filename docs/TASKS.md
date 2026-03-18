@@ -1,6 +1,6 @@
 # CRM Access Solution — Liste des tâches
 
-> Dernière mise à jour : 2026-03-17 (session 3)
+> Dernière mise à jour : 2026-03-18 (session 4)
 > Les tâches sont ordonnées du plus prioritaire au moins prioritaire.
 > Mettre à jour le statut et la date à chaque complétion.
 
@@ -96,10 +96,13 @@
   - Route : `/app/credit/:ref` (paramètre = `refDemande`)
   - Endpoint : `GET /credit/getinfosdmde/{ref}`
   - Layout 2 colonnes : client + montants (gauche) | onglets (droite)
-  - **Onglet Détails** : infos demande + section décision finale (montant, durée, mensualité, frais, indicateurs booléens)
-  - **Onglet Documents** : upload + liste avec téléchargement/suppression
+  - **Onglet Détails** : infos demande + décision finale + avance de fonds + signataires PM
+  - **Onglet Checklist** : documents nécessaires avec progression
+  - **Onglet Documents** : upload + liste avec téléchargement/suppression + contrats PDF
   - **Onglet Historique** : timeline observations avec auteur, profil, horodatage
-  - Interfaces `CreditFiche`, `CreditDecisionFinale`, `CreditObservation`, `CreditDocumentAnnexe` ajoutées
+  - **Onglet Actifs & Garanties** (ajouté session 4) : lazy-load `getGarantiesDemande`, sidebar 7 sections (totaux, véhicules, immobilisations, DAT, matériels, biens mobiliers, cautions solidaires avec tous les champs identitaires)
+  - Carte client PP enrichie (rue, lot, villa, adresse, batimentProche, domicille) et PM (capitalSocial, ncc, dateCreation, NumEnregistrement)
+  - Interfaces : `CreditFiche`, `CreditDecisionFinale`, `CreditObservation`, `CreditDocumentAnnexe`, `CreditSignataire`, `GarantieVehicule`, `GarantieImmobilisation`, `GarantieMateriel`, `GarantieType`, `GarantiesCautionSolidaire`, `GarantiesData`
 
 - [x] **T10** — Corriger la redirection post-création de demande `[0.25 j]`
   - Redirige désormais vers `/app/credit/list` après save réussi
@@ -129,19 +132,21 @@
   - FrontEnd ref : `detail-tableau-bord-agence-siege`
   - Accessible depuis le tableau des agences dans le dashboard
 
-- [ ] **T14** — Implémenter "Analyse financière" *(décomposée en 8 sous-tâches)* `[14.5 j total]`
+- [x] **T14** — Implémenter "Analyse financière" *(décomposée en 8 sous-tâches)* `[14.5 j total]`
   - Route : `/app/credit/analyse/:id`
   - FrontEnd ref : `analyse-financiere-credit`
-  - Dépend de : **T01**, **T02**, **T09**
+  - Architecture : composant parent + 8 sections enfants standalone
 
-  - [ ] **T14a** — Section profil activité + ventes journalières/mensuelles `[2 j]`
-  - [ ] **T14b** — Section achats mensuels + charges exploitation `[2 j]`
-  - [ ] **T14c** — Section trésorerie + créances + stocks + dettes `[2 j]`
-  - [ ] **T14d** — Section profil familial + composition ménage `[1.5 j]`
-  - [ ] **T14e** — Section actifs & garanties (immobilier, véhicules, DAT…) `[2 j]`
-  - [ ] **T14f** — Section cautions solidaires + documents annexes `[1.5 j]`
-  - [ ] **T14g** — Section analyse SWOT + pré-comité / comité `[2 j]`
-  - [ ] **T14h** — Section envoi dossier + validation finale `[1.5 j]`
+  - [x] **T14a** — Section profil activité + ventes journalières/mensuelles `[2 j]`
+    - Affichage commune, quartier, rue, boîte postale, type activité, typeAnalyse (principale/secondaire)
+    - Ventes mensuelles et journalières CRUD inline, calcul moyenne automatique
+  - [x] **T14b** — Section achats mensuels + charges exploitation `[2 j]`
+  - [x] **T14c** — Section trésorerie + créances + stocks + dettes `[2 j]`
+  - [x] **T14d** — Section profil familial + composition ménage `[1.5 j]`
+  - [x] **T14e** — Section actifs & garanties (immobilier, véhicules, DAT…) `[2 j]`
+  - [x] **T14f** — Section cautions solidaires + documents annexes `[1.5 j]`
+  - [x] **T14g** — Section analyse SWOT + pré-comité / comité `[2 j]`
+  - [x] **T14h** — Section envoi dossier + validation finale `[1.5 j]`
 
 ---
 
@@ -228,10 +233,11 @@
   - Depuis : `/app/asc/detail/:id`
   - Dépend de : **T05**
 
-- [ ] **T28** — Export PDF : Convention de crédit `[3 j]`
-  - Depuis : fiche crédit (`/app/credit/:id`)
-  - Versions PP et PM avec mise en page officielle
-  - Dépend de : **T05**, **T09**
+- [x] **T28** — Export PDF : Convention de crédit `[3 j]`
+  - Depuis : fiche crédit (`/app/credit/:id`), onglet Documents → section "Contrats & PDF"
+  - `credit-pdf.service.ts` porté depuis le frontEnd (7000+ lignes, font Montserrat VFS, logo enum)
+  - Boutons conditionnels par type crédit et statut : contrat de prêt PP/PM/coopérative, convention crédit auto, contrat relais business, engagement règlement, fiche résumé dossier, convention cautionnement (par caution), gage véhicule (par véhicule)
+  - `DatePipe` ajouté aux providers root (`app.config.ts`)
 
 - [ ] **T29** — Export Excel : Géolocalisation CORAs `[0.5 j]`
   - Depuis : `/cora-map`
@@ -339,10 +345,10 @@
 | Priorité | Tâches | Estimation | Terminées |
 |---|---|---|---|
 | 🔴 P1 — Infrastructure | T01 → T05 | 3.5 j | ✅ 5 / 5 |
-| 🟠 P2 — Workflow Crédit | T06 → T14h | 26.25 j | ✅ 6 / 16 (T06, T07, T09, T10, T11 · T08 supprimé) |
+| 🟠 P2 — Workflow Crédit | T06 → T14h | 26.25 j | ✅ 15 / 16 (T06, T07, T09, T10, T11, T12, T14a–T14h · T08 supprimé · T13 reste) |
 | 🟡 P3 — Tirage & Employeurs | T15 → T22 | 8.5 j | 0 / 8 |
-| 🟡 P4 — Exports | T23 → T29 | 8.5 j | 0 / 7 |
+| 🟡 P4 — Exports | T23 → T29 | 8.5 j | ✅ 1 / 7 (T28) |
 | 🟢 P5 — ASC | T30 → T31 | 3 j | 0 / 2 |
 | 🟢 P6 — CORA | T32 → T33 | 2 j | 0 / 2 |
 | 🔵 P7 — Paramétrage | T34 → T41 | 9.75 j | 0 / 8 |
-| **TOTAL** | **43 tâches** | **~61.5 j** | **11 / 43** |
+| **TOTAL** | **43 tâches** | **~61.5 j** | **21 / 43** |

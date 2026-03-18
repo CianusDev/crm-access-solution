@@ -1,0 +1,339 @@
+<div class="flex flex-col gap-6">
+
+  <!-- Erreur -->
+  @if (error()) {
+    <div class="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3">
+      <lucide-icon [img]="AlertCircleIcon" [size]="16" class="text-destructive shrink-0" />
+      <p class="text-sm text-destructive">{{ error() }}</p>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="space-y-3">
+      @for (_ of [1, 2, 3]; track $index) {
+        <div class="h-36 rounded-xl border border-border bg-muted/30 animate-pulse"></div>
+      }
+    </div>
+  } @else {
+
+    <!-- En-tête récap -->
+    <div class="flex items-center justify-between">
+      @if (totalValeur() > 0) {
+        <div class="rounded-xl border border-border bg-muted/30 px-4 py-3">
+          <p class="text-xs text-muted-foreground">Valeur totale des actifs</p>
+          <p class="text-lg font-bold">{{ formatMontant(totalValeur()) }} FCFA</p>
+        </div>
+      } @else {
+        <span></span>
+      }
+      <button type="button" (click)="openAdd()" appButton>
+        <lucide-icon [img]="PlusIcon" [size]="14" />
+        Ajouter un actif
+      </button>
+    </div>
+
+    <!-- ══ BIENS IMMOBILIERS ══════════════════════════════════════════════ -->
+    <app-card>
+      <app-card-header>
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <lucide-icon [img]="Building2Icon" [size]="16" class="text-muted-foreground" />
+            <app-card-title>Biens immobiliers</app-card-title>
+            @if (immobiliers().length > 0) {
+              <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{{ immobiliers().length }}</span>
+            }
+          </div>
+          <button type="button" (click)="openAdd('IMMOBILIER')" appButton size="sm" variant="outline">
+            <lucide-icon [img]="PlusIcon" [size]="12" />
+            Ajouter
+          </button>
+        </div>
+      </app-card-header>
+      <app-card-content>
+        @if (immobiliers().length === 0) {
+          <p class="py-4 text-center text-sm text-muted-foreground">Aucun bien immobilier enregistré</p>
+        } @else {
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border bg-muted/10">
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Libellé</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Localisation</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Superficie</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Valeur (FCFA)</th>
+                <th class="px-4 py-2 w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (actif of immobiliers(); track actif.id) {
+                <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
+                  <td class="px-4 py-2.5 font-medium">{{ actif.libelle }}</td>
+                  <td class="px-4 py-2.5 text-muted-foreground">{{ actif.localisation ?? '—' }}</td>
+                  <td class="px-4 py-2.5 text-muted-foreground">{{ actif.superficie ? actif.superficie + ' m²' : '—' }}</td>
+                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(actif.valeurEstimee) }}</td>
+                  <td class="px-4 py-2.5">
+                    <button type="button" (click)="openDelete(actif)"
+                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                      <lucide-icon [img]="Trash2Icon" [size]="13" />
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </app-card-content>
+    </app-card>
+
+    <!-- ══ VÉHICULES ════════════════════════════════════════════════════ -->
+    <app-card>
+      <app-card-header>
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <lucide-icon [img]="CarIcon" [size]="16" class="text-muted-foreground" />
+            <app-card-title>Véhicules</app-card-title>
+            @if (vehicules().length > 0) {
+              <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{{ vehicules().length }}</span>
+            }
+          </div>
+          <button type="button" (click)="openAdd('VEHICULE')" appButton size="sm" variant="outline">
+            <lucide-icon [img]="PlusIcon" [size]="12" />
+            Ajouter
+          </button>
+        </div>
+      </app-card-header>
+      <app-card-content>
+        @if (vehicules().length === 0) {
+          <p class="py-4 text-center text-sm text-muted-foreground">Aucun véhicule enregistré</p>
+        } @else {
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border bg-muted/10">
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Libellé</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Marque</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Année</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Valeur (FCFA)</th>
+                <th class="px-4 py-2 w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (actif of vehicules(); track actif.id) {
+                <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
+                  <td class="px-4 py-2.5 font-medium">{{ actif.libelle }}</td>
+                  <td class="px-4 py-2.5 text-muted-foreground">{{ actif.marque ?? '—' }}</td>
+                  <td class="px-4 py-2.5 text-muted-foreground">{{ actif.annee ?? '—' }}</td>
+                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(actif.valeurEstimee) }}</td>
+                  <td class="px-4 py-2.5">
+                    <button type="button" (click)="openDelete(actif)"
+                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                      <lucide-icon [img]="Trash2Icon" [size]="13" />
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </app-card-content>
+    </app-card>
+
+    <!-- ══ ÉQUIPEMENTS ══════════════════════════════════════════════════ -->
+    <app-card>
+      <app-card-header>
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <lucide-icon [img]="WrenchIcon" [size]="16" class="text-muted-foreground" />
+            <app-card-title>Équipements & Matériel</app-card-title>
+            @if (equipements().length > 0) {
+              <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{{ equipements().length }}</span>
+            }
+          </div>
+          <button type="button" (click)="openAdd('EQUIPEMENT')" appButton size="sm" variant="outline">
+            <lucide-icon [img]="PlusIcon" [size]="12" />
+            Ajouter
+          </button>
+        </div>
+      </app-card-header>
+      <app-card-content>
+        @if (equipements().length === 0) {
+          <p class="py-4 text-center text-sm text-muted-foreground">Aucun équipement enregistré</p>
+        } @else {
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border bg-muted/10">
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Libellé</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Valeur (FCFA)</th>
+                <th class="px-4 py-2 w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (actif of equipements(); track actif.id) {
+                <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
+                  <td class="px-4 py-2.5 font-medium">{{ actif.libelle }}</td>
+                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(actif.valeurEstimee) }}</td>
+                  <td class="px-4 py-2.5">
+                    <button type="button" (click)="openDelete(actif)"
+                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                      <lucide-icon [img]="Trash2Icon" [size]="13" />
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </app-card-content>
+    </app-card>
+
+    <!-- ══ DAT ══════════════════════════════════════════════════════════ -->
+    <app-card>
+      <app-card-header>
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <lucide-icon [img]="PiggyBankIcon" [size]="16" class="text-muted-foreground" />
+            <app-card-title>Dépôts à terme (DAT)</app-card-title>
+            @if (dats().length > 0) {
+              <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{{ dats().length }}</span>
+            }
+          </div>
+          <button type="button" (click)="openAdd('DAT')" appButton size="sm" variant="outline">
+            <lucide-icon [img]="PlusIcon" [size]="12" />
+            Ajouter
+          </button>
+        </div>
+      </app-card-header>
+      <app-card-content>
+        @if (dats().length === 0) {
+          <p class="py-4 text-center text-sm text-muted-foreground">Aucun dépôt à terme enregistré</p>
+        } @else {
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border bg-muted/10">
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Libellé</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Banque</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Échéance</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Montant (FCFA)</th>
+                <th class="px-4 py-2 w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (actif of dats(); track actif.id) {
+                <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
+                  <td class="px-4 py-2.5 font-medium">{{ actif.libelle }}</td>
+                  <td class="px-4 py-2.5 text-muted-foreground">{{ actif.banque ?? '—' }}</td>
+                  <td class="px-4 py-2.5 text-muted-foreground">{{ actif.echeance ?? '—' }}</td>
+                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(actif.valeurEstimee) }}</td>
+                  <td class="px-4 py-2.5">
+                    <button type="button" (click)="openDelete(actif)"
+                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                      <lucide-icon [img]="Trash2Icon" [size]="13" />
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </app-card-content>
+    </app-card>
+
+    <!-- ══ AUTRES ACTIFS ════════════════════════════════════════════════ -->
+    @if (autres().length > 0) {
+      <app-card>
+        <app-card-header>
+          <div class="flex items-center gap-2">
+            <lucide-icon [img]="BoxIcon" [size]="16" class="text-muted-foreground" />
+            <app-card-title>Autres actifs</app-card-title>
+            <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{{ autres().length }}</span>
+          </div>
+        </app-card-header>
+        <app-card-content>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border bg-muted/10">
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Libellé</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Valeur (FCFA)</th>
+                <th class="px-4 py-2 w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (actif of autres(); track actif.id) {
+                <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
+                  <td class="px-4 py-2.5 font-medium">{{ actif.libelle }}</td>
+                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(actif.valeurEstimee) }}</td>
+                  <td class="px-4 py-2.5">
+                    <button type="button" (click)="openDelete(actif)"
+                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                      <lucide-icon [img]="Trash2Icon" [size]="13" />
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </app-card-content>
+      </app-card>
+    }
+
+  }
+
+</div>
+
+<!-- ══ DRAWER — Actif ══════════════════════════════════════════════════════ -->
+<app-drawer [(open)]="actifDrawerOpen">
+  <app-drawer-header>
+    <app-drawer-title>Ajouter un actif / garantie</app-drawer-title>
+  </app-drawer-header>
+  <app-drawer-content>
+    <form [formGroup]="actifForm" class="flex flex-col gap-4">
+
+      <app-form-select name="type" label="Type d'actif" [options]="typesActifOptions" placeholder="Sélectionner un type" required />
+      <app-form-input name="libelle" label="Libellé" placeholder="Ex: Terrain Cocody, Toyota Corolla…" required />
+      <app-form-input name="valeurEstimee" label="Valeur estimée (FCFA)" type="number" placeholder="Ex: 5000000" required />
+
+      <!-- Champs conditionnels — Immobilier -->
+      @if (selectedType() === 'IMMOBILIER') {
+        <app-form-input name="localisation" label="Localisation" placeholder="Ex: Cocody, Abidjan" />
+        <app-form-input name="superficie" label="Superficie (m²)" type="number" placeholder="Ex: 200" />
+      }
+
+      <!-- Champs conditionnels — Véhicule -->
+      @if (selectedType() === 'VEHICULE') {
+        <app-form-input name="marque" label="Marque / Modèle" placeholder="Ex: Toyota Corolla" />
+        <app-form-input name="annee" label="Année" type="number" placeholder="Ex: 2019" />
+      }
+
+      <!-- Champs conditionnels — DAT -->
+      @if (selectedType() === 'DAT') {
+        <app-form-input name="banque" label="Banque / Institution" placeholder="Ex: SGBCI" />
+        <app-form-input name="echeance" label="Date d'échéance" type="date" />
+      }
+
+    </form>
+  </app-drawer-content>
+  <app-drawer-footer>
+    <div class="flex gap-2 justify-end">
+      <button type="button" (click)="actifDrawerOpen = false" appButton variant="outline">Annuler</button>
+      <button type="button" (click)="save()" appButton [disabled]="isSaving()">
+        @if (isSaving()) { Enregistrement… } @else { Enregistrer }
+      </button>
+    </div>
+  </app-drawer-footer>
+</app-drawer>
+
+<!-- ══ DIALOG — Suppression ════════════════════════════════════════════════ -->
+<app-dialog [(open)]="deleteDialogOpen">
+  <app-dialog-header>
+    <app-dialog-title>Confirmer la suppression</app-dialog-title>
+    <app-dialog-description>
+      @if (actifToDelete) {
+        Supprimer « {{ actifToDelete.libelle }} » ? Cette action est irréversible.
+      }
+    </app-dialog-description>
+  </app-dialog-header>
+  <app-dialog-footer>
+    <button type="button" (click)="deleteDialogOpen = false" appButton variant="outline">Annuler</button>
+    <button type="button" (click)="confirmDelete()" appButton variant="destructive" [disabled]="isDeleting()">
+      @if (isDeleting()) { Suppression… } @else { Supprimer }
+    </button>
+  </app-dialog-footer>
+</app-dialog>
