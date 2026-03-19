@@ -1,6 +1,7 @@
 import { SIDEBAR_STORAGE_KEY } from '@/core/constants/local-storage-key';
 import { DEFAULT_MENU } from '@/core/constants/sidebar-menu';
 import { LocalStorageService } from '@/core/services/local-storage/local-storage.service';
+import { PermissionService } from '@/core/services/permission/permission.service';
 import { isPlatformBrowser, NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -45,6 +46,20 @@ import { SidebarGroup } from './sidebar.interface';
 export class Sidebar implements OnDestroy {
   // Groupes du menu (configurable via input)
   readonly groups = input<SidebarGroup[]>(DEFAULT_MENU);
+
+  private readonly permissions = inject(PermissionService);
+
+  /** Groups/items filtered by the current user's role. */
+  protected readonly visibleGroups = computed(() => {
+    return this.groups()
+      .map((group) => ({
+        ...group,
+        items: group.items.filter(
+          (item) => !item.roles?.length || this.permissions.hasRole(...item.roles),
+        ),
+      }))
+      .filter((group) => group.items.length > 0);
+  });
 
   // Etat réduit : si true, seuls les icônes sont visibles (sidebar étroite)
   protected readonly collapsed = signal(false);
@@ -149,7 +164,7 @@ export class Sidebar implements OnDestroy {
    * Utilise le préfixe le plus long pour que les sous-routes prennent le bon groupe.
    */
   private syncOpenGroupWithUrl(url: string): void {
-    const groups = this.groups();
+    const groups = this.visibleGroups();
     let bestIndex: number | null = null;
     let bestLength = -1;
 

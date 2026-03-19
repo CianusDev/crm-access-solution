@@ -33,7 +33,6 @@ export const routes: Routes = [
   authRoutes,
   {
     path: 'app',
-    // component: RouteLoaderComponent,
     children: [
       {
         path: '',

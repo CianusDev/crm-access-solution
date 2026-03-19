@@ -318,7 +318,7 @@ export class CreditService {
 
   deleteAchatMensuel(id: number) {
     return this.api
-      .delete<{ status: number }>(this.endpoint + '/deleteAchatMensuel/' + id)
+      .delete<{ status: number }>(this.endpoint + '/deleteMargeCom/' + id)
       .pipe(catchError((err) => throwError(() => err)));
   }
 
@@ -342,7 +342,7 @@ export class CreditService {
 
   saveCreance(data: Record<string, unknown>) {
     return this.api
-      .post<{ status: number; message?: string }>(this.endpoint + '/saveCreance', data)
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveCreanceClient', data)
       .pipe(catchError((err) => throwError(() => err)));
   }
 
@@ -384,7 +384,7 @@ export class CreditService {
 
   saveMembreMenage(data: Record<string, unknown>) {
     return this.api
-      .post<{ status: number; message?: string }>(this.endpoint + '/saveMembreMenage', data)
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveMenageRevenuFamille', data)
       .pipe(catchError((err) => throwError(() => err)));
   }
 
@@ -408,13 +408,13 @@ export class CreditService {
 
   saveCautionSolidaire(data: Record<string, unknown>) {
     return this.api
-      .post<{ status: number; message?: string }>(this.endpoint + '/saveCautionSolidaire', data)
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveCrCaution', data)
       .pipe(catchError((err) => throwError(() => err)));
   }
 
   deleteCautionSolidaire(id: number) {
     return this.api
-      .delete<{ status: number }>(this.endpoint + '/deleteCautionSolidaire/' + id)
+      .delete<{ status: number }>(this.endpoint + '/deleteCaution/' + id)
       .pipe(catchError((err) => throwError(() => err)));
   }
 
@@ -432,13 +432,13 @@ export class CreditService {
 
   saveSWOT(data: Record<string, unknown>) {
     return this.api
-      .post<{ status: number; message?: string }>(this.endpoint + '/saveSWOT', data)
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveAswot', data)
       .pipe(catchError((err) => throwError(() => err)));
   }
 
   savePropositionAR(data: Record<string, unknown>) {
     return this.api
-      .post<{ status: number; message?: string }>(this.endpoint + '/savePropositionAR', data)
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveProposition', data)
       .pipe(catchError((err) => throwError(() => err)));
   }
 

@@ -6,6 +6,20 @@ import { detailCoraResolver } from './pages/detail-cora/detail-cora.resolver';
 import { pendingCoraResolver } from './pages/pending-cora/pending-cora.resolver';
 import { detailAgentResolver } from './pages/detail-agent/detail-agent.resolver';
 import { createAgentFormDataResolver } from './pages/create-agent/create-agent.resolver';
+import { roleGuard } from '@/core/guards/role.guard';
+import { UserRole } from '@/core/models/user.model';
+
+const {
+  Admin, DG, DGA,
+  DirectriceExploitation: D_EXPL,
+  ResponsableExploitation: RESPO_EXPL,
+  ChargeCora: Charge_Cora,
+  ResponsableFrontOffice: RESPO_FO,
+  AdministrationAudit: ADMIN_AUDIT,
+  GestionCora: Gestion_Cora,
+} = UserRole;
+
+const CORA_VIEWERS = [Admin, DG, DGA, D_EXPL, RESPO_EXPL, Charge_Cora, RESPO_FO, ADMIN_AUDIT, Gestion_Cora] as const;
 
 export const coraRoutes: Route = {
   path: 'cora',
@@ -17,6 +31,7 @@ export const coraRoutes: Route = {
     },
     {
       path: 'dashboard',
+      canActivate: [roleGuard([...CORA_VIEWERS])],
       resolve: {
         dashboardCoraData: dashboardCoraDataResolver,
       },
@@ -25,6 +40,7 @@ export const coraRoutes: Route = {
     },
     {
       path: 'create',
+      canActivate: [roleGuard([Admin, Gestion_Cora])],
       resolve: {
         formData: createCoraFormDataResolver,
       },
@@ -33,6 +49,7 @@ export const coraRoutes: Route = {
     },
     {
       path: 'list',
+      canActivate: [roleGuard([...CORA_VIEWERS])],
       resolve: {
         listData: listCoraResolver,
       },
@@ -41,6 +58,7 @@ export const coraRoutes: Route = {
     },
     {
       path: 'pending',
+      canActivate: [roleGuard([...CORA_VIEWERS])],
       resolve: {
         agents: pendingCoraResolver,
       },
@@ -49,6 +67,7 @@ export const coraRoutes: Route = {
     },
     {
       path: 'agent/create',
+      canActivate: [roleGuard([Admin, Gestion_Cora])],
       resolve: {
         formData: createAgentFormDataResolver,
       },
@@ -57,17 +76,20 @@ export const coraRoutes: Route = {
     },
     {
       path: 'agent/:id',
+      canActivate: [roleGuard([...CORA_VIEWERS])],
       resolve: { agent: detailAgentResolver },
       loadComponent: () =>
         import('./pages/detail-agent/detail-agent.component').then((m) => m.DetailAgentComponent),
     },
     {
       path: 'my-coras',
+      canActivate: [roleGuard([Gestion_Cora])],
       loadComponent: () =>
         import('./pages/mes-coras/mes-coras.component').then((m) => m.MesCoras),
     },
     {
       path: ':id',
+      canActivate: [roleGuard([...CORA_VIEWERS])],
       resolve: {
         cora: detailCoraResolver,
       },

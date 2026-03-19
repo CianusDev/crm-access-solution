@@ -129,9 +129,9 @@ export class AscService {
 
   getChequeDetail(numcheque: string) {
     return this.api
-      .get<{ cheque: AscCheque }>(this.endpoint + '/getAvChequeByCheque/' + numcheque)
+      .get<{ cheques: AscCheque }>(this.endpoint + '/getAvChequeByCheque/' + numcheque)
       .pipe(
-        map((res) => { console.log('[getChequeDetail] raw:', res); return res.cheque ?? (res as unknown as AscCheque); }),
+        map((res) => res.cheques),
         catchError((err) => throwError(() => err)),
       );
   }
