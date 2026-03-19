@@ -8,14 +8,18 @@ const {
   ResponsableExploitation: RESPO_EXPL,
   ResponsableFrontOffice: RESPO_FO,
   AdministrationAudit: ADMIN_AUDIT,
+  assistanteClientelePME: ASSC_PME,
   DirecteurRisque: DR,
   AnalysteRisque: AR,
   GestionnairePortefeuilles: GP,
-  GestionnairePortefeuillesJunior: GPJ,
   ChargeDuComite: CHARGE_COMIT,
   Chargedepartementcredit: CDCR,
   ResponsableJuridique: RESPO_JURIDIQUE,
   ResponsableAssurance: RESPO_ASSUR,
+  ResponsableClientelePME: RESPO_CLT_PME,
+  ResponsableClienteleTPE: RESPO_CLT_TPE,
+  ResponsableProduitAgricole: RESPO_PROD_AGRI,
+  ResponsableReseau: RESPO_RS,
   responsableClient: RC,
   ChefAgence: CA,
   ChefAgenceAdjoint: CAA,
@@ -29,17 +33,28 @@ const {
   SuperviseurPME: SUP_PME,
 } = UserRole;
 
+// Dashboard siège uniquement (old: Admin, DG, DGA, CDCR, DR, D_EXPL, RESPO_CLT_TPE, RESPO_PROD_AGRI,
+//   ADMIN_AUDIT, RESPO_CLT_PME, RESPO_EXPL, CHARGE_COMIT, RESPO_JURIDIQUE, RESPO_ASSUR, RESPO_FO, ASSC_PME, RESPO_RS)
 const CREDIT_SIEGE = [
-  Admin, DG, DGA, D_EXPL, RESPO_EXPL, RESPO_FO, ADMIN_AUDIT,
-  AR, GP, GPJ, DR, CHARGE_COMIT, CDCR, RESPO_JURIDIQUE, RESPO_ASSUR,
-  RC, CA, CAA, CC, CE, CUP, ACJ, CDC, RESPO_RGL, SUP_RISQ_ZONE, SUP_PME,
+  Admin, DG, DGA, CDCR, DR, D_EXPL,
+  RESPO_CLT_TPE, RESPO_PROD_AGRI, ADMIN_AUDIT, RESPO_CLT_PME,
+  RESPO_EXPL, CHARGE_COMIT, RESPO_JURIDIQUE, RESPO_ASSUR,
+  RESPO_FO, ASSC_PME, RESPO_RS,
 ] as const;
 
+// Dashboard agence
 const CREDIT_AGENCE = [CA, CAA, CC, GP, CUP, CE, RC, AR, SUP_RISQ_ZONE, RESPO_RGL, SUP_PME, CDC] as const;
 
+// Créer demande
 const CREDIT_CREATE = [Admin, ACJ, CE, GP, CC, RC] as const;
 
-const CREDIT_ALL = [...new Set([...CREDIT_SIEGE, ...CREDIT_AGENCE])] as const;
+// Toutes les routes crédit (liste, fiche, analyse, employeurs…)
+const CREDIT_ALL = [...new Set([
+  Admin, DG, DGA, DR, CDCR, D_EXPL, RESPO_EXPL, RESPO_FO,
+  RESPO_CLT_TPE, RESPO_CLT_PME, RESPO_PROD_AGRI,
+  SUP_PME, GP, CUP, CE, ASSC_PME, CC, CA, CAA, RC, ACJ, AR,
+  SUP_RISQ_ZONE, CHARGE_COMIT, RESPO_RGL, RESPO_JURIDIQUE, RESPO_ASSUR, CDC,
+])] as const;
 
 export const CREDIT_ROUTES: Routes = [
   {

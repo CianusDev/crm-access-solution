@@ -28,6 +28,7 @@
 | `ADMIN_AUDIT` | Administration Audit |
 | `Charge_Cora` | Chargé du réseau de correspondants |
 | `Gestion_Cora` | Gestionnaire réseau correspondants |
+| `Agent_BO` | Agent Back Office |
 | `RC` | Responsable Client |
 | `CA` | Chef Agence |
 | `CAA` | Chef d'Agence Adjoint |
@@ -54,7 +55,6 @@
 | `RESPO_CLT_TPE` | Responsable Clientèle TPE |
 | `RESPO_PROD_AGRI` | Responsable Produit Agricole |
 | `CHEF_DEPART_MARK` | Chef Département Marketing |
-| `Agent_BO` | Agent Back Office |
 
 ---
 
@@ -85,14 +85,14 @@ Template (@if canCreate / show*)  ←── masque les boutons d'action non auto
 | Page / Route | Rôles autorisés | Guard |
 |---|---|:---:|
 | Tableau de bord (`/cora/dashboard`) | Admin, DG, DGA, D_EXPL, RESPO_EXPL, Charge_Cora, RESPO_FO, ADMIN_AUDIT, Gestion_Cora | `roleGuard` |
-| Liste des CORAs (`/cora/list`) | Idem | `roleGuard` |
-| Demandes en attente (`/cora/pending`) | Idem | `roleGuard` |
-| Détail d'un CORA (`/cora/:id`) | Idem | `roleGuard` |
+| Liste des CORAs (`/cora/list`) | Admin, DG, DGA, D_EXPL, RESPO_EXPL, **Agent_BO**, RESPO_FO, Charge_Cora, ADMIN_AUDIT | `roleGuard` |
+| Demandes en attente (`/cora/pending`) | Admin, DGA, D_EXPL, RESPO_EXPL, Gestion_Cora, **Agent_BO**, Charge_Cora | `roleGuard` |
+| Détail d'un CORA (`/cora/:id`) | Admin, DG, DGA, D_EXPL, RESPO_EXPL, Charge_Cora, RESPO_FO, ADMIN_AUDIT, Gestion_Cora | `roleGuard` |
 | Détail d'un agent (`/cora/agent/:id`) | Idem | `roleGuard` |
 | Créer un CORA (`/cora/create`) | **Admin, Gestion_Cora** | `roleGuard` |
 | Créer un sous-agent (`/cora/agent/create`) | **Admin, Gestion_Cora** | `roleGuard` |
 | Mes CORAs (`/cora/my-coras`) | **Gestion_Cora** | `roleGuard` |
-| Géolocalisation (`/cora-map`) | Admin, DG, DGA, D_EXPL, RESPO_EXPL, Charge_Cora, RESPO_FO, ADMIN_AUDIT, Gestion_Cora | `roleGuard` |
+| Géolocalisation (`/cora-map`) | **Admin uniquement** | — |
 
 ### 1.2 Actions dans les pages
 
@@ -101,17 +101,20 @@ Template (@if canCreate / show*)  ←── masque les boutons d'action non auto
 | Bouton "Nouveau CORA" | Liste des CORAs | Admin, Gestion_Cora | `@if (canCreateCora())` dans template |
 | Soumettre le formulaire | Page Créer CORA | Admin, Gestion_Cora | Route guard (page inaccessible aux autres) |
 | Soumettre le formulaire | Page Créer sous-agent | Admin, Gestion_Cora | Route guard |
-| Voir le détail (œil) | Liste des CORAs | Tous les viewers CORA | Lecture seule — pas de guard supplémentaire |
+| Voir le détail (œil) | Liste des CORAs | Tous les viewers CORA | Lecture seule |
 | Export Excel / PDF | Liste des CORAs | Tous les viewers CORA | Lecture seule |
 
 ### 1.3 Résumé par profil — CORA
 
-| Profil | Dashboard | Liste | Créer | Mes CORAs |
-|--------|:---:|:---:|:---:|:---:|
-| **Admin** | ✅ | ✅ + bouton Nouveau | ✅ | ❌ |
-| **DG / DGA / D_EXPL / RESPO_EXPL / RESPO_FO / ADMIN_AUDIT / Charge_Cora** | ✅ | ✅ (lecture) | ❌ | ❌ |
-| **Gestion_Cora** | ✅ | ✅ + bouton Nouveau | ✅ | ✅ |
-| **Tous les autres** | ❌ | ❌ | ❌ | ❌ |
+| Profil | Dashboard | Liste | D. Attente | Créer | Mes CORAs |
+|--------|:---:|:---:|:---:|:---:|:---:|
+| **Admin** | ✅ | ✅ + bouton Nouveau | ✅ | ✅ | ❌ |
+| **DG / DGA** | ✅ | ✅ (lecture) | ❌ | ❌ | ❌ |
+| **D_EXPL / RESPO_EXPL / Charge_Cora** | ✅ | ✅ (lecture) | ✅ | ❌ | ❌ |
+| **RESPO_FO / ADMIN_AUDIT** | ✅ | ✅ (lecture) | ❌ | ❌ | ❌ |
+| **Gestion_Cora** | ✅ | ❌ | ✅ | ✅ | ✅ |
+| **Agent_BO** | ❌ | ✅ (lecture) | ✅ | ❌ | ❌ |
+| **Tous les autres** | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 ---
 
@@ -125,12 +128,12 @@ Template (@if canCreate / show*)  ←── masque les boutons d'action non auto
 | Tableau de bord agence (`/asc/dashboard/agence`) | **RC, CA, CC** | `roleGuard` |
 | Recherche client (`/asc/client-search`) | **Admin, RC, CC** | `roleGuard` |
 | Créer une demande (`/asc/create`) | **Admin, RC, CC** | `roleGuard` |
-| Demandes en attente (`/asc/pending`) | Siège ∪ Agence | `roleGuard` |
+| Demandes en attente (`/asc/pending`) | Admin, ADMIN_AUDIT, DGA, D_EXPL, ASSC_PME, RC, CC, RESPO_FO, AGENT_ACC, RESPO_EXPL | `roleGuard` |
 | Détail demande (`/asc/detail/:id`) | Siège ∪ Agence | `roleGuard` |
-| Liste des demandes (`/asc/list`) | Siège ∪ Agence | `roleGuard` |
-| Liste des tireurs (`/asc/tireurs`) | Siège uniquement | `roleGuard` |
+| Liste des chèques (`/asc/list`) | Admin, DG, DGA, D_EXPL, ASSC_PME, **CA**, RC, CC, RESPO_FO, AGENT_ACC, RESPO_EXPL, RESPO_CLT_PME | `roleGuard` |
+| Liste des tireurs (`/asc/tireurs`) | Admin, DG, DGA, D_EXPL, ASSC_PME, **CA, RC, CC**, RESPO_FO, AGENT_ACC, RESPO_EXPL, RESPO_CLT_PME | `roleGuard` |
 | Détail chèque (`/asc/cheque/:numcheque`) | Siège ∪ Agence | `roleGuard` |
-| Chèques en attente 7j (`/asc/cheques-attente`) | Siège ∪ Agence | `roleGuard` |
+| Chèques en attente 7j (`/asc/cheques-attente`) | Admin, ADMIN_AUDIT, DGA, D_EXPL, ASSC_PME, RESPO_EXPL, RESPO_FO, AGENT_ACC, RC, CC | `roleGuard` |
 
 ### 2.2 Actions dans les pages — Workflow de validation ASC
 
@@ -191,21 +194,21 @@ Statut 1/8/10  →  Statut 2  →  Statut 9  →  Statut 3  →  Statut 4  →  
 
 | Page / Route | Rôles autorisés | Guard |
 |---|---|:---:|
-| Tableau de bord réseau (`/credit/dashboard`) | Groupe Siège (27 rôles) | `roleGuard` |
+| Tableau de bord réseau (`/credit/dashboard`) | Admin, DG, DGA, CDCR, DR, D_EXPL, RESPO_CLT_TPE, RESPO_PROD_AGRI, ADMIN_AUDIT, RESPO_CLT_PME, RESPO_EXPL, CHARGE_COMIT, RESPO_JURIDIQUE, RESPO_ASSUR, RESPO_FO, ASSC_PME, RESPO_RS | `roleGuard` |
 | Tableau de bord agence (`/credit/dashboard-agence`) | CA, CAA, CC, GP, CUP, CE, RC, AR, SUP_RISQ_ZONE, RESPO_RGL, SUP_PME, CDC | `roleGuard` |
 | Nouvelle demande (`/credit/create`) | **Admin, ACJ, CE, GP, CC, RC** | `roleGuard` |
-| Liste des demandes (`/credit/list`) | Siège ∪ Agence | `roleGuard` |
-| Analyse dossier (`/credit/analyse/:ref`) | Siège ∪ Agence | `roleGuard` |
-| Résumé dossier (`/credit/resume/:ref`) | Siège ∪ Agence | `roleGuard` |
-| Fiche dossier (`/credit/:ref`) | Siège ∪ Agence | `roleGuard` |
-| Détail agence (`/credit/detail-agence/:code`) | Siège ∪ Agence | `roleGuard` |
-| Organigramme (`/credit/organigramme`) | Siège ∪ Agence | `roleGuard` |
-| Employeurs éligibles (`/credit/employeur/list`) | Siège ∪ Agence | `roleGuard` |
-| Détail employeur (`/credit/employeur/:id`) | Siège ∪ Agence | `roleGuard` |
-| Tirages découvert — liste (`/credit/tirage/list`) | Siège ∪ Agence | `roleGuard` |
-| Tirages découvert — détail (`/credit/tirage/:ref`) | Siège ∪ Agence | `roleGuard` |
+| Liste des demandes (`/credit/list`) | Siège ∪ Agence ∪ RESPO_CLT_TPE, RESPO_CLT_PME, RESPO_PROD_AGRI, ASSC_PME | `roleGuard` |
+| Analyse dossier (`/credit/analyse/:ref`) | CREDIT_ALL | `roleGuard` |
+| Résumé dossier (`/credit/resume/:ref`) | CREDIT_ALL | `roleGuard` |
+| Fiche dossier (`/credit/:ref`) | CREDIT_ALL | `roleGuard` |
+| Détail agence (`/credit/detail-agence/:code`) | CREDIT_ALL | `roleGuard` |
+| Organigramme (`/credit/organigramme`) | CREDIT_ALL | `roleGuard` |
+| Employeurs éligibles (`/credit/employeur/list`) | **Admin, CA, CAA, D_EXPL, RC, CC** | `roleGuard` |
+| Détail employeur (`/credit/employeur/:id`) | CREDIT_ALL | `roleGuard` |
+| Tirages découvert — liste (`/credit/tirage/list`) | Admin, ACJ, CE, GP, CC, RC | `roleGuard` |
+| Tirages découvert — détail (`/credit/tirage/:ref`) | Admin, ACJ, CE, GP, CC, RC | `roleGuard` |
 
-> **Groupe Siège (27 rôles)** : Admin, DG, DGA, D_EXPL, RESPO_EXPL, RESPO_FO, ADMIN_AUDIT, AR, GP, GPJ, DR, CHARGE_COMIT, CDCR, RESPO_JURIDIQUE, RESPO_ASSUR, RC, CA, CAA, CC, CE, CUP, ACJ, CDC, RESPO_RGL, SUP_RISQ_ZONE, SUP_PME
+> **CREDIT_ALL** : union de tous les rôles ayant accès aux routes crédit — Admin, DG, DGA, DR, CDCR, D_EXPL, RESPO_EXPL, RESPO_FO, RESPO_CLT_TPE, RESPO_CLT_PME, RESPO_PROD_AGRI, SUP_PME, GP, CUP, CE, ASSC_PME, CC, CA, CAA, RC, ACJ, AR, SUP_RISQ_ZONE, CHARGE_COMIT, RESPO_RGL, RESPO_JURIDIQUE, RESPO_ASSUR, CDC
 
 ### 3.2 Actions dans les pages
 
@@ -213,27 +216,33 @@ Statut 1/8/10  →  Statut 2  →  Statut 9  →  Statut 3  →  Statut 4  →  
 |--------|------|-----------------|-------------|
 | Bouton "Nouvelle demande" | Liste des demandes | **Tous sauf RC et CC** | `@if (canCreateCredit())` — `lacksRole(RC, CC)` |
 | Soumettre le formulaire de création | Page Créer | Admin, ACJ, CE, GP, CC, RC | Route guard |
-| Voir le détail (clic ligne) | Liste | Siège ∪ Agence | Lecture seule |
-| Export / actions sur fiche | Fiche dossier | Siège ∪ Agence | Contrôlé par statut (logique interne) |
+| Voir le détail (clic ligne) | Liste | CREDIT_ALL | Lecture seule |
+| Export / actions sur fiche | Fiche dossier | CREDIT_ALL | Contrôlé par statut (logique interne) |
 
 ### 3.3 Résumé par profil — Crédit
 
-| Profil | Db réseau | Db agence | Créer | Consulter |
-|--------|:---:|:---:|:---:|:---:|
-| **Admin** | ✅ | ❌ | ✅ | ✅ |
-| **DG / DGA / D_EXPL / RESPO_EXPL / RESPO_FO / ADMIN_AUDIT** | ✅ | ❌ | ❌ | ✅ |
-| **DR / GPJ / CHARGE_COMIT / CDCR / RESPO_JURIDIQUE / RESPO_ASSUR** | ✅ | ❌ | ❌ | ✅ |
-| **RC** | ✅ | ✅ | ✅ | ✅ |
-| **CA** | ✅ | ✅ | ❌ | ✅ |
-| **CAA** | ✅ | ✅ | ❌ | ✅ |
-| **CC** | ✅ | ✅ | ✅ | ✅ |
-| **GP** | ✅ | ✅ | ✅ | ✅ |
-| **CE** | ✅ | ✅ | ✅ | ✅ |
-| **CUP** | ✅ | ✅ | ❌ | ✅ |
-| **ACJ** | ✅ | ❌ | ✅ | ✅ |
-| **CDC** | ✅ | ✅ | ❌ | ✅ |
-| **AR / SUP_RISQ_ZONE / RESPO_RGL / SUP_PME** | ✅ | ✅ | ❌ | ✅ |
-| **Tous les autres** | ❌ | ❌ | ❌ | ❌ |
+| Profil | Db réseau | Db agence | Créer | Liste | Employeurs |
+|--------|:---:|:---:|:---:|:---:|:---:|
+| **Admin** | ✅ | ❌ | ✅ | ✅ | ✅ |
+| **DG** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **DGA** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **D_EXPL** | ✅ | ❌ | ❌ | ✅ | ✅ |
+| **RESPO_EXPL / RESPO_FO / ADMIN_AUDIT** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **DR / CHARGE_COMIT / CDCR / RESPO_JURIDIQUE / RESPO_ASSUR** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **RESPO_CLT_TPE / RESPO_PROD_AGRI / RESPO_CLT_PME** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **ASSC_PME** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **RESPO_RS** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **RC** | ❌ | ✅ | ✅ | ✅ | ✅ |
+| **CA** | ❌ | ✅ | ❌ | ✅ | ✅ |
+| **CAA** | ❌ | ✅ | ❌ | ✅ | ✅ |
+| **CC** | ❌ | ✅ | ✅ | ✅ | ✅ |
+| **GP** | ❌ | ✅ | ✅ | ✅ | ❌ |
+| **CE** | ❌ | ✅ | ✅ | ✅ | ❌ |
+| **CUP** | ❌ | ✅ | ❌ | ✅ | ❌ |
+| **ACJ** | ❌ | ❌ | ✅ | ✅ | ❌ |
+| **CDC** | ❌ | ✅ | ❌ | ✅ | ❌ |
+| **AR / SUP_RISQ_ZONE / RESPO_RGL / SUP_PME** | ❌ | ✅ | ❌ | ✅ | ❌ |
+| **Tous les autres** | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 ---
 
@@ -243,9 +252,9 @@ Statut 1/8/10  →  Statut 2  →  Statut 9  →  Statut 3  →  Statut 4  →  
 
 | Page | Rôles autorisés |
 |------|-----------------|
-| Liste des utilisateurs | Admin, DG, DGA |
-| Détail utilisateur | Admin, DG, DGA |
-| Configuration (Agences, ASC, Crédit, Zonification) | Admin, DG, DGA |
+| Liste des utilisateurs | **Admin uniquement** |
+| Détail utilisateur | **Admin uniquement** |
+| Configuration (Agences, ASC, Crédit, Zonification) | **Admin uniquement** |
 
 > Le guard s'applique sur `canActivateChild` au niveau de `/parametres` — toutes les sous-routes sont protégées en bloc.
 
@@ -253,13 +262,13 @@ Statut 1/8/10  →  Statut 2  →  Statut 9  →  Statut 3  →  Statut 4  →  
 
 | Action | Rôles autorisés | Enforcement |
 |--------|-----------------|-------------|
-| Modifier affectations agence (Drawer) | Admin, DG, DGA | Route guard (page inaccessible aux autres) |
-| Modifier nature prestation ASC | Admin, DG, DGA | Route guard |
-| Modifier config crédit (activité, charge, frais) | Admin, DG, DGA | Route guard |
-| Modifier zones / régions / teams / zone ACJ | Admin, DG, DGA | Route guard |
-| Activer / désactiver un utilisateur | Admin, DG, DGA | Route guard |
-| Modifier infos utilisateur | Admin, DG, DGA | Route guard |
-| Modifier permissions utilisateur | Admin, DG, DGA | Route guard |
+| Modifier affectations agence (Drawer) | Admin | Route guard (page inaccessible aux autres) |
+| Modifier nature prestation ASC | Admin | Route guard |
+| Modifier config crédit (activité, charge, frais) | Admin | Route guard |
+| Modifier zones / régions / teams / zone ACJ | Admin | Route guard |
+| Activer / désactiver un utilisateur | Admin | Route guard |
+| Modifier infos utilisateur | Admin | Route guard |
+| Modifier permissions utilisateur | Admin | Route guard |
 
 ---
 
@@ -267,31 +276,31 @@ Statut 1/8/10  →  Statut 2  →  Statut 9  →  Statut 3  →  Statut 4  →  
 
 | Profil | CORA | ASC | Crédit | Paramètres |
 |--------|:----:|:---:|:------:|:----------:|
-| **Admin** | Tout sauf Mes CORAs | Siège + Créer + toutes actions | Siège + Créer | ✅ |
-| **DG** | Lecture | Siège (lecture) | Siège (lecture) | ✅ |
-| **DGA** | Lecture | Siège (lecture) | Siège (lecture) | ✅ |
-| **D_EXPL** | Lecture | Siège (lecture) | Siège (lecture) | ❌ |
-| **RESPO_EXPL** | Lecture | Siège + Valider/Approuver (statut 3) | Siège (lecture) | ❌ |
-| **RESPO_FO** | Lecture | Siège + Ajourner + Autoriser (statut 4) | Siège (lecture) | ❌ |
-| **ADMIN_AUDIT** | Lecture | Siège (lecture) | Siège (lecture) | ❌ |
-| **Charge_Cora** | Lecture | ❌ | ❌ | ❌ |
-| **Gestion_Cora** | Tout + Mes CORAs + Créer | ❌ | ❌ | ❌ |
-| **ASSC_PME** | ❌ | Siège + Valider/Approuver (statut 2) | ❌ | ❌ |
-| **RESPO_CLT_PME** | ❌ | Siège + Valider/Approuver (statut 9) | ❌ | ❌ |
-| **AGENT_ACC** | ❌ | Siège + Valider/Approuver (statut 2) | ❌ | ❌ |
-| **RC** | ❌ | Agence + Créer + Soumettre + Confirmer/Annuler + Supprimer | Siège + Agence + Créer | ❌ |
-| **CA** | ❌ | Agence (lecture) | Siège + Agence (lecture) | ❌ |
-| **CAA** | ❌ | ❌ | Agence (lecture) | ❌ |
-| **CC** | ❌ | Agence + Créer + Soumettre + Confirmer/Annuler + Supprimer | Agence + Créer | ❌ |
-| **GP** | ❌ | ❌ | Siège + Agence + Créer | ❌ |
-| **GPJ** | ❌ | ❌ | Siège (lecture) | ❌ |
-| **CE** | ❌ | ❌ | Siège + Agence + Créer | ❌ |
-| **CUP** | ❌ | ❌ | Siège + Agence (lecture) | ❌ |
-| **ACJ** | ❌ | ❌ | Siège + Créer | ❌ |
-| **CDC** | ❌ | ❌ | Siège + Agence (lecture) | ❌ |
-| **AR** | ❌ | ❌ | Siège + Agence (lecture) | ❌ |
-| **SUP_RISQ_ZONE** | ❌ | ❌ | Siège + Agence (lecture) | ❌ |
-| **RESPO_RGL** | ❌ | ❌ | Siège + Agence (lecture) | ❌ |
-| **SUP_PME** | ❌ | ❌ | Siège + Agence (lecture) | ❌ |
-| **DR / CHARGE_COMIT / CDCR / RESPO_JURIDIQUE / RESPO_ASSUR** | ❌ | ❌ | Siège (lecture) | ❌ |
-| **RESPO_RS / RESPO_CLT_TPE / RESPO_PROD_AGRI / CHEF_DEPART_MARK / Agent_BO** | ❌ | ❌ | ❌ | ❌ |
+| **Admin** | Tout sauf Mes CORAs | Siège + Créer + toutes actions | Db réseau + Créer + tout | ✅ |
+| **DG** | Dashboard + Liste | Siège (lecture) | Db réseau + Liste | ❌ |
+| **DGA** | Dashboard + Liste + D.Attente | Siège + Rejeter/Approuver/Ajourner (statut 3) | Db réseau + Liste | ❌ |
+| **D_EXPL** | Dashboard + Liste + D.Attente | Siège + Rejeter/Approuver/Ajourner (statuts 3, 9) | Db réseau + Liste + Employeurs | ❌ |
+| **RESPO_EXPL** | Dashboard + Liste + D.Attente | Siège + Rejeter/Approuver/Ajourner (statuts 3, 9) | Db réseau + Liste | ❌ |
+| **RESPO_FO** | Dashboard + Liste | Siège + Ajourner + Autoriser (statut 4) | Db réseau + Liste | ❌ |
+| **ADMIN_AUDIT** | Dashboard + Liste | Siège (lecture) | Db réseau + Liste | ❌ |
+| **Charge_Cora** | Dashboard + Liste + D.Attente | ❌ | ❌ | ❌ |
+| **Gestion_Cora** | Dashboard + D.Attente + Créer + Mes CORAs | ❌ | ❌ | ❌ |
+| **Agent_BO** | Liste + D.Attente | ❌ | ❌ | ❌ |
+| **ASSC_PME** | ❌ | Siège + Rejeter/Approuver/Ajourner (statut 2) | Db réseau + Liste | ❌ |
+| **RESPO_CLT_PME** | ❌ | Siège + Rejeter/Approuver (statut 9) | Db réseau + Liste | ❌ |
+| **AGENT_ACC** | ❌ | Siège + Ajourner (statut 2) | ❌ | ❌ |
+| **RC** | ❌ | Agence + Créer + Soumettre + Confirmer/Annuler | Db agence + Créer + Liste + Employeurs | ❌ |
+| **CA** | ❌ | Agence + Liste + Tireurs (lecture) | Db agence + Liste + Employeurs | ❌ |
+| **CAA** | ❌ | ❌ | Db agence + Liste + Employeurs | ❌ |
+| **CC** | ❌ | Agence + Créer + Soumettre + Confirmer/Annuler + Liste + Tireurs | Db agence + Créer + Liste + Employeurs | ❌ |
+| **GP** | ❌ | ❌ | Db agence + Créer + Liste | ❌ |
+| **GPJ** | ❌ | ❌ | Liste uniquement | ❌ |
+| **CE** | ❌ | ❌ | Db agence + Créer + Liste | ❌ |
+| **CUP** | ❌ | ❌ | Db agence + Liste | ❌ |
+| **ACJ** | ❌ | ❌ | Créer + Liste | ❌ |
+| **CDC** | ❌ | ❌ | Db agence + Liste | ❌ |
+| **AR / SUP_RISQ_ZONE / RESPO_RGL / SUP_PME** | ❌ | ❌ | Db agence + Liste | ❌ |
+| **DR / CHARGE_COMIT / CDCR / RESPO_JURIDIQUE / RESPO_ASSUR** | ❌ | ❌ | Db réseau + Liste | ❌ |
+| **RESPO_CLT_TPE / RESPO_PROD_AGRI** | ❌ | ❌ | Db réseau + Liste | ❌ |
+| **RESPO_RS** | ❌ | ❌ | Db réseau uniquement | ❌ |
+| **CHEF_DEPART_MARK** | ❌ | ❌ | ❌ | ❌ |
