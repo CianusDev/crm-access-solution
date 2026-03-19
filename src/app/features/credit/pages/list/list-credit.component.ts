@@ -22,6 +22,8 @@ import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { CreditService } from '../../services/credit/credit.service';
 import { CreditDemande, CREDIT_STATUTS } from '../../interfaces/credit.interface';
+import { PermissionService } from '@/core/services/permission/permission.service';
+import { UserRole } from '@/core/models/user.model';
 import { navigateByStatut } from '../../utils/credit-navigation';
 
 type TabFilter = 'attente' | 'cloture' | 'rejette';
@@ -52,6 +54,12 @@ export class ListCreditComponent implements OnInit {
   private readonly creditService = inject(CreditService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly permissions = inject(PermissionService);
+
+  // Old frontend : bouton visible à tous SAUF RC et CC
+  readonly canCreateCredit = computed(() =>
+    this.permissions.lacksRole(UserRole.responsableClient, UserRole.conseilClientele),
+  );
 
   // ── State ──────────────────────────────────────────────────────────────
   readonly activeTab = signal<TabFilter>('attente');

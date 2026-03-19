@@ -1,7 +1,6 @@
 import { Avatar } from '@/shared/components/avatar/avatar.component';
 import { Dropdown, DropdownItem } from '@/shared/components/dropdown';
 import { Sidebar } from '@/shared/components/sidebar/sidebar.component';
-
 import { DEFAULT_MENU } from '@/core/constants/sidebar-menu';
 import type { User } from '@/core/models/user.model';
 import { Breadcrumb } from '@/shared/components/breadcrumb/breadcrumb.component';

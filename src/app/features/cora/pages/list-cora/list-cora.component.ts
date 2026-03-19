@@ -18,6 +18,8 @@ import { Router } from '@angular/router';
 import { LucideAngularModule, Plus, Search, Eye, Filter, Download, RefreshCw, X } from 'lucide-angular';
 import { Cora, CoraFiltre, ListCoraData } from '../../interfaces/cora.interface';
 import { CoraService } from '../../services/cora/cora.service';
+import { PermissionService } from '@/core/services/permission/permission.service';
+import { UserRole } from '@/core/models/user.model';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { FormSelect } from '@/shared/components/form-select/form-select.component';
 import { FormInput } from '@/shared/components/form-input/form-input.component';
@@ -77,6 +79,11 @@ export class ListCoraComponent implements OnInit {
 
   // ── Services ───────────────────────────────────────────────────────────────
   private readonly router = inject(Router);
+  private readonly permissions = inject(PermissionService);
+
+  readonly canCreateCora = computed(() =>
+    this.permissions.hasRole(UserRole.Admin, UserRole.GestionCora),
+  );
   private readonly coraService = inject(CoraService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder);

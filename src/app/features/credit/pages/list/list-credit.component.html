@@ -15,10 +15,12 @@
       >
         <lucide-icon [img]="RefreshIcon" [size]="15" [class.animate-spin]="isLoading()" />
       </button>
-      <button appButton type="button" (click)="goToCreate()">
-        <lucide-icon [img]="PlusIcon" [size]="15" />
-        Nouvelle demande
-      </button>
+      @if (canCreateCredit()) {
+        <button appButton type="button" (click)="goToCreate()">
+          <lucide-icon [img]="PlusIcon" [size]="15" />
+          Nouvelle demande
+        </button>
+      }
     </div>
   </div>
 

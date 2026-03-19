@@ -41,6 +41,8 @@ import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import { FormsModule } from '@angular/forms';
 import { AscDemande } from '../../interfaces/asc.interface';
 import { AscService } from '../../services/asc/asc.service';
+import { PermissionService } from '@/core/services/permission/permission.service';
+import { UserRole } from '@/core/models/user.model';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { PdfExportService } from '@/core/services/export/pdf-export.service';
 import type { Content, TableCell } from 'pdfmake/interfaces';
@@ -154,6 +156,7 @@ export class DetailComponent {
   private readonly ascService = inject(AscService);
   private readonly toast = inject(ToastService);
   private readonly pdfService = inject(PdfExportService);
+  private readonly permissions = inject(PermissionService);
 
   readonly demande = input<AscDemande | null>(null);
 
@@ -303,15 +306,82 @@ export class DetailComponent {
     }
   });
 
-  // ── Visibilité boutons (basée sur statut) ──────────────────────────────
-  readonly showSoumettre = computed(() => [1, 8, 10].includes(this.demande()?.statut ?? -1));
-  readonly showRejeter = computed(() => [2, 3, 9].includes(this.demande()?.statut ?? -1));
-  readonly showAjourner = computed(() => [2, 3, 4, 9].includes(this.demande()?.statut ?? -1));
-  readonly showApprouver = computed(() => [2, 3, 9].includes(this.demande()?.statut ?? -1));
-  readonly showAutoriser = computed(() => this.demande()?.statut === 4);
-  readonly showConfirmer = computed(() => this.demande()?.statut === 5);
-  readonly showAnnuler = computed(() => this.demande()?.statut === 5);
-  readonly showDelete = computed(() => ![6, 11].includes(this.demande()?.statut ?? -1));
+  // ── Visibilité boutons (statut + rôle — conforme old frontend) ────────
+
+  // Statut 1/8/10 : RC ou CC soumet
+  readonly showSoumettre = computed(
+    () =>
+      [1, 8, 10].includes(this.demande()?.statut ?? -1) &&
+      this.permissions.hasRole(UserRole.conseilClientele, UserRole.responsableClient, UserRole.Admin),
+  );
+
+  // Rejet selon statut :
+  //   Statut 2  → ASSC_PME
+  //   Statut 3  → RESPO_EXPL, D_EXPL, DR, DGA
+  //   Statut 9  → RESPO_EXPL, RESPO_CLT_PME, D_EXPL, DR
+  readonly showRejeter = computed(() => {
+    const s = this.demande()?.statut ?? -1;
+    if (s === 2) return this.permissions.hasRole(UserRole.assistanteClientelePME, UserRole.Admin);
+    if (s === 3) return this.permissions.hasRole(UserRole.ResponsableExploitation, UserRole.DirectriceExploitation, UserRole.DirecteurRisque, UserRole.DGA, UserRole.Admin);
+    if (s === 9) return this.permissions.hasRole(UserRole.ResponsableExploitation, UserRole.ResponsableClientelePME, UserRole.DirectriceExploitation, UserRole.DirecteurRisque, UserRole.Admin);
+    return false;
+  });
+
+  // Ajournement selon statut :
+  //   Statut 2  → AGENT_ACC, ASSC_PME
+  //   Statut 3  → RESPO_EXPL, D_EXPL, DR, DGA
+  //   Statut 4  → Admin, RESPO_FO
+  //   Statut 8  → RC, CC (même agence — guard simplifié)
+  //   Statut 9  → RESPO_EXPL, RESPO_CLT_PME, D_EXPL, DR
+  readonly showAjourner = computed(() => {
+    const s = this.demande()?.statut ?? -1;
+    if (s === 2) return this.permissions.hasRole(UserRole.agentAccueil, UserRole.assistanteClientelePME, UserRole.Admin);
+    if (s === 3) return this.permissions.hasRole(UserRole.ResponsableExploitation, UserRole.DirectriceExploitation, UserRole.DirecteurRisque, UserRole.DGA, UserRole.Admin);
+    if (s === 4) return this.permissions.hasRole(UserRole.ResponsableFrontOffice, UserRole.Admin);
+    if (s === 8) return this.permissions.hasRole(UserRole.responsableClient, UserRole.conseilClientele, UserRole.Admin);
+    if (s === 9) return this.permissions.hasRole(UserRole.ResponsableExploitation, UserRole.ResponsableClientelePME, UserRole.DirectriceExploitation, UserRole.DirecteurRisque, UserRole.Admin);
+    return false;
+  });
+
+  // Approbation selon statut :
+  //   Statut 2  → ASSC_PME
+  //   Statut 3  → RESPO_EXPL, D_EXPL, DR, DGA
+  //   Statut 9  → RESPO_EXPL, RESPO_CLT_PME, D_EXPL, DR
+  readonly showApprouver = computed(() => {
+    const s = this.demande()?.statut ?? -1;
+    if (s === 2) return this.permissions.hasRole(UserRole.assistanteClientelePME, UserRole.Admin);
+    if (s === 3) return this.permissions.hasRole(UserRole.ResponsableExploitation, UserRole.DirectriceExploitation, UserRole.DirecteurRisque, UserRole.DGA, UserRole.Admin);
+    if (s === 9) return this.permissions.hasRole(UserRole.ResponsableExploitation, UserRole.ResponsableClientelePME, UserRole.DirectriceExploitation, UserRole.DirecteurRisque, UserRole.Admin);
+    return false;
+  });
+
+  // Statut 4 : Admin ou RESPO_FO autorise le décaissement
+  readonly showAutoriser = computed(
+    () =>
+      this.demande()?.statut === 4 &&
+      this.permissions.hasRole(UserRole.ResponsableFrontOffice, UserRole.Admin),
+  );
+
+  // Statut 5 : Admin, RC, CC confirment
+  readonly showConfirmer = computed(
+    () =>
+      this.demande()?.statut === 5 &&
+      this.permissions.hasRole(UserRole.conseilClientele, UserRole.responsableClient, UserRole.Admin),
+  );
+
+  // Statut 5 : Admin, RC, CC annulent
+  readonly showAnnuler = computed(
+    () =>
+      this.demande()?.statut === 5 &&
+      this.permissions.hasRole(UserRole.conseilClientele, UserRole.responsableClient, UserRole.Admin),
+  );
+
+  // Suppression : Admin uniquement (non clôturé / non abouti)
+  readonly showDelete = computed(
+    () =>
+      ![6, 11].includes(this.demande()?.statut ?? -1) &&
+      this.permissions.hasRole(UserRole.Admin),
+  );
   readonly hasActions = computed(
     () =>
       this.showSoumettre() ||

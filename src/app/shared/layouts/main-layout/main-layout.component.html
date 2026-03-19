@@ -78,7 +78,7 @@
         >
           <div class="text-right">
             <p class="text-sm font-semibold">{{ user()?.nom }} {{ user()?.prenom }}</p>
-            <p class="text-xs text-muted-foreground">Administrateur</p>
+            <p class="text-xs text-muted-foreground">{{user()?.profil?.libelle ?? "-"}}</p>
           </div>
           <app-avatar />
         </button>
