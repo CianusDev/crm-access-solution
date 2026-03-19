@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import {
@@ -86,6 +86,17 @@ export class ResumeCreditComponent implements OnInit {
   private readonly toast = inject(ToastService);
   readonly permissions = inject(PermissionService);
 
+  readonly data = input<CreditResume>();
+
+  constructor() {
+    effect(() => {
+      const data = this.data();
+      if (!data) return;
+      this.resume.set(data);
+      this.isLoading.set(false);
+    }, { allowSignalWrites: true });
+  }
+
   // ── State ──────────────────────────────────────────────────────────────
   readonly ref = signal('');
   readonly activeTab = signal<TabId>('synthese');
@@ -123,7 +134,6 @@ export class ResumeCreditComponent implements OnInit {
   ngOnInit() {
     const ref = this.route.snapshot.paramMap.get('ref') ?? '';
     this.ref.set(ref);
-    this.load();
   }
 
   // ── Actions ────────────────────────────────────────────────────────────

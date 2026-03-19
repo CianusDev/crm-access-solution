@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -76,6 +76,7 @@ import {
   GarantieMateriel,
   GarantieVehicule,
 } from '../../interfaces/credit.interface';
+import { FicheCreditResolvedData } from './fiche-credit.resolver';
 
 type TabId = 'details' | 'documents' | 'checklist' | 'garanties';
 
@@ -155,6 +156,19 @@ export class FicheCreditComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly creditService = inject(CreditService);
+
+  readonly data = input<FicheCreditResolvedData>();
+
+  constructor() {
+    effect(() => {
+      const data = this.data();
+      if (!data) return;
+      this.fiche.set(data.fiche);
+      this.documents.set(data.documents);
+      this.observations.set(data.observations);
+      this.populateDocChecklist();
+    }, { allowSignalWrites: true });
+  }
   private readonly pdfService = inject(CreditPDFService);
   readonly datePipe = inject(DatePipe);
   private readonly toast = inject(ToastService);
@@ -394,9 +408,6 @@ export class FicheCreditComponent implements OnInit {
   ngOnInit() {
     const ref = this.route.snapshot.paramMap.get('ref') ?? '';
     this.ref.set(ref);
-    this.loadFiche();
-    this.loadDocuments();
-    this.loadObservations();
   }
 
   // ── Chargements ────────────────────────────────────────────────────────

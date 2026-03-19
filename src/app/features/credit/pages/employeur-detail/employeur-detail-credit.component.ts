@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, effect, inject, input, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import {
@@ -19,6 +19,7 @@ import { BadgeComponent } from '@/shared/components/badge/badge.component';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { CreditService } from '../../services/credit/credit.service';
 import { Employeur, EmployeurDocument, EmployeurObservation } from '../../interfaces/credit.interface';
+import { EmployeurDetailResolvedData } from './employeur-detail-credit.resolver';
 
 type TabId = 'infos' | 'documents' | 'observations';
 
@@ -48,6 +49,19 @@ export class EmployeurDetailCreditComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(ToastService);
 
+  readonly data = input<EmployeurDetailResolvedData>();
+
+  constructor() {
+    effect(() => {
+      const data = this.data();
+      if (!data) return;
+      this.employeur.set(data.employeur);
+      this.documents.set(data.documents);
+      this.observations.set(data.observations);
+      this.isLoading.set(false);
+    }, { allowSignalWrites: true });
+  }
+
   readonly isLoading = signal(true);
   readonly employeur = signal<Employeur | null>(null);
   readonly documents = signal<EmployeurDocument[]>([]);
@@ -66,29 +80,7 @@ export class EmployeurDetailCreditComponent implements OnInit {
     this.id.set(id);
     if (!id) {
       this.router.navigate(['/app/credit/employeur/list']);
-      return;
     }
-
-    this.creditService.getDetailEmployeur(id).subscribe({
-      next: (e) => {
-        this.employeur.set(e);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.toast.error('Impossible de charger le détail de l\'employeur.');
-        this.isLoading.set(false);
-      },
-    });
-
-    this.creditService.getDocumentsEmployeur(id).subscribe({
-      next: (docs) => this.documents.set(docs),
-      error: () => {},
-    });
-
-    this.creditService.getObservationsEmployeur(id).subscribe({
-      next: (obs) => this.observations.set(obs),
-      error: () => {},
-    });
   }
 
   goBack() {

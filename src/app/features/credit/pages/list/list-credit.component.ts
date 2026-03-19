@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
@@ -44,7 +44,7 @@ type TabFilter = 'attente' | 'cloture' | 'rejette';
     ButtonDirective,
   ],
 })
-export class ListCreditComponent implements OnInit {
+export class ListCreditComponent {
   readonly SearchIcon = Search;
   readonly PlusIcon = Plus;
   readonly RefreshIcon = RefreshCw;
@@ -55,6 +55,18 @@ export class ListCreditComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly permissions = inject(PermissionService);
+
+  readonly demandes = input<CreditDemande[]>();
+
+  constructor() {
+    effect(() => {
+      const demandes = this.demandes();
+      if (demandes) {
+        this.allDemandes.set(demandes);
+        this.isLoading.set(false);
+      }
+    }, { allowSignalWrites: true });
+  }
 
   // Old frontend : bouton visible à tous SAUF RC et CC
   readonly canCreateCredit = computed(() =>
@@ -92,11 +104,6 @@ export class ListCreditComponent implements OnInit {
 
   readonly statuts = CREDIT_STATUTS;
   readonly Math = Math;
-
-  // ── Lifecycle ──────────────────────────────────────────────────────────
-  ngOnInit() {
-    this.load();
-  }
 
   // ── Actions ────────────────────────────────────────────────────────────
   switchTab(tab: string) {

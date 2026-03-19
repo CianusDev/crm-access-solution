@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { LucideAngularModule, Search, Eye, RefreshCw, UserPlus, Users } from 'lucide-angular';
 import { NgClass, UpperCasePipe } from '@angular/common';
@@ -37,7 +37,7 @@ const STATUT_INFO: Record<number, { label: string; class: string }> = {
     Avatar,
   ],
 })
-export class UtilisateursComponent implements OnInit {
+export class UtilisateursComponent {
   readonly SearchIcon  = Search;
   readonly EyeIcon     = Eye;
   readonly RefreshIcon = RefreshCw;
@@ -47,6 +47,8 @@ export class UtilisateursComponent implements OnInit {
   private readonly router   = inject(Router);
   private readonly service  = inject(ParametresService);
   private readonly toast    = inject(ToastService);
+
+  readonly utilisateurs = input<Utilisateur[]>();
 
   readonly users     = signal<Utilisateur[]>([]);
   readonly isLoading = signal(false);
@@ -73,7 +75,12 @@ export class UtilisateursComponent implements OnInit {
     return this.filtered().slice(start, start + PAGE_SIZE);
   });
 
-  ngOnInit() { this.load(); }
+  constructor() {
+    effect(() => {
+      const u = this.utilisateurs();
+      if (u) this.users.set(u);
+    }, { allowSignalWrites: true });
+  }
 
   load() {
     this.isLoading.set(true);

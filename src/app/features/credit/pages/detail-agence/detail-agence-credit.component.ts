@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
@@ -32,6 +32,7 @@ import {
   CreditTypeCredit,
 } from '../../interfaces/credit.interface';
 import { navigateByStatut } from '../../utils/credit-navigation';
+import { DetailAgenceCreditResolvedData } from './detail-agence-credit.resolver';
 
 @Component({
   selector: 'app-detail-agence-credit',
@@ -65,6 +66,18 @@ export class DetailAgenceCreditComponent implements OnInit {
   private readonly creditService = inject(CreditService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder);
+
+  readonly data = input<DetailAgenceCreditResolvedData>();
+
+  constructor() {
+    effect(() => {
+      const data = this.data();
+      if (!data) return;
+      this.detail.set(data.detail);
+      this.page.set(1);
+      this.typesCredit.set(data.typesCredit);
+    }, { allowSignalWrites: true });
+  }
 
   // ── State ──────────────────────────────────────────────────────────────
   readonly code = signal('');
@@ -126,11 +139,6 @@ export class DetailAgenceCreditComponent implements OnInit {
     const libelle = this.route.snapshot.queryParamMap.get('libelle') ?? code;
     this.code.set(code);
     this.libelle.set(libelle);
-    this.load();
-    this.creditService.getTypesCredit().subscribe({
-      next: (list) => this.typesCredit.set(list),
-      error: () => {},
-    });
   }
 
   // ── Actions ────────────────────────────────────────────────────────────

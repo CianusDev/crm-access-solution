@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -32,7 +32,7 @@ interface GroupeAR {
     CardTitleComponent,
   ],
 })
-export class OrganigrammeCreditComponent implements OnInit {
+export class OrganigrammeCreditComponent {
   readonly UsersIcon = Users;
   readonly UserIcon = User;
   readonly ChevronRightIcon = ChevronRight;
@@ -42,6 +42,18 @@ export class OrganigrammeCreditComponent implements OnInit {
   private readonly creditService = inject(CreditService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+
+  readonly demandes = input<CreditDemande[]>();
+
+  constructor() {
+    effect(() => {
+      const demandes = this.demandes();
+      if (demandes) {
+        this.groupes.set(this.groupByAR(demandes));
+        this.isLoading.set(false);
+      }
+    }, { allowSignalWrites: true });
+  }
 
   readonly isLoading = signal(true);
   readonly search = signal('');
@@ -61,10 +73,6 @@ export class OrganigrammeCreditComponent implements OnInit {
       }))
       .filter((g) => g.demandes.length > 0);
   });
-
-  ngOnInit() {
-    this.load();
-  }
 
   load() {
     this.isLoading.set(true);

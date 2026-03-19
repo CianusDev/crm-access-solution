@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NgClass, UpperCasePipe } from '@angular/common';
@@ -17,6 +17,7 @@ import { getInitiales } from '@/shared/pipes/initiales.pipe';
 import { ParametresService } from '../../services/parametres.service';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { AuthService } from '@/core/services/auth/auth.service';
+import { UtilisateurDetailResolvedData } from './utilisateur-detail.resolver';
 import {
   Utilisateur, ParametresProfil, ParametresAgence, ParametresCommune,
   ServiceItem, PermissionTypeCredit, ZoneItem,
@@ -38,7 +39,7 @@ const PROFILS_CODE = ['AR', 'GP'];
     Avatar,
   ],
 })
-export class UtilisateurDetailComponent implements OnInit {
+export class UtilisateurDetailComponent {
   readonly ArrowLeftIcon   = ArrowLeft;
   readonly UserIcon        = User;
   readonly ShieldIcon      = Shield;
@@ -55,6 +56,8 @@ export class UtilisateurDetailComponent implements OnInit {
   private readonly service = inject(ParametresService);
   private readonly toast   = inject(ToastService);
   private readonly auth    = inject(AuthService);
+
+  readonly data = input<UtilisateurDetailResolvedData>();
 
   // ── State ─────────────────────────────────────────────────────────────────
   readonly isLoading  = signal(true);
@@ -101,9 +104,22 @@ export class UtilisateurDetailComponent implements OnInit {
 
   readonly initiales = computed(() => getInitiales(this.user()?.nom, this.user()?.prenom ?? ''));
 
-  ngOnInit() {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    this.loadUser(id);
+  constructor() {
+    effect(() => {
+      const d = this.data();
+      if (!d) return;
+      const { user, formData } = d;
+      this.user.set(user);
+      this.patchInfoForm(user);
+      this.profils.set(formData.profils);
+      this.services.set(formData.services);
+      this.agences.set(formData.agences);
+      this.communes.set(formData.communes);
+      if (this.showPermissions()) this.loadPermissions(user.id);
+      if (user.profil?.name === 'AR') this.loadSousZones();
+      if (user.profil?.name === 'SUP_RISQ_ZONE') this.loadZones();
+      this.isLoading.set(false);
+    }, { allowSignalWrites: true });
   }
 
   loadUser(id: number) {

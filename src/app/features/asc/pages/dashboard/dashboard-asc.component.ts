@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import {
   LucideAngularModule,
@@ -32,7 +32,7 @@ import { StatsCardComponent } from '@/shared/components/stats-card/stats-card.co
     StatsCardComponent,
   ],
 })
-export class DashboardAscComponent implements OnInit {
+export class DashboardAscComponent {
   readonly ArchiveIcon = Archive;
   readonly ClockIcon = Clock;
   readonly CheckCircleIcon = CheckCircle;
@@ -44,11 +44,15 @@ export class DashboardAscComponent implements OnInit {
 
   private readonly ascService = inject(AscService);
 
+  // Resolved inputs
+  readonly dashboard = input<AscDashboard>();
+  readonly agences = input<{ id: number; libelle: string }[]>();
+
   readonly currentYear = new Date().getFullYear();
   readonly years = [this.currentYear, this.currentYear - 1, this.currentYear - 2];
   readonly selectedYear = signal(this.currentYear);
   readonly isLoading = signal(false);
-  readonly dashboard = signal<AscDashboard | null>(null);
+  readonly dashboardData = signal<AscDashboard | null>(null);
   readonly agencesList = signal<{ id: number; libelle: string }[]>([]);
 
   // Pagination agences table
@@ -56,16 +60,18 @@ export class DashboardAscComponent implements OnInit {
   readonly pageSize = 8;
 
   readonly pagedAgences = computed(() => {
-    const agences = this.dashboard()?.agences ?? [];
+    const agences = this.dashboardData()?.agences ?? [];
     const start = (this.page() - 1) * this.pageSize;
     return agences.slice(start, start + this.pageSize);
   });
 
-  ngOnInit() {
-    this.load(this.currentYear);
-    this.ascService.getAgences().subscribe({
-      next: (agences) => this.agencesList.set(agences),
-    });
+  constructor() {
+    effect(() => {
+      const d = this.dashboard();
+      if (d) this.dashboardData.set(d);
+      const a = this.agences();
+      if (a) this.agencesList.set(a);
+    }, { allowSignalWrites: true });
   }
 
   load(annee: number) {
@@ -73,7 +79,7 @@ export class DashboardAscComponent implements OnInit {
     this.page.set(1);
     this.isLoading.set(true);
     this.ascService.getDashboard(annee).subscribe({
-      next: (d) => { this.dashboard.set(d); this.isLoading.set(false); },
+      next: (d) => { this.dashboardData.set(d); this.isLoading.set(false); },
       error: () => this.isLoading.set(false),
     });
   }

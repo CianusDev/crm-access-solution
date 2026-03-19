@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
@@ -30,6 +30,7 @@ import {
   CreditTypeCredit,
 } from '../../interfaces/credit.interface';
 import { navigateByStatut } from '../../utils/credit-navigation';
+import { DashboardAgenceCreditResolvedData } from './dashboard-agence-credit.resolver';
 
 @Component({
   selector: 'app-dashboard-agence-credit',
@@ -50,7 +51,7 @@ import { navigateByStatut } from '../../utils/credit-navigation';
     FormSelect,
   ],
 })
-export class DashboardAgenceCreditComponent implements OnInit {
+export class DashboardAgenceCreditComponent {
   readonly SearchIcon = Search;
   readonly RefreshIcon = RefreshCw;
   readonly AlertCircleIcon = AlertCircle;
@@ -61,6 +62,18 @@ export class DashboardAgenceCreditComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder);
+
+  readonly data = input<DashboardAgenceCreditResolvedData>();
+
+  constructor() {
+    effect(() => {
+      const data = this.data();
+      if (!data) return;
+      this.dashboard.set(data.dashboard);
+      this.page.set(1);
+      this.typesCredit.set(data.typesCredit);
+    }, { allowSignalWrites: true });
+  }
 
   // ── Formulaire de filtre ────────────────────────────────────────────────
   readonly filtre = this.fb.group({
@@ -124,15 +137,6 @@ export class DashboardAgenceCreditComponent implements OnInit {
 
   readonly Math = Math;
   readonly statuts = CREDIT_STATUTS;
-
-  // ── Lifecycle ──────────────────────────────────────────────────────────
-  ngOnInit() {
-    this.load();
-    this.creditService.getTypesCredit().subscribe({
-      next: (list) => this.typesCredit.set(list),
-      error: () => {},
-    });
-  }
 
   // ── Actions ────────────────────────────────────────────────────────────
   load() {

@@ -1,8 +1,7 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
 import {
   LucideAngularModule,
   Award,
@@ -56,6 +55,7 @@ import {
 } from '../../interfaces/credit.interface';
 
 import { CreditDonutChartComponent } from '../../components/credit-donut-chart/credit-donut-chart.component';
+import { DashboardCreditResolvedData } from './dashboard-credit.resolver';
 
 interface TbTotaux {
   decaisses: CreditTbStatut;
@@ -96,7 +96,7 @@ interface TbTotaux {
     CreditDonutChartComponent,
   ],
 })
-export class DashboardCreditComponent implements OnInit {
+export class DashboardCreditComponent {
   // ── Icons ──────────────────────────────────────────────────────────────
   readonly AwardIcon = Award;
   readonly CheckCircleIcon = CheckCircle;
@@ -114,6 +114,8 @@ export class DashboardCreditComponent implements OnInit {
   private readonly creditService = inject(CreditService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+
+  readonly data = input<DashboardCreditResolvedData>();
 
   // ── Général — dashCrdBytype + dashCrdByStatut + dashCrdByAgence + dashCrdByRegion ──
   readonly isLoading = signal(false);
@@ -180,6 +182,20 @@ export class DashboardCreditComponent implements OnInit {
   readonly agencePage = signal(1);
   readonly agencePageSize = 10;
 
+  constructor() {
+    effect(() => {
+      const data = this.data();
+      if (!data) return;
+      this.dashTypeCredit.set(data.typeCredit);
+      this.dashStatut.set(data.statut);
+      this.statAgences.set(data.agences);
+      this.agencePage.set(1);
+      this.statRegions.set(data.regions);
+      this.tbProduits.set(data.tbProduits);
+      if (data.regions.length > 0) this.selectRegion(data.regions[0].id);
+    }, { allowSignalWrites: true });
+  }
+
   readonly pagedAgences = computed(() => {
     const start = (this.agencePage() - 1) * this.agencePageSize;
     return this.statAgences().slice(start, start + this.agencePageSize);
@@ -192,43 +208,6 @@ export class DashboardCreditComponent implements OnInit {
     const start = (this.zonePage() - 1) * this.zonePageSize;
     return this.listeZones().slice(start, start + this.zonePageSize);
   });
-
-  // ── Lifecycle ──────────────────────────────────────────────────────────
-  ngOnInit() {
-    this.isLoading.set(true);
-    this.tbIsLoading.set(true);
-
-    forkJoin({
-      typeCredit: this.creditService.getDashboardTypeCredit(),
-      statut: this.creditService.getDashboardStatut(),
-      agences: this.creditService.getStatsByAgence(),
-      regions: this.creditService.getStatsByRegion(),
-    }).subscribe({
-      next: ({ typeCredit, statut, agences, regions }) => {
-        this.dashTypeCredit.set(typeCredit);
-        this.dashStatut.set(statut);
-        this.statAgences.set(agences);
-        this.agencePage.set(1);
-        this.statRegions.set(regions);
-        if (regions.length > 0) this.selectRegion(regions[0].id);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.toast.error('Erreur lors du chargement du tableau de bord.');
-        this.isLoading.set(false);
-      },
-    });
-
-    this.creditService.getTbByProd().subscribe({
-      next: (data) => {
-        this.tbProduits.set(data);
-        this.tbIsLoading.set(false);
-      },
-      error: () => {
-        this.tbIsLoading.set(false);
-      },
-    });
-  }
 
   // ── Général ─────────────────────────────────────────────────────────────
   selectRegion(id: number) {

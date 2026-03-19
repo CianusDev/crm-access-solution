@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -28,7 +28,7 @@ type Filtre = 'tous' | 'valide' | 'rejette';
     PaginationComponent,
   ],
 })
-export class EmployeurListCreditComponent implements OnInit {
+export class EmployeurListCreditComponent {
   readonly Building2Icon = Building2;
   readonly SearchIcon = Search;
   readonly RefreshCwIcon = RefreshCw;
@@ -37,6 +37,18 @@ export class EmployeurListCreditComponent implements OnInit {
   private readonly creditService = inject(CreditService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+
+  readonly employeurs = input<Employeur[]>();
+
+  constructor() {
+    effect(() => {
+      const list = this.employeurs();
+      if (list) {
+        this.employeursData.set(list);
+        this.isLoading.set(false);
+      }
+    }, { allowSignalWrites: true });
+  }
 
   readonly filtreOptions: { value: Filtre; label: string }[] = [
     { value: 'tous', label: 'Tous' },
@@ -50,12 +62,12 @@ export class EmployeurListCreditComponent implements OnInit {
   readonly filtre = signal<Filtre>('tous');
   readonly search = signal('');
   readonly currentPage = signal(1);
-  readonly employeurs = signal<Employeur[]>([]);
+  readonly employeursData = signal<Employeur[]>([]);
 
   readonly filtered = computed(() => {
     const q = this.search().toLowerCase();
-    if (!q) return this.employeurs();
-    return this.employeurs().filter((e) =>
+    if (!q) return this.employeursData();
+    return this.employeursData().filter((e) =>
       (e.nomEntreprise ?? '').toLowerCase().includes(q) ||
       (e.codeAdh ?? '').toLowerCase().includes(q),
     );
@@ -66,10 +78,6 @@ export class EmployeurListCreditComponent implements OnInit {
     const start = (page - 1) * this.PAGE_SIZE;
     return this.filtered().slice(start, start + this.PAGE_SIZE);
   });
-
-  ngOnInit() {
-    this.load('tous');
-  }
 
   setFiltre(f: Filtre) {
     this.filtre.set(f);
@@ -86,7 +94,7 @@ export class EmployeurListCreditComponent implements OnInit {
     const action = f === 'tous' ? undefined : f;
     this.creditService.getListeEmployeurs(action).subscribe({
       next: (list) => {
-        this.employeurs.set(list);
+        this.employeursData.set(list);
         this.isLoading.set(false);
       },
       error: () => {

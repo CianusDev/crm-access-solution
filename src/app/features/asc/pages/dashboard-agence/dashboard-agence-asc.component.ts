@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
 import {
@@ -70,22 +70,39 @@ export class DashboardAgenceAscComponent implements OnInit {
   readonly years = [this.currentYear, this.currentYear - 1, this.currentYear - 2];
   readonly selectedYear = signal(this.currentYear);
   readonly isLoading    = signal(false);
-  readonly dashboard    = signal<AscDashboard | null>(null);
+  readonly dashboardData    = signal<AscDashboard | null>(null);
   readonly monthlyValues = signal<number[]>(Array(12).fill(0));
+
+  // Resolved input
+  readonly dashboard = input<AscDashboard>();
 
   readonly agenceId    = computed(() => this.authService.currentUser()?.agence?.id ?? null);
   readonly agenceLabel = computed(() => this.authService.currentUser()?.agence?.libelle ?? 'Agence');
 
-  readonly topClients  = computed(() => this.dashboard()?.topClients ?? []);
-  readonly recentesAsc = computed(() => this.dashboard()?.recentesAsc ?? []);
+  readonly topClients  = computed(() => this.dashboardData()?.topClients ?? []);
+  readonly recentesAsc = computed(() => this.dashboardData()?.recentesAsc ?? []);
 
   readonly chartData = computed<BarChartData>(() => ({
     labels: MOIS_LABELS,
     datasets: [{ label: 'Montant déboursé (FCFA)', values: this.monthlyValues(), colorVar: '--color-chart-1' }],
   }));
 
+  constructor() {
+    effect(() => {
+      const d = this.dashboard();
+      if (d) this.dashboardData.set(d);
+    }, { allowSignalWrites: true });
+  }
+
   ngOnInit() {
-    this.load(this.currentYear);
+    // Load mensuel data for the chart (requires agenceId from auth)
+    const agId = this.agenceId();
+    if (agId) {
+      this.ascService.getDashboardMensuel(this.currentYear, agId).subscribe({
+        next: (items) => this.monthlyValues.set(this.buildMonthlyValues(items)),
+        error: () => {},
+      });
+    }
   }
 
   load(annee: number) {
@@ -93,7 +110,7 @@ export class DashboardAgenceAscComponent implements OnInit {
     this.isLoading.set(true);
 
     this.ascService.getDashboard(annee).subscribe({
-      next: (d) => { this.dashboard.set(d); this.isLoading.set(false); },
+      next: (d) => { this.dashboardData.set(d); this.isLoading.set(false); },
       error: () => this.isLoading.set(false),
     });
 

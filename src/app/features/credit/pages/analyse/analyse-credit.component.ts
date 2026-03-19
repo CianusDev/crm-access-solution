@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, effect, inject, input, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   LucideAngularModule,
@@ -11,6 +11,7 @@ import { BadgeComponent } from '@/shared/components/badge/badge.component';
 import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import { CreditService } from '../../services/credit/credit.service';
 import { CREDIT_STATUTS, CreditFicheDemandeDetail } from '../../interfaces/credit.interface';
+import { AnalyseCreditResolvedData } from './analyse-credit.resolver';
 import { ActiviteSectionComponent } from './sections/activite/activite-section.component';
 import { AchatsSectionComponent } from './sections/achats/achats-section.component';
 import { TresorerieSectionComponent } from './sections/tresorerie/tresorerie-section.component';
@@ -68,6 +69,20 @@ export class AnalyseCreditComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly creditService = inject(CreditService);
 
+  readonly data = input<AnalyseCreditResolvedData>();
+
+  constructor() {
+    effect(() => {
+      const data = this.data();
+      if (!data) return;
+      this.ficheHeader.set(data.fiche.demande);
+      if (data.analyse?.demande) {
+        this.demande.set(data.analyse.demande as CreditFicheDemandeDetail);
+      }
+      this.isLoading.set(false);
+    }, { allowSignalWrites: true });
+  }
+
   readonly statuts = CREDIT_STATUTS;
   readonly tabs = TABS;
 
@@ -85,7 +100,6 @@ export class AnalyseCreditComponent implements OnInit {
   ngOnInit() {
     const ref = this.route.snapshot.paramMap.get('ref') ?? '';
     this.ref.set(ref);
-    this.loadHeader();
   }
 
   // ── Data loading ───────────────────────────────────────────────────────

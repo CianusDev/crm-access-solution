@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import {
@@ -26,6 +26,7 @@ import {
   CreditFiche,
   CreditObservation,
 } from '../../interfaces/credit.interface';
+import { TirageDetailResolvedData } from './tirage-detail-credit.resolver';
 
 @Component({
   selector: 'app-tirage-detail-credit',
@@ -56,6 +57,18 @@ export class TirageDetailCreditComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(ToastService);
 
+  readonly data = input<TirageDetailResolvedData>();
+
+  constructor() {
+    effect(() => {
+      const data = this.data();
+      if (!data) return;
+      this.fiche.set(data.fiche);
+      this.observations.set(data.observations);
+      this.isLoading.set(false);
+    }, { allowSignalWrites: true });
+  }
+
   readonly isLoading = signal(true);
   readonly fiche = signal<CreditFiche | null>(null);
   readonly observations = signal<CreditObservation[]>([]);
@@ -78,24 +91,7 @@ export class TirageDetailCreditComponent implements OnInit {
 
     if (!ref) {
       this.router.navigate(['/app/credit/list']);
-      return;
     }
-
-    this.creditService.getFicheCredit(ref).subscribe({
-      next: (f) => {
-        this.fiche.set(f);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.toast.error('Impossible de charger le détail du tirage.');
-        this.isLoading.set(false);
-      },
-    });
-
-    this.creditService.getObservations(ref).subscribe({
-      next: (obs) => this.observations.set(obs),
-      error: () => {},
-    });
   }
 
   goBack() {

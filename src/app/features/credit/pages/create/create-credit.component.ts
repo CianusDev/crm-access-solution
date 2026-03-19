@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DatePipe, DecimalPipe, JsonPipe } from '@angular/common';
@@ -35,6 +35,7 @@ import {
   CreditTypeActivite,
   CreditTypeCredit,
 } from '../../interfaces/credit.interface';
+import { CreateCreditResolvedData } from './create-credit.resolver';
 
 /** Codes de types de crédit autorisés par groupe de profil */
 const CODES_GP = ['004', '011', '019', '015', '021', '033', '016', '032', '035'];
@@ -85,6 +86,18 @@ export class CreateCreditComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(ToastService);
   private readonly permissions = inject(PermissionService);
+
+  readonly data = input<CreateCreditResolvedData>();
+
+  constructor() {
+    effect(() => {
+      const data = this.data();
+      if (!data) return;
+      this.typesActivite.set(data.typesActivite);
+      this.typesCredit.set(data.typesCredit);
+      this.isLoadingRefs.set(false);
+    }, { allowSignalWrites: true });
+  }
 
   // ── State ──────────────────────────────────────────────────────────────
   readonly choix = signal<'1' | '2'>('1');
@@ -220,26 +233,6 @@ export class CreateCreditComponent implements OnInit {
     if (codeFromQuery) {
       this.codeClient.set(codeFromQuery);
     }
-
-    this.creditService.getTypesActivite().subscribe({
-      next: (list) => {
-        this.typesActivite.set(list);
-        this.creditService.getTypesCredit().subscribe({
-          next: (credits) => {
-            this.typesCredit.set(credits);
-            this.isLoadingRefs.set(false);
-          },
-          error: () => {
-            this.toast.error('Erreur lors du chargement des types de crédit.');
-            this.isLoadingRefs.set(false);
-          },
-        });
-      },
-      error: () => {
-        this.toast.error("Erreur lors du chargement des secteurs d'activité.");
-        this.isLoadingRefs.set(false);
-      },
-    });
   }
 
   // ── Actions ────────────────────────────────────────────────────────────
