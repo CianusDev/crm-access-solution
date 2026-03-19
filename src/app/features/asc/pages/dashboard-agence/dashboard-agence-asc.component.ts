@@ -14,6 +14,7 @@ import {
 } from '@/shared/components/card/card.component';
 import { BarChartComponent, BarChartData } from '@/shared/components/chart/bar-chart.component';
 import { AscService } from '../../services/asc/asc.service';
+import { StatsCardComponent } from '@/shared/components/stats-card/stats-card.component';
 import { AuthService } from '@/core/services/auth/auth.service';
 import { AscDashboard, AscDashboardMensuelItem } from '../../interfaces/asc.interface';
 
@@ -47,6 +48,7 @@ const ASC_STATUTS: Record<number, { label: string; cls: string }> = {
     CardHeaderComponent,
     CardTitleComponent,
     BarChartComponent,
+    StatsCardComponent,
   ],
   templateUrl: './dashboard-agence-asc.component.html',
 })

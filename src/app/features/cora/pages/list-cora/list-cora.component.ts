@@ -15,7 +15,16 @@ import { PdfExportService } from '@/core/services/export/pdf-export.service';
 import type { TableCell } from 'pdfmake/interfaces';
 import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { LucideAngularModule, Plus, Search, Eye, Filter, Download, RefreshCw, X } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  Plus,
+  Search,
+  Eye,
+  Filter,
+  Download,
+  RefreshCw,
+  X,
+} from 'lucide-angular';
 import { Cora, CoraFiltre, ListCoraData } from '../../interfaces/cora.interface';
 import { CoraService } from '../../services/cora/cora.service';
 import { PermissionService } from '@/core/services/permission/permission.service';
@@ -25,6 +34,7 @@ import { FormSelect } from '@/shared/components/form-select/form-select.componen
 import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { CoraMapComponent } from '../../components/cora-map/cora-map.component';
 import { InitialesPipe } from '@/shared/pipes/initiales.pipe';
+import { LogoBase64 } from '@/features/credit/enumeration/logo_base64.enum';
 
 const PAGE_SIZE = 10;
 
@@ -204,7 +214,7 @@ export class ListCoraComponent implements OnInit {
         this.isRefreshing.set(false);
       },
       error: (err) => {
-        this.toast.error(err.message ?? 'Erreur lors de l\'actualisation.');
+        this.toast.error(err.message ?? "Erreur lors de l'actualisation.");
         this.isRefreshing.set(false);
       },
     });
@@ -278,7 +288,11 @@ export class ListCoraComponent implements OnInit {
       {
         pageOrientation: 'landscape',
         pageMargins: [40, 70, 40, 50],
-        header: this.pdfService.header('Liste des CORAs', `${rows.length} résultat(s) — ${new Date().toLocaleDateString('fr-FR')}`),
+        header: this.pdfService.header(
+          'Liste des CORAs',
+          `${rows.length} résultat(s) — ${new Date().toLocaleDateString('fr-FR')}`,
+          LogoBase64.logoVertical,
+        ),
         footer: (currentPage, pageCount) => this.pdfService.footer(currentPage, pageCount),
         content: [
           {
@@ -302,19 +316,34 @@ export class ListCoraComponent implements OnInit {
 
   exportCSV() {
     const rows = this.filtered();
-    const headers = ['Référence', 'Désignation', 'Email', 'N.Perfect', 'N.P-Mobile', 'Commune', 'Quartier', 'Rue', 'Gestionnaire', 'Nb Agences'];
-    const lines = rows.map((c) => [
-      c.reference,
-      c.designation,
-      c.email,
-      c.perfect,
-      c.pmobile,
-      c.commune?.libelle ?? '',
-      c.quartier,
-      c.rue,
-      c.user ? `${c.user.nom} ${c.user.prenom}` : '',
-      c.agents?.length ?? 0,
-    ].map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';'));
+    const headers = [
+      'Référence',
+      'Désignation',
+      'Email',
+      'N.Perfect',
+      'N.P-Mobile',
+      'Commune',
+      'Quartier',
+      'Rue',
+      'Gestionnaire',
+      'Nb Agences',
+    ];
+    const lines = rows.map((c) =>
+      [
+        c.reference,
+        c.designation,
+        c.email,
+        c.perfect,
+        c.pmobile,
+        c.commune?.libelle ?? '',
+        c.quartier,
+        c.rue,
+        c.user ? `${c.user.nom} ${c.user.prenom}` : '',
+        c.agents?.length ?? 0,
+      ]
+        .map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`)
+        .join(';'),
+    );
 
     const csv = [headers.join(';'), ...lines].join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -325,7 +354,6 @@ export class ListCoraComponent implements OnInit {
     a.click();
     URL.revokeObjectURL(url);
   }
-
 
   avatarColor(statut: number): string {
     return STATUT_COLORS[statut] ?? 'bg-muted text-muted-foreground';

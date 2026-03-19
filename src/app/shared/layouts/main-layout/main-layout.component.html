@@ -2,7 +2,7 @@
   <!-- Sidebar -->
   <app-sidebar></app-sidebar>
   <!-- Content for MainLayout -->
-  <section class="w-full h-full flex-1 flex flex-col">
+  <section class="min-w-0 flex-1 flex flex-col overflow-hidden">
     <!-- Header for MainLayout -->
     <nav class="w-full flex items-center bg-background px-6 py-4 h-16 border-b border-border">
       <!-- Search area: keep the results dropdown positioned relative to this container -->
@@ -86,7 +86,7 @@
     </nav>
 
     <!-- Main content -->
-    <section class="w-full h-[calc(100svh-4rem)] relative p-6 overflow-y-auto">
+    <section class="w-full h-[calc(100svh-4rem)] relative p-6 overflow-y-auto overflow-x-hidden">
       <app-breadcrumb [items]="breadcrumbItems" />
       <router-outlet></router-outlet>
       <app-route-loader></app-route-loader>

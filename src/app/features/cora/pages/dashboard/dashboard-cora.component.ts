@@ -11,12 +11,12 @@ import {
   UsersIcon,
 } from 'lucide-angular';
 import { CoraManagersTable } from '../../components/cora-manager-table/cora-managers-table.component';
-import { StatsCard } from '../../components/stats-card/stats-card.component';
+import { StatsCardComponent } from '@/shared/components/stats-card/stats-card.component';
 import { DashboardCoraData } from '../../interfaces/dashbaord-cora.interface';
 
 @Component({
   selector: 'app-dashboard-cora',
-  imports: [LucideAngularModule, StatsCard, CoraManagersTable, BarChartComponent],
+  imports: [LucideAngularModule, StatsCardComponent, CoraManagersTable, BarChartComponent],
   templateUrl: './dashboard-cora.component.html',
 })
 export class DashboardCoraComponent {

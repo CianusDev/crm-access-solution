@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Save, Plus, Pencil, Search } from 'lucide-angular';
 import {
-  CardComponent, CardContentComponent, CardHeaderComponent, CardTitleComponent,
+  CardComponent, CardContentComponent,
 } from '@/shared/components/card/card.component';
 import { TabsComponent } from '@/shared/components/tabs/tabs.component';
 import { TabComponent } from '@/shared/components/tabs/tab.component';
@@ -21,7 +21,7 @@ import { SousZone, Zone, Region, ZoneItem, Team, ZoneAcj, UtilisateurMin } from 
   imports: [
     FormsModule,
     LucideAngularModule,
-    CardComponent, CardContentComponent, CardHeaderComponent, CardTitleComponent,
+    CardComponent, CardContentComponent,
     TabsComponent, TabComponent,
     DrawerComponent, DrawerHeaderComponent, DrawerTitleComponent,
     DrawerContentComponent, DrawerFooterComponent,

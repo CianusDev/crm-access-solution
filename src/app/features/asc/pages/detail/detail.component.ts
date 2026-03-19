@@ -46,6 +46,7 @@ import { UserRole } from '@/core/models/user.model';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { PdfExportService } from '@/core/services/export/pdf-export.service';
 import type { Content, TableCell } from 'pdfmake/interfaces';
+import { LogoBase64 } from '@/features/credit/enumeration/logo_base64.enum';
 import { Avatar } from '@/shared/components/avatar/avatar.component';
 import {
   DrawerComponent,
@@ -498,6 +499,7 @@ export class DetailComponent {
         header: this.pdfService.header(
           'Demande d\'avance sur chèque',
           `Réf. ${ref} — Statut : ${statutInfo?.label ?? ''}`,
+          LogoBase64.logoVertical,
         ),
         footer: (currentPage, pageCount) => this.pdfService.footer(currentPage, pageCount),
         content,

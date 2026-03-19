@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Save, Plus, Pencil, Search } from 'lucide-angular';
 import {
-  CardComponent, CardContentComponent, CardHeaderComponent, CardTitleComponent,
+  CardComponent, CardContentComponent,
 } from '@/shared/components/card/card.component';
 import {
   DrawerComponent, DrawerHeaderComponent, DrawerTitleComponent,
@@ -19,7 +19,7 @@ import { NaturePrestation } from '../../../interfaces/parametres.interface';
   imports: [
     FormsModule,
     LucideAngularModule,
-    CardComponent, CardContentComponent, CardHeaderComponent, CardTitleComponent,
+    CardComponent, CardContentComponent,
     DrawerComponent, DrawerHeaderComponent, DrawerTitleComponent,
     DrawerContentComponent, DrawerFooterComponent,
     PaginationComponent,

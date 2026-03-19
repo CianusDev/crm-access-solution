@@ -31,7 +31,7 @@ import {
   LucideAngularModule,
 } from 'lucide-angular';
 import { Cora, CoraAgent } from '../../interfaces/cora.interface';
-import { DatePipe, DecimalPipe, UpperCasePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { Avatar } from '@/shared/components/avatar/avatar.component';
 import { getInitiales, InitialesPipe } from '@/shared/pipes/initiales.pipe';
 
@@ -89,7 +89,6 @@ const AGENT_STATUT_VARIANT: Record<number, BadgeVariant> = {
     LucideAngularModule,
     DatePipe,
     DecimalPipe,
-    UpperCasePipe,
     Avatar,
     InitialesPipe,
   ],

@@ -33,57 +33,11 @@
 
     <!-- ── KPI row ───────────────────────────────────────────────────────── -->
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-
-      <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
-        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
-          <lucide-icon [img]="ArchiveIcon" [size]="20" class="text-foreground" />
-        </div>
-        <div>
-          <p class="text-2xl font-bold text-foreground">{{ d.totalCheques | number }}</p>
-          <p class="text-xs text-muted-foreground">Total chèques</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
-        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-yellow-100">
-          <lucide-icon [img]="ClockIcon" [size]="20" class="text-yellow-600" />
-        </div>
-        <div>
-          <p class="text-2xl font-bold text-foreground">{{ d.totalAscAttente | number }}</p>
-          <p class="text-xs text-muted-foreground">En attente</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
-        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-100">
-          <lucide-icon [img]="CheckCircleIcon" [size]="20" class="text-green-600" />
-        </div>
-        <div>
-          <p class="text-2xl font-bold text-foreground">{{ d.totalAscValide | number }}</p>
-          <p class="text-xs text-muted-foreground">Validées</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
-        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-100">
-          <lucide-icon [img]="XCircleIcon" [size]="20" class="text-orange-500" />
-        </div>
-        <div>
-          <p class="text-2xl font-bold text-foreground">{{ d.totalAscDecaisAnul | number }}</p>
-          <p class="text-xs text-muted-foreground">Décaiss. annulés</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
-        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-100">
-          <lucide-icon [img]="XOctagonIcon" [size]="20" class="text-destructive" />
-        </div>
-        <div>
-          <p class="text-2xl font-bold text-foreground">{{ d.totalAscRejette | number }}</p>
-          <p class="text-xs text-muted-foreground">Rejetées</p>
-        </div>
-      </div>
-
+      <app-stats-card title="Total chèques"     [value]="d.totalCheques"      [icon]="ArchiveIcon"      iconBackground="bg-secondary"   iconClass="text-foreground" />
+      <app-stats-card title="En attente"        [value]="d.totalAscAttente"   [icon]="ClockIcon"        iconBackground="bg-yellow-100"  iconClass="text-yellow-600" />
+      <app-stats-card title="Validées"          [value]="d.totalAscValide"    [icon]="CheckCircleIcon"  iconBackground="bg-green-100"   iconClass="text-green-600" />
+      <app-stats-card title="Décaiss. annulés"  [value]="d.totalAscDecaisAnul" [icon]="XCircleIcon"    iconBackground="bg-orange-100"  iconClass="text-orange-500" />
+      <app-stats-card title="Rejetées"          [value]="d.totalAscRejette"   [icon]="XOctagonIcon"    iconBackground="bg-red-100"     iconClass="text-destructive" />
     </div>
 
     <!-- ── Chart + Sidebar ──────────────────────────────────────────────── -->

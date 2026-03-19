@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { LucideAngularModule, Save, Plus, Pencil, Search } from 'lucide-angular';
 import {
-  CardComponent, CardContentComponent, CardHeaderComponent, CardTitleComponent,
+  CardComponent, CardContentComponent,
 } from '@/shared/components/card/card.component';
 import { TabsComponent } from '@/shared/components/tabs/tabs.component';
 import { TabComponent } from '@/shared/components/tabs/tab.component';
@@ -22,7 +22,7 @@ import { TypeActivite, TypeCredit, TypeCharge, FraisDossier } from '../../../int
   imports: [
     FormsModule, DecimalPipe,
     LucideAngularModule,
-    CardComponent, CardContentComponent, CardHeaderComponent, CardTitleComponent,
+    CardComponent, CardContentComponent,
     TabsComponent, TabComponent,
     DrawerComponent, DrawerHeaderComponent, DrawerTitleComponent,
     DrawerContentComponent, DrawerFooterComponent,

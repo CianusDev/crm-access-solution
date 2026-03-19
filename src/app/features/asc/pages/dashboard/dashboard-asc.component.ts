@@ -15,6 +15,7 @@ import { PaginationComponent } from '@/shared/components/pagination/pagination.c
 import { AscMonthlyChartComponent } from './asc-monthly-chart.component';
 import { AscDashboard } from '../../interfaces/asc.interface';
 import { AscService } from '../../services/asc/asc.service';
+import { StatsCardComponent } from '@/shared/components/stats-card/stats-card.component';
 
 @Component({
   selector: 'app-dashboard-asc',
@@ -28,6 +29,7 @@ import { AscService } from '../../services/asc/asc.service';
     CardTitleComponent,
     PaginationComponent,
     AscMonthlyChartComponent,
+    StatsCardComponent,
   ],
 })
 export class DashboardAscComponent implements OnInit {

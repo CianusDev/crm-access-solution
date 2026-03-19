@@ -41,25 +41,25 @@ export class PdfExportService {
 
   // ── Helpers de mise en page réutilisables ────────────────────────────────
 
-  /** En-tête standard avec logo texte + titre */
-  header(title: string, subtitle?: string): TDocumentDefinitions['header'] {
+  /** En-tête standard avec logo image (base64) ou texte fallback + titre */
+  header(title: string, subtitle?: string, logo?: string): TDocumentDefinitions['header'] {
+    const logoCol: any = logo
+      ? { image: logo, width: 80, margin: [0, 0, 0, 0] }
+      : { text: 'CRM Access Solution', style: 'headerBrand', width: '*' };
+
     return {
-      margin: [40, 20, 40, 0],
+      margin: [40, 12, 40, 0],
       columns: [
-        {
-          text: 'CRM Access Solution',
-          style: 'headerBrand',
-          width: '*',
-        },
+        logoCol,
         {
           stack: [
             { text: title, style: 'headerTitle', alignment: 'right' },
             ...(subtitle ? [{ text: subtitle, style: 'headerSubtitle', alignment: 'right' as const }] : []),
           ],
-          width: 'auto',
+          width: '*',
         },
       ],
-    };
+    } as any;
   }
 
   /** Pied de page standard avec numérotation */

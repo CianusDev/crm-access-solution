@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { DatePipe, NgClass, UpperCasePipe } from '@angular/common';
+import { NgClass, UpperCasePipe } from '@angular/common';
 import {
   LucideAngularModule,
   ArrowLeft, User, Shield, CreditCard, MapPin,
@@ -31,7 +31,7 @@ const PROFILS_CODE = ['AR', 'GP'];
   selector: 'app-utilisateur-detail',
   templateUrl: './utilisateur-detail.component.html',
   imports: [
-    FormsModule, NgClass, UpperCasePipe, DatePipe,
+    FormsModule, NgClass, UpperCasePipe,
     LucideAngularModule,
     CardComponent, CardContentComponent, CardHeaderComponent, CardTitleComponent,
     TabsComponent, TabComponent,
