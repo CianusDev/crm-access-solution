@@ -5,6 +5,7 @@ import { LucideAngularModule, Save, Plus, Pencil, Search } from 'lucide-angular'
 import {
   CardComponent, CardContentComponent,
 } from '@/shared/components/card/card.component';
+import { BadgeComponent } from '@/shared/components/badge/badge.component';
 import { TabsComponent } from '@/shared/components/tabs/tabs.component';
 import { TabComponent } from '@/shared/components/tabs/tab.component';
 import {
@@ -23,6 +24,7 @@ import { TypeActivite, TypeCredit, TypeCharge, FraisDossier } from '../../../int
     FormsModule, DecimalPipe,
     LucideAngularModule,
     CardComponent, CardContentComponent,
+    BadgeComponent,
     TabsComponent, TabComponent,
     DrawerComponent, DrawerHeaderComponent, DrawerTitleComponent,
     DrawerContentComponent, DrawerFooterComponent,
@@ -78,6 +80,11 @@ export class ConfigCreditComponent implements OnInit {
     const s = (this.pageCredit() - 1) * this.PAGE_SIZE;
     return this.filteredCredit().slice(s, s + this.PAGE_SIZE);
   });
+
+  /** Plafond maximum parmi tous les types de crédit — sert à calibrer la barre de progression */
+  readonly maxPlafondCredit = computed(() =>
+    Math.max(...this.typesCredit().map((t) => t.mttPlafondCrd ?? 0), 1),
+  );
 
   readonly filteredCharge = computed(() => {
     const q = this.searchCharge().toLowerCase().trim();

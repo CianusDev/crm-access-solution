@@ -52,11 +52,21 @@ export class MainLayout implements OnInit, OnDestroy {
   // Signaux et entrées
   readonly user = input<User | null>(null, { alias: 'currentUser' });
   readonly searchQuery = signal('');
+  readonly searchOpen = signal(false);
+
   readonly filteredSidebarItems = computed(() => {
     const q = this.searchQuery().trim().toLowerCase();
-    return q
-      ? DEFAULT_MENU.filter((group) => group.items.some((i) => i.label.toLowerCase().includes(q)))
-      : DEFAULT_MENU;
+    if (!q) return DEFAULT_MENU;
+
+    return DEFAULT_MENU
+      .map((group) => ({
+        ...group,
+        // Si le nom du groupe matche → garder tous ses items, sinon filtrer item par item
+        items: group.label.toLowerCase().includes(q)
+          ? group.items
+          : group.items.filter((i) => i.label.toLowerCase().includes(q)),
+      }))
+      .filter((group) => group.items.length > 0);
   });
 
   // Router & breadcrumb
@@ -78,27 +88,27 @@ export class MainLayout implements OnInit, OnDestroy {
 
   // Gestionnaires d'événements conservés en tant que propriétés pour pouvoir être supprimés de manière fiable
   private readonly _onDocumentClick = (event: MouseEvent) => {
-    if (!this.searchQuery()) return;
+    if (!this.searchOpen()) return;
 
     const target = event.target as Element | null;
     if (!target) return;
 
     // Si le clic est sur un résultat de recherche (role="option"), fermer le menu déroulant
     if (target.closest('[role="option"]')) {
-      this.ngZone.run(() => this.searchQuery.set(''));
+      this.ngZone.run(() => this.closeSearch());
       return;
     }
 
     // Si le clic est en dehors du composant hôte, fermer le menu déroulant
     if (!this.hostEl.nativeElement.contains(target)) {
-      this.ngZone.run(() => this.searchQuery.set(''));
+      this.ngZone.run(() => this.closeSearch());
     }
   };
 
   private readonly _onDocumentKeydown = (event: KeyboardEvent) => {
-    if (!this.searchQuery()) return;
+    if (!this.searchOpen()) return;
     if (event.key === 'Escape') {
-      this.ngZone.run(() => this.searchQuery.set(''));
+      this.ngZone.run(() => this.closeSearch());
     }
   };
 
@@ -166,8 +176,8 @@ export class MainLayout implements OnInit, OnDestroy {
     this.breadcrumbItems = crumbs;
   }
 
-  // Appelé par le template lorsqu'un résultat de recherche est explicitement cliqué (optionnel)
-  onSearchItemClick(): void {
+  closeSearch(): void {
+    this.searchOpen.set(false);
     this.searchQuery.set('');
   }
 

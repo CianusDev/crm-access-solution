@@ -15,28 +15,29 @@
               class="h-10 w-full rounded px-3 border border-transparent focus:outline-none bg-transparent"
               placeholder="Rechercher..."
               [value]="searchQuery()"
+              (focus)="searchOpen.set(true)"
               (input)="searchQuery.set($event.target.value)"
               aria-label="Rechercher dans le menu"
             />
           </div>
 
           <!-- Backdrop: when search is open, capture outside clicks to close -->
-          @if (searchQuery()) {
+          @if (searchOpen()) {
             <div
               class="fixed inset-0 z-40"
-              (click)="searchQuery.set('')"
+              (click)="closeSearch()"
               aria-hidden="true"
             ></div>
           }
 
           <!-- Search results dropdown: absolutely positioned relative to the input wrapper -->
-          @if (searchQuery()) {
+          @if (searchOpen()) {
             <div
               animate.enter="fade-in-0"
               animate.leave="fade-out-0"
-              class="absolute left-0 top-full mt-4 w-full z-50">
+              class="absolute left-0 top-full  mt-4 w-full z-50">
               <div
-                class="bg-background p-2 shadow-xl rounded-lg border border-border transition-all duration-200 ease-in-out overflow-auto"
+                class="bg-background p-2 shadow-xl rounded-lg border border-border transition-all duration-200 ease-in-out overflow-auto h-72"
                 role="listbox"
                 aria-label="Résultats de la recherche"
                 (click)="$event.stopPropagation()"
@@ -51,7 +52,7 @@
                           [routerLink]="subItem.href"
                           class="block p-1 px-2 rounded-lg hover:bg-accent transition-colors"
                           role="option"
-                          (click)="searchQuery.set('')"
+                          (click)="closeSearch()"
                         >
                           <lucide-icon [img]="subItem.icon" class="inline-block w-4 h-4 mr-2" />
                           {{ subItem.label }}

@@ -1,8 +1,8 @@
 <!-- Barre actions -->
 <div class="mb-4 flex items-center gap-3">
   <div class="relative flex-1">
-    <lucide-icon [img]="SearchIcon" [size]="14"
-      class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+    <!-- <lucide-icon [img]="SearchIcon" [size]="14"
+      class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" /> -->
     <input type="text" placeholder="Rechercher une nature de prestation…"
       [value]="searchQuery()"
       (input)="setSearch($any($event.target).value)"
