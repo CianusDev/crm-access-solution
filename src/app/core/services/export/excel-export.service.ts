@@ -13,7 +13,8 @@ export class ExcelExportService {
    * Charge ExcelJS de façon asynchrone (lazy) pour ne pas alourdir le bundle initial.
    */
   private async getExcelJS(): Promise<typeof import('exceljs')> {
-    return import('exceljs');
+    const mod = await import('exceljs');
+    return ((mod as any).default ?? mod) as typeof import('exceljs');
   }
 
   /**

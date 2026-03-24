@@ -3,14 +3,41 @@ import type { TDocumentDefinitions, TCreatedPdf, Content, TableCell } from 'pdfm
 
 @Injectable({ providedIn: 'root' })
 export class PdfExportService {
-  /**
-   * Charge pdfmake de façon asynchrone (lazy) pour ne pas alourdir le bundle initial.
-   */
+  private pdfMakeInstance: any = null;
+
   private async getPdfMake() {
-    const pdfMake = await import('pdfmake/build/pdfmake');
-    const pdfFonts = await import('pdfmake/build/vfs_fonts');
-    (pdfMake as any).default.vfs = (pdfFonts as any).default.pdfMake?.vfs ?? (pdfFonts as any).default;
-    return (pdfMake as any).default as typeof import('pdfmake/build/pdfmake');
+    if (this.pdfMakeInstance) return this.pdfMakeInstance;
+
+    const [pdfMakeModule, montserratVfs] = await Promise.all([
+      import('pdfmake/build/pdfmake'),
+      fetch('assets/fonts-creditaccess/Montserrat.js')
+        .then((r) => r.text())
+        .then((code) => {
+          const marker = 'this.pdfMake.vfs = ';
+          const markerIdx = code.indexOf(marker);
+          const start = code.indexOf('{', markerIdx + marker.length);
+          const end = code.lastIndexOf('}');
+          return JSON.parse(code.slice(start, end + 1)) as Record<string, string>;
+        })
+        .catch(() => ({}) as Record<string, string>),
+    ]);
+
+    const pdfMake = (pdfMakeModule as any).default ?? pdfMakeModule;
+
+    pdfMake.addFontContainer({
+      vfs: montserratVfs,
+      fonts: {
+        Montserrat: {
+          normal: 'Montserrat-Light.ttf',
+          bold: 'Montserrat-Bold.ttf',
+          italics: 'Montserrat-Regular.ttf',
+          bolditalics: 'Montserrat-Medium.ttf',
+        },
+      },
+    });
+
+    this.pdfMakeInstance = pdfMake;
+    return pdfMake as typeof import('pdfmake/build/pdfmake');
   }
 
   /**
