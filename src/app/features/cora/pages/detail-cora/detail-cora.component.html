@@ -185,16 +185,30 @@
                   </app-badge>
                 </td>
                 <td appTableCell align="center">
-                  <button
-                    appButton
-                    variant="ghost"
-                    size="icon"
-                    type="button"
-                    (click)="viewAgent(agent.id)"
-                    title="Voir le détail"
-                  >
-                    <lucide-icon [img]="EyeIcon" [size]="16" />
-                  </button>
+                  <div class="flex items-center justify-center gap-1">
+                    <button
+                      appButton
+                      variant="ghost"
+                      size="icon"
+                      type="button"
+                      (click)="viewAgent(agent.id)"
+                      title="Voir le détail"
+                    >
+                      <lucide-icon [img]="EyeIcon" [size]="16" />
+                    </button>
+                    @if (AdminRole | hasRole) {
+                      <button
+                        appButton
+                        variant="ghost"
+                        size="icon"
+                        type="button"
+                        (click)="openPmobileDialog(agent)"
+                        title="Modifier N° P-Mobile"
+                      >
+                        <lucide-icon [img]="PencilIcon" [size]="16" />
+                      </button>
+                    }
+                  </div>
                 </td>
               </tr>
             } @empty {
@@ -212,3 +226,33 @@
   }
 
 </div>
+
+<!-- Dialog modification N° P-Mobile -->
+<app-dialog [open]="pmobileDialogOpen()" (openChange)="pmobileDialogOpen.set($event)" classContainer="max-w-sm">
+  <app-dialog-header>
+    <app-dialog-title>Modifier N° P-Mobile</app-dialog-title>
+    <app-dialog-description>Saisissez le nouveau numéro P-Mobile de l'agent.</app-dialog-description>
+  </app-dialog-header>
+  <app-dialog-content>
+    <form [formGroup]="pmobileForm" class="flex flex-col gap-4">
+      <app-form-input
+        name="pmobileNumber"
+        label="Numéro P-Mobile"
+        type="tel"
+      />
+    </form>
+  </app-dialog-content>
+  <app-dialog-footer>
+    <button appButton variant="outline" type="button" (click)="pmobileDialogOpen.set(false)">
+      Annuler
+    </button>
+    <button
+      appButton
+      type="button"
+      [disabled]="pmobileForm.invalid || pmobileLoading()"
+      (click)="savePmobile()"
+    >
+      @if (pmobileLoading()) { Enregistrement... } @else { Enregistrer }
+    </button>
+  </app-dialog-footer>
+</app-dialog>

@@ -2,12 +2,68 @@
 
 <div class="pt-4 flex flex-col gap-6">
 
-  <!-- Back + title -->
-  <div class="flex items-center gap-3">
+  <!-- Back + title + actions -->
+  <div class="flex items-center justify-between gap-3 flex-wrap">
     <div>
       <h1 class="text-2xl font-bold text-foreground">Détail Agent</h1>
-      <p class="text-sm text-muted-foreground font-mono">{{ a?.reference }}</p>
+      <!-- <p class="text-sm text-muted-foreground font-mono">{{ a?.reference }}</p> -->
     </div>
+
+    @if (a) {
+      <div class="flex flex-wrap gap-2">
+
+        <!-- Clôturer (statut==6, rôles: GestionCora | AgentBO | ChargeCora) -->
+        @if (a.statut === 6 && ([GestionCoraRole, AgentBORole, ChargeCoraRole] | hasRole)) {
+          <button
+            appButton variant="destructive" type="button"
+            [disabled]="actionLoading()"
+            (click)="closeAgentAction()"
+            class="gap-2"
+          >
+            <lucide-icon [img]="LockIcon" [size]="15" />
+            @if (actionLoading()) { En cours... } @else { Clôturer cet Agent }
+          </button>
+        }
+
+        <!-- Envoyer pour décision (statut==2, évaluation présente, GestionCora) -->
+        @if (a.evaluation && a.statut === 2 && (GestionCoraRole | hasRole)) {
+          <button
+            appButton type="button"
+            [disabled]="actionLoading()"
+            (click)="sendForValidation()"
+            class="gap-2"
+          >
+            <lucide-icon [img]="SendIcon" [size]="15" />
+            @if (actionLoading()) { En cours... } @else { Envoyer pour décision }
+          </button>
+        }
+
+        <!-- Ajouter P-Mobile + Perfect (statut==5, typeUser==1, AgentBO) -->
+        @if (a.statut === 5 && a.typeUser === 1 && (AgentBORole | hasRole)) {
+          <button
+            appButton type="button"
+            (click)="openIdentifiantPrincipalDialog()"
+            class="gap-2"
+          >
+            <lucide-icon [img]="KeyRoundIcon" [size]="15" />
+            Ajouter identifiant P-Mobile et Perfect
+          </button>
+        }
+
+        <!-- Ajouter P-Mobile seul (statut==5, typeUser==2|3, AgentBO) -->
+        @if (a.statut === 5 && (a.typeUser === 2 || a.typeUser === 3) && (AgentBORole | hasRole)) {
+          <button
+            appButton type="button"
+            (click)="openIdentifiantSousAgentDialog()"
+            class="gap-2"
+          >
+            <lucide-icon [img]="KeyRoundIcon" [size]="15" />
+            Ajouter identifiant P-Mobile
+          </button>
+        }
+
+      </div>
+    }
   </div>
 
   @if (a) {
@@ -178,7 +234,7 @@
           <app-tab label="Documents" [icon]="FileTextIcon">
             <app-card>
               <app-card-content class="!pt-6">
-                <div class="flex flex-col gap-4">
+                <div class="grid sm:grid-cols-3 gap-4">
                   @for (type of DOC_TYPES; track type) {
                     <div>
                       <p class="text-xs font-semibold uppercase text-muted-foreground mb-2">{{ type }}</p>
@@ -193,7 +249,7 @@
                               class="gap-1.5 text-xs"
                             >
                               <lucide-icon [img]="FileTextIcon" [size]="13" />
-                              {{ doc.reference ?? type }}
+                              {{ doc.reference }}
                               <lucide-icon [img]="ExternalLinkIcon" [size]="11" class="text-muted-foreground" />
                             </button>
                           }
@@ -257,24 +313,66 @@
           <app-tab label="Décisions" [icon]="ClipboardListIcon">
             <app-card>
               <app-card-content class="!pt-6">
-                @if (!a.decision || a.decision.length === 0) {
-                  <p class="text-sm text-muted-foreground italic">Aucune décision enregistrée.</p>
-                } @else {
-                  <div class="flex flex-col gap-3">
-                    @for (d of a.decision; track $index) {
-                      <div class="rounded-lg border border-border p-3 text-sm">
-                        <div class="flex items-center justify-between mb-1">
-                          <span class="font-medium text-foreground">
-                            {{ d.user?.nom | uppercase }} {{ d.user?.prenom }}
-                          </span>
-                          @if (d.dateDecision) {
-                            <span class="text-xs text-muted-foreground">{{ d.dateDecision | date: 'dd/MM/yyyy' }}</span>
-                          }
-                        </div>
-                        <p class="text-muted-foreground">{{ d.observation }}</p>
-                      </div>
-                    }
+
+                <!-- Bouton "Prendre une décision" -->
+                @if (
+                  (a.statut === 4 && ([DGARole, DirectriceExploitationRole] | hasRole)) ||
+                  (a.statut === 3 && (ChargeCoraRole | hasRole))
+                ) {
+                  <div class="mb-4">
+                    <button appButton type="button" (click)="openDecisionDialog()" class="gap-2">
+                      <lucide-icon [img]="GavelIcon" [size]="15" />
+                      Prendre une décision
+                    </button>
                   </div>
+                }
+
+                @if (!a.decision || a.decision.length === 0) {
+                  <div class="flex flex-col items-center gap-3 py-12 text-center">
+                    <lucide-icon [img]="ClipboardListIcon" [size]="36" class="text-muted-foreground/20" />
+                    <p class="text-sm text-muted-foreground italic">Aucune décision enregistrée.</p>
+                  </div>
+                } @else {
+                  <ul class="relative ml-3 border-l border-border flex flex-col gap-3 py-1">
+                    @for (d of a.decision; track $index) {
+                      <li class="relative pl-5">
+                        <span class="absolute -left-[5px] top-0 h-2.5 w-2.5 rounded-full bg-primary ring-[3px] ring-primary/20"></span>
+                        <div class="rounded-xl border border-border bg-card p-3.5 shadow-sm">
+                          <!-- Header -->
+                          <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 mb-2">
+                            <div class="flex items-center gap-2 flex-wrap">
+                              @if (d.decision) {
+                                <app-badge [variant]="decisionVariant(d.decision)">
+                                  {{ decisionLabel(d.decision) }}
+                                </app-badge>
+                              }
+                            </div>
+                            @if (d.dateDecision) {
+                              <span class="text-xs text-muted-foreground whitespace-nowrap">
+                                {{ d.dateDecision | date: 'dd MMM yyyy' }} à {{ d.dateDecision | date: 'HH:mm' }}
+                              </span>
+                            }
+                          </div>
+                          <!-- Observation -->
+                          @if (d.observation) {
+                            <p class="text-sm text-muted-foreground mb-3 leading-relaxed">{{ d.observation }}</p>
+                          }
+                          <!-- Footer user -->
+                          <div class="border-t border-border pt-2.5 mt-2.5 flex items-center gap-2">
+                            <app-avatar />
+                            <div class="min-w-0">
+                              <p class="text-xs font-medium text-foreground leading-tight truncate">
+                                {{ d.user?.nom | uppercase }} {{ d.user?.prenom }}
+                              </p>
+                              @if (d.user?.libelle) {
+                                <p class="text-xs text-muted-foreground leading-tight truncate">{{ d.user?.libelle }}</p>
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                    }
+                  </ul>
                 }
               </app-card-content>
             </app-card>
@@ -287,3 +385,101 @@
   }
 
 </div>
+
+<!-- Dialog : Prendre une décision -->
+<app-dialog [open]="decisionDialogOpen()" (openChange)="decisionDialogOpen.set($event)" classContainer="max-w-sm">
+  <app-dialog-header>
+    <app-dialog-title>Prendre une décision</app-dialog-title>
+    <app-dialog-description>Sélectionnez une décision et ajoutez une observation.</app-dialog-description>
+  </app-dialog-header>
+  <app-dialog-content>
+    <form [formGroup]="decisionForm" class="flex flex-col gap-4">
+      <div class="flex flex-col gap-2">
+        <p class="text-sm font-medium text-foreground">Décision</p>
+        <div class="flex flex-col gap-2">
+          @for (opt of [
+            { value: '2', label: 'Acceptée' },
+            { value: '1', label: 'Refusée' },
+            { value: '3', label: 'Ajournée' }
+          ]; track opt.value) {
+            <label class="flex items-center gap-2 cursor-pointer text-sm">
+              <input type="radio" formControlName="decision" [value]="opt.value" class="accent-primary" />
+              {{ opt.label }}
+            </label>
+          }
+        </div>
+      </div>
+      <app-form-input
+        name="observation"
+        label="Observation"
+        type="text"
+      />
+    </form>
+  </app-dialog-content>
+  <app-dialog-footer>
+    <button appButton variant="outline" type="button" (click)="decisionDialogOpen.set(false)">
+      Annuler
+    </button>
+    <button
+      appButton
+      type="button"
+      [disabled]="decisionForm.invalid || decisionLoading()"
+      (click)="saveDecision()"
+    >
+      @if (decisionLoading()) { Enregistrement... } @else { Valider }
+    </button>
+  </app-dialog-footer>
+</app-dialog>
+
+<!-- Dialog : Identifiant Agent Principal (P-Mobile + Perfect) -->
+<app-dialog [open]="identifiantPrincipalDialogOpen()" (openChange)="identifiantPrincipalDialogOpen.set($event)" classContainer="max-w-sm">
+  <app-dialog-header>
+    <app-dialog-title>Ajouter les identifiants</app-dialog-title>
+    <app-dialog-description>Renseignez le numéro Perfect et le numéro P-Mobile de l'agent principal.</app-dialog-description>
+  </app-dialog-header>
+  <app-dialog-content>
+    <form [formGroup]="identifiantPrincipalForm" class="flex flex-col gap-4">
+      <app-form-input name="perfectNumber" label="Numéro Perfect" type="text" />
+      <app-form-input name="pmobileNumber" label="Numéro P-Mobile" type="tel" />
+    </form>
+  </app-dialog-content>
+  <app-dialog-footer>
+    <button appButton variant="outline" type="button" (click)="identifiantPrincipalDialogOpen.set(false)">
+      Annuler
+    </button>
+    <button
+      appButton
+      type="button"
+      [disabled]="identifiantPrincipalForm.invalid || identifiantPrincipalLoading()"
+      (click)="saveIdentifiantPrincipal()"
+    >
+      @if (identifiantPrincipalLoading()) { Enregistrement... } @else { Enregistrer }
+    </button>
+  </app-dialog-footer>
+</app-dialog>
+
+<!-- Dialog : Identifiant Sous-Agent (P-Mobile) -->
+<app-dialog [open]="identifiantSousAgentDialogOpen()" (openChange)="identifiantSousAgentDialogOpen.set($event)" classContainer="max-w-sm">
+  <app-dialog-header>
+    <app-dialog-title>Ajouter le numéro P-Mobile</app-dialog-title>
+    <app-dialog-description>Renseignez le numéro P-Mobile du sous-agent.</app-dialog-description>
+  </app-dialog-header>
+  <app-dialog-content>
+    <form [formGroup]="identifiantSousAgentForm" class="flex flex-col gap-4">
+      <app-form-input name="pmobileNumber" label="Numéro P-Mobile" type="tel" />
+    </form>
+  </app-dialog-content>
+  <app-dialog-footer>
+    <button appButton variant="outline" type="button" (click)="identifiantSousAgentDialogOpen.set(false)">
+      Annuler
+    </button>
+    <button
+      appButton
+      type="button"
+      [disabled]="identifiantSousAgentForm.invalid || identifiantSousAgentLoading()"
+      (click)="saveIdentifiantSousAgent()"
+    >
+      @if (identifiantSousAgentLoading()) { Enregistrement... } @else { Enregistrer }
+    </button>
+  </app-dialog-footer>
+</app-dialog>

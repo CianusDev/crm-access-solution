@@ -152,10 +152,40 @@ export class CoraService {
       );
   }
 
+  updatePmobile(agentId: number, pmobileNumber: string) {
+    return this.apiService
+      .post(this.endpoint + '/update_pmobile_number', { agent: agentId, pmobileNumber })
+      .pipe(catchError((err) => throwError(() => ({ status: err.status, message: err.message }))));
+  }
+
   searchCoras(filtre: CoraFiltre) {
     return this.apiService.post<{ data: Cora[] }>(this.endpoint + '/recherce_cora', filtre).pipe(
       map((res) => res.data),
       catchError((err) => throwError(() => ({ status: err.status, message: err.message }))),
     );
+  }
+
+  sendAgentForValidation(agentId: number) {
+    return this.apiService
+      .post(this.endpoint + '/change_statut_agent_evaluation', { agent: agentId })
+      .pipe(catchError((err) => throwError(() => ({ status: err.status, message: err.message }))));
+  }
+
+  closeAgent(agentId: number) {
+    return this.apiService
+      .post(this.endpoint + '/cloturer_agent', { agent: agentId })
+      .pipe(catchError((err) => throwError(() => ({ status: err.status, message: err.message }))));
+  }
+
+  saveDecision(data: { decision: number; observation: string; agent: number }) {
+    return this.apiService
+      .post(this.endpoint + '/save_decision', data)
+      .pipe(catchError((err) => throwError(() => ({ status: err.status, message: err.message }))));
+  }
+
+  savePerfectNumber(data: { agent: number; perfectNumber?: string; pmobileNumber: string }) {
+    return this.apiService
+      .post(this.endpoint + '/save_perfect_number', data)
+      .pipe(catchError((err) => throwError(() => ({ status: err.status, message: err.message }))));
   }
 }

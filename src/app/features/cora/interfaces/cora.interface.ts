@@ -2,6 +2,7 @@ export interface CoraAgent {
   id: number;
   reference?: string;
   nomPrenom?: string;
+  pmobile?: string;
   commune?: CoraCommune;
   quartier?: string;
   rue?: string;
@@ -77,7 +78,9 @@ export interface Decision {
   decision?: number;
   observation?: string;
   dateDecision?: string;
-  user?: { nom: string; prenom: string };
+  etat?: number;
+  status?: number;
+  user?: { nom: string; prenom: string; libelle: string };
 }
 
 export interface AgentCoraDetail {

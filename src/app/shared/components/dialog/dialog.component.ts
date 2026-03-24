@@ -99,7 +99,7 @@ export class DialogContentComponent {}
         aria-modal="true"
         class="fixed left-1/2 top-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2 rounded-lg border border-zinc-200 bg-background p-6 shadow-lg
                animate-in fade-in-0 zoom-in-95 slide-in-from-left-1/2 slide-in-from-top-48"
-        [ngClass]="classContainer || 'max-w-lg'"
+        [ngClass]="classContainer || 'max-w-xl'"
       >
         <!-- Bouton fermer -->
         <button

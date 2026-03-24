@@ -12,12 +12,22 @@ import {
   CardHeaderComponent,
   CardTitleComponent,
 } from '@/shared/components/card/card.component';
-import { BadgeComponent } from '@/shared/components/badge/badge.component';
-import { BadgeVariant } from '@/shared/components/badge/badge.component';
+import {
+  DialogComponent,
+  DialogHeaderComponent,
+  DialogTitleComponent,
+  DialogDescriptionComponent,
+  DialogContentComponent,
+  DialogFooterComponent,
+} from '@/shared/components/dialog/dialog.component';
+import { FormInput } from '@/shared/components/form-input/form-input.component';
+import { BadgeComponent, BadgeVariant } from '@/shared/components/badge/badge.component';
 import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import { PdfExportService } from '@/core/services/export/pdf-export.service';
-import type { TableCell } from 'pdfmake/interfaces';
-import { Component, computed, inject, input } from '@angular/core';
+import { HasRolePipe } from '@/shared/pipes/has-role/has-role.pipe';
+import { ToastService } from '@/core/services/toast/toast.service';
+import { Component, computed, inject, input, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
   ArrowLeft,
@@ -28,12 +38,15 @@ import {
   Users,
   Layers,
   Eye,
+  Pencil,
   LucideAngularModule,
 } from 'lucide-angular';
 import { Cora, CoraAgent } from '../../interfaces/cora.interface';
+import { CoraService } from '../../services/cora/cora.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Avatar } from '@/shared/components/avatar/avatar.component';
 import { getInitiales, InitialesPipe } from '@/shared/pipes/initiales.pipe';
+import { UserRole } from '@/core/models/user.model';
 
 const FORME_JURIDIQUE: Record<number, string> = {
   1: 'ENTREPRISE INDIVIDUELLE',
@@ -91,6 +104,15 @@ const AGENT_STATUT_VARIANT: Record<number, BadgeVariant> = {
     DecimalPipe,
     Avatar,
     InitialesPipe,
+    HasRolePipe,
+    ReactiveFormsModule,
+    FormInput,
+    DialogComponent,
+    DialogHeaderComponent,
+    DialogTitleComponent,
+    DialogDescriptionComponent,
+    DialogContentComponent,
+    DialogFooterComponent,
   ],
 })
 export class DetailCoraComponent {
@@ -102,9 +124,14 @@ export class DetailCoraComponent {
   readonly UsersIcon = Users;
   readonly LayersIcon = Layers;
   readonly EyeIcon = Eye;
+  readonly PencilIcon = Pencil;
+  readonly AdminRole = UserRole.Admin;
 
   private readonly router = inject(Router);
   private readonly pdfService = inject(PdfExportService);
+  private readonly coraService = inject(CoraService);
+  private readonly toast = inject(ToastService);
+  private readonly fb = inject(FormBuilder);
 
   // Resolver data
   readonly cora = input<Cora>();
@@ -117,6 +144,36 @@ export class DetailCoraComponent {
   readonly formeJuridique = computed(
     () => FORME_JURIDIQUE[this.cora()?.formuleJuridique ?? 0] ?? '—',
   );
+
+  // ── Dialog P-Mobile ─────────────────────────────────────────────────────────
+  readonly pmobileDialogOpen = signal(false);
+  readonly pmobileLoading = signal(false);
+  readonly pmobileForm = this.fb.group({
+    agentId: [0],
+    pmobileNumber: ['', Validators.required],
+  });
+
+  openPmobileDialog(agent: CoraAgent) {
+    this.pmobileForm.reset({ agentId: agent.id, pmobileNumber: agent.pmobile ?? '' });
+    this.pmobileDialogOpen.set(true);
+  }
+
+  savePmobile() {
+    if (this.pmobileForm.invalid) return;
+    const { agentId, pmobileNumber } = this.pmobileForm.getRawValue();
+    this.pmobileLoading.set(true);
+    this.coraService.updatePmobile(agentId!, pmobileNumber!).subscribe({
+      next: () => {
+        this.toast.success('Numéro P-Mobile mis à jour.');
+        this.pmobileDialogOpen.set(false);
+        this.pmobileLoading.set(false);
+      },
+      error: (err) => {
+        this.toast.error(err.message ?? 'Erreur lors de la mise à jour.');
+        this.pmobileLoading.set(false);
+      },
+    });
+  }
 
   goBack() {
     this.router.navigate(['/app/cora/list']);

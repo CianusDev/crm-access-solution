@@ -8,8 +8,19 @@ import { BadgeComponent, BadgeVariant } from '@/shared/components/badge/badge.co
 import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import { TabsComponent } from '@/shared/components/tabs/tabs.component';
 import { TabComponent } from '@/shared/components/tabs/tab.component';
+import {
+  DialogComponent,
+  DialogHeaderComponent,
+  DialogTitleComponent,
+  DialogDescriptionComponent,
+  DialogContentComponent,
+  DialogFooterComponent,
+} from '@/shared/components/dialog/dialog.component';
+import { FormInput } from '@/shared/components/form-input/form-input.component';
+import { HasRolePipe } from '@/shared/pipes/has-role/has-role.pipe';
 import { GoogleMap, MapMarker } from '@angular/google-maps';
 import { Component, computed, inject, input, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
   ArrowLeft,
@@ -23,6 +34,10 @@ import {
   LucideAngularModule,
   ExternalLink,
   CheckIcon,
+  Send,
+  Lock,
+  KeyRound,
+  Gavel,
 } from 'lucide-angular';
 import {
   AgentCoraDetail,
@@ -36,6 +51,7 @@ import { Avatar } from '@/shared/components/avatar/avatar.component';
 import { getInitiales } from '@/shared/pipes/initiales.pipe';
 import { DatePipe, UpperCasePipe } from '@angular/common';
 import { StripHtmlPipe } from '@/shared/pipes/strip-html.pipe';
+import { UserRole } from '@/core/models/user.model';
 
 const STATUT_LABEL: Record<number, string> = {
   1: 'Rejeté',
@@ -58,9 +74,15 @@ const STATUT_VARIANT: Record<number, BadgeVariant> = {
 };
 
 const DECISION_LABEL: Record<number, string> = {
-  1: 'Approuvé',
-  2: 'Rejeté',
-  3: 'En attente',
+  1: 'Refusée',
+  2: 'Acceptée',
+  3: 'Ajournée',
+};
+
+const DECISION_VARIANT: Record<number, BadgeVariant> = {
+  1: 'default',
+  2: 'success',
+  3: 'warning',
 };
 
 const DISTANCE_LABEL: Record<number, string> = {
@@ -112,6 +134,15 @@ const IMG_TYPES = ['Mandataire Social', 'Façade', 'Ruelle', 'Espace client', 'P
     UpperCasePipe,
     Avatar,
     StripHtmlPipe,
+    HasRolePipe,
+    ReactiveFormsModule,
+    FormInput,
+    DialogComponent,
+    DialogHeaderComponent,
+    DialogTitleComponent,
+    DialogDescriptionComponent,
+    DialogContentComponent,
+    DialogFooterComponent,
   ],
 })
 export class DetailAgentComponent {
@@ -124,19 +155,57 @@ export class DetailAgentComponent {
   readonly ClipboardListIcon = ClipboardList;
   readonly CheckIcon = CheckIcon;
   readonly ExternalLinkIcon = ExternalLink;
+  readonly SendIcon = Send;
+  readonly LockIcon = Lock;
+  readonly KeyRoundIcon = KeyRound;
+  readonly GavelIcon = Gavel;
 
   readonly DOC_TYPES = DOC_TYPES;
   readonly IMG_TYPES = IMG_TYPES;
   readonly FORCES = FORCES;
   readonly FAIBLESSES = FAIBLESSES;
 
+  // Rôles
+  readonly GestionCoraRole = UserRole.GestionCora;
+  readonly AgentBORole = UserRole.AgentBO;
+  readonly ChargeCoraRole = UserRole.ChargeCora;
+  readonly DGARole = UserRole.DirecteurGeneralAdjoint;
+  readonly DirectriceExploitationRole = UserRole.DirectriceExploitation;
+
   private readonly router = inject(Router);
   private readonly coraService = inject(CoraService);
   private readonly toast = inject(ToastService);
+  private readonly fb = inject(FormBuilder);
 
   readonly agent = input<AgentCoraDetail>();
 
   readonly isSubmitting = signal(false);
+
+  // ── Dialogs ───────────────────────────────────────────────────────────────
+  readonly decisionDialogOpen = signal(false);
+  readonly decisionLoading = signal(false);
+  readonly decisionForm = this.fb.group({
+    agentId: [0],
+    decision: ['', Validators.required],
+    observation: ['', Validators.required],
+  });
+
+  readonly identifiantPrincipalDialogOpen = signal(false);
+  readonly identifiantPrincipalLoading = signal(false);
+  readonly identifiantPrincipalForm = this.fb.group({
+    agentId: [0],
+    perfectNumber: ['', Validators.required],
+    pmobileNumber: ['', Validators.required],
+  });
+
+  readonly identifiantSousAgentDialogOpen = signal(false);
+  readonly identifiantSousAgentLoading = signal(false);
+  readonly identifiantSousAgentForm = this.fb.group({
+    agentId: [0],
+    pmobileNumber: ['', Validators.required],
+  });
+
+  readonly actionLoading = signal(false);
 
   // ── Computed ──────────────────────────────────────────────────────────────
   readonly initiales = computed(() => getInitiales(this.agent()?.cora?.designation));
@@ -202,6 +271,9 @@ export class DetailAgentComponent {
   decisionLabel(d?: number) {
     return DECISION_LABEL[d ?? 0] ?? '—';
   }
+  decisionVariant(d?: number): BadgeVariant {
+    return DECISION_VARIANT[d ?? 0] ?? 'secondary';
+  }
   distanceLabel(d?: number) {
     return DISTANCE_LABEL[d ?? 0] ?? '—';
   }
@@ -234,5 +306,121 @@ export class DetailAgentComponent {
 
   goBack() {
     this.router.navigate(['/app/cora/pending']);
+  }
+
+  // ── Actions ───────────────────────────────────────────────────────────────
+  sendForValidation() {
+    const id = this.agent()?.id;
+    if (!id) return;
+    this.actionLoading.set(true);
+    this.coraService.sendAgentForValidation(id).subscribe({
+      next: () => {
+        this.toast.success('Agent envoyé pour validation.');
+        this.actionLoading.set(false);
+        this.goBack();
+      },
+      error: (err) => {
+        this.toast.error(err.message ?? 'Erreur lors de l\'envoi.');
+        this.actionLoading.set(false);
+      },
+    });
+  }
+
+  closeAgentAction() {
+    const id = this.agent()?.id;
+    if (!id) return;
+    this.actionLoading.set(true);
+    this.coraService.closeAgent(id).subscribe({
+      next: () => {
+        this.toast.success('Agent clôturé avec succès.');
+        this.actionLoading.set(false);
+        this.goBack();
+      },
+      error: (err) => {
+        this.toast.error(err.message ?? 'Erreur lors de la clôture.');
+        this.actionLoading.set(false);
+      },
+    });
+  }
+
+  // ── Dialog décision ───────────────────────────────────────────────────────
+  openDecisionDialog() {
+    const id = this.agent()?.id;
+    this.decisionForm.reset({ agentId: id ?? 0, decision: '', observation: '' });
+    this.decisionDialogOpen.set(true);
+  }
+
+  saveDecision() {
+    if (this.decisionForm.invalid) return;
+    const { agentId, decision, observation } = this.decisionForm.getRawValue();
+    this.decisionLoading.set(true);
+    this.coraService
+      .saveDecision({ agent: agentId!, decision: Number(decision), observation: observation! })
+      .subscribe({
+        next: () => {
+          this.toast.success('Décision enregistrée.');
+          this.decisionDialogOpen.set(false);
+          this.decisionLoading.set(false);
+          this.goBack();
+        },
+        error: (err) => {
+          this.toast.error(err.message ?? 'Erreur lors de l\'enregistrement.');
+          this.decisionLoading.set(false);
+        },
+      });
+  }
+
+  // ── Dialog identifiant agent principal ────────────────────────────────────
+  openIdentifiantPrincipalDialog() {
+    const id = this.agent()?.id;
+    this.identifiantPrincipalForm.reset({ agentId: id ?? 0, perfectNumber: '', pmobileNumber: '' });
+    this.identifiantPrincipalDialogOpen.set(true);
+  }
+
+  saveIdentifiantPrincipal() {
+    if (this.identifiantPrincipalForm.invalid) return;
+    const { agentId, perfectNumber, pmobileNumber } = this.identifiantPrincipalForm.getRawValue();
+    this.identifiantPrincipalLoading.set(true);
+    this.coraService
+      .savePerfectNumber({ agent: agentId!, perfectNumber: perfectNumber!, pmobileNumber: pmobileNumber! })
+      .subscribe({
+        next: () => {
+          this.toast.success('Identifiants enregistrés.');
+          this.identifiantPrincipalDialogOpen.set(false);
+          this.identifiantPrincipalLoading.set(false);
+          this.goBack();
+        },
+        error: (err) => {
+          this.toast.error(err.message ?? 'Erreur lors de l\'enregistrement.');
+          this.identifiantPrincipalLoading.set(false);
+        },
+      });
+  }
+
+  // ── Dialog identifiant sous-agent ─────────────────────────────────────────
+  openIdentifiantSousAgentDialog() {
+    const id = this.agent()?.id;
+    this.identifiantSousAgentForm.reset({ agentId: id ?? 0, pmobileNumber: '' });
+    this.identifiantSousAgentDialogOpen.set(true);
+  }
+
+  saveIdentifiantSousAgent() {
+    if (this.identifiantSousAgentForm.invalid) return;
+    const { agentId, pmobileNumber } = this.identifiantSousAgentForm.getRawValue();
+    this.identifiantSousAgentLoading.set(true);
+    this.coraService
+      .savePerfectNumber({ agent: agentId!, pmobileNumber: pmobileNumber! })
+      .subscribe({
+        next: () => {
+          this.toast.success('Numéro P-Mobile enregistré.');
+          this.identifiantSousAgentDialogOpen.set(false);
+          this.identifiantSousAgentLoading.set(false);
+          this.goBack();
+        },
+        error: (err) => {
+          this.toast.error(err.message ?? 'Erreur lors de l\'enregistrement.');
+          this.identifiantSousAgentLoading.set(false);
+        },
+      });
   }
 }
