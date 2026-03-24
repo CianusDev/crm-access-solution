@@ -55,7 +55,7 @@ const AGENT_STATUT_LABEL: Record<number, string> = {
   2: "En attente d'évaluation",
   3: 'En attente de validation',
   4: "En attente d'approbation",
-  5: "En attente de création des accès",
+  5: 'En attente de création des accès',
   6: 'En attente de clôture',
   7: 'Clôturé',
 };
@@ -109,97 +109,100 @@ export class DetailCoraComponent {
   // Resolver data
   readonly cora = input<Cora>();
 
-  readonly initiales = computed(() => getInitiales(this.cora()?.designation));
+  readonly initiales = computed(() => {
+    const c = this.cora();
+    return getInitiales(c?.designation);
+  });
 
-  readonly formeJuridique = computed(() =>
-    FORME_JURIDIQUE[this.cora()?.formuleJuridique ?? 0] ?? '—',
+  readonly formeJuridique = computed(
+    () => FORME_JURIDIQUE[this.cora()?.formuleJuridique ?? 0] ?? '—',
   );
 
   goBack() {
     this.router.navigate(['/app/cora/list']);
   }
 
-  async exportPdf() {
-    const c = this.cora();
-    if (!c) return;
+  // async exportPdf() {
+  //   const c = this.cora();
+  //   if (!c) return;
 
-    const infos: [string, string][] = [
-      ['Référence', c.reference ?? '—'],
-      ['Désignation', c.designation ?? '—'],
-      ['Email', c.email ?? '—'],
-      ['N. PERFECT', c.perfect ?? '—'],
-      ['N. P-Mobile', c.pmobile ?? '—'],
-      ['Mobile', c.mobile ?? '—'],
-      ['Fixe', c.fixe ?? '—'],
-      ['Commune', c.commune?.libelle ?? '—'],
-      ['Quartier', c.quartier ?? '—'],
-      ['Rue', c.rue ?? '—'],
-      ['Forme juridique', this.formeJuridique() ?? '—'],
-      ['Capital social', c.capital ? `${c.capital.toLocaleString('fr-FR')} FCFA` : '—'],
-      ['RCCM', c.rccm ?? '—'],
-      ['NCC', c.ncc ?? '—'],
-      ['Gestionnaire', c.user ? `${c.user.nom} ${c.user.prenom}` : '—'],
-    ];
+  //   const infos: [string, string][] = [
+  //     ['Référence', c.reference ?? '—'],
+  //     ['Désignation', c.designation ?? '—'],
+  //     ['Email', c.email ?? '—'],
+  //     ['N. PERFECT', c.perfect ?? '—'],
+  //     ['N. P-Mobile', c.pmobile ?? '—'],
+  //     ['Mobile', c.mobile ?? '—'],
+  //     ['Fixe', c.fixe ?? '—'],
+  //     ['Commune', c.commune?.libelle ?? '—'],
+  //     ['Quartier', c.quartier ?? '—'],
+  //     ['Rue', c.rue ?? '—'],
+  //     ['Forme juridique', this.formeJuridique() ?? '—'],
+  //     ['Capital social', c.capital ? `${c.capital.toLocaleString('fr-FR')} FCFA` : '—'],
+  //     ['RCCM', c.rccm ?? '—'],
+  //     ['NCC', c.ncc ?? '—'],
+  //     ['Gestionnaire', c.user ? `${c.user.nom} ${c.user.prenom}` : '—'],
+  //   ];
 
-    const agentRows: TableCell[][] = [
-      [
-        { text: 'Référence', style: 'tableHeader' },
-        { text: 'Nom / Prénom', style: 'tableHeader' },
-        { text: 'Commune', style: 'tableHeader' },
-        { text: 'Type', style: 'tableHeader' },
-        { text: 'Statut', style: 'tableHeader' },
-      ],
-      ...(c.agents ?? []).map((a, i) =>
-        this.pdfService.tableRow(
-          [
-            a.reference ?? '—',
-            a.nomPrenom ?? '—',
-            a.commune?.libelle ?? '—',
-            AGENT_TYPE_LABEL[a.typeUser ?? 0] ?? '—',
-            AGENT_STATUT_LABEL[a.statut ?? 0] ?? '—',
-          ],
-          i % 2 === 1,
-        ),
-      ),
-    ];
+  //   const agentRows: TableCell[][] = [
+  //     [
+  //       { text: 'Référence', style: 'tableHeader' },
+  //       { text: 'Nom / Prénom', style: 'tableHeader' },
+  //       { text: 'Commune', style: 'tableHeader' },
+  //       { text: 'Type', style: 'tableHeader' },
+  //       { text: 'Statut', style: 'tableHeader' },
+  //     ],
+  //     ...(c.agents ?? []).map((a, i) =>
+  //       this.pdfService.tableRow(
+  //         [
+  //           a.reference ?? '—',
+  //           a.nomPrenom ?? '—',
+  //           a.commune?.libelle ?? '—',
+  //           AGENT_TYPE_LABEL[a.typeUser ?? 0] ?? '—',
+  //           AGENT_STATUT_LABEL[a.statut ?? 0] ?? '—',
+  //         ],
+  //         i % 2 === 1,
+  //       ),
+  //     ),
+  //   ];
 
-    await this.pdfService.download(
-      {
-        pageMargins: [40, 70, 40, 50],
-        header: this.pdfService.header('Fiche CORA', c.reference),
-        footer: (currentPage, pageCount) => this.pdfService.footer(currentPage, pageCount),
-        content: [
-          { text: c.designation, style: 'sectionTitle', fontSize: 14 },
-          { text: '\n' },
-          { text: 'Informations générales', style: 'sectionTitle' },
-          {
-            table: {
-              widths: [140, '*'],
-              body: infos.map(([label, value], i) => [
-                { text: label, style: i % 2 === 0 ? 'tableCell' : 'tableCellAlt', bold: true },
-                { text: value, style: i % 2 === 0 ? 'tableCell' : 'tableCellAlt' },
-              ]),
-            },
-            layout: { hLineWidth: () => 0.5, vLineWidth: () => 0, hLineColor: () => '#e5e7eb' },
-          },
-          { text: '\n' },
-          { text: `Agents (${(c.agents ?? []).length})`, style: 'sectionTitle' },
-          (c.agents ?? []).length === 0
-            ? { text: 'Aucun agent enregistré.', style: 'tableCell', italics: true }
-            : {
-                table: {
-                  headerRows: 1,
-                  widths: ['auto', '*', 'auto', 'auto', '*'],
-                  body: agentRows,
-                },
-                layout: { hLineWidth: () => 0.5, vLineWidth: () => 0, hLineColor: () => '#e5e7eb' },
-              },
-        ],
-        styles: this.pdfService.baseStyles,
-      },
-      `fiche-cora-${c.reference ?? c.id}`,
-    );
-  }
+  //   await this.pdfService.download(
+  //     {
+  //       pageMargins: [40, 70, 40, 50],
+  //       header: this.pdfService.header('Fiche CORA', c.reference),
+  //       footer: (currentPage, pageCount) => this.pdfService.footer(currentPage, pageCount),
+  //       content: [
+  //         { text: c.designation ?? '', style: 'sectionTitle', fontSize: 14 },
+  //         { text: '\n' },
+  //         { text: 'Informations générales', style: 'sectionTitle' },
+  //         {
+  //           table: {
+  //             widths: [140, '*'],
+  //             body: infos.map(([label, value], i) => [
+  //               { text: label, style: i % 2 === 0 ? 'tableCell' : 'tableCellAlt', bold: true },
+  //               { text: value, style: i % 2 === 0 ? 'tableCell' : 'tableCellAlt' },
+  //             ]),
+  //           },
+  //           layout: { hLineWidth: () => 0.5, vLineWidth: () => 0, hLineColor: () => '#e5e7eb' },
+  //         },
+  //         { text: '\n' },
+  //         { text: `Agents (${(c.agents ?? []).length})`, style: 'sectionTitle' },
+  //         (c.agents ?? []).length === 0
+  //           ? { text: 'Aucun agent enregistré.', style: 'tableCell', italics: true }
+  //           : {
+  //               table: {
+  //                 headerRows: 1,
+  //                 widths: ['auto', '*', 'auto', 'auto', '*'],
+  //                 body: agentRows,
+  //               },
+  //               layout: { hLineWidth: () => 0.5, vLineWidth: () => 0, hLineColor: () => '#e5e7eb' },
+  //             },
+  //       ],
+  //       styles: this.pdfService.baseStyles,
+  //     },
+  //     `fiche-cora-${c.reference ?? c.id}`,
+  //   );
+  // }
 
   agentTypeLabel(agent: CoraAgent): string {
     return AGENT_TYPE_LABEL[agent.typeUser ?? 0] ?? '—';

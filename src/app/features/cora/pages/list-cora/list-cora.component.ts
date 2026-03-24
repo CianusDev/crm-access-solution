@@ -19,7 +19,7 @@ import {
   LucideAngularModule,
   Plus,
   Search,
-  Eye,
+  Printer,
   Filter,
   Download,
   RefreshCw,
@@ -35,6 +35,7 @@ import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { CoraMapComponent } from '../../components/cora-map/cora-map.component';
 import { InitialesPipe } from '@/shared/pipes/initiales.pipe';
 import { LogoBase64 } from '@/features/credit/enumeration/logo_base64.enum';
+import { CoraPdfService } from '../../services/pdf/cora-pdf.service';
 
 const PAGE_SIZE = 10;
 
@@ -81,7 +82,7 @@ const STATUT_LABELS: Record<number, string> = {
 export class ListCoraComponent implements OnInit {
   readonly PlusIcon = Plus;
   readonly SearchIcon = Search;
-  readonly EyeIcon = Eye;
+  readonly PrinterIcon = Printer;
   readonly FilterIcon = Filter;
   readonly DownloadIcon = Download;
   readonly RefreshIcon = RefreshCw;
@@ -99,12 +100,14 @@ export class ListCoraComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly excelService = inject(ExcelExportService);
   private readonly pdfService = inject(PdfExportService);
+  private readonly coraPdf = inject(CoraPdfService);
 
   // ── Resolver data ──────────────────────────────────────────────────────────
   readonly listData = input<ListCoraData>();
 
   // ── Local cora list (can be replaced by search result) ────────────────────
   readonly coraList = signal<Cora[]>([]);
+  readonly printingId = signal<number | null>(null);
 
   ngOnInit() {
     this.coraList.set(this.listData()?.coras ?? []);
@@ -220,8 +223,17 @@ export class ListCoraComponent implements OnInit {
     });
   }
 
-  viewDetail(id: number) {
-    this.router.navigate(['/app/cora', id]);
+  viewDetail(id?: string) {
+    this.router.navigate(['/app/cora', id || '']);
+  }
+
+  async printContratPDF(cora: Cora) {
+    this.printingId.set(cora.id);
+    try {
+      await this.coraPdf.printContrat(cora);
+    } finally {
+      this.printingId.set(null);
+    }
   }
 
   goToCreate() {
@@ -251,7 +263,7 @@ export class ListCoraComponent implements OnInit {
       quartier: c.quartier ?? '',
       rue: c.rue ?? '',
       gestionnaire: c.user ? `${c.user.nom} ${c.user.prenom}` : '',
-      statut: STATUT_LABELS[c.statut] ?? '',
+      statut: STATUT_LABELS[c.statut ?? 0] ?? '',
     }));
     await this.excelService.export(data, columns, 'liste-coras', 'CORAs');
   }
@@ -277,7 +289,7 @@ export class ListCoraComponent implements OnInit {
             c.pmobile ?? '',
             c.commune?.libelle ?? '',
             c.user ? `${c.user.nom} ${c.user.prenom}` : '',
-            STATUT_LABELS[c.statut] ?? '',
+            STATUT_LABELS[c.statut ?? 0] ?? '',
           ],
           i % 2 === 1,
         ),

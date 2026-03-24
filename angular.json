@@ -31,6 +31,12 @@
               }
             ],
             "styles": ["src/styles.css"],
+            "scripts": [],
+            "allowedCommonJsDependencies": [
+              "exceljs",
+              "pdfmake/build/pdfmake",
+              "pdfmake/build/vfs_fonts"
+            ],
             "security": {
               "allowedHosts": []
             }

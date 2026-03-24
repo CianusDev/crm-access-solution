@@ -21,6 +21,8 @@ export class AuthService {
 
   currentUser = signal<User | null>(null);
   isAuthenticated = computed(() => !!this.currentUser() && !!this.getToken());
+  /** Devient true dès que l'initialisation est terminée (succès ou échec) */
+  readonly initialized = signal(false);
 
   constructor() {
     this.initializeAuth();
@@ -32,12 +34,13 @@ export class AuthService {
 
     if (token && userId != null) {
       this.fetchCurrentUser(userId).subscribe({
+        next: () => this.initialized.set(true),
         error: (err) => {
           this.logger.error({
             message: 'initializeAuth failed',
             data: { status: err.status, error: err.message },
           });
-
+          this.initialized.set(true);
           // Only logout if the token is truly invalid (401)
           // For other errors (network, 500, etc.), keep the session alive
           if (err.status === 401) {
@@ -45,6 +48,8 @@ export class AuthService {
           }
         },
       });
+    } else {
+      this.initialized.set(true);
     }
   }
 

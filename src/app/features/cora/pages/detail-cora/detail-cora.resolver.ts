@@ -4,5 +4,5 @@ import { Cora } from '../../interfaces/cora.interface';
 import { CoraService } from '../../services/cora/cora.service';
 
 export const detailCoraResolver: ResolveFn<Cora> = (route) => {
-  return inject(CoraService).getCoraById(Number(route.paramMap.get('id')));
+  return inject(CoraService).getCoraByRef(route.paramMap.get('id'));
 };

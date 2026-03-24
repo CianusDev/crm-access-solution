@@ -301,7 +301,7 @@ export const DEFAULT_MENU: SidebarGroup[] = [
         roles: [...ASC_LIST_ROLES],
       },
       {
-        label: 'Chèques en attente (7j)',
+        label: 'Chèques en cours (7j)',
         href: '/app/asc/cheques-attente',
         icon: AlarmClock,
         roles: [...ASC_CHEQUES_ROLES],

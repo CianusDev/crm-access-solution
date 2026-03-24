@@ -94,3 +94,10 @@ LES AGENTS BACKOFFICE
 -->4377964991
 
 de l'equipe backend
+
+
+si on avait l'image en png du logo dans
+  les asset du projet , et qu'on creait
+  un fonction qui transforme limage en
+  base64, et l'utiliser dans le service
+  de pdf a la demande ?

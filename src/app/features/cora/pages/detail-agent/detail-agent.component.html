@@ -4,9 +4,6 @@
 
   <!-- Back + title -->
   <div class="flex items-center gap-3">
-    <button appButton variant="ghost" size="icon" type="button" (click)="goBack()">
-      <lucide-icon [img]="ArrowLeftIcon" [size]="18" />
-    </button>
     <div>
       <h1 class="text-2xl font-bold text-foreground">Détail Agent</h1>
       <p class="text-sm text-muted-foreground font-mono">{{ a?.reference }}</p>
@@ -88,7 +85,7 @@
                     class="flex h-4 w-4 shrink-0 items-center justify-center rounded"
                     [class]="item.value ? 'bg-primary text-primary-foreground' : 'border border-border'"
                   >
-                    @if (item.value) { <lucide-icon [img]="CheckCircleIcon" [size]="10" /> }
+                    @if (item.value) { <lucide-icon [img]="CheckIcon" [size]="14" /> }
                   </span>
                   <span [class]="item.value ? 'text-foreground' : 'text-muted-foreground'">{{ item.label }}</span>
                 </li>
@@ -104,7 +101,7 @@
         <app-tabs>
 
           <!-- Évaluation -->
-          <app-tab label="Évaluation" [icon]="CheckCircleIcon">
+          <app-tab label="Évaluation" [icon]="CheckIcon">
             <app-card>
               <app-card-content class="!pt-6">
                 @if (!a.evaluation) {
@@ -114,7 +111,7 @@
 
                     <div>
                       <p class="text-xs font-semibold uppercase text-muted-foreground mb-1">Historique du propriétaire</p>
-                      <p class="text-foreground">{{ a.evaluation.historique }}</p>
+                      <p class="text-foreground">{{ a.evaluation.historique | stripHtml }}</p>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
@@ -130,7 +127,7 @@
 
                     <div>
                       <p class="text-xs font-semibold uppercase text-muted-foreground mb-1">Niveau de sécurité de la zone</p>
-                      <p class="text-foreground">{{ a.evaluation.securite }}</p>
+                      <p class="text-foreground">{{ a.evaluation.securite | stripHtml }}</p>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
@@ -167,7 +164,7 @@
                     @if (a.evaluation.commentaire) {
                       <div>
                         <p class="text-xs font-semibold uppercase text-muted-foreground mb-1">Commentaire du gestionnaire</p>
-                        <p class="text-foreground">{{ a.evaluation.commentaire }}</p>
+                        <p class="text-foreground">{{ a.evaluation.commentaire | stripHtml }}</p>
                       </div>
                     }
 
@@ -220,10 +217,10 @@
                       @if (imagesByType()[type].length === 0) {
                         <p class="text-xs text-muted-foreground italic">Aucune image chargée.</p>
                       } @else {
-                        <div class="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                        <div class="grid grid-cols-2 gap-2">
                           @for (img of imagesByType()[type]; track img.reference) {
                             <a [href]="fileUrl(img.lien)" target="_blank" class="block overflow-hidden rounded-lg border border-border hover:opacity-80 transition-opacity">
-                              <img [src]="fileUrl(img.lien)" [alt]="img.libelle" class="h-24 w-full object-cover" />
+                              <img [src]="fileUrl(img.lien)" [alt]="img.libelle" class="h-48 w-full object-cover" />
                             </a>
                           }
                         </div>

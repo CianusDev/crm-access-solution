@@ -12,66 +12,106 @@ import { GoogleMap, MapMarker } from '@angular/google-maps';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
-  ArrowLeft, MapPin, Phone, FileText, Image, Map, ClipboardList,
-  CheckCircle, LucideAngularModule, ExternalLink,
+  ArrowLeft,
+  MapPin,
+  Phone,
+  FileText,
+  Image,
+  Map,
+  ClipboardList,
+  CheckCircle,
+  LucideAngularModule,
+  ExternalLink,
+  CheckIcon,
 } from 'lucide-angular';
-import { AgentCoraDetail, Decision, Evaluation, FileCoraModel } from '../../interfaces/cora.interface';
+import {
+  AgentCoraDetail,
+  Decision,
+  Evaluation,
+  FileCoraModel,
+} from '../../interfaces/cora.interface';
 import { CoraService } from '../../services/cora/cora.service';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { Avatar } from '@/shared/components/avatar/avatar.component';
 import { getInitiales } from '@/shared/pipes/initiales.pipe';
 import { DatePipe, UpperCasePipe } from '@angular/common';
+import { StripHtmlPipe } from '@/shared/pipes/strip-html.pipe';
 
 const STATUT_LABEL: Record<number, string> = {
-  1: 'Rejeté', 2: "En attente d'évaluation", 3: 'En attente de validation',
-  4: "En attente d'approbation", 5: "En attente de création des accès",
-  6: 'En attente de clôture', 7: 'Clôturé',
+  1: 'Rejeté',
+  2: "En attente d'évaluation",
+  3: 'En attente de validation',
+  4: "En attente d'approbation",
+  5: 'En attente de création des accès',
+  6: 'En attente de clôture',
+  7: 'Clôturé',
 };
 
 const STATUT_VARIANT: Record<number, BadgeVariant> = {
-  1: 'destructive', 2: 'warning', 3: 'warning', 4: 'warning',
-  5: 'secondary', 6: 'secondary', 7: 'success',
+  1: 'destructive',
+  2: 'warning',
+  3: 'warning',
+  4: 'warning',
+  5: 'secondary',
+  6: 'secondary',
+  7: 'success',
 };
 
 const DECISION_LABEL: Record<number, string> = {
-  1: 'Approuvé', 2: 'Rejeté', 3: 'En attente',
+  1: 'Approuvé',
+  2: 'Rejeté',
+  3: 'En attente',
 };
 
 const DISTANCE_LABEL: Record<number, string> = {
-  0: 'Moins de 500m', 1: '500m à 1km', 2: "Plus d'un (01) km",
+  0: 'Moins de 500m',
+  1: '500m à 1km',
+  2: "Plus d'un (01) km",
 };
 
 const FORCES = [
-  'Cadre approprié', 'Bonne situation géographique',
+  'Cadre approprié',
+  'Bonne situation géographique',
   "Forte concentration d'activités",
-  'Bonne expérience dans le domaine (mobile money)', 'Cadre sécurisé',
+  'Bonne expérience dans le domaine (mobile money)',
+  'Cadre sécurisé',
 ];
 
-const FAIBLESSES = [
-  'Insuffisance de fdr', 'Cadre non sécuriser', 'Besoin de diversification',
-];
+const FAIBLESSES = ['Insuffisance de fdr', 'Cadre non sécuriser', 'Besoin de diversification'];
 
 const DOC_TYPES = [
-  "Pièce d'identité", "Carton d'Ouverture", 'DFE', 'BIC', 'RCCM',
-  'Contrat de bail', 'Facture',
+  "Pièce d'identité",
+  "Carton d'Ouverture",
+  'DFE',
+  'BIC',
+  'RCCM',
+  'Contrat de bail',
+  'Facture',
 ];
 
 const FILE_BASE_URL = 'https://crm-fichiers.creditaccess.ci/crm/panier-de-fichiers-ca/';
 
-const IMG_TYPES = [
-  'Mandataire Social', 'Façade', 'Ruelle', 'Espace client', 'Photo Caisse',
-];
+const IMG_TYPES = ['Mandataire Social', 'Façade', 'Ruelle', 'Espace client', 'Photo Caisse'];
 
 @Component({
   selector: 'app-detail-agent',
   templateUrl: './detail-agent.component.html',
   imports: [
-    CardComponent, CardHeaderComponent, CardTitleComponent, CardContentComponent,
-    BadgeComponent, ButtonDirective,
-    TabsComponent, TabComponent,
-    GoogleMap, MapMarker,
-    LucideAngularModule, DatePipe, UpperCasePipe,
+    CardComponent,
+    CardHeaderComponent,
+    CardTitleComponent,
+    CardContentComponent,
+    BadgeComponent,
+    ButtonDirective,
+    TabsComponent,
+    TabComponent,
+    GoogleMap,
+    MapMarker,
+    LucideAngularModule,
+    DatePipe,
+    UpperCasePipe,
     Avatar,
+    StripHtmlPipe,
   ],
 })
 export class DetailAgentComponent {
@@ -82,7 +122,7 @@ export class DetailAgentComponent {
   readonly ImageIcon = Image;
   readonly MapIcon = Map;
   readonly ClipboardListIcon = ClipboardList;
-  readonly CheckCircleIcon = CheckCircle;
+  readonly CheckIcon = CheckIcon;
   readonly ExternalLinkIcon = ExternalLink;
 
   readonly DOC_TYPES = DOC_TYPES;
@@ -109,42 +149,74 @@ export class DetailAgentComponent {
   });
 
   readonly mapOptions: google.maps.MapOptions = {
-    mapTypeControl: false, streetViewControl: false, fullscreenControl: true,
+    mapTypeControl: false,
+    streetViewControl: false,
+    fullscreenControl: true,
   };
 
   readonly forces = computed<string[]>(() => {
-    try { return JSON.parse(this.agent()?.evaluation?.force ?? '[]'); } catch { return []; }
+    try {
+      return JSON.parse(this.agent()?.evaluation?.force ?? '[]');
+    } catch {
+      return [];
+    }
   });
 
   readonly faiblesses = computed<string[]>(() => {
-    try { return JSON.parse(this.agent()?.evaluation?.faiblesse ?? '[]'); } catch { return []; }
+    try {
+      return JSON.parse(this.agent()?.evaluation?.faiblesse ?? '[]');
+    } catch {
+      return [];
+    }
   });
 
   readonly documentsByType = computed(() => {
     const docs = this.agent()?.documents ?? [];
-    return DOC_TYPES.reduce((acc, type) => {
-      acc[type] = docs.filter((d) => d.libelle === type);
-      return acc;
-    }, {} as Record<string, FileCoraModel[]>);
+    return DOC_TYPES.reduce(
+      (acc, type) => {
+        acc[type] = docs.filter((d) => d.libelle === type);
+        return acc;
+      },
+      {} as Record<string, FileCoraModel[]>,
+    );
   });
 
   readonly imagesByType = computed(() => {
     const imgs = this.agent()?.images ?? [];
-    return IMG_TYPES.reduce((acc, type) => {
-      acc[type] = imgs.filter((i) => i.libelle === type);
-      return acc;
-    }, {} as Record<string, FileCoraModel[]>);
+    return IMG_TYPES.reduce(
+      (acc, type) => {
+        acc[type] = imgs.filter((i) => i.libelle === type);
+        return acc;
+      },
+      {} as Record<string, FileCoraModel[]>,
+    );
   });
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-  statutLabel(statut?: number) { return STATUT_LABEL[statut ?? 0] ?? '—'; }
-  statutVariant(statut?: number): BadgeVariant { return STATUT_VARIANT[statut ?? 0] ?? 'secondary'; }
-  decisionLabel(d?: number) { return DECISION_LABEL[d ?? 0] ?? '—'; }
-  distanceLabel(d?: number) { return DISTANCE_LABEL[d ?? 0] ?? '—'; }
-  typeLabel(t?: number) { return t === 1 ? 'Agent principal' : 'Sous-agent'; }
-  typeBadgeVariant(t?: number): BadgeVariant { return t === 1 ? 'default' : 'secondary'; }
-  hasForce(f: string) { return this.forces().includes(f); }
-  hasFaiblesse(f: string) { return this.faiblesses().includes(f); }
+  statutLabel(statut?: number) {
+    return STATUT_LABEL[statut ?? 0] ?? '—';
+  }
+  statutVariant(statut?: number): BadgeVariant {
+    return STATUT_VARIANT[statut ?? 0] ?? 'secondary';
+  }
+  decisionLabel(d?: number) {
+    return DECISION_LABEL[d ?? 0] ?? '—';
+  }
+  distanceLabel(d?: number) {
+    return DISTANCE_LABEL[d ?? 0] ?? '—';
+  }
+  typeLabel(t?: number) {
+    return t === 1 ? 'Agent principal' : 'Sous-agent';
+  }
+  typeBadgeVariant(t?: number): BadgeVariant {
+    return t === 1 ? 'default' : 'secondary';
+  }
+  hasForce(f: string) {
+    return this.forces().includes(f);
+  }
+  hasFaiblesse(f: string) {
+    return this.faiblesses().includes(f);
+  }
 
   fileUrl(lien?: string) {
     return lien ? FILE_BASE_URL + lien : null;
@@ -160,5 +232,7 @@ export class DetailAgentComponent {
     if (c) window.open(`https://www.google.com/maps?q=${c.lat},${c.lng}`, '_blank');
   }
 
-  goBack() { this.router.navigate(['/app/cora/pending']); }
+  goBack() {
+    this.router.navigate(['/app/cora/pending']);
+  }
 }

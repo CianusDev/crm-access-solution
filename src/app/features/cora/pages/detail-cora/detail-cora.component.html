@@ -13,10 +13,6 @@
         <p class="text-sm text-muted-foreground font-mono">{{ c?.reference }}</p>
       </div>
     </div>
-    <button appButton variant="outline" type="button" (click)="exportPdf()" class="gap-2">
-      <lucide-icon [img]="FileTextIcon" [size]="15" />
-      Exporter PDF
-    </button>
   </div>
 
   @if (c) {
@@ -53,7 +49,7 @@
             <div class="flex items-center gap-3 rounded-lg bg-muted/40 p-3">
               <lucide-icon [img]="UsersIcon" [size]="18" class="text-primary" />
               <div>
-                <p class="text-lg font-bold text-foreground">{{ c.agents.length }}</p>
+                <p class="text-lg font-bold text-foreground">{{ c.agents?.length ?? 0 }}</p>
                 <p class="text-xs text-muted-foreground">Agents</p>
               </div>
             </div>
@@ -80,7 +76,7 @@
               <div>
                 <p class="text-xs text-muted-foreground">Localisation</p>
                 <p class="font-medium text-foreground">
-                  {{ c.commune.libelle }}{{ c.quartier ? ', ' + c.quartier : '' }}{{ c.rue ? ', ' + c.rue : '' }}
+                  {{ c.commune?.libelle }}{{ c.quartier ? ', ' + c.quartier : '' }}{{ c.rue ? ', ' + c.rue : '' }}
                 </p>
               </div>
             </div>
@@ -131,10 +127,10 @@
         </app-card-header>
         <app-card-content>
           <div class="flex flex-col items-center gap-3 text-center">
-            <app-avatar [initials]="c.user.nom | initiales:c.user.prenom" size="lg" />
+            <app-avatar [initials]="c.user?.nom | initiales:c.user?.prenom" size="lg" />
             <div>
-              <p class="font-bold text-foreground uppercase">{{ c.user.nom }}</p>
-              <p class="text-sm text-foreground">{{ c.user.prenom }}</p>
+              <p class="font-bold text-foreground uppercase">{{ c.user?.nom }}</p>
+              <p class="text-sm text-foreground">{{ c.user?.prenom }}</p>
             </div>
           </div>
           @if (c.enregistreLe) {
@@ -165,7 +161,7 @@
             </tr>
           </thead>
           <tbody appTableBody>
-            @for (agent of c.agents; track agent.id) {
+            @for (agent of (c.agents ?? []); track agent.id) {
               <tr appTableRow>
                 <td appTableCell>
                   <span class="font-mono text-xs font-medium text-foreground">{{ agent.reference ?? '—' }}</span>

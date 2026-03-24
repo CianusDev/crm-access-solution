@@ -13,13 +13,7 @@ interface MapMarkerData {
   standalone: true,
   imports: [GoogleMap, MapMarker, MapInfoWindow],
   template: `
-    <google-map
-      height="400px"
-      width="100%"
-      [zoom]="zoom"
-      [center]="center"
-      [options]="mapOptions"
-    >
+    <google-map height="400px" width="100%" [zoom]="zoom" [center]="center" [options]="mapOptions">
       @for (marker of markers(); track $index) {
         <map-marker
           #markerRef="mapMarker"
@@ -36,9 +30,14 @@ interface MapMarkerData {
             {{ activeMarker()?.type === 1 ? 'Agent principal' : 'Sous-agent' }}
           </p>
           <a
-            [href]="'https://www.google.com/maps?q=' + activeMarker()?.position?.lat + ',' + activeMarker()?.position?.lng"
+            [href]="
+              'https://www.google.com/maps?q=' +
+              activeMarker()?.position?.lat +
+              ',' +
+              activeMarker()?.position?.lng
+            "
             target="_blank"
-            class="mt-1 inline-block text-xs text-blue-600 hover:underline"
+            class="mt-1 inline-block text-xs text-primary hover:underline"
           >
             Voir l'itinéraire ↗
           </a>
@@ -72,7 +71,7 @@ export class CoraMapComponent implements OnChanges {
         if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
           result.push({
             position: { lat, lng },
-            label: cora.designation,
+            label: cora.designation ?? '',
             type: agent.typeUser ?? 2,
           });
         }
@@ -86,7 +85,7 @@ export class CoraMapComponent implements OnChanges {
       icon: {
         path: google.maps.SymbolPath.CIRCLE,
         scale: 8,
-        fillColor: type === 1 ? '#2563eb' : '#f97316',
+        fillColor: type === 1 ? '#db0004' : '#f97316',
         fillOpacity: 1,
         strokeColor: '#ffffff',
         strokeWeight: 2,

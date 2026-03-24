@@ -30,25 +30,28 @@ export interface Gestionnaire {
 
 export interface Cora {
   id: number;
-  reference: string;
-  designation: string;
-  email: string;
-  perfect: string;
-  pmobile: string;
+  reference?: string;
+  designation?: string;
+  email?: string;
+  perfect?: string;
+  pmobile?: string;
   mobile?: string;
   fixe?: string;
-  commune: CoraCommune;
-  quartier: string;
-  rue: string;
-  nombrePtService?: number;
+  commune?: CoraCommune;
+  quartier?: string;
+  rue?: string;
+  nombrePtService?: number | string;
   formuleJuridique?: number;
   capital?: number;
   rccm?: string;
   ncc?: string;
   enregistreLe?: string;
-  user: CoraUser;
-  agents: CoraAgent[];
-  statut: number;
+  civilite?: number;
+  nomPrenom?: string;
+  fonction?: string;
+  user?: CoraUser;
+  agents?: CoraAgent[];
+  statut?: number;
 }
 
 export interface FileCoraModel {

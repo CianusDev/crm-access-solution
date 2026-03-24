@@ -88,7 +88,7 @@
     <div class="px-4 py-3 border-b border-border text-sm font-medium text-foreground flex items-center gap-2">
       <span>Carte des agences</span>
       <span class="text-xs text-muted-foreground font-normal">
-        — <span class="inline-block h-2 w-2 rounded-full bg-blue-600"></span> Agent principal
+        — <span class="inline-block h-2 w-2 rounded-full bg-primary"></span> Agent principal
         &nbsp;<span class="inline-block h-2 w-2 rounded-full bg-orange-500"></span> Sous-agent
       </span>
     </div>
@@ -127,22 +127,22 @@
     <tbody appTableBody>
 
       @for (cora of paginated(); track cora.id) {
-        <tr appTableRow>
+        <tr appTableRow class="cursor-pointer" (click)="viewDetail(cora.reference)">
           <!-- Désignation + avatar initiales -->
           <td appTableCell>
             <div class="flex items-center gap-3">
               <div
                 class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-                [class]="avatarColor(cora.statut)"
+                [class]="avatarColor(cora.statut ?? 0)"
               >
                 {{ cora.designation | initiales }}
               </div>
               <div class="flex flex-col min-w-0">
                 <span class="font-semibold text-foreground truncate">{{ cora.designation }}</span>
-                <span class="text-xs text-muted-foreground font-mono">{{ cora.reference }}</span>
-                @if (cora.email) {
+                <!-- <span class="text-xs text-muted-foreground font-mono">{{ cora.reference }}</span> -->
+                <!-- @if (cora.email) {
                   <span class="text-xs text-muted-foreground truncate">{{ cora.email }}</span>
-                }
+                } -->
               </div>
             </div>
           </td>
@@ -172,7 +172,7 @@
           <!-- Zone géographique -->
           <td appTableCell>
             <div class="flex flex-col text-sm">
-              <span class="font-medium text-foreground">{{ cora.commune.libelle }}</span>
+              <span class="font-medium text-foreground">{{ cora.commune?.libelle }}</span>
               <span class="text-xs text-muted-foreground">
                 {{ cora.quartier }}{{ cora.rue ? ', ' + cora.rue : '' }}
               </span>
@@ -181,14 +181,14 @@
 
           <!-- Gestionnaire -->
           <td appTableCell>
-            <span class="text-sm font-medium text-foreground uppercase">{{ cora.user.nom }}</span>
-            <span class="text-sm text-foreground"> {{ cora.user.prenom }}</span>
+            <span class="text-sm font-medium text-foreground uppercase">{{ cora.user?.nom }}</span>
+            <span class="text-sm text-foreground"> {{ cora.user?.prenom }}</span>
           </td>
 
           <!-- Nb agences -->
           <td appTableCell align="center">
             <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-              {{ cora.agents.length }}
+              {{ cora.agents?.length ?? 0 }}
             </span>
           </td>
 
@@ -199,10 +199,15 @@
               variant="ghost"
               size="icon"
               type="button"
-              (click)="viewDetail(cora.id)"
-              title="Voir le détail"
+              (click)="$event.stopPropagation(); printContratPDF(cora)"
+              [disabled]="printingId() === cora.id"
+              title="Imprimer le contrat"
             >
-              <lucide-icon [img]="EyeIcon" [size]="16" />
+              <lucide-icon
+                [img]="PrinterIcon"
+                [size]="16"
+                [class.animate-spin]="printingId() === cora.id"
+              />
             </button>
           </td>
         </tr>

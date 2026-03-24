@@ -113,8 +113,8 @@ export class PublicMapComponent implements OnChanges {
           this.allMarkers.push({
             position: { lat, lng },
             coraId: cora.id,
-            coraDesignation: cora.designation,
-            coraReference: cora.reference,
+            coraDesignation: cora.designation ?? '',
+            coraReference: cora.reference ?? '',
             coraCommuneId: cora.commune?.id ?? 0,
             coraCommune: cora.commune?.libelle ?? '',
             coraQuartier: cora.quartier ?? '',
