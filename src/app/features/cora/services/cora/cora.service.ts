@@ -1,6 +1,6 @@
 import { ApiService } from '@/core/services/api/api.service';
 import { inject, Injectable } from '@angular/core';
-import { catchError, forkJoin, map, throwError } from 'rxjs';
+import { catchError, forkJoin, map, of, throwError } from 'rxjs';
 import { CoraFormData, CreateCoraDto } from '../../interfaces/create-cora-dto.interface';
 import { AgentCoraDetail, AgentEnAttente, Cora, CoraFiltre, CoraRefDesig, CreateAgentDto, CreateAgentFormData, Gestionnaire, ListCoraData } from '../../interfaces/cora.interface';
 
@@ -82,6 +82,15 @@ export class CoraService {
       .pipe(
         map((res) => res.communes),
         catchError((err) => throwError(() => ({ status: err.status, message: err.message }))),
+      );
+  }
+
+  getQuartiersByCommune(communeId: number) {
+    return this.apiService
+      .get<{ quartiers: string[] }>(`/quartiers?commune=${communeId}`)
+      .pipe(
+        map((res) => res.quartiers ?? []),
+        catchError(() => of([])),
       );
   }
 

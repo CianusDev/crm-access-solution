@@ -1,9 +1,9 @@
 import { Component, OnChanges, computed, inject, input, signal, viewChild } from '@angular/core';
+import { CoraService } from '../../services/cora/cora.service';
 import { GoogleMap, MapInfoWindow, MapMarker } from '@angular/google-maps';
-import { X, LucideAngularModule, MapPin, Building2, FilterX, Download } from 'lucide-angular';
-import { Cora, Gestionnaire } from '../../interfaces/cora.interface';
+import { X, LucideAngularModule, MapPin, Building2, FilterX } from 'lucide-angular';
+import { Cora } from '../../interfaces/cora.interface';
 import { SearchableSelectComponent } from '../../../../shared/components/searchable-select/searchable-select.component';
-import { ExcelExportService, ExcelColumn } from '../../../../core/services/export/excel-export.service';
 
 interface PublicMarker {
   position: google.maps.LatLngLiteral;
@@ -14,9 +14,8 @@ interface PublicMarker {
   coraCommune: string;
   coraQuartier: string;
   coraRue: string;
-  coraUserId: number;
-  coraGestionnaire: string;
   agentType: number;
+  contact: string;
 }
 
 @Component({
@@ -29,18 +28,15 @@ export class PublicMapComponent implements OnChanges {
   readonly MapPinIcon = MapPin;
   readonly Building2Icon = Building2;
   readonly FilterXIcon = FilterX;
-  readonly DownloadIcon = Download;
-
-  private readonly excelService = inject(ExcelExportService);
+  private readonly coraService = inject(CoraService);
 
   readonly coras = input<Cora[]>([]);
   readonly communes = input<{ id: number; libelle: string }[]>([]);
-  readonly gestionnaires = input<Gestionnaire[]>([]);
   private readonly infoWindow = viewChild.required(MapInfoWindow);
 
   // ── Carte ────────────────────────────────────────────────────────────────
-  readonly center: google.maps.LatLngLiteral = { lat: 5.316667, lng: -4.033333 };
-  readonly zoom = 11;
+  readonly center: google.maps.LatLngLiteral = { lat: 6.81606, lng: -5.3635378 };
+  readonly zoom = 6;
   readonly mapOptions: google.maps.MapOptions = {
     mapTypeControl: false,
     streetViewControl: false,
@@ -50,10 +46,14 @@ export class PublicMapComponent implements OnChanges {
   };
 
   // ── Filtres ───────────────────────────────────────────────────────────────
-  readonly gestionnaireFilter = signal<number | null>(null);
   readonly communeFilter = signal<number | null>(null);
-  readonly quartierFilter = signal('');
+  readonly quartierFilter = signal<string | null>(null);
   readonly rueFilter = signal('');
+
+  // ── Quartiers dynamiques ──────────────────────────────────────────────────
+  readonly quartiers = signal<string[]>([]);
+  readonly quartiersLoading = signal(false);
+  readonly quartierOptions = computed(() => this.quartiers().map((q) => ({ value: q, label: q })));
 
   readonly activeMarker = signal<PublicMarker | null>(null);
   readonly panelOpen = signal(true);
@@ -67,26 +67,41 @@ export class PublicMapComponent implements OnChanges {
       .sort((a, b) => a.libelle.localeCompare(b.libelle))
       .map((c) => ({ value: c.id, label: c.libelle })),
   );
-  readonly gestionnaireOptions = computed(() =>
-    [...this.gestionnaires()]
-      .sort((a, b) => a.nom.localeCompare(b.nom))
-      .map((g) => ({ value: g.id, label: `${g.nom} ${g.prenom}` })),
-  );
 
-  // ── Stats ────────────────────────────────────────────────────────────────
-  readonly totalCoras = computed(() => this.coras().length);
-  readonly totalAgents = computed(() =>
-    this.coras().reduce((sum, c) => sum + (c.agents?.length ?? 0), 0),
+  readonly totalAgentsPrincipaux = computed(() =>
+    this.coras().reduce(
+      (sum, c) => sum + (c.agents?.filter((a) => a.typeUser === 1).length ?? 0),
+      0,
+    ),
+  );
+  readonly totalSousAgents = computed(() =>
+    this.coras().reduce(
+      (sum, c) => sum + (c.agents?.filter((a) => a.typeUser !== 1).length ?? 0),
+      0,
+    ),
   );
   readonly visibleMarkers = computed(() => this.markers().length);
 
   readonly hasActiveFilters = computed(
-    () =>
-      !!this.gestionnaireFilter() ||
-      !!this.communeFilter() ||
-      !!this.quartierFilter() ||
-      !!this.rueFilter(),
+    () => !!this.communeFilter() || !!this.quartierFilter() || !!this.rueFilter(),
   );
+
+  onCommuneChange(communeId: number | null) {
+    this.communeFilter.set(communeId);
+    this.quartierFilter.set(null);
+    this.quartiers.set([]);
+    if (communeId !== null) {
+      this.quartiersLoading.set(true);
+      this.coraService.getQuartiersByCommune(communeId).subscribe({
+        next: (list) => {
+          this.quartiers.set(list);
+          this.quartiersLoading.set(false);
+        },
+        error: () => this.quartiersLoading.set(false),
+      });
+    }
+    this.applyFilter();
+  }
 
   ngOnChanges() {
     this.allMarkers = [];
@@ -104,9 +119,8 @@ export class PublicMapComponent implements OnChanges {
             coraCommune: cora.commune?.libelle ?? '',
             coraQuartier: cora.quartier ?? '',
             coraRue: cora.rue ?? '',
-            coraUserId: cora.user?.id ?? 0,
-            coraGestionnaire: cora.user ? `${cora.user.nom} ${cora.user.prenom}` : '',
             agentType: agent.typeUser ?? 2,
+            contact: cora.mobile ?? '',
           });
         }
       }
@@ -115,14 +129,12 @@ export class PublicMapComponent implements OnChanges {
   }
 
   applyFilter() {
-    const gestionnaire = this.gestionnaireFilter();
     const commune = this.communeFilter();
-    const quartier = this.quartierFilter().toLowerCase().trim();
+    const quartier = this.quartierFilter()?.toLowerCase().trim() ?? '';
     const rue = this.rueFilter().toLowerCase().trim();
 
     this.markers.set(
       this.allMarkers.filter((m) => {
-        if (gestionnaire && m.coraUserId !== gestionnaire) return false;
         if (commune && m.coraCommuneId !== commune) return false;
         if (quartier && !m.coraQuartier.toLowerCase().includes(quartier)) return false;
         if (rue && !m.coraRue.toLowerCase().includes(rue)) return false;
@@ -132,9 +144,9 @@ export class PublicMapComponent implements OnChanges {
   }
 
   resetFilters() {
-    this.gestionnaireFilter.set(null);
     this.communeFilter.set(null);
-    this.quartierFilter.set('');
+    this.quartiers.set([]);
+    this.quartierFilter.set(null);
     this.rueFilter.set('');
     this.applyFilter();
   }
@@ -144,38 +156,12 @@ export class PublicMapComponent implements OnChanges {
     this.infoWindow().open(markerRef);
   }
 
-  async exportExcel() {
-    const columns: ExcelColumn[] = [
-      { header: 'Référence CORA', key: 'coraReference' },
-      { header: 'Désignation', key: 'coraDesignation' },
-      { header: 'Gestionnaire', key: 'coraGestionnaire' },
-      { header: 'Type agent', key: 'typeAgent' },
-      { header: 'Commune', key: 'coraCommune' },
-      { header: 'Quartier', key: 'coraQuartier' },
-      { header: 'Rue', key: 'coraRue' },
-      { header: 'Latitude', key: 'lat' },
-      { header: 'Longitude', key: 'lng' },
-    ];
-    const rows: Record<string, unknown>[] = this.markers().map((m) => ({
-      coraReference: m.coraReference,
-      coraDesignation: m.coraDesignation,
-      coraGestionnaire: m.coraGestionnaire,
-      typeAgent: m.agentType === 1 ? 'Agent principal' : 'Sous-agent',
-      coraCommune: m.coraCommune,
-      coraQuartier: m.coraQuartier,
-      coraRue: m.coraRue,
-      lat: m.position.lat,
-      lng: m.position.lng,
-    }));
-    await this.excelService.export(rows, columns, 'Géolocalisation_CORAs', 'Géolocalisation');
-  }
-
   markerOptions(type: number): google.maps.MarkerOptions {
     return {
       icon: {
         path: google.maps.SymbolPath.CIRCLE,
         scale: 9,
-        fillColor: type === 1 ? '#2563eb' : '#f97316',
+        fillColor: type === 1 ? '#db0004' : '#f97316',
         fillOpacity: 1,
         strokeColor: '#ffffff',
         strokeWeight: 2,

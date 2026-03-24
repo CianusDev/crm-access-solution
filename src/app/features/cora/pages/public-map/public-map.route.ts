@@ -1,4 +1,4 @@
-import { corasPublicResolver, communesPublicResolver, gestionnairesPublicResolver } from './public-map.resolver';
+import { corasPublicResolver, communesPublicResolver } from './public-map.resolver';
 import { Route } from '@angular/router';
 
 export const coraMapRoute: Route = {
@@ -6,7 +6,6 @@ export const coraMapRoute: Route = {
   resolve: {
     coras: corasPublicResolver,
     communes: communesPublicResolver,
-    gestionnaires: gestionnairesPublicResolver,
   },
   loadComponent: () =>
     import('./public-map.component').then((m) => m.PublicMapComponent),

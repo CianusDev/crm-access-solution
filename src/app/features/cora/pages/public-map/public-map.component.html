@@ -15,14 +15,14 @@
       @if (activeMarker(); as m) {
         <div class="min-w-[180px] p-1">
           <p class="text-sm font-bold text-gray-900">{{ m.coraDesignation }}</p>
-          <p class="text-xs text-gray-500 font-mono">{{ m.coraReference }}</p>
+          <p class="text-xs text-gray-500">Contact: {{ m.contact }}</p>
           @if (m.coraCommune) {
             <p class="mt-1 text-xs text-gray-600">📍 {{ m.coraCommune }}{{ m.coraQuartier ? ', ' + m.coraQuartier : '' }}</p>
           }
           <a
             [href]="'https://www.google.com/maps?q=' + m.position.lat + ',' + m.position.lng"
             target="_blank"
-            class="mt-2 block text-xs text-blue-600 hover:underline"
+            class="mt-2 block text-xs text-primary hover:underline"
           >
             Voir l'itinéraire ↗
           </a>
@@ -39,12 +39,12 @@
   >
     <!-- En-tête -->
     <div class="flex items-center gap-3 border-b border-gray-100 px-4 py-4 sticky top-0 bg-white z-10">
-      <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600">
+      <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary">
         <lucide-icon [img]="MapPinIcon" [size]="16" class="text-white" />
       </div>
       <div class="flex-1 min-w-0">
-        <h1 class="text-sm font-bold text-gray-900 leading-tight">Réseau de CORAs</h1>
-        <p class="text-xs text-gray-500">Credit Access CI</p>
+        <h1 class="text-sm font-bold text-gray-900 leading-tight">Réseau de correspondants</h1>
+        <p class="text-xs text-gray-500">Credit Access</p>
       </div>
       <button type="button" (click)="panelOpen.set(false)" class="text-gray-400 hover:text-gray-600 transition-colors shrink-0">
         <lucide-icon [img]="XIcon" [size]="16" />
@@ -52,19 +52,16 @@
     </div>
 
     <!-- Statistiques -->
-    <div class="grid grid-cols-3 divide-x divide-gray-100 border-b border-gray-100 shrink-0">
-      <div class="flex flex-col items-center py-3">
-        <p class="text-lg font-bold text-gray-900">{{ totalCoras() }}</p>
-        <p class="text-xs text-gray-500">CORAs</p>
-      </div>
-      <div class="flex flex-col items-center py-3">
-        <p class="text-lg font-bold text-gray-900">{{ totalAgents() }}</p>
-        <p class="text-xs text-gray-500">Agents</p>
-      </div>
-      <div class="flex flex-col items-center py-3">
-        <p class="text-lg font-bold text-blue-600">{{ visibleMarkers() }}</p>
-        <p class="text-xs text-gray-500">Sur la carte</p>
-      </div>
+    <div class="flex items-center gap-3 border-b border-gray-100 px-4 py-2.5 text-xs text-gray-500 shrink-0">
+      <span class="flex items-center gap-1.5">
+        <span class="h-3 w-3 shrink-0 rounded-full bg-primary"></span>
+        {{ totalAgentsPrincipaux() }} principal{{ totalAgentsPrincipaux() > 1 ? 'aux' : '' }}
+      </span>
+      <span class="flex items-center gap-1.5">
+        <span class="h-3 w-3 shrink-0 rounded-full bg-orange-500"></span>
+        {{ totalSousAgents() }} sous-agent{{ totalSousAgents() > 1 ? 's' : '' }}
+      </span>
+      <span class="ml-auto font-medium text-primary">{{ visibleMarkers() }} affiché{{ visibleMarkers() > 1 ? 's' : '' }}</span>
     </div>
 
     <!-- Filtres -->
@@ -83,18 +80,6 @@
         }
       </div>
 
-      <!-- Gestionnaire -->
-      <div class="flex flex-col gap-1">
-        <label class="text-xs text-gray-500">Gestionnaire</label>
-        <app-searchable-select
-          [options]="gestionnaireOptions()"
-          [value]="gestionnaireFilter()"
-          placeholder="Tous les gestionnaires"
-          searchPlaceholder="Rechercher un gestionnaire…"
-          (valueChange)="gestionnaireFilter.set($event !== null ? +$event : null); applyFilter()"
-        />
-      </div>
-
       <!-- Commune -->
       <div class="flex flex-col gap-1">
         <label class="text-xs text-gray-500">Commune</label>
@@ -103,20 +88,35 @@
           [value]="communeFilter()"
           placeholder="Toutes les communes"
           searchPlaceholder="Rechercher une commune…"
-          (valueChange)="communeFilter.set($event !== null ? +$event : null); applyFilter()"
+          (valueChange)="onCommuneChange($event !== null ? +$event : null)"
         />
       </div>
 
       <!-- Quartier -->
       <div class="flex flex-col gap-1">
         <label class="text-xs text-gray-500">Quartier</label>
-        <input
-          type="text"
-          placeholder="Ex: Riviera, Plateau…"
-          [value]="quartierFilter()"
-          (input)="quartierFilter.set($any($event.target).value); applyFilter()"
-          class="h-8 w-full rounded-md border border-gray-200 bg-gray-50 px-2.5 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-        />
+        @if (quartiersLoading()) {
+          <div class="h-8 w-full rounded-md border border-gray-200 bg-gray-50 px-2.5 flex items-center">
+            <span class="text-xs text-gray-400 animate-pulse">Chargement…</span>
+          </div>
+        } @else if (communeFilter() && quartierOptions().length > 0) {
+          <app-searchable-select
+            [options]="quartierOptions()"
+            [value]="quartierFilter()"
+            placeholder="Tous les quartiers"
+            searchPlaceholder="Rechercher un quartier…"
+            (valueChange)="quartierFilter.set($any($event)); applyFilter()"
+          />
+        } @else {
+          <input
+            type="text"
+            placeholder="Ex: Riviera, Plateau…"
+            [value]="quartierFilter() ?? ''"
+            [disabled]="!communeFilter()"
+            (input)="quartierFilter.set($any($event.target).value || null); applyFilter()"
+            class="h-8 w-full rounded-md border border-gray-200 bg-gray-50 px-2.5 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:opacity-40 disabled:cursor-not-allowed"
+          />
+        }
       </div>
 
       <!-- Rue -->
@@ -137,8 +137,8 @@
       <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Légende</p>
       <div class="flex flex-col gap-1.5">
         <div class="flex items-center gap-2">
-          <span class="h-3 w-3 shrink-0 rounded-full bg-blue-600 ring-2 ring-white shadow-sm"></span>
-          <span class="text-xs text-gray-700">Agent principal (Mandataire)</span>
+          <span class="h-3 w-3 shrink-0 rounded-full bg-primary ring-2 ring-white shadow-sm"></span>
+          <span class="text-xs text-gray-700">Agent principal</span>
         </div>
         <div class="flex items-center gap-2">
           <span class="h-3 w-3 shrink-0 rounded-full bg-orange-500 ring-2 ring-white shadow-sm"></span>
@@ -147,20 +147,8 @@
       </div>
     </div>
 
-    <!-- Export -->
-    <div class="border-t border-gray-100 px-4 py-3">
-      <button
-        type="button"
-        (click)="exportExcel()"
-        [disabled]="markers().length === 0"
-        class="flex w-full items-center justify-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-green-50 hover:border-green-300 hover:text-green-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        <lucide-icon [img]="DownloadIcon" [size]="13" />
-        Export Excel ({{ markers().length }} points)
-      </button>
-    </div>
 
-    <!-- Aucun résultat -->
+<!-- Aucun résultat -->
     @if (hasActiveFilters() && visibleMarkers() === 0) {
       <div class="flex flex-col items-center gap-2 px-4 py-6 text-center">
         <lucide-icon [img]="MapPinIcon" [size]="28" class="text-gray-300" />

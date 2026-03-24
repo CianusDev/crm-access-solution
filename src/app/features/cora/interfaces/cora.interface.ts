@@ -64,7 +64,7 @@ export interface Evaluation {
   pointCoraProche?: string;
   distanceCoraProche?: number;
   securite?: string;
-  force?: string;   // JSON string
+  force?: string; // JSON string
   faiblesse?: string; // JSON string
   commentaire?: string;
 }
