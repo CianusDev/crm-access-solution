@@ -107,6 +107,7 @@ export class ListCoraComponent implements OnInit {
   readonly coraList = signal<Cora[]>([]);
   readonly printingId = signal<number | null>(null);
   readonly isExportingPdf = signal(false);
+  readonly isExportingExcel = signal(false);
 
   ngOnInit() {
     this.coraList.set(this.listData()?.coras ?? []);
@@ -240,6 +241,8 @@ export class ListCoraComponent implements OnInit {
   }
 
   async exportExcel() {
+    this.isExportingExcel.set(true);
+    try {
     const columns: ExcelColumn[] = [
       { header: 'Référence', key: 'ref', width: 16 },
       { header: 'Raison Sociale', key: 'raison_social', width: 30 },
@@ -261,6 +264,11 @@ export class ListCoraComponent implements OnInit {
       nombre_agence: c.agents?.length ?? 0,
     }));
     await this.excelService.export(data, columns, 'liste-coras', 'CORAs');
+    } catch (err: any) {
+      this.toast.error(err?.message ?? "Erreur lors de l'export Excel.");
+    } finally {
+      this.isExportingExcel.set(false);
+    }
   }
 
   async exportPdf() {

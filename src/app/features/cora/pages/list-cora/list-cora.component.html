@@ -18,9 +18,9 @@
       >
         <lucide-icon [img]="RefreshIcon" [size]="16" [class.animate-spin]="isRefreshing()" />
       </button>
-      <button appButton variant="outline" type="button" (click)="exportExcel()" class="gap-2">
+      <button appButton variant="outline" type="button" (click)="exportExcel()" [disabled]="isExportingExcel()" class="gap-2">
         <lucide-icon [img]="DownloadIcon" [size]="16" />
-        Export Excel
+        @if (isExportingExcel()) { Génération... } @else { Export Excel }
       </button>
       <button appButton variant="outline" type="button" (click)="exportPdf()" [disabled]="isExportingPdf()" class="gap-2">
         <lucide-icon [img]="DownloadIcon" [size]="16" />
