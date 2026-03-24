@@ -24,17 +24,16 @@ export class PdfExportService {
 
     const pdfMake = (pdfMakeModule as any).default ?? pdfMakeModule;
 
-    pdfMake.addFontContainer({
-      vfs: montserratVfs,
-      fonts: {
-        Montserrat: {
-          normal: 'Montserrat-Light.ttf',
-          bold: 'Montserrat-Bold.ttf',
-          italics: 'Montserrat-Regular.ttf',
-          bolditalics: 'Montserrat-Medium.ttf',
-        },
+    // API pdfmake 0.2.x
+    pdfMake.vfs = montserratVfs;
+    pdfMake.fonts = {
+      Montserrat: {
+        normal: 'Montserrat-Light.ttf',
+        bold: 'Montserrat-Bold.ttf',
+        italics: 'Montserrat-Regular.ttf',
+        bolditalics: 'Montserrat-Medium.ttf',
       },
-    });
+    };
 
     this.pdfMakeInstance = pdfMake;
     return pdfMake as typeof import('pdfmake/build/pdfmake');
@@ -107,35 +106,46 @@ export class PdfExportService {
     };
   }
 
+  /** defaultStyle à inclure dans chaque docDefinition */
+  get defaultStyle(): TDocumentDefinitions['defaultStyle'] {
+    return { font: 'Montserrat' };
+  }
+
   /** Styles de base communs à tous les documents */
   get baseStyles(): TDocumentDefinitions['styles'] {
     return {
       headerBrand: {
+        font: 'Montserrat',
         fontSize: 11,
         bold: true,
         color: '#1a56db',
       },
       headerTitle: {
+        font: 'Montserrat',
         fontSize: 10,
         bold: true,
         color: '#374151',
       },
       headerSubtitle: {
+        font: 'Montserrat',
         fontSize: 8,
         color: '#6b7280',
         italics: true,
       },
       footerText: {
+        font: 'Montserrat',
         fontSize: 8,
         color: '#9ca3af',
       },
       sectionTitle: {
+        font: 'Montserrat',
         fontSize: 11,
         bold: true,
         color: '#111827',
         margin: [0, 12, 0, 6],
       },
       tableHeader: {
+        font: 'Montserrat',
         fontSize: 9,
         bold: true,
         color: '#ffffff',
@@ -143,22 +153,26 @@ export class PdfExportService {
         margin: [4, 4, 4, 4],
       },
       tableCell: {
+        font: 'Montserrat',
         fontSize: 9,
         color: '#374151',
         margin: [4, 3, 4, 3],
       },
       tableCellAlt: {
+        font: 'Montserrat',
         fontSize: 9,
         color: '#374151',
         fillColor: '#f9fafb',
         margin: [4, 3, 4, 3],
       },
       label: {
+        font: 'Montserrat',
         fontSize: 9,
         color: '#6b7280',
         bold: true,
       },
       value: {
+        font: 'Montserrat',
         fontSize: 9,
         color: '#111827',
       },

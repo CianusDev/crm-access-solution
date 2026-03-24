@@ -22,9 +22,9 @@
         <lucide-icon [img]="DownloadIcon" [size]="16" />
         Export Excel
       </button>
-      <button appButton variant="outline" type="button" (click)="exportPdf()" class="gap-2">
+      <button appButton variant="outline" type="button" (click)="exportPdf()" [disabled]="isExportingPdf()" class="gap-2">
         <lucide-icon [img]="DownloadIcon" [size]="16" />
-        Export PDF
+        @if (isExportingPdf()) { Génération... } @else { Export PDF }
       </button>
       @if (canCreateCora()) {
         <button appButton type="button" (click)="goToCreate()" class="gap-2">

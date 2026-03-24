@@ -34,18 +34,16 @@ export class CoraPdfService {
 
     const pdfMake = (pdfMakeModule as any).default ?? pdfMakeModule;
 
-    // API pdfmake 0.3.x : addFontContainer({ vfs, fonts })
-    pdfMake.addFontContainer({
-      vfs: montserratVfs,
-      fonts: {
-        Montserrat: {
-          normal: 'Montserrat-Light.ttf',
-          bold: 'Montserrat-Bold.ttf',
-          italics: 'Montserrat-Regular.ttf',
-          bolditalics: 'Montserrat-Medium.ttf',
-        },
+    // API pdfmake 0.2.x
+    pdfMake.vfs = montserratVfs;
+    pdfMake.fonts = {
+      Montserrat: {
+        normal: 'Montserrat-Light.ttf',
+        bold: 'Montserrat-Bold.ttf',
+        italics: 'Montserrat-Regular.ttf',
+        bolditalics: 'Montserrat-Medium.ttf',
       },
-    });
+    };
 
     this.pdfMakeInstance = pdfMake;
     return pdfMake;
@@ -672,17 +670,119 @@ export class CoraPdfService {
       },
     };
 
-    // pdfmake 0.3.x : getBlob() retourne une Promise (plus de callback)
-    const blob = await pdfMake.createPdf(docDefinition).getBlob();
-    const url = URL.createObjectURL(blob);
-    const win = window.open(url, '_blank');
-    if (!win) {
-      // Fallback si popup bloqué : téléchargement direct
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `contrat-cora-${cora.reference}.pdf`;
-      a.click();
-    }
-    setTimeout(() => URL.revokeObjectURL(url), 30_000);
+    await new Promise<void>((resolve, reject) => {
+      try {
+        pdfMake.createPdf(docDefinition).getBlob((blob: Blob) => {
+          try {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `contrat-cora-${cora.reference}.pdf`;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 30_000);
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        });
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
+  async exportListePDF(coras: Cora[], userName: string): Promise<void> {
+    const pdfMake = await this.getPdfMake();
+
+    const docDefinition: any = {
+      pageSize: 'A3',
+      pageOrientation: 'landscape',
+      content: [
+        {
+          columns: [
+            {
+              stack: [
+                { image: LogoBase64.logoVertical, width: 80 },
+                {
+                  text: [
+                    { text: 'Email : ', bold: true }, 'support@creditaccess.ci\n',
+                    { text: 'Tél : ', bold: true }, '+225 21 22 21 50 / +225 05 94 27 67 05\n',
+                    { text: 'BP : ', bold: true }, '01 BP 12084 ABIDJAN 01',
+                  ],
+                  fontSize: 9,
+                  marginTop: 4,
+                },
+              ],
+            },
+            {
+              stack: [
+                { text: 'Imprimé le : ' + new Date().toLocaleString(), fontSize: 9 },
+                { text: 'Imprimé par : ' + userName, bold: true, fontSize: 9, marginTop: 4 },
+              ],
+              alignment: 'right',
+            },
+          ],
+          marginBottom: 10,
+        },
+        {
+          text: 'LISTE DES GESTIONNAIRES DE CORRESPONDANT',
+          fontSize: 20,
+          marginTop: 10,
+          marginBottom: 20,
+          alignment: 'center',
+          decoration: 'underline',
+          bold: true,
+        },
+        {
+          table: {
+            headerRows: 1,
+            widths: ['auto', 200, 200, 'auto', 'auto', 'auto', 'auto', 'auto'],
+            body: [
+              [
+                { text: 'Référence', bold: true },
+                { text: 'Identifiant Perfect', bold: true },
+                { text: 'Identifiant P-Mobile', bold: true },
+                { text: 'Raison Sociale', bold: true },
+                { text: 'Commune', bold: true },
+                { text: 'Quartier', bold: true },
+                { text: 'Gestionnaire', bold: true },
+                { text: "Nombre d'Agence", bold: true },
+              ],
+              ...coras.map((c) => [
+                c.reference ?? '',
+                c.perfect ?? '',
+                c.pmobile ?? '',
+                c.designation ?? '',
+                c.commune?.libelle ?? '',
+                c.quartier ?? '',
+                c.user ? `${c.user.nom} ${c.user.prenom}` : '',
+                c.agents?.length ?? 0,
+              ]),
+            ],
+          },
+        },
+      ],
+      defaultStyle: { font: 'Montserrat' },
+    };
+
+    await new Promise<void>((resolve, reject) => {
+      try {
+        pdfMake.createPdf(docDefinition).getBlob((blob: Blob) => {
+          try {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `liste-coras_${Date.now()}.pdf`;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 30_000);
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        });
+      } catch (e) {
+        reject(e);
+      }
+    });
   }
 }

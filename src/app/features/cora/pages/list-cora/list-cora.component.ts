@@ -11,8 +11,7 @@ import { ButtonComponent } from '@/shared/components/button/button.component';
 import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { ExcelExportService, ExcelColumn } from '@/core/services/export/excel-export.service';
-import { PdfExportService } from '@/core/services/export/pdf-export.service';
-import type { TableCell } from 'pdfmake/interfaces';
+import { AuthService } from '@/core/services/auth/auth.service';
 import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
@@ -34,7 +33,6 @@ import { FormSelect } from '@/shared/components/form-select/form-select.componen
 import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { CoraMapComponent } from '../../components/cora-map/cora-map.component';
 import { InitialesPipe } from '@/shared/pipes/initiales.pipe';
-import { LogoBase64 } from '@/features/credit/enumeration/logo_base64.enum';
 import { CoraPdfService } from '../../services/pdf/cora-pdf.service';
 
 const PAGE_SIZE = 10;
@@ -99,8 +97,8 @@ export class ListCoraComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder);
   private readonly excelService = inject(ExcelExportService);
-  private readonly pdfService = inject(PdfExportService);
   private readonly coraPdf = inject(CoraPdfService);
+  private readonly auth = inject(AuthService);
 
   // ── Resolver data ──────────────────────────────────────────────────────────
   readonly listData = input<ListCoraData>();
@@ -108,6 +106,7 @@ export class ListCoraComponent implements OnInit {
   // ── Local cora list (can be replaced by search result) ────────────────────
   readonly coraList = signal<Cora[]>([]);
   readonly printingId = signal<number | null>(null);
+  readonly isExportingPdf = signal(false);
 
   ngOnInit() {
     this.coraList.set(this.listData()?.coras ?? []);
@@ -242,88 +241,39 @@ export class ListCoraComponent implements OnInit {
 
   async exportExcel() {
     const columns: ExcelColumn[] = [
-      { header: 'Référence', key: 'reference', width: 16 },
-      { header: 'Désignation', key: 'designation', width: 30 },
-      { header: 'Email', key: 'email', width: 28 },
-      { header: 'N. PERFECT', key: 'perfect', width: 16 },
-      { header: 'Téléphone', key: 'telephone', width: 16 },
+      { header: 'Référence', key: 'ref', width: 16 },
+      { header: 'Raison Sociale', key: 'raison_social', width: 30 },
+      { header: 'Identifiant Perfect', key: 'identifiant_perfect', width: 22 },
+      { header: 'Identifiant P-Mobile', key: 'identifiant_pmobile', width: 22 },
       { header: 'Commune', key: 'commune', width: 18 },
       { header: 'Quartier', key: 'quartier', width: 18 },
-      { header: 'Rue', key: 'rue', width: 22 },
       { header: 'Gestionnaire', key: 'gestionnaire', width: 24 },
-      { header: 'Statut', key: 'statut', width: 14 },
+      { header: "Nb d'agences", key: 'nombre_agence', width: 14 },
     ];
     const data = this.filtered().map((c) => ({
-      reference: c.reference ?? '',
-      designation: c.designation ?? '',
-      email: c.email ?? '',
-      perfect: c.perfect ?? '',
-      telephone: c.pmobile ?? '',
+      ref: c.reference ?? '',
+      raison_social: c.designation ?? '',
+      identifiant_perfect: c.perfect ?? '',
+      identifiant_pmobile: c.pmobile ?? '',
       commune: c.commune?.libelle ?? '',
       quartier: c.quartier ?? '',
-      rue: c.rue ?? '',
       gestionnaire: c.user ? `${c.user.nom} ${c.user.prenom}` : '',
-      statut: STATUT_LABELS[c.statut ?? 0] ?? '',
+      nombre_agence: c.agents?.length ?? 0,
     }));
     await this.excelService.export(data, columns, 'liste-coras', 'CORAs');
   }
 
   async exportPdf() {
-    const rows = this.filtered();
-    const tableBody: TableCell[][] = [
-      [
-        { text: 'Référence', style: 'tableHeader' },
-        { text: 'Désignation', style: 'tableHeader' },
-        { text: 'PERFECT', style: 'tableHeader' },
-        { text: 'Téléphone', style: 'tableHeader' },
-        { text: 'Commune', style: 'tableHeader' },
-        { text: 'Gestionnaire', style: 'tableHeader' },
-        { text: 'Statut', style: 'tableHeader' },
-      ],
-      ...rows.map((c, i) =>
-        this.pdfService.tableRow(
-          [
-            c.reference ?? '',
-            c.designation ?? '',
-            c.perfect ?? '',
-            c.pmobile ?? '',
-            c.commune?.libelle ?? '',
-            c.user ? `${c.user.nom} ${c.user.prenom}` : '',
-            STATUT_LABELS[c.statut ?? 0] ?? '',
-          ],
-          i % 2 === 1,
-        ),
-      ),
-    ];
-
-    await this.pdfService.download(
-      {
-        pageOrientation: 'landscape',
-        pageMargins: [40, 70, 40, 50],
-        header: this.pdfService.header(
-          'Liste des CORAs',
-          `${rows.length} résultat(s) — ${new Date().toLocaleDateString('fr-FR')}`,
-          LogoBase64.logoVertical,
-        ),
-        footer: (currentPage, pageCount) => this.pdfService.footer(currentPage, pageCount),
-        content: [
-          {
-            table: {
-              headerRows: 1,
-              widths: ['auto', '*', 'auto', 'auto', 'auto', '*', 'auto'],
-              body: tableBody,
-            },
-            layout: {
-              hLineWidth: () => 0.5,
-              vLineWidth: () => 0,
-              hLineColor: () => '#e5e7eb',
-            },
-          },
-        ],
-        styles: this.pdfService.baseStyles,
-      },
-      'liste-coras',
-    );
+    this.isExportingPdf.set(true);
+    try {
+      const user = this.auth.currentUser();
+      const userName = user ? `${user.nom} ${user.prenom}` : '';
+      await this.coraPdf.exportListePDF(this.filtered(), userName);
+    } catch (err: any) {
+      this.toast.error(err?.message ?? 'Erreur lors de la génération du PDF.');
+    } finally {
+      this.isExportingPdf.set(false);
+    }
   }
 
   exportCSV() {
