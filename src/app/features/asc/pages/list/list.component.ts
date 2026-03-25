@@ -1,8 +1,8 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { DecimalPipe, DatePipe, NgClass } from '@angular/common';
+import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Eye, Search, FileText, Filter, X } from 'lucide-angular';
+import { LucideAngularModule, Eye, Search, Filter, X, Loader } from 'lucide-angular';
 import {
   CardComponent,
   CardContentComponent,
@@ -10,21 +10,12 @@ import {
   CardTitleComponent,
 } from '@/shared/components/card/card.component';
 import { PaginationComponent } from '@/shared/components/pagination/pagination.component';
-import { AscDemande } from '../../interfaces/asc.interface';
+import { AscCheque } from '../../interfaces/asc.interface';
+import { AscService } from '../../services/asc/asc.service';
+import { AuthService } from '@/core/services/auth/auth.service';
+import { UserRole } from '@/core/models/user.model';
+import { ToastService } from '@/core/services/toast/toast.service';
 
-const STATUT_LABELS: Record<number, { label: string; class: string }> = {
-  1: { label: 'En cours de création', class: 'bg-gray-100 text-gray-700' },
-  2: { label: 'En attente validation', class: 'bg-yellow-100 text-yellow-700' },
-  3: { label: "En attente d'approbation", class: 'bg-orange-100 text-orange-700' },
-  4: { label: 'Suivi décaissement', class: 'bg-blue-100 text-blue-700' },
-  5: { label: 'En attente décaissement', class: 'bg-purple-100 text-purple-700' },
-  6: { label: 'Clôturé', class: 'bg-green-100 text-green-700' },
-  7: { label: 'Rejeté', class: 'bg-red-100 text-red-700' },
-  8: { label: 'Transfert inter-agence', class: 'bg-pink-100 text-pink-700' },
-  9: { label: 'En attente validation', class: 'bg-yellow-100 text-yellow-700' },
-  10: { label: 'Création dans Perfect', class: 'bg-blue-100 text-blue-700' },
-  11: { label: 'Demande non aboutie', class: 'bg-red-100 text-red-700' },
-};
 
 @Component({
   selector: 'app-liste-cheques',
@@ -32,7 +23,6 @@ const STATUT_LABELS: Record<number, { label: string; class: string }> = {
   imports: [
     DecimalPipe,
     DatePipe,
-    NgClass,
     FormsModule,
     LucideAngularModule,
     CardComponent,
@@ -43,56 +33,63 @@ const STATUT_LABELS: Record<number, { label: string; class: string }> = {
   ],
 })
 export class ListComponent {
-  readonly EyeIcon     = Eye;
-  readonly SearchIcon  = Search;
-  readonly FileTextIcon = FileText;
-  readonly FilterIcon  = Filter;
-  readonly XIcon = X;
+  readonly EyeIcon    = Eye;
+  readonly SearchIcon = Search;
+  readonly FilterIcon = Filter;
+  readonly XIcon      = X;
+  readonly LoaderIcon = Loader;
 
-  private readonly router = inject(Router);
+  private readonly router     = inject(Router);
+  private readonly ascService = inject(AscService);
+  private readonly authService = inject(AuthService);
+  private readonly toast      = inject(ToastService);
 
-  readonly demandes = input<AscDemande[]>([]);
+  /** Agences pour le select (toujours chargées via resolver) */
   readonly agences = input<{ id: number; libelle: string }[]>([]);
 
-  // Filters
-  readonly filterClient = signal('');
-  readonly filterAgence = signal('');
-  readonly filterDateDebut = signal('');
-  readonly filterDateFin = signal('');
+  /** null = recherche jamais lancée | AscCheque[] = résultats */
+  readonly results     = signal<AscCheque[] | null>(null);
+  readonly isSearching = signal(false);
 
-  // Pagination
-  readonly page = signal(1);
+  // ── Filtres ────────────────────────────────────────────────────────────
+  readonly filterClient    = signal('');
+  readonly filterAgence    = signal('');
+  readonly filterDateDebut = signal('');
+  readonly filterDateFin   = signal('');
+
+  // ── Pagination ─────────────────────────────────────────────────────────
+  readonly page     = signal(1);
   readonly pageSize = 10;
 
+  /** RC et CC ne voient pas le filtre agence */
+  readonly showAgenceFilter = computed(() => {
+    const role = this.authService.currentUser()?.role;
+    return role !== UserRole.responsableClient && role !== UserRole.conseilClientele;
+  });
+
   readonly filtered = computed(() => {
-    const items = this.demandes();
+    const items = this.results();
+    if (items === null) return [];
+
     const client = this.filterClient().toLowerCase().trim();
     const agence = this.filterAgence();
-    const debut = this.filterDateDebut();
-    const fin = this.filterDateFin();
+    const debut  = this.filterDateDebut();
+    const fin    = this.filterDateFin();
 
     return items.filter((d) => {
       if (client) {
         const match =
           d.client?.nomPrenom?.toLowerCase().includes(client) ||
           d.client?.codeClient?.toLowerCase().includes(client) ||
-          d.cheque?.tireur?.toLowerCase().includes(client) ||
-          d.numDemandeAsc?.toLowerCase().includes(client);
+          d.tireur?.toLowerCase().includes(client) ||
+          d.numcheque?.toLowerCase().includes(client) ||
+          d.numTransaction?.toLowerCase().includes(client);
         if (!match) return false;
       }
-
       if (agence) {
-        const ag = d.client?.agence?.libelle ?? d.agence?.libelle ?? '';
-        if (!ag.includes(agence)) return false;
+        const agId = String(d.client?.agence?.id ?? '');
+        if (agId !== agence) return false;
       }
-
-      const rawDate = d.dateRemise ?? d.dateDemande ?? d.datedemande;
-      if (rawDate) {
-        const date = new Date(rawDate);
-        if (debut && date < new Date(debut)) return false;
-        if (fin && date > new Date(fin + 'T23:59:59')) return false;
-      }
-
       return true;
     });
   });
@@ -103,29 +100,48 @@ export class ListComponent {
   });
 
   readonly hasActiveFilters = computed(
-    () =>
-      !!this.filterClient() ||
-      !!this.filterAgence() ||
-      !!this.filterDateDebut() ||
-      !!this.filterDateFin(),
+    () => !!this.filterClient() || !!this.filterAgence() || !!this.filterDateDebut() || !!this.filterDateFin(),
   );
+
+  // ── Recherche serveur (POST /recherche_asc) ────────────────────────────
+  search() {
+    this.isSearching.set(true);
+    // Même structure que l'ancien frontend : tous les champs envoyés (vides inclus)
+    const payload = {
+      codeClient: this.filterClient(),
+      agence:     this.filterAgence() ? Number(this.filterAgence()) : '',
+      dateDebut:  this.filterDateDebut(),
+      dateFin:    this.filterDateFin(),
+    };
+
+    this.ascService.searchCheques(payload).subscribe({
+      next: (res) => {
+        this.results.set(res ?? []);
+        // Vider les filtres : le serveur a déjà filtré, on ne re-filtre pas côté client
+        this.filterClient.set('');
+        this.filterAgence.set('');
+        this.filterDateDebut.set('');
+        this.filterDateFin.set('');
+        this.page.set(1);
+        this.isSearching.set(false);
+      },
+      error: () => {
+        this.toast.error('Erreur lors de la recherche.');
+        this.isSearching.set(false);
+      },
+    });
+  }
 
   resetFilters() {
     this.filterClient.set('');
     this.filterAgence.set('');
     this.filterDateDebut.set('');
     this.filterDateFin.set('');
+    this.results.set(null);
     this.page.set(1);
   }
 
-  onFilterChange() {
-    this.page.set(1);
-  }
+  onFilterChange() { this.page.set(1); }
 
-  statutInfo(statut: number) {
-    return STATUT_LABELS[statut] ?? { label: String(statut), class: 'bg-muted text-muted-foreground' };
-  }
-
-  goDetail(id: number)              { this.router.navigate(['/app/asc/detail', id]); }
   goChequeDetail(numcheque: string) { this.router.navigate(['/app/asc/cheque', numcheque]); }
 }

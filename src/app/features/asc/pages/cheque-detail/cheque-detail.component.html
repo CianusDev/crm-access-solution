@@ -12,10 +12,17 @@
         <p class="text-sm text-muted-foreground">{{ c.client?.nomPrenom }} · {{ c.client?.agence?.libelle }}</p>
       }
     </div>
-    <button type="button" (click)="load()" [disabled]="isLoading()"
-      class="flex items-center justify-center h-9 w-9 rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50">
-      <lucide-icon [img]="RefreshCwIcon" [size]="15" [class.animate-spin]="isLoading()" />
-    </button>
+    <div class="flex items-center gap-2">
+      @if (canEditCheque()) {
+        <button type="button" (click)="goModifCheque()" appButton variant="outline" size="sm" class="gap-1.5">
+          <lucide-icon [img]="EditIcon" [size]="14" /> Modifier le chèque
+        </button>
+      }
+      <button type="button" (click)="load()" [disabled]="isLoading()"
+        class="flex items-center justify-center h-9 w-9 rounded-md border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50">
+        <lucide-icon [img]="RefreshCwIcon" [size]="15" [class.animate-spin]="isLoading()" />
+      </button>
+    </div>
   </div>
 
   <!-- Erreur -->
@@ -45,7 +52,6 @@
           <app-card-header>
             <div class="flex items-center justify-between w-full">
               <app-card-title>Informations du chèque</app-card-title>
-              <!-- Documents -->
               <div class="flex items-center gap-2">
                 @if (c.image || c.imageCheque) {
                   <button type="button" (click)="openDoc(c.image ?? c.imageCheque)"
@@ -127,39 +133,140 @@
           <app-card-header>
             <div class="flex items-center justify-between w-full">
               <app-card-title>Demandes d'avance ({{ (c.demandes ?? []).length }})</app-card-title>
+              @if (canAddDemande() && !showAddForm()) {
+                <button type="button" (click)="openAddForm()"
+                  class="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                  <lucide-icon [img]="PlusIcon" [size]="13" /> Nouvelle demande
+                </button>
+              }
             </div>
           </app-card-header>
           <app-card-content class="!p-0 !pt-0">
-            @if ((c.demandes ?? []).length === 0) {
+
+            <!-- Formulaire ajout/édition -->
+            @if (showAddForm()) {
+              <div class="border-b border-border bg-muted/20 px-4 py-3">
+                <p class="text-xs font-medium text-foreground mb-2">
+                  {{ isEditMode() ? 'Modifier la demande' : 'Nouvelle demande' }}
+                </p>
+                <div class="flex items-center gap-2">
+                  <div class="flex-1">
+                    <input
+                      type="number"
+                      placeholder="Montant sollicité (FCFA)"
+                      [value]="montantSollicite()"
+                      (input)="montantSollicite.set($any($event.target).value)"
+                      class="h-9 w-full rounded-md border border-border bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                  <button type="button" (click)="saveDemande()" [disabled]="!montantSollicite() || isSaving()" appButton size="sm" class="gap-1.5 shrink-0">
+                    @if (isSaving()) {
+                      <lucide-icon [img]="LoaderIcon" [size]="13" class="animate-spin" />
+                    }
+                    {{ isEditMode() ? 'Modifier' : 'Ajouter' }}
+                  </button>
+                  <button type="button" (click)="cancelForm()" appButton variant="ghost" size="sm" class="shrink-0">
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            }
+
+            @if ((c.demandes ?? []).length === 0 && !showAddForm()) {
               <p class="py-8 text-center text-sm text-muted-foreground">Aucune demande associée à ce chèque.</p>
             } @else {
               <div class="divide-y divide-border border-t border-border">
                 @for (d of c.demandes; track d.id) {
-                  <div class="flex items-center gap-4 px-4 py-3 hover:bg-muted/30 transition-colors">
-                    <div class="flex-1 min-w-0">
-                      <div class="flex items-center gap-2 flex-wrap">
-                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                          [class]="statutClass(d.statut)">
-                          {{ statutLabel(d.statut) }}
-                        </span>
-                        @if (d.numDemandeAsc) {
-                          <span class="text-xs font-mono text-muted-foreground">{{ d.numDemandeAsc }}</span>
-                        }
+                  <div class="px-4 py-3 hover:bg-muted/20 transition-colors">
+                    <div class="flex items-start gap-3">
+                      <div class="flex-1 min-w-0">
+                        <!-- Statut + N° demande -->
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium" [class]="statutClass(d.statut)">
+                            {{ statutLabel(d.statut) }}
+                          </span>
+                          @if (d.numDemandeAsc) {
+                            <span class="text-xs font-mono text-muted-foreground">{{ d.numDemandeAsc }}</span>
+                          }
+                        </div>
+                        <!-- Montants + date -->
+                        <div class="mt-1 flex items-center gap-4 flex-wrap text-sm">
+                          <span class="text-muted-foreground">Sollicité : <strong class="text-foreground">{{ d.montantSollicite | number }} FCFA</strong></span>
+                          @if (d.montantAccorde) {
+                            <span class="text-muted-foreground">Accordé : <strong class="text-green-600">{{ d.montantAccorde | number }} FCFA</strong></span>
+                          }
+                          @if (d.dateDemande ?? d.datedemande) {
+                            <span class="text-xs text-muted-foreground">{{ (d.dateDemande ?? d.datedemande) | date:'dd/MM/yyyy' }}</span>
+                          }
+                        </div>
                       </div>
-                      <div class="mt-1 flex items-center gap-4 flex-wrap text-sm">
-                        <span class="text-muted-foreground">Sollicité : <strong class="text-foreground">{{ d.montantSollicite | number }} FCFA</strong></span>
-                        @if (d.montantAccorde) {
-                          <span class="text-muted-foreground">Accordé : <strong class="text-green-600">{{ d.montantAccorde | number }} FCFA</strong></span>
+
+                      <!-- Actions -->
+                      <div class="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+
+                        <!-- Statut 6 : Imprimer PDF + Détail -->
+                        @if (d.statut === 6) {
+                          <button type="button" (click)="printPdf(d)" [disabled]="isExporting()"
+                            class="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50">
+                            @if (isExporting()) {
+                              <lucide-icon [img]="LoaderIcon" [size]="13" class="animate-spin" />
+                            } @else {
+                              <lucide-icon [img]="PrinterIcon" [size]="13" />
+                            }
+                            Imprimer PDF
+                          </button>
+                          <button type="button" (click)="goDetail(d.id)"
+                            class="flex items-center justify-center h-8 w-8 rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                            <lucide-icon [img]="EyeIcon" [size]="13" />
+                          </button>
                         }
-                        @if (d.dateDemande ?? d.datedemande) {
-                          <span class="text-xs text-muted-foreground">{{ (d.dateDemande ?? d.datedemande) | date:'dd/MM/yyyy' }}</span>
+
+                        <!-- Statut 8 (transfert inter-agence) + même agence : N° demande + soumettre -->
+                        @if (d.statut === 8 && sameAgence() && isRcOrCc()) {
+                          @if (!d.numDemandeAsc) {
+                            <button type="button" (click)="openNumModal(d, 'add')"
+                              class="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                              <lucide-icon [img]="PlusIcon" [size]="13" /> N° demande
+                            </button>
+                          } @else {
+                            <button type="button" (click)="openNumModal(d, 'edit')"
+                              class="flex items-center gap-1 rounded-md border border-amber-300 px-2.5 py-1.5 text-xs text-amber-700 hover:bg-amber-50 transition-colors">
+                              <lucide-icon [img]="EditIcon" [size]="13" /> Modif N°
+                            </button>
+                            <button type="button" (click)="openSubmitModal(d)"
+                              class="flex items-center gap-1 rounded-md bg-primary px-2.5 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 transition-colors">
+                              <lucide-icon [img]="SendIcon" [size]="13" /> Soumettre
+                            </button>
+                          }
                         }
+
+                        <!-- Statut 1 : éditer, supprimer, soumettre/transférer -->
+                        @if (d.statut === 1) {
+                          <button type="button" (click)="openEditForm(d)" [disabled]="deletingId() === d.id"
+                            class="flex items-center justify-center h-8 w-8 rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50">
+                            <lucide-icon [img]="EditIcon" [size]="13" />
+                          </button>
+                          @if (deletingId() === d.id) {
+                            <span class="flex items-center justify-center h-8 w-8">
+                              <lucide-icon [img]="LoaderIcon" [size]="13" class="animate-spin text-muted-foreground" />
+                            </span>
+                          } @else {
+                            <button type="button" (click)="deleteDemande(d)"
+                              class="flex items-center justify-center h-8 w-8 rounded-md border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-destructive/10 transition-colors">
+                              <lucide-icon [img]="TrashIcon" [size]="13" />
+                            </button>
+                          }
+                          @if (isRcOrCc()) {
+                            <button type="button" (click)="openSubmitModal(d)"
+                              class="flex items-center gap-1 rounded-md bg-primary px-2.5 py-1.5 text-xs text-primary-foreground hover:bg-primary/90 transition-colors">
+                              <lucide-icon [img]="SendIcon" [size]="13" />
+                              {{ sameAgence() ? 'Soumettre' : 'Transférer' }}
+                            </button>
+                          }
+                        }
+
                       </div>
                     </div>
-                    <button type="button" (click)="goDetail(d.id)"
-                      class="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0">
-                      <lucide-icon [img]="EyeIcon" [size]="13" /> Détail
-                    </button>
                   </div>
                 }
               </div>
@@ -192,10 +299,22 @@
                     <dt class="text-muted-foreground">Type</dt>
                     <dd class="font-medium">{{ cl.typeAgent === 'SC' ? 'Personne morale' : 'Personne physique' }}</dd>
                   </div>
+                  @if (cl.typeAgent === 'SC' && cl.gerant?.nomDirigeant) {
+                    <div class="flex justify-between">
+                      <dt class="text-muted-foreground">Gérant</dt>
+                      <dd class="font-medium">{{ cl.gerant?.nomDirigeant }}</dd>
+                    </div>
+                  }
                   <div class="flex justify-between">
                     <dt class="text-muted-foreground">Agence</dt>
                     <dd class="font-medium">{{ cl.agence.libelle }}</dd>
                   </div>
+                  @if (cl.dateOuvertureCompte) {
+                    <div class="flex justify-between">
+                      <dt class="text-muted-foreground">Ouverture du compte</dt>
+                      <dd class="font-medium">{{ cl.dateOuvertureCompte | date:'dd/MM/yyyy' }}</dd>
+                    </div>
+                  }
                   <div class="flex justify-between">
                     <dt class="text-muted-foreground">Chèques remisés</dt>
                     <dd class="font-medium">{{ cl.nbreChequeRemise }}</dd>
@@ -212,6 +331,28 @@
                     <dt class="text-muted-foreground">Montant max accordé</dt>
                     <dd class="font-medium tabular-nums">{{ cl.montantChequeAccordeAsc | number }}</dd>
                   </div>
+                  @if (cl.montantMaxEncaisse != null) {
+                    <div class="flex justify-between">
+                      <dt class="text-muted-foreground">Montant max encaissé</dt>
+                      <dd class="font-medium tabular-nums">{{ cl.montantMaxEncaisse | number }} FCFA</dd>
+                    </div>
+                  }
+                  @if (cl.montantMaxCreditObtenu != null) {
+                    <div class="flex justify-between">
+                      <dt class="text-muted-foreground">Montant max crédit</dt>
+                      <dd class="font-medium tabular-nums">{{ cl.montantMaxCreditObtenu | number }} FCFA</dd>
+                    </div>
+                  }
+                  @if (cl.autreCreditBeneficie.length > 0) {
+                    <div class="flex justify-between items-start">
+                      <dt class="text-muted-foreground shrink-0">Crédits obtenus</dt>
+                      <dd class="font-medium text-right">
+                        @for (cr of cl.autreCreditBeneficie; track cr.typeCreditBenef) {
+                          <span class="inline-block text-xs bg-muted rounded px-1.5 py-0.5 ml-1">{{ cr.typeCreditBenef }}</span>
+                        }
+                      </dd>
+                    </div>
+                  }
                 </dl>
               </div>
             } @else {
@@ -252,3 +393,58 @@
   }
 
 </div>
+
+<!-- Modal N° demande PERFECT -->
+@if (showNumModal()) {
+  <app-dialog [open]="showNumModal()" (openChange)="closeNumModal()">
+    <app-dialog-header>
+      <app-dialog-title>{{ numModalTitle() }}</app-dialog-title>
+    </app-dialog-header>
+    <app-dialog-content>
+      <div class="flex flex-col gap-2">
+        <label class="text-sm font-medium text-foreground">Numéro de la demande</label>
+        <input
+          type="text"
+          [value]="numDemandeInput()"
+          (input)="numDemandeInput.set($any($event.target).value)"
+          class="h-9 w-full rounded-md border border-border bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+        />
+      </div>
+    </app-dialog-content>
+    <app-dialog-footer>
+      <button type="button" appButton variant="ghost" (click)="closeNumModal()">Annuler</button>
+      <button type="button" appButton (click)="saveNumDemande()" [disabled]="!numDemandeInput() || isSaving()">
+        @if (isSaving()) { <lucide-icon [img]="LoaderIcon" [size]="14" class="animate-spin mr-1" /> }
+        {{ numModalBtn() }}
+      </button>
+    </app-dialog-footer>
+  </app-dialog>
+}
+
+<!-- Modal confirmation soumission -->
+@if (showSubmitModal()) {
+  <app-dialog [open]="showSubmitModal()" (openChange)="closeSubmitModal()">
+    <app-dialog-header>
+      <app-dialog-title>Confirmer l'envoi de la demande</app-dialog-title>
+    </app-dialog-header>
+    <app-dialog-content>
+      <div class="flex flex-col gap-2">
+        <label class="text-sm font-medium text-foreground">Commentaire (facultatif)</label>
+        <textarea
+          rows="3"
+          [value]="submitObs()"
+          (input)="submitObs.set($any($event.target).value)"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none"
+          placeholder="Avis favorable…"
+        ></textarea>
+      </div>
+    </app-dialog-content>
+    <app-dialog-footer>
+      <button type="button" appButton variant="ghost" (click)="closeSubmitModal()">Annuler</button>
+      <button type="button" appButton (click)="confirmSubmit()" [disabled]="isSubmitting()">
+        @if (isSubmitting()) { <lucide-icon [img]="LoaderIcon" [size]="14" class="animate-spin mr-1" /> }
+        Confirmer
+      </button>
+    </app-dialog-footer>
+  </app-dialog>
+}

@@ -136,6 +136,42 @@ export class AscService {
       );
   }
 
+  getListeCheques() {
+    return this.api
+      .get<{ cheques: AscDemande[] }>(this.endpoint + '/listecheque')
+      .pipe(
+        map((res) => res.cheques),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  searchCheques(data: { codeClient: string; agence: number | string; dateDebut: string; dateFin: string }) {
+    return this.api
+      .post<{ cheques: AscCheque[] }>(this.endpoint + '/recherche_asc', data)
+      .pipe(
+        map((res) => res.cheques),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  saveSousDemande(data: { numcheque: string; montantSollicite: number }) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveSousDemande', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  updateSousDemande(id: number, data: { numcheque: string; montantSollicite: number; numDemandeAsc?: string }) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/updateAsc/' + id, data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteSousDemande(data: { avCheque: number }) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/delete_asc', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
   getChequesAttente() {
     return this.api
       .get<{ cheques: AscDemande[] }>(this.endpoint + '/chequesattente')

@@ -17,10 +17,17 @@
         s.label
       }}</span>
     }
-    <button appButton variant="outline" size="sm" type="button" (click)="exportPdf()" class="gap-2">
-      <lucide-icon [img]="DownloadIcon" [size]="14" />
-      Exporter PDF
-    </button>
+    @if (demande()?.statut === 6) {
+      <button appButton variant="outline" size="sm" type="button" (click)="exportPdf()" [disabled]="isExporting()" class="gap-2">
+        @if (isExporting()) {
+          <lucide-icon [img]="LoaderIcon" [size]="14" class="animate-spin" />
+          Génération...
+        } @else {
+          <lucide-icon [img]="DownloadIcon" [size]="14" />
+          Imprimer PDF
+        }
+      </button>
+    }
   </div>
 
   <!-- ── Boutons d'action ─────────────────────────────────────────────── -->
@@ -256,7 +263,7 @@
         class="flex flex-col items-center gap-1 rounded-xl border border-border bg-card p-5 text-center"
       >
         <p class="text-xs text-muted-foreground">Montant du chèque</p>
-        <p class="text-2xl font-bold text-foreground">{{ d.cheque.montantCheque | number }}</p>
+        <p class="text-2xl font-bold text-foreground">{{ (d.cheque?.montantCheque ?? 0) | number }}</p>
         <p class="text-xs text-muted-foreground">FCFA</p>
       </div>
       <div
@@ -296,21 +303,21 @@
           <div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
             <div>
               <p class="text-xs text-muted-foreground">Numéro de chèque</p>
-              <p class="text-sm font-mono font-medium text-foreground">{{ d.cheque.numcheque }}</p>
+              <p class="text-sm font-mono font-medium text-foreground">{{ d.cheque?.numcheque ?? '—' }}</p>
             </div>
             <div>
               <p class="text-xs text-muted-foreground">Numéro de remise</p>
               <p class="text-sm font-mono font-medium text-foreground">
-                {{ d.cheque.numTransaction }}
+                {{ d.cheque?.numTransaction ?? '—' }}
               </p>
             </div>
             <div>
               <p class="text-xs text-muted-foreground">Tireur</p>
-              <p class="text-sm font-medium text-foreground">{{ d.cheque.tireur }}</p>
+              <p class="text-sm font-medium text-foreground">{{ d.cheque?.tireur ?? '—' }}</p>
             </div>
             <div>
               <p class="text-xs text-muted-foreground">Banque du tireur</p>
-              <p class="text-sm font-medium text-foreground">{{ d.cheque.banque }}</p>
+              <p class="text-sm font-medium text-foreground">{{ d.cheque?.banque ?? '—' }}</p>
             </div>
             <div>
               <p class="text-xs text-muted-foreground">Date de la demande</p>
@@ -320,7 +327,7 @@
             </div>
             <div>
               <p class="text-xs text-muted-foreground">Date de remise du chèque</p>
-              <p class="text-sm text-foreground">{{ d.cheque.dateCheque | date: 'dd/MM/yyyy' }}</p>
+              <p class="text-sm text-foreground">{{ d.cheque?.dateCheque | date: 'dd/MM/yyyy' }}</p>
             </div>
             @if (d.numDemandeAsc) {
               <div>
@@ -331,7 +338,7 @@
             <!-- @if (d.natureObjetReglement) { -->
               <div>
                 <p class="text-xs text-muted-foreground">Nature de la prestation</p>
-                <p class="text-sm text-foreground">{{ d.natureObjetReglement ?? "-"}}</p>
+                <p class="text-sm text-foreground">{{ d.cheque?.naturePrestation?.libelle ?? d.natureObjetReglement ?? '—' }}</p>
               </div>
             <!-- } -->
             @if (d.user) {
@@ -402,7 +409,7 @@
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
           @for (
             doc of [
-              { label: 'Image du chèque', lien: d.cheque.imageCheque ?? d.cheque.image },
+              { label: 'Image du chèque', lien: d.cheque?.imageCheque ?? d.cheque?.image },
               { label: "Preuve de l'existance d'une transaction", lien: d.preuveTransaction },
               { label: "Preuve de l'existance de l'entreprise", lien: d.preuveEntreprise },
             ];
@@ -581,14 +588,14 @@
                       {{ h.numDemandeAsc ?? '—' }}
                     </td>
                     <td class="px-3 py-2.5 font-mono text-xs text-foreground">
-                      {{ h.cheque.numTransaction }}
+                      {{ h.cheque?.numTransaction ?? '—' }}
                     </td>
-                    <td class="px-3 py-2.5 text-sm text-foreground">{{ h.cheque.tireur }}</td>
-                    <td class="px-3 py-2.5 text-sm text-foreground">{{ h.cheque.banque }}</td>
+                    <td class="px-3 py-2.5 text-sm text-foreground">{{ h.cheque?.tireur ?? '—' }}</td>
+                    <td class="px-3 py-2.5 text-sm text-foreground">{{ h.cheque?.banque ?? '—' }}</td>
                     <td
                       class="px-3 py-2.5 text-right font-medium text-foreground whitespace-nowrap text-sm"
                     >
-                      {{ h.cheque.montantCheque | number }} FCFA
+                      {{ (h.cheque?.montantCheque ?? 0) | number }} FCFA
                     </td>
                     <td
                       class="px-3 py-2.5 text-right font-medium text-primary whitespace-nowrap text-sm"
@@ -596,10 +603,10 @@
                       {{ h.montantSollicite | number }} FCFA
                     </td>
                     <td class="px-3 py-2.5 text-center">
-                      @if (fileUrl(h.cheque.imageCheque ?? h.cheque.image)) {
+                      @if (fileUrl(h.cheque?.imageCheque ?? h.cheque?.image)) {
                         <button
                           type="button"
-                          (click)="openFile(h.cheque.imageCheque ?? h.cheque.image)"
+                          (click)="openFile(h.cheque?.imageCheque ?? h.cheque?.image)"
                           class="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                         >
                           Voir <lucide-icon [img]="ExternalLinkIcon" [size]="11" />
@@ -703,10 +710,10 @@
                 <app-avatar />
                 <div class="min-w-0">
                   <p class="text-xs font-medium text-foreground leading-tight truncate">
-                    {{ obs.user.nom }} {{ obs.user.prenom }}
+                    {{ obs.user?.nom }} {{ obs.user?.prenom }}
                   </p>
                   <p class="text-xs text-muted-foreground leading-tight truncate">
-                    {{ obs.user.profil }}
+                    {{ obs.user?.profil ?? '—' }}
                   </p>
                 </div>
               </div>

@@ -134,8 +134,8 @@
                 @for (d of recentesAsc(); track d.id) {
                   <tr class="hover:bg-muted/30 transition-colors cursor-pointer" (click)="goDetail(d.id)">
                     <td class="px-4 py-3 font-medium text-foreground">{{ d.client?.nomPrenom ?? '—' }}</td>
-                    <td class="px-4 py-3 text-muted-foreground">{{ d.cheque.tireur }}</td>
-                    <td class="px-4 py-3 text-muted-foreground">{{ d.cheque.banque }}</td>
+                    <td class="px-4 py-3 text-muted-foreground">{{ d.cheque?.tireur ?? '—' }}</td>
+                    <td class="px-4 py-3 text-muted-foreground">{{ d.cheque?.banque ?? '—' }}</td>
                     <td class="px-4 py-3 text-right font-medium tabular-nums text-foreground whitespace-nowrap">{{ d.montantSollicite | number }} FCFA</td>
                     <td class="px-4 py-3">
                       <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"

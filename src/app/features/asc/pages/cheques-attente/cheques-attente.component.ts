@@ -51,9 +51,9 @@ export class ChequesAttenteComponent {
       (d) =>
         d.client?.nomPrenom?.toLowerCase().includes(q) ||
         d.client?.codeClient?.toLowerCase().includes(q) ||
-        d.cheque.numcheque.toLowerCase().includes(q) ||
-        d.cheque.numTransaction.toLowerCase().includes(q) ||
-        d.cheque.tireur.toLowerCase().includes(q),
+        d.cheque?.numcheque?.toLowerCase().includes(q) ||
+        d.cheque?.numTransaction?.toLowerCase().includes(q) ||
+        d.cheque?.tireur?.toLowerCase().includes(q),
     );
   });
 

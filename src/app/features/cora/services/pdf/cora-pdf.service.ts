@@ -1,5 +1,8 @@
 import { Injectable } from '@angular/core';
-import { LogoBase64, SignatureDirecteurGeneralAdjointBase64 } from '@/features/credit/enumeration/logo_base64.enum';
+import {
+  LogoBase64,
+  SignatureDirecteurGeneralAdjointBase64,
+} from '@/features/credit/enumeration/logo_base64.enum';
 import { Cora, CoraAgent } from '../../interfaces/cora.interface';
 
 const CIVILITES: Record<number, string> = {
@@ -705,9 +708,12 @@ export class CoraPdfService {
                 { image: LogoBase64.logoVertical, width: 80 },
                 {
                   text: [
-                    { text: 'Email : ', bold: true }, 'support@creditaccess.ci\n',
-                    { text: 'Tél : ', bold: true }, '+225 21 22 21 50 / +225 05 94 27 67 05\n',
-                    { text: 'BP : ', bold: true }, '01 BP 12084 ABIDJAN 01',
+                    { text: 'Email : ', bold: true },
+                    'support@creditaccess.ci\n',
+                    { text: 'Tél : ', bold: true },
+                    '+225 21 22 21 50 / +225 05 94 27 67 05\n',
+                    { text: 'BP : ', bold: true },
+                    '01 BP 12084 ABIDJAN 01',
                   ],
                   fontSize: 9,
                   marginTop: 4,

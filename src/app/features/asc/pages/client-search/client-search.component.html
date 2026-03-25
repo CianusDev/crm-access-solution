@@ -178,13 +178,13 @@
                       </p>
                     </td>
                     <td appTableCell>
-                      <span class="font-mono text-xs text-foreground">{{ d.cheque.numcheque }}</span>
+                      <span class="font-mono text-xs text-foreground">{{ d.cheque?.numcheque ?? '—' }}</span>
                     </td>
                     <td appTableCell>
-                      <span class="text-sm text-foreground">{{ d.cheque.tireur }}</span>
+                      <span class="text-sm text-foreground">{{ d.cheque?.tireur ?? '—' }}</span>
                     </td>
                     <td appTableCell>
-                      <span class="text-sm text-muted-foreground">{{ d.cheque.banque }}</span>
+                      <span class="text-sm text-muted-foreground">{{ d.cheque?.banque ?? '—' }}</span>
                     </td>
                     <td appTableCell class="text-right whitespace-nowrap">
                       <span class="text-sm font-semibold text-foreground">{{ d.montantSollicite | number }}</span>

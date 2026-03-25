@@ -1,5 +1,6 @@
 export interface AscAgence {
   id: number;
+  code?: string;
   libelle: string;
 }
 
@@ -18,6 +19,7 @@ export interface AscClient {
   nbreIncidentPaie: number;
   nbreAvChequeBenef: number;
   montantChequeAccordeAsc: number;
+  montantMaxEncaisse?: number;
   montantMaxCreditObtenu?: number;
   autreCreditBeneficie: { typeCreditBenef: string }[];
   gerant?: AscClientGerant;
@@ -35,12 +37,12 @@ export interface AscNaturePrestation {
 }
 
 export interface AscCheque {
-  id: number;
-  numcheque: string;
-  numTransaction: string;
-  tireur: string;
-  banque: string;
-  montantCheque: number;
+  id?: number;
+  numcheque?: string;
+  numTransaction?: string;
+  tireur?: string;
+  banque?: string;
+  montantCheque?: number;
   dateCheque?: string;
   imageCheque?: string;
   image?: string;
@@ -56,7 +58,7 @@ export interface AscObservation {
   decision: string;
   date: string;
   observation: string;
-  user: { nom: string; prenom: string; profil: string };
+  user: { nom: string; prenom: string; profil: string; libelleAgence?: string } | null;
 }
 
 export interface AscDemande {
@@ -65,6 +67,7 @@ export interface AscDemande {
   dateRemise?: string;
   dateDemande?: string;
   datedemande?: string;
+  dateDecaissement?: string;
   montantSollicite: number;
   montantMaxEncaisse?: number;
   montantAccorde?: number;
@@ -73,7 +76,7 @@ export interface AscDemande {
   statut: number;
   description?: string;
   client?: AscClient;
-  cheque: AscCheque;
+  cheque?: AscCheque;
   preuveTransaction?: string;
   preuveEntreprise?: string;
   observation?: AscObservation[];

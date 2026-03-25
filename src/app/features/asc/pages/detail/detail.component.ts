@@ -45,8 +45,8 @@ import { PermissionService } from '@/core/services/permission/permission.service
 import { UserRole } from '@/core/models/user.model';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { PdfExportService } from '@/core/services/export/pdf-export.service';
-import type { Content, TableCell } from 'pdfmake/interfaces';
 import { LogoBase64 } from '@/features/credit/enumeration/logo_base64.enum';
+import { AuthService } from '@/core/services/auth/auth.service';
 import { Avatar } from '@/shared/components/avatar/avatar.component';
 import {
   DrawerComponent,
@@ -158,6 +158,7 @@ export class DetailComponent {
   private readonly toast = inject(ToastService);
   private readonly pdfService = inject(PdfExportService);
   private readonly permissions = inject(PermissionService);
+  private readonly authService = inject(AuthService);
 
   readonly demande = input<AscDemande | null>(null);
 
@@ -202,6 +203,7 @@ export class DetailComponent {
   readonly dialogOpen = signal(false);
   readonly deleteDialogOpen = signal(false);
   readonly isLoading = signal(false);
+  readonly isExporting = signal(false);
 
   // Pending action: { decision: number, title: string, requireObs: boolean }
   readonly pendingAction = signal<{ decision: number; title: string; requireObs: boolean } | null>(
@@ -398,115 +400,285 @@ export class DetailComponent {
   // ── Export PDF ─────────────────────────────────────────────────────────
   async exportPdf() {
     const d = this.demande();
-    if (!d) return;
+    if (!d || this.isExporting()) return;
+    this.isExporting.set(true);
 
-    const fmt = (v?: number | null) =>
-      v != null ? v.toLocaleString('fr-FR') + ' FCFA' : '—';
-    const fmtDate = (s?: string) =>
+    const currentUser = this.authService.currentUser();
+    const client = d.client;
+    const cheque = d.cheque;
+
+    const fmtMontant = (v?: number | null) =>
+      v != null ? v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : '—';
+    const fmtDate = (s?: string | null) =>
       s ? new Date(s).toLocaleDateString('fr-FR') : '—';
+    const fmtDateTime = (s?: string | null) => {
+      if (!s) return '—';
+      const dt = new Date(s);
+      return dt.toLocaleDateString('fr-FR') + ', ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    };
 
-    const statutInfo = this.statut();
-    const decisionLabel = (v?: number) =>
-      v === 1 ? 'Accordé' : v === 0 ? 'Rejeté' : v === 2 ? 'Ajourné' : v === 3 ? 'Approuvé' : '—';
+    const montantSollicite = fmtMontant(d.montantSollicite) + ' FCFA';
+    const montantAccorde = fmtMontant(d.montantAccorde ?? d.montantSollicite) + ' FCFA';
+    const montantCheque = fmtMontant(cheque?.montantCheque) + ' FCFA';
 
-    const infoRows = (pairs: [string, string][]): TableCell[][] =>
-      pairs.map(([label, value], i) => [
-        { text: label, style: i % 2 === 0 ? 'tableCell' : 'tableCellAlt', bold: true },
-        { text: value, style: i % 2 === 0 ? 'tableCell' : 'tableCellAlt' },
-      ]);
-
-    const infoTable = (pairs: [string, string][]): Content => ({
-      table: {
-        widths: [150, '*'],
-        body: infoRows(pairs),
-      },
-      layout: { hLineWidth: () => 0.5, vLineWidth: () => 0, hLineColor: () => '#e5e7eb' },
-    });
-
-    const content: Content[] = [
-      { text: 'Informations client', style: 'sectionTitle' },
-      infoTable([
-        ['Nom / Prénom', d.client?.nomPrenom ?? '—'],
-        ['Code client', d.client?.codeClient ?? '—'],
-        ['Type', d.client?.typeAgent === 'SC' ? 'Personne morale' : 'Personne physique'],
-        ['Agence', d.client?.agence?.libelle ?? '—'],
-        ['Ouverture du compte', fmtDate(d.client?.dateOuvertureCompte)],
-        ['Avances reçues', String(d.client?.nbreAvChequeBenef ?? 0)],
-        ['Incidents de paiement', String(d.client?.nbreIncidentPaie ?? 0)],
-        ['Montant max accordé', fmt(d.client?.montantChequeAccordeAsc)],
-      ]),
-      { text: '\n' },
-      { text: 'Informations du chèque', style: 'sectionTitle' },
-      infoTable([
-        ['N° de chèque', d.cheque?.numcheque ?? '—'],
-        ['N° de remise', d.cheque?.numTransaction ?? '—'],
-        ['Tireur', d.cheque?.tireur ?? '—'],
-        ['Banque du tireur', d.cheque?.banque ?? '—'],
-        ['Date de remise', fmtDate(d.cheque?.dateCheque)],
-        ['Date de la demande', fmtDate(d.dateDemande ?? d.datedemande)],
-        ['N° demande Perfect', d.numDemandeAsc ?? '—'],
-        ['Nature prestation', d.natureObjetReglement ?? '—'],
-        ['Agence émettrice', d.agence?.libelle ?? '—'],
-        ['Créé par', d.user ? `${d.user.nom} ${d.user.prenom}` : '—'],
-      ]),
-      { text: '\n' },
-      { text: 'Montants', style: 'sectionTitle' },
-      infoTable([
-        ['Montant du chèque', fmt(d.cheque?.montantCheque)],
-        ['Montant sollicité', fmt(d.montantSollicite)],
-        ['Montant accordé', fmt(d.montantAccorde)],
-        ['Montant max encaissé', fmt(d.montantMaxEncaisse)],
-      ]),
-    ];
-
-    if (this.hasChecklist()) {
-      const checklistBody: TableCell[][] = this.checklist().map((item, i) => [
+    const docDefinition: any = {
+      pageSize: 'A4',
+      content: [
+        // ── 1. En-tête logo + titre ──────────────────────────────────────
         {
-          text: item.checked ? '✓' : '✗',
-          style: i % 2 === 0 ? 'tableCell' : 'tableCellAlt',
-          color: item.checked ? '#16a34a' : '#9ca3af',
+          columns: [
+            { image: LogoBase64.logoVertical, width: 65, height: 60 },
+            [
+              {
+                style: 'entete',
+                table: {
+                  body: [[{ text: "FICHE DE DEMANDE D'AVANCE SUR CHEQUE", style: 'enteteText' }]],
+                },
+              },
+            ],
+          ],
+          margin: [0, 0, 0, 20],
+        },
+        // ── 2. Téléphone + Imprimé le/par ───────────────────────────────
+        {
+          columns: [
+            {
+              text: [
+                { text: 'Tel : ', style: 'styleCle' },
+                { text: '+225 21 22 21 50 / +225 05 94 27 67 05', style: 'styleValeur' },
+              ],
+            },
+            {
+              margin: [45, 0, 0, 0],
+              text: [
+                { text: 'Imprimé le : ', style: 'styleCle' },
+                { text: new Date().toLocaleString('fr-FR'), style: 'styleValeur' },
+                { text: '\n\nImprimé par : ', style: 'styleCle' },
+                { text: currentUser ? `${currentUser.nom} ${currentUser.prenom}` : '—', style: 'styleValeur' },
+              ],
+            },
+          ],
+          margin: [0, 0, 0, 25],
+        },
+        // ── 3. N° demande / Date / Débourser le ─────────────────────────
+        {
+          alignment: 'center',
+          margin: [0, 0, 0, 10],
+          columns: [
+            {
+              text: [
+                { text: 'Numéro de la demande:\n', style: 'styleCle' },
+                { text: d.numDemandeAsc ?? '—', style: 'styleValeur' },
+              ],
+            },
+            {
+              text: [
+                { text: 'Date de la demande:\n', style: 'styleCle' },
+                { text: fmtDate(d.dateDemande ?? d.datedemande), style: 'styleValeur' },
+              ],
+            },
+            d.dateDecaissement
+              ? {
+                  text: [
+                    { text: 'Débourser le:\n', style: 'styleCle' },
+                    { text: fmtDate(d.dateDecaissement), style: 'styleValeur' },
+                  ],
+                }
+              : '',
+          ],
+        },
+        // ── 4. Montants sollicité / accordé ─────────────────────────────
+        {
+          margin: [30, 0, 0, 10],
+          columns: [
+            {
+              text: [
+                { text: 'Montant sollicité : ', style: 'styleCle' },
+                { text: montantSollicite, bold: true, fontSize: 12 },
+              ],
+            },
+            {
+              text: [
+                { text: 'Montant accordé : ', style: 'styleCle' },
+                { text: montantAccorde, bold: true, fontSize: 12 },
+              ],
+            },
+          ],
+        },
+        // ── 5. Tableau client | chèque ───────────────────────────────────
+        {
+          table: {
+            widths: [200, 300],
+            body: [
+              [
+                {
+                  border: [false, true, false, true],
+                  /* fillColor: '#eeeeee', */
+                  margin: [0, 5, 0, 20],
+                  stack: [
+                    {
+                      text: [
+                        { text: 'Raison sociale ou Désignation\n ', style: 'styleCle' },
+                        { text: (client?.nomPrenom ?? '—') + '\n\n', style: 'styleValeur' },
+                        ...(client?.typeAgent === 'SC'
+                          ? [
+                              { text: 'Gérant\n ', style: 'styleCle' },
+                              { text: (client.gerant?.nomDirigeant ?? '—') + '\n\n', style: 'styleValeur' },
+                            ]
+                          : []),
+                        { text: 'Agence\n ', style: 'styleCle' },
+                        { text: 'Agence ' + (client?.agence?.libelle ?? '—') + '\n\n', style: 'styleValeur' },
+                      ],
+                    },
+                    {
+                      columns: [
+                        {
+                          text: [
+                            { text: 'Code client\n ', style: 'styleCle' },
+                            { text: (client?.codeClient ?? '—') + '\n\n', style: 'styleValeur' },
+                          ],
+                        },
+                        {
+                          alignment: 'right',
+                          text: [
+                            { text: 'Type compte\n ', style: 'styleCle' },
+                            {
+                              text: (client?.typeAgent === 'SC' ? 'Personne morale' : 'Personne physique') + '\n\n',
+                              style: 'styleValeur',
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    {
+                      text: [
+                        { text: 'Nombre de chèques remisés\n ', style: 'styleCle' },
+                        { text: String(client?.nbreChequeRemise ?? 0) + '\n\n', style: 'styleValeur' },
+                        { text: 'Incidents de paiement\n ', style: 'styleCle' },
+                        { text: String(client?.nbreIncidentPaie ?? 0), style: 'styleValeur' },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  border: [false, true, false, true],
+                  margin: [0, 5, 0, 20],
+                  stack: [
+                    {
+                      text: [
+                        { text: 'Tireur\n ', style: 'styleCle' },
+                        { text: (cheque?.tireur ?? '—') + '\n\n', style: 'styleValeur' },
+                        { text: 'Banque du Tireur\n', style: 'styleCle' },
+                        { text: (cheque?.banque ?? '—') + '\n\n', style: 'styleValeur' },
+                      ],
+                    },
+                    {
+                      columns: [
+                        {
+                          text: [
+                            { text: 'Nature de la Prestation\n ', style: 'styleCle' },
+                            {
+                              text: (cheque?.naturePrestation?.libelle ?? d.natureObjetReglement ?? '—') + '\n\n',
+                              style: 'styleValeur',
+                            },
+                          ],
+                        },
+                        {
+                          alignment: 'right',
+                          text: [
+                            { text: 'Date du chèque\n ', style: 'styleCle' },
+                            { text: fmtDate(cheque?.dateCheque) + '\n\n', style: 'styleValeur' },
+                          ],
+                        },
+                      ],
+                    },
+                    {
+                      columns: [
+                        {
+                          text: [
+                            { text: 'N° Chèque\n ', style: 'styleCle' },
+                            { text: (cheque?.numcheque ?? '—') + '\n\n', style: 'styleValeur' },
+                          ],
+                        },
+                        {
+                          alignment: 'right',
+                          text: [
+                            { text: 'N° Chèque PERFECT\n ', style: 'styleCle' },
+                            { text: (cheque?.numTransaction ?? '—') + '\n\n', style: 'styleValeur' },
+                          ],
+                        },
+                      ],
+                    },
+                    {
+                      text: [
+                        { text: 'Montant du chèque : ', style: 'styleCle' },
+                        { text: '  ' + montantCheque, bold: true, fontSize: 12 },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            ],
+          },
+        },
+        // ── 6. Titre observations ────────────────────────────────────────
+        {
+          text: 'LISTE DES OBSERVATIONS DES UTILISATEURS',
+          fontSize: 16,
+          marginTop: 25,
+          marginBottom: 20,
+          alignment: 'center',
+          decoration: 'underline',
           bold: true,
         },
-        { text: item.label, style: i % 2 === 0 ? 'tableCell' : 'tableCellAlt' },
-      ]);
-      content.push(
-        { text: '\n' },
-        { text: 'Vérification', style: 'sectionTitle' },
+        // ── 7. Tableau des observations ──────────────────────────────────
         {
-          table: { widths: [30, '*'], body: checklistBody },
-          layout: { hLineWidth: () => 0.5, vLineWidth: () => 0, hLineColor: () => '#e5e7eb' },
-        } as Content,
-      );
-    }
-
-    if (d.decision) {
-      content.push(
-        { text: '\n' },
-        { text: 'Décision', style: 'sectionTitle' },
-        infoTable([
-          ['Résultat', decisionLabel(d.decision.decision)],
-          ['Date', fmtDate(d.decision.dateDecision)],
-          ['Par', d.decision.user ? `${d.decision.user.nom} ${d.decision.user.prenom}` : '—'],
-          ['Observation', d.decision.observation ?? '—'],
-        ]),
-      );
-    }
-
-    const ref = d.numDemandeAsc ?? String(d.id);
-    await this.pdfService.download(
-      {
-        pageMargins: [40, 70, 40, 50],
-        header: this.pdfService.header(
-          'Demande d\'avance sur chèque',
-          `Réf. ${ref} — Statut : ${statutInfo?.label ?? ''}`,
-          LogoBase64.logoVertical,
-        ),
-        footer: (currentPage, pageCount) => this.pdfService.footer(currentPage, pageCount),
-        content,
-        styles: this.pdfService.baseStyles,
+          table: {
+            headerRows: 1,
+            widths: ['auto', 'auto', 'auto', 'auto', '*', 'auto'],
+            body: [
+              [
+                { text: 'Utilisateur', style: 'enteteTableau' },
+                { text: 'Agence', style: 'enteteTableau' },
+                { text: 'Poste', style: 'enteteTableau' },
+                { text: 'Action menée', style: 'enteteTableau' },
+                { text: 'Commentaire', style: 'enteteTableau' },
+                { text: 'Date & Heure', style: 'enteteTableau' },
+              ],
+              ...((d.observation ?? []).length > 0
+                ? (d.observation ?? []).map((obs) => [
+                    { text: obs.user ? `${obs.user.nom} ${obs.user.prenom}` : '—', style: 'valeurTableau' },
+                    { text: obs.user?.libelleAgence ?? '—', style: 'valeurTableau' },
+                    { text: obs.user?.profil ?? '—', style: 'valeurTableau' },
+                    { text: obs.decision ?? '—', style: 'valeurTableau' },
+                    { text: obs.observation ?? '—', style: 'valeurTableau' },
+                    { text: fmtDateTime(obs.date), style: 'valeurTableau' },
+                  ])
+                : [[{ text: 'Aucune observation', colSpan: 6, alignment: 'center', style: 'valeurTableau' }, '', '', '', '', '']]
+              ),
+            ],
+          },
+        },
+      ],
+      styles: {
+        entete: { alignment: 'center', margin: [0, 0, 0, 0] },
+        enteteText: { margin: [15, 15, 15, 15], fontSize: 16, bold: true },
+        enteteTableau: { bold: true, alignment: 'center', fontSize: 8 },
+        valeurTableau: { fontSize: 9 },
+        styleCle: { fontSize: 9 },
+        styleValeur: { bold: true, fontSize: 10 },
       },
-      `asc-demande-${ref}`,
-    );
+      defaultStyle: { font: 'Montserrat' },
+    };
+
+    try {
+      await this.pdfService.open(docDefinition);
+    } catch (err) {
+      console.error('[exportPdf]', err);
+      this.toast.error('Erreur lors de la génération du PDF.');
+    } finally {
+      this.isExporting.set(false);
+    }
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────
