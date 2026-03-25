@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Building2, Search, RefreshCw, ChevronRight } from 'lucide-angular';
 import {
@@ -20,6 +20,7 @@ type Filtre = 'tous' | 'valide' | 'rejette';
   templateUrl: './employeur-list-credit.component.html',
   imports: [
     FormsModule,
+    DatePipe,
     DecimalPipe,
     LucideAngularModule,
     CardComponent,
@@ -68,8 +69,7 @@ export class EmployeurListCreditComponent {
     const q = this.search().toLowerCase();
     if (!q) return this.employeursData();
     return this.employeursData().filter((e) =>
-      (e.nomEntreprise ?? '').toLowerCase().includes(q) ||
-      (e.codeAdh ?? '').toLowerCase().includes(q),
+      (e.nomEntreprise ?? '').toLowerCase().includes(q),
     );
   });
 
@@ -108,15 +108,35 @@ export class EmployeurListCreditComponent {
     this.router.navigate(['/app/credit/employeur', e.id]);
   }
 
+  formeJuridiqueLabel(f?: number): string {
+    const map: Record<number, string> = {
+      1: 'ENTREPRISE INDIVIDUELLE',
+      2: 'SARL',
+      3: 'SA',
+      4: 'SASU',
+      5: 'ASSOCIATION',
+      6: 'COOPERATIVE',
+      7: 'SAS',
+      8: 'INFORMEL',
+      9: 'SARLU',
+      10: 'SCOOPS',
+      11: 'COOP-CA',
+    };
+    return f != null ? (map[f] ?? '—') : '—';
+  }
+
   statutLabel(s?: number): string {
-    if (s === 2) return 'Validé';
-    if (s === 3) return 'Rejeté';
+    if (s === 4) return 'Validé';
+    if (s === 0) return 'Rejetté';
+    if (s === 1) return 'Enregistrement';
+    if (s === 2) return 'En attente validation DGA EXPL.';
+    if (s === 3) return 'En attente création PERFECT';
     return 'En cours';
   }
 
   statutVariant(s?: number): 'default' | 'success' | 'destructive' {
-    if (s === 2) return 'success';
-    if (s === 3) return 'destructive';
+    if (s === 4) return 'success';
+    if (s === 0) return 'destructive';
     return 'default';
   }
 }

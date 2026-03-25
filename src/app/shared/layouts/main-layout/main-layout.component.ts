@@ -30,6 +30,7 @@ import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { AuthService } from '@/core/services/auth/auth.service';
 import { RouteLoaderComponent } from '../route-loader/route-loader.component';
+import { NotificationComponent } from '@/shared/components/notification/notification.component';
 
 @Component({
   selector: 'app-main-layout',
@@ -42,6 +43,7 @@ import { RouteLoaderComponent } from '../route-loader/route-loader.component';
     RouterLink,
     Breadcrumb,
     RouteLoaderComponent,
+    NotificationComponent,
   ],
   templateUrl: './main-layout.component.html',
   styleUrls: ['./main-layout.component.css'],

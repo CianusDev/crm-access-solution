@@ -15,7 +15,9 @@ import { roleGuard } from '@/core/guards/role.guard';
 import { UserRole } from '@/core/models/user.model';
 
 const {
-  Admin, DG, DGA,
+  Admin,
+  DG,
+  DGA,
   DirectriceExploitation: D_EXPL,
   ResponsableExploitation: RESPO_EXPL,
   ResponsableFrontOffice: RESPO_FO,
@@ -46,22 +48,74 @@ const {
 } = UserRole;
 
 const CREDIT_SIEGE = [
-  Admin, DG, DGA, CDCR, DR, D_EXPL,
-  RESPO_CLT_TPE, RESPO_PROD_AGRI, ADMIN_AUDIT, RESPO_CLT_PME,
-  RESPO_EXPL, CHARGE_COMIT, RESPO_JURIDIQUE, RESPO_ASSUR,
-  RESPO_FO, ASSC_PME, RESPO_RS,
+  Admin,
+  DG,
+  DGA,
+  CDCR,
+  DR,
+  D_EXPL,
+  RESPO_CLT_TPE,
+  RESPO_PROD_AGRI,
+  ADMIN_AUDIT,
+  RESPO_CLT_PME,
+  RESPO_EXPL,
+  CHARGE_COMIT,
+  RESPO_JURIDIQUE,
+  RESPO_ASSUR,
+  RESPO_FO,
+  ASSC_PME,
+  RESPO_RS,
 ] as const;
 
-const CREDIT_AGENCE = [CA, CAA, CC, GP, CUP, CE, RC, AR, SUP_RISQ_ZONE, RESPO_RGL, SUP_PME, CDC] as const;
+const CREDIT_AGENCE = [
+  CA,
+  CAA,
+  CC,
+  GP,
+  CUP,
+  CE,
+  RC,
+  AR,
+  SUP_RISQ_ZONE,
+  RESPO_RGL,
+  SUP_PME,
+  CDC,
+] as const;
 
 const CREDIT_CREATE = [Admin, ACJ, CE, GP, CC, RC] as const;
 
-const CREDIT_ALL = [...new Set([
-  Admin, DG, DGA, DR, CDCR, D_EXPL, RESPO_EXPL, RESPO_FO,
-  RESPO_CLT_TPE, RESPO_CLT_PME, RESPO_PROD_AGRI,
-  SUP_PME, GP, CUP, CE, ASSC_PME, CC, CA, CAA, RC, ACJ, AR,
-  SUP_RISQ_ZONE, CHARGE_COMIT, RESPO_RGL, RESPO_JURIDIQUE, RESPO_ASSUR, CDC,
-])] as const;
+const CREDIT_ALL = [
+  ...new Set([
+    Admin,
+    DG,
+    DGA,
+    DR,
+    CDCR,
+    D_EXPL,
+    RESPO_EXPL,
+    RESPO_FO,
+    RESPO_CLT_TPE,
+    RESPO_CLT_PME,
+    RESPO_PROD_AGRI,
+    SUP_PME,
+    GP,
+    CUP,
+    CE,
+    ASSC_PME,
+    CC,
+    CA,
+    CAA,
+    RC,
+    ACJ,
+    AR,
+    SUP_RISQ_ZONE,
+    CHARGE_COMIT,
+    RESPO_RGL,
+    RESPO_JURIDIQUE,
+    RESPO_ASSUR,
+    CDC,
+  ]),
+] as const;
 
 export const creditRoutes: Route = {
   path: 'credit',
@@ -71,14 +125,18 @@ export const creditRoutes: Route = {
       canActivate: [roleGuard([...CREDIT_SIEGE])],
       resolve: { data: dashboardCreditResolver },
       loadComponent: () =>
-        import('./pages/dashboard/dashboard-credit.component').then((m) => m.DashboardCreditComponent),
+        import('./pages/dashboard/dashboard-credit.component').then(
+          (m) => m.DashboardCreditComponent,
+        ),
     },
     {
       path: 'dashboard-agence',
       canActivate: [roleGuard([...CREDIT_AGENCE])],
       resolve: { data: dashboardAgenceCreditResolver },
       loadComponent: () =>
-        import('./pages/dashboard-agence/dashboard-agence-credit.component').then((m) => m.DashboardAgenceCreditComponent),
+        import('./pages/dashboard-agence/dashboard-agence-credit.component').then(
+          (m) => m.DashboardAgenceCreditComponent,
+        ),
     },
     {
       path: 'create',
@@ -113,41 +171,53 @@ export const creditRoutes: Route = {
       canActivate: [roleGuard([...CREDIT_ALL])],
       resolve: { data: detailAgenceCreditResolver },
       loadComponent: () =>
-        import('./pages/detail-agence/detail-agence-credit.component').then((m) => m.DetailAgenceCreditComponent),
+        import('./pages/detail-agence/detail-agence-credit.component').then(
+          (m) => m.DetailAgenceCreditComponent,
+        ),
     },
     {
       path: 'organigramme',
       canActivate: [roleGuard([...CREDIT_ALL])],
       resolve: { demandes: organigrammeCreditResolver },
       loadComponent: () =>
-        import('./pages/organigramme/organigramme-credit.component').then((m) => m.OrganigrammeCreditComponent),
+        import('./pages/organigramme/organigramme-credit.component').then(
+          (m) => m.OrganigrammeCreditComponent,
+        ),
     },
     {
       path: 'employeur/list',
       canActivate: [roleGuard([...CREDIT_ALL])],
       resolve: { employeurs: employeurListCreditResolver },
       loadComponent: () =>
-        import('./pages/employeur-list/employeur-list-credit.component').then((m) => m.EmployeurListCreditComponent),
+        import('./pages/employeur-list/employeur-list-credit.component').then(
+          (m) => m.EmployeurListCreditComponent,
+        ),
     },
     {
       path: 'employeur/:id',
       canActivate: [roleGuard([...CREDIT_ALL])],
       resolve: { data: employeurDetailCreditResolver },
       loadComponent: () =>
-        import('./pages/employeur-detail/employeur-detail-credit.component').then((m) => m.EmployeurDetailCreditComponent),
+        import('./pages/employeur-detail/employeur-detail-credit.component').then(
+          (m) => m.EmployeurDetailCreditComponent,
+        ),
     },
     {
       path: 'tirage/list',
       canActivate: [roleGuard([...CREDIT_ALL])],
       loadComponent: () =>
-        import('./pages/tirage-list/tirage-list-credit.component').then((m) => m.TirageListCreditComponent),
+        import('./pages/tirage-list/tirage-list-credit.component').then(
+          (m) => m.TirageListCreditComponent,
+        ),
     },
     {
       path: 'tirage/:ref',
       canActivate: [roleGuard([...CREDIT_ALL])],
       resolve: { data: tirageDetailCreditResolver },
       loadComponent: () =>
-        import('./pages/tirage-detail/tirage-detail-credit.component').then((m) => m.TirageDetailCreditComponent),
+        import('./pages/tirage-detail/tirage-detail-credit.component').then(
+          (m) => m.TirageDetailCreditComponent,
+        ),
     },
     {
       path: ':ref',
