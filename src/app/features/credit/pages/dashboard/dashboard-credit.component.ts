@@ -11,7 +11,6 @@ import {
   Search,
   FileText,
   LayoutDashboard,
-  Globe,
   MapPin,
   Building2,
   ChevronRight,
@@ -49,25 +48,11 @@ import {
   CreditStatAgence,
   CreditStatRegion,
   CreditStatZone,
-  CreditTbProduit,
-  CreditTbStatut,
   CreditTypeItem,
 } from '../../interfaces/credit.interface';
 
 import { CreditDonutChartComponent } from '../../components/credit-donut-chart/credit-donut-chart.component';
 import { DashboardCreditResolvedData } from './dashboard-credit.resolver';
-
-interface TbTotaux {
-  decaisses: CreditTbStatut;
-  enDecaissement: CreditTbStatut;
-  enComite: CreditTbStatut;
-  enContreVal: CreditTbStatut;
-  enInstruction: CreditTbStatut;
-  nonInstruit: CreditTbStatut;
-  total: CreditTbStatut;
-  probable: CreditTbStatut;
-  valide: CreditTbStatut;
-}
 
 @Component({
   selector: 'app-dashboard-credit',
@@ -105,7 +90,6 @@ export class DashboardCreditComponent {
   readonly SearchIcon = Search;
   readonly FileTextIcon = FileText;
   readonly LayoutDashboardIcon = LayoutDashboard;
-  readonly GlobeIcon = Globe;
   readonly MapPinIcon = MapPin;
   readonly Building2Icon = Building2;
   readonly ChevronRightIcon = ChevronRight;
@@ -127,14 +111,6 @@ export class DashboardCreditComponent {
   readonly selectedRegionId = signal<number | null>(null);
   readonly listeZones = signal<CreditStatZone[]>([]);
 
-  // ── Total Réseau — tbByProd ────────────────────────────────────────────
-  readonly tbIsLoading = signal(false);
-  readonly tbIsSearching = signal(false);
-  readonly tbProduits = signal<CreditTbProduit[]>([]);
-  readonly tbFilterAgence = signal<string | null>(null);
-  readonly tbFilterDateDebut = signal('');
-  readonly tbFilterDateFin = signal('');
-
   // ── Computed — Général ─────────────────────────────────────────────────
   readonly typesAvecPourcentage = computed<CreditTypeItem[]>(() => {
     const d = this.dashTypeCredit();
@@ -155,26 +131,6 @@ export class DashboardCreditComponent {
     () => this.statRegions().find((r) => r.id === this.selectedRegionId()) ?? null,
   );
 
-  // ── Computed — Total Réseau ────────────────────────────────────────────
-  readonly tbTotaux = computed<TbTotaux>(() => {
-    const list = this.tbProduits();
-    const sum = (key: keyof Omit<CreditTbProduit, 'libelle'>): CreditTbStatut => ({
-      nombre: list.reduce((s, p) => s + (p[key] as CreditTbStatut).nombre, 0),
-      volume: list.reduce((s, p) => s + (p[key] as CreditTbStatut).volume, 0),
-    });
-    return {
-      decaisses: sum('decaisses'),
-      enDecaissement: sum('enDecaissement'),
-      enComite: sum('enComite'),
-      enContreVal: sum('enContreVal'),
-      enInstruction: sum('enInstruction'),
-      nonInstruit: sum('nonInstruit'),
-      total: sum('total'),
-      probable: sum('probable'),
-      valide: sum('valide'),
-    };
-  });
-
   readonly agencesOptions = computed<SelectOption[]>(() =>
     this.statAgences().map((a) => ({ value: a.code, label: a.libelle })),
   );
@@ -191,7 +147,6 @@ export class DashboardCreditComponent {
       this.statAgences.set(data.agences);
       this.agencePage.set(1);
       this.statRegions.set(data.regions);
-      this.tbProduits.set(data.tbProduits);
       if (data.regions.length > 0) this.selectRegion(data.regions[0].id);
     }, { allowSignalWrites: true });
   }
@@ -232,24 +187,4 @@ export class DashboardCreditComponent {
     });
   }
 
-  // ── Total Réseau ────────────────────────────────────────────────────────
-  rechercherTb() {
-    this.tbIsSearching.set(true);
-    this.creditService
-      .getTbByProdFiltre(
-        this.tbFilterAgence() ?? '',
-        this.tbFilterDateDebut(),
-        this.tbFilterDateFin(),
-      )
-      .subscribe({
-        next: (data) => {
-          this.tbProduits.set(data);
-          this.tbIsSearching.set(false);
-        },
-        error: () => {
-          this.toast.error('Erreur lors de la recherche.');
-          this.tbIsSearching.set(false);
-        },
-      });
-  }
 }

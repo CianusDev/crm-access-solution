@@ -7,7 +7,6 @@ import {
   CreditDashboardStatut,
   CreditStatAgence,
   CreditStatRegion,
-  CreditTbProduit,
 } from '../../interfaces/credit.interface';
 
 export interface DashboardCreditResolvedData {
@@ -15,7 +14,6 @@ export interface DashboardCreditResolvedData {
   statut: CreditDashboardStatut;
   agences: CreditStatAgence[];
   regions: CreditStatRegion[];
-  tbProduits: CreditTbProduit[];
 }
 
 export const dashboardCreditResolver: ResolveFn<DashboardCreditResolvedData> = () => {
@@ -25,6 +23,5 @@ export const dashboardCreditResolver: ResolveFn<DashboardCreditResolvedData> = (
     statut: svc.getDashboardStatut(),
     agences: svc.getStatsByAgence(),
     regions: svc.getStatsByRegion(),
-    tbProduits: svc.getTbByProd(),
   });
 };

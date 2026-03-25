@@ -126,7 +126,7 @@ export class DashboardAgenceAscComponent implements OnInit {
   private buildMonthlyValues(items: AscDashboardMensuelItem[]): number[] {
     const values = Array(12).fill(0);
     items.forEach((item) => {
-      if (item.mois >= 1 && item.mois <= 12) values[item.mois - 1] = item.montant;
+      if (item.month >= 1 && item.month <= 12) values[item.month - 1] = item.total;
     });
     return values;
   }

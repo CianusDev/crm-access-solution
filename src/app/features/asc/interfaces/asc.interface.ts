@@ -104,8 +104,8 @@ export interface AscDashboardAgence {
 }
 
 export interface AscDashboardMensuelItem {
-  mois: number; // 1–12
-  montant: number;
+  month: number; // 1–12
+  total: number;
   nbre: number;
 }
 

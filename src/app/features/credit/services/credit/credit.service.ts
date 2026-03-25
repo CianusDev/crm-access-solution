@@ -27,7 +27,6 @@ import {
   CreditTirageSearch,
   GarantiesData,
   CreditStatZone,
-  CreditTbProduit,
   CreditTypeActivite,
   CreditTypeCredit,
 } from '../../interfaces/credit.interface';
@@ -120,29 +119,6 @@ export class CreditService {
       );
   }
 
-  // ── Tab Total Réseau — tbByProd ───────────────────────────────────────────
-  // Réponse : { produits: [...] }
-  getTbByProd() {
-    return this.api
-      .get<{ produits: CreditTbProduit[] }>(this.endpoint + '/tbByProd')
-      .pipe(
-        map((res) => res.produits),
-        catchError((err) => throwError(() => err)),
-      );
-  }
-
-  getTbByProdFiltre(agence: string, dateDebut: string, dateFin: string) {
-    let params = new HttpParams();
-    if (agence) params = params.set('agence', agence);
-    if (dateDebut) params = params.set('dateDebut', dateDebut);
-    if (dateFin) params = params.set('dateFin', dateFin);
-    return this.api
-      .get<{ produits: CreditTbProduit[] }>(this.endpoint + '/tbByProd', params)
-      .pipe(
-        map((res) => res.produits),
-        catchError((err) => throwError(() => err)),
-      );
-  }
 
   // ── Détail agence depuis dashboard siège (statCrdAgence) ─────────────────
   getDetailAgence(code: string) {
