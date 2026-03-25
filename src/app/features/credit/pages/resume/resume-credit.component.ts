@@ -35,15 +35,28 @@ import {
   CreditComiteDecision,
 } from '../../interfaces/credit.interface';
 
-type TabId = 'synthese' | 'swot' | 'garanties' | 'proposition' | 'contre-eval' | 'comites' | 'decision' | 'historique';
+type TabId =
+  | 'synthese'
+  | 'swot'
+  | 'garanties'
+  | 'proposition'
+  | 'contre-eval'
+  | 'comites'
+  | 'decision'
+  | 'historique';
 
 /** Profils autorisés à agir selon le statut */
 const ACTIONS_PAR_STATUT: Record<number, UserRole[]> = {
-  5:  [UserRole.AnalysteRisque, UserRole.Admin],
-  6:  [UserRole.SuperviseurRisqueZone, UserRole.Admin],
-  7:  [UserRole.ChargeDuComite, UserRole.Admin],
-  8:  [UserRole.ResponsableRegional, UserRole.Admin],
-  9:  [UserRole.DirecteurRisque, UserRole.DirecteurGeneralAdjoint, UserRole.Chargedepartementcredit, UserRole.Admin],
+  5: [UserRole.AnalysteRisque, UserRole.Admin],
+  6: [UserRole.SuperviseurRisqueZone, UserRole.Admin],
+  7: [UserRole.ChargeDuComite, UserRole.Admin],
+  8: [UserRole.ResponsableRegional, UserRole.Admin],
+  9: [
+    UserRole.DirecteurRisque,
+    UserRole.DirecteurGeneralAdjoint,
+    UserRole.Chargedepartementcredit,
+    UserRole.Admin,
+  ],
   10: [UserRole.DirecteurRisque, UserRole.DirecteurGeneralAdjoint, UserRole.Admin],
   11: [UserRole.DirecteurGeneralAdjoint, UserRole.DirectriceExploitation, UserRole.Admin],
   12: [UserRole.DG, UserRole.Admin],
@@ -89,12 +102,15 @@ export class ResumeCreditComponent implements OnInit {
   readonly data = input<CreditResume>();
 
   constructor() {
-    effect(() => {
-      const data = this.data();
-      if (!data) return;
-      this.resume.set(data);
-      this.isLoading.set(false);
-    }, { allowSignalWrites: true });
+    effect(
+      () => {
+        const data = this.data();
+        if (!data) return;
+        this.resume.set(data);
+        this.isLoading.set(false);
+      },
+      { allowSignalWrites: true },
+    );
   }
 
   // ── State ──────────────────────────────────────────────────────────────
@@ -119,14 +135,14 @@ export class ResumeCreditComponent implements OnInit {
   readonly tabs = computed<{ id: TabId; label: string; show: boolean }[]>(() => {
     const r = this.resume();
     return [
-      { id: 'synthese',    label: 'Synthèse',         show: true },
-      { id: 'swot',        label: 'SWOT',             show: !!(r?.aSwots?.length) },
-      { id: 'garanties',   label: 'Garanties',        show: !!r?.garantieProposes },
-      { id: 'proposition', label: 'Proposition AR',   show: !!r?.proposition },
-      { id: 'contre-eval', label: 'Contre-éval.',     show: !!r?.contreEvaluation },
-      { id: 'comites',     label: 'Comités',          show: !!(r?.precomites?.length || r?.comites?.length) },
-      { id: 'decision',    label: 'Décision finale',  show: !!r?.decision },
-      { id: 'historique',  label: 'Historique',       show: true },
+      { id: 'synthese', label: 'Synthèse', show: true },
+      { id: 'swot', label: 'SWOT', show: !!r?.aSwots?.length },
+      { id: 'garanties', label: 'Garanties', show: !!r?.garantieProposes },
+      { id: 'proposition', label: 'Proposition AR', show: !!r?.proposition },
+      { id: 'contre-eval', label: 'Contre-éval.', show: !!r?.contreEvaluation },
+      { id: 'comites', label: 'Comités', show: !!(r?.precomites?.length || r?.comites?.length) },
+      { id: 'decision', label: 'Décision finale', show: !!r?.decision },
+      { id: 'historique', label: 'Historique', show: true },
     ];
   });
 
@@ -137,9 +153,9 @@ export class ResumeCreditComponent implements OnInit {
   }
 
   // ── Actions ────────────────────────────────────────────────────────────
-  goBack() {
-    this.router.navigate(['/app/credit/list']);
-  }
+  // goBack() {
+  //   this.router.navigate(['/app/credit/list']);
+  // }
 
   refresh() {
     this.load();

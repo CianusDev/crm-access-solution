@@ -77,6 +77,7 @@ import {
   GarantieVehicule,
 } from '../../interfaces/credit.interface';
 import { FicheCreditResolvedData } from './fiche-credit.resolver';
+import { StripHtmlPipe } from '@/shared/pipes/strip-html.pipe';
 
 type TabId = 'details' | 'documents' | 'checklist' | 'garanties';
 
@@ -123,6 +124,7 @@ interface LeveeConditionItem {
     DialogTitleComponent,
     DialogDescriptionComponent,
     DialogFooterComponent,
+    StripHtmlPipe,
   ],
 })
 export class FicheCreditComponent implements OnInit {
@@ -160,14 +162,17 @@ export class FicheCreditComponent implements OnInit {
   readonly data = input<FicheCreditResolvedData>();
 
   constructor() {
-    effect(() => {
-      const data = this.data();
-      if (!data) return;
-      this.fiche.set(data.fiche);
-      this.documents.set(data.documents);
-      this.observations.set(data.observations);
-      this.populateDocChecklist();
-    }, { allowSignalWrites: true });
+    effect(
+      () => {
+        const data = this.data();
+        if (!data) return;
+        this.fiche.set(data.fiche);
+        this.documents.set(data.documents);
+        this.observations.set(data.observations);
+        this.populateDocChecklist();
+      },
+      { allowSignalWrites: true },
+    );
   }
   private readonly pdfService = inject(CreditPDFService);
   readonly datePipe = inject(DatePipe);
@@ -312,25 +317,29 @@ export class FicheCreditComponent implements OnInit {
   readonly garantieImmobilisations = computed(() => {
     const g = this.garanties();
     if (!g) return [] as GarantieImmobilisation[];
-    return (g.typeGaranties?.find((t) => t.id === GARANTIE_TYPE_IDS.IMMOBILISATION)?.garanties ?? []) as GarantieImmobilisation[];
+    return (g.typeGaranties?.find((t) => t.id === GARANTIE_TYPE_IDS.IMMOBILISATION)?.garanties ??
+      []) as GarantieImmobilisation[];
   });
 
   readonly garantieMateriels = computed(() => {
     const g = this.garanties();
     if (!g) return [] as GarantieMateriel[];
-    return (g.typeGaranties?.find((t) => t.id === GARANTIE_TYPE_IDS.MATERIEL_PRO)?.garanties ?? []) as GarantieMateriel[];
+    return (g.typeGaranties?.find((t) => t.id === GARANTIE_TYPE_IDS.MATERIEL_PRO)?.garanties ??
+      []) as GarantieMateriel[];
   });
 
   readonly garantieBiensMobiliers = computed(() => {
     const g = this.garanties();
     if (!g) return [] as GarantieMateriel[];
-    return (g.typeGaranties?.find((t) => t.id === GARANTIE_TYPE_IDS.BIEN_MOBILIER_FAMILLE)?.garanties ?? []) as GarantieMateriel[];
+    return (g.typeGaranties?.find((t) => t.id === GARANTIE_TYPE_IDS.BIEN_MOBILIER_FAMILLE)
+      ?.garanties ?? []) as GarantieMateriel[];
   });
 
   readonly garantieDats = computed(() => {
     const g = this.garanties();
     if (!g) return [] as GarantieDAT[];
-    return (g.typeGaranties?.find((t) => t.id === GARANTIE_TYPE_IDS.DAT)?.garanties ?? []) as GarantieDAT[];
+    return (g.typeGaranties?.find((t) => t.id === GARANTIE_TYPE_IDS.DAT)?.garanties ??
+      []) as GarantieDAT[];
   });
 
   readonly totalGarantiesFixe = computed(() => {
@@ -346,11 +355,27 @@ export class FicheCreditComponent implements OnInit {
     if (!g) return [];
     return [
       { id: 0, label: 'Totaux', count: null },
-      { id: GARANTIE_TYPE_IDS.VEHICULE, label: 'Véhicules', count: this.garantieVehicules().length },
-      { id: GARANTIE_TYPE_IDS.IMMOBILISATION, label: 'Immobilisations', count: this.garantieImmobilisations().length },
+      {
+        id: GARANTIE_TYPE_IDS.VEHICULE,
+        label: 'Véhicules',
+        count: this.garantieVehicules().length,
+      },
+      {
+        id: GARANTIE_TYPE_IDS.IMMOBILISATION,
+        label: 'Immobilisations',
+        count: this.garantieImmobilisations().length,
+      },
       { id: GARANTIE_TYPE_IDS.DAT, label: 'DAT', count: this.garantieDats().length },
-      { id: GARANTIE_TYPE_IDS.MATERIEL_PRO, label: 'Matériels professionnels', count: this.garantieMateriels().length },
-      { id: GARANTIE_TYPE_IDS.BIEN_MOBILIER_FAMILLE, label: 'Biens mobiliers famille', count: this.garantieBiensMobiliers().length },
+      {
+        id: GARANTIE_TYPE_IDS.MATERIEL_PRO,
+        label: 'Matériels professionnels',
+        count: this.garantieMateriels().length,
+      },
+      {
+        id: GARANTIE_TYPE_IDS.BIEN_MOBILIER_FAMILLE,
+        label: 'Biens mobiliers famille',
+        count: this.garantieBiensMobiliers().length,
+      },
       { id: -1, label: 'Cautions solidaires', count: g.crCaution?.length ?? 0 },
     ];
   });
@@ -474,7 +499,9 @@ export class FicheCreditComponent implements OnInit {
         this.garanties.set(data);
         this.isLoadingGaranties.set(false);
         // Default to vehicules if present, else totaux
-        if (data.typeGaranties?.find((t) => t.id === GARANTIE_TYPE_IDS.VEHICULE)?.garanties?.length) {
+        if (
+          data.typeGaranties?.find((t) => t.id === GARANTIE_TYPE_IDS.VEHICULE)?.garanties?.length
+        ) {
           this.activeGarantiesSection.set(GARANTIE_TYPE_IDS.VEHICULE);
         } else {
           this.activeGarantiesSection.set(0);
@@ -661,7 +688,9 @@ export class FicheCreditComponent implements OnInit {
       observation: this.actionObs(),
       password: this.actionPwd(),
       ...(this.currentAction.decision != null ? { decision: this.currentAction.decision } : {}),
-      ...(this.leveeConditions().length > 0 ? { checkliste: this.leveeConditions().map((i) => i.libelle) } : {}),
+      ...(this.leveeConditions().length > 0
+        ? { checkliste: this.leveeConditions().map((i) => i.libelle) }
+        : {}),
     };
     this.isSubmittingAction.set(true);
     const obs$ =

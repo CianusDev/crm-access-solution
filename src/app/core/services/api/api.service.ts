@@ -8,6 +8,7 @@ import { AuthService } from '../auth/auth.service';
 import { TOKEN, USER_ID } from '@/core/constants/local-storage-key';
 import { LocalStorageService } from '../local-storage/local-storage.service';
 import { Router } from '@angular/router';
+import { ToastService } from '../toast/toast.service';
 
 @Injectable({
   providedIn: 'root',
@@ -17,6 +18,7 @@ export class ApiService {
   private http: HttpClient = inject(HttpClient);
   private localStorageService = inject(LocalStorageService);
   private router = inject(Router);
+  private toast = inject(ToastService);
 
   private getHeaders(): HttpHeaders {
     return new HttpHeaders({
@@ -35,6 +37,7 @@ export class ApiService {
       }
 
       if (body['status'] && typeof body['status'] === 'number' && body['status'] >= 400) {
+        this.toast.error(String(body['message']) ?? DEFAULT_ERROR_MESSAGE);
         throw {
           status: body['status'],
           message: body['message'] ?? DEFAULT_ERROR_MESSAGE,

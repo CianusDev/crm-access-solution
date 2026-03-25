@@ -328,12 +328,12 @@
                 <p class="text-sm font-mono font-medium text-foreground">{{ d.numDemandeAsc }}</p>
               </div>
             }
-            @if (d.natureObjetReglement) {
+            <!-- @if (d.natureObjetReglement) { -->
               <div>
                 <p class="text-xs text-muted-foreground">Nature de la prestation</p>
-                <p class="text-sm text-foreground">{{ d.natureObjetReglement }}</p>
+                <p class="text-sm text-foreground">{{ d.natureObjetReglement ?? "-"}}</p>
               </div>
-            }
+            <!-- } -->
             @if (d.user) {
               <div>
                 <p class="text-xs text-muted-foreground">Créé par</p>
@@ -403,8 +403,8 @@
           @for (
             doc of [
               { label: 'Image du chèque', lien: d.cheque.imageCheque ?? d.cheque.image },
-              { label: 'Preuve de transaction', lien: d.preuveTransaction },
-              { label: "Preuve de l'entreprise", lien: d.preuveEntreprise },
+              { label: "Preuve de l'existance d'une transaction", lien: d.preuveTransaction },
+              { label: "Preuve de l'existance de l'entreprise", lien: d.preuveEntreprise },
             ];
             track doc.label
           ) {
@@ -512,7 +512,7 @@
               <lucide-icon
                 [img]="SearchIcon"
                 [size]="14"
-                class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+                class="absolute left-1.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
               />
               <input
                 type="text"
@@ -643,7 +643,6 @@
     class="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors"
   >
     <lucide-icon [img]="MessageSquareIcon" [size]="16" />
-    Observations
     @if ((demande()!.observation?.length ?? 0) > 0) {
       <span
         class="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-xs font-bold"

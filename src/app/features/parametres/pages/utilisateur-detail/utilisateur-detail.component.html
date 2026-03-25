@@ -27,7 +27,7 @@
       </span>
       <!-- Toggle statut -->
       <button type="button" (click)="changerStatut()" [disabled]="isSaving()"
-        class="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted disabled:opacity-50">
+        class="inline-flex items-center gap-1 bg-background rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted disabled:opacity-50">
         <lucide-icon [img]="user()!.statut === 1 ? ToggleRightIcon : ToggleLeftIcon" [size]="14" />
         {{ user()!.statut === 1 ? 'Désactiver' : 'Activer' }}
       </button>
@@ -171,14 +171,14 @@
         <app-card>
           <app-card-header>
             <app-card-title>Mot de passe</app-card-title>
+            <p class="text-sm text-muted-foreground">
+              En tant qu'administrateur, vous pouvez générer un nouveau mot de passe aléatoire pour cet utilisateur.
+            </p>
           </app-card-header>
           <app-card-content>
             @if (isAdmin()) {
-              <p class="text-sm text-muted-foreground mb-4">
-                En tant qu'administrateur, vous pouvez générer un nouveau mot de passe aléatoire pour cet utilisateur.
-              </p>
               <button type="button" (click)="changerMotPasse()" [disabled]="isSaving()"
-                class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                class="inline-flex mx-auto items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
                 <lucide-icon [img]="KeyRoundIcon" [size]="14" />
                 Générer un nouveau mot de passe
               </button>

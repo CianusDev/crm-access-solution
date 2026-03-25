@@ -352,7 +352,7 @@
                 <!-- Date inscription / création -->
                 @if (c.dateInscription) {
                   <div class="flex justify-between text-xs">
-                    <span class="text-muted-foreground">{{ isPersonneMorale() ? 'Date de création' : 'Ouverture compte' }}</span>
+                    <span class="text-muted-foreground">{{ 'Ouverture compte' }}</span>
                     <span class="font-medium text-foreground">{{ c.dateInscription | date:'dd/MM/yyyy' }}</span>
                   </div>
                 }
@@ -941,7 +941,7 @@
                     @if (decision()!.commentaire) {
                       <div class="col-span-2 sm:col-span-3">
                         <p class="text-xs text-muted-foreground">Commentaire décision</p>
-                        <p class="text-sm text-foreground leading-relaxed">{{ decision()!.commentaire }}</p>
+                        <p class="text-sm text-foreground leading-relaxed">{{ decision()!.commentaire | stripHtml }}</p>
                       </div>
                     }
                   </div>
@@ -2067,7 +2067,7 @@
                 </time>
               </div>
               @if (obs.observation) {
-                <p class="text-sm text-muted-foreground mb-3 leading-relaxed">{{ obs.observation }}</p>
+                <p class="text-sm text-muted-foreground mb-3 leading-relaxed">{{ obs.observation|stripHtml }}</p>
               }
               @if (obs.user) {
                 <div class="border-t border-border pt-2.5 mt-2.5 flex items-center gap-2">

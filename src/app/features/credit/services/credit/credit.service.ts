@@ -27,6 +27,7 @@ import {
   CreditTirageSearch,
   GarantiesData,
   CreditStatZone,
+  CreditTbProduit,
   CreditTypeActivite,
   CreditTypeCredit,
 } from '../../interfaces/credit.interface';
@@ -119,6 +120,41 @@ export class CreditService {
       );
   }
 
+  // ── Sous-zones par zone : statCrdZone?zone={id} ───────────────────────────
+  // Réponse : { data: { sousZone: [...] } }
+  getSousZonesByZone(idZone: number) {
+    const params = new HttpParams().set('zone', String(idZone));
+    return this.api
+      .get<{ data: { sousZone: CreditStatZone[] } }>(this.endpoint + '/statCrdZone', params)
+      .pipe(
+        map((res) => res.data.sousZone),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+
+  // ── Tab Total Réseau — tbByProd ───────────────────────────────────────────
+  getTbByProd() {
+    return this.api
+      .get<{ produits: CreditTbProduit[] }>(this.endpoint + '/tbByProd')
+      .pipe(
+        map((res) => res.produits),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  getTbByProdFiltre(agence: string, dateDebut: string, dateFin: string) {
+    let params = new HttpParams();
+    if (agence) params = params.set('agence', agence);
+    if (dateDebut) params = params.set('dateDebut', dateDebut);
+    if (dateFin) params = params.set('dateFin', dateFin);
+    return this.api
+      .get<{ produits: CreditTbProduit[] }>(this.endpoint + '/tbByProd', params)
+      .pipe(
+        map((res) => res.produits),
+        catchError((err) => throwError(() => err)),
+      );
+  }
 
   // ── Détail agence depuis dashboard siège (statCrdAgence) ─────────────────
   getDetailAgence(code: string) {

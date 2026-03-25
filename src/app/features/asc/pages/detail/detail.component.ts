@@ -400,8 +400,8 @@ export class DetailComponent {
     const d = this.demande();
     if (!d) return;
 
-    const fmt = (v?: number) =>
-      v !== undefined ? v.toLocaleString('fr-FR') + ' FCFA' : '—';
+    const fmt = (v?: number | null) =>
+      v != null ? v.toLocaleString('fr-FR') + ' FCFA' : '—';
     const fmtDate = (s?: string) =>
       s ? new Date(s).toLocaleDateString('fr-FR') : '—';
 

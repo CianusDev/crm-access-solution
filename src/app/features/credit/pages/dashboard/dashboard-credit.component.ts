@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, computed, effect, inject, input, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -11,6 +11,7 @@ import {
   Search,
   FileText,
   LayoutDashboard,
+  Globe,
   MapPin,
   Building2,
   ChevronRight,
@@ -48,11 +49,25 @@ import {
   CreditStatAgence,
   CreditStatRegion,
   CreditStatZone,
+  CreditTbProduit,
+  CreditTbStatut,
   CreditTypeItem,
 } from '../../interfaces/credit.interface';
 
 import { CreditDonutChartComponent } from '../../components/credit-donut-chart/credit-donut-chart.component';
 import { DashboardCreditResolvedData } from './dashboard-credit.resolver';
+
+interface TbTotaux {
+  decaisses: CreditTbStatut;
+  enDecaissement: CreditTbStatut;
+  enComite: CreditTbStatut;
+  enContreVal: CreditTbStatut;
+  enInstruction: CreditTbStatut;
+  nonInstruit: CreditTbStatut;
+  total: CreditTbStatut;
+  probable: CreditTbStatut;
+  valide: CreditTbStatut;
+}
 
 @Component({
   selector: 'app-dashboard-credit',
@@ -90,6 +105,7 @@ export class DashboardCreditComponent {
   readonly SearchIcon = Search;
   readonly FileTextIcon = FileText;
   readonly LayoutDashboardIcon = LayoutDashboard;
+  readonly GlobeIcon = Globe;
   readonly MapPinIcon = MapPin;
   readonly Building2Icon = Building2;
   readonly ChevronRightIcon = ChevronRight;
@@ -111,6 +127,14 @@ export class DashboardCreditComponent {
   readonly selectedRegionId = signal<number | null>(null);
   readonly listeZones = signal<CreditStatZone[]>([]);
 
+  // ── Total Réseau — tbByProd ────────────────────────────────────────────
+  readonly tbIsLoading = signal(false);
+  readonly tbIsSearching = signal(false);
+  readonly tbProduits = signal<CreditTbProduit[]>([]);
+  readonly tbFilterAgence = signal<string | null>(null);
+  readonly tbFilterDateDebut = signal('');
+  readonly tbFilterDateFin = signal('');
+
   // ── Computed — Général ─────────────────────────────────────────────────
   readonly typesAvecPourcentage = computed<CreditTypeItem[]>(() => {
     const d = this.dashTypeCredit();
@@ -131,6 +155,26 @@ export class DashboardCreditComponent {
     () => this.statRegions().find((r) => r.id === this.selectedRegionId()) ?? null,
   );
 
+  // ── Computed — Total Réseau ────────────────────────────────────────────
+  readonly tbTotaux = computed<TbTotaux>(() => {
+    const list = this.tbProduits();
+    const sum = (key: keyof Omit<CreditTbProduit, 'libelle'>): CreditTbStatut => ({
+      nombre: list.reduce((s, p) => s + (p[key] as CreditTbStatut).nombre, 0),
+      volume: list.reduce((s, p) => s + (p[key] as CreditTbStatut).volume, 0),
+    });
+    return {
+      decaisses: sum('decaisses'),
+      enDecaissement: sum('enDecaissement'),
+      enComite: sum('enComite'),
+      enContreVal: sum('enContreVal'),
+      enInstruction: sum('enInstruction'),
+      nonInstruit: sum('nonInstruit'),
+      total: sum('total'),
+      probable: sum('probable'),
+      valide: sum('valide'),
+    };
+  });
+
   readonly agencesOptions = computed<SelectOption[]>(() =>
     this.statAgences().map((a) => ({ value: a.code, label: a.libelle })),
   );
@@ -147,6 +191,7 @@ export class DashboardCreditComponent {
       this.statAgences.set(data.agences);
       this.agencePage.set(1);
       this.statRegions.set(data.regions);
+      this.tbProduits.set(data.tbProduits);
       if (data.regions.length > 0) this.selectRegion(data.regions[0].id);
     }, { allowSignalWrites: true });
   }
@@ -159,6 +204,12 @@ export class DashboardCreditComponent {
   readonly zonePage = signal(1);
   readonly zonePageSize = 10;
 
+  readonly selectedZoneId = signal<number | null>(null);
+  readonly listeSousZones = signal<CreditStatZone[]>([]);
+  readonly isLoadingSousZones = signal(false);
+
+  @ViewChild('sousZonesPanel') sousZonesPanel?: ElementRef<HTMLElement>;
+
   readonly pagedZones = computed(() => {
     const start = (this.zonePage() - 1) * this.zonePageSize;
     return this.listeZones().slice(start, start + this.zonePageSize);
@@ -169,6 +220,8 @@ export class DashboardCreditComponent {
     this.selectedRegionId.set(id);
     this.listeZones.set([]);
     this.zonePage.set(1);
+    this.selectedZoneId.set(null);
+    this.listeSousZones.set([]);
     this.isLoadingZones.set(true);
     this.creditService.getZonesByRegion(id).subscribe({
       next: (zones) => {
@@ -187,4 +240,43 @@ export class DashboardCreditComponent {
     });
   }
 
+  selectZone(zone: CreditStatZone) {
+    if (this.selectedZoneId() === zone.id) {
+      this.selectedZoneId.set(null);
+      this.listeSousZones.set([]);
+      return;
+    }
+    this.selectedZoneId.set(zone.id);
+    this.listeSousZones.set([]);
+    this.isLoadingSousZones.set(true);
+    setTimeout(() => this.sousZonesPanel?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    this.creditService.getSousZonesByZone(zone.id).subscribe({
+      next: (data) => {
+        this.listeSousZones.set(data);
+        this.isLoadingSousZones.set(false);
+      },
+      error: () => this.isLoadingSousZones.set(false),
+    });
+  }
+
+  // ── Total Réseau ────────────────────────────────────────────────────────
+  rechercherTb() {
+    this.tbIsSearching.set(true);
+    this.creditService
+      .getTbByProdFiltre(
+        this.tbFilterAgence() ?? '',
+        this.tbFilterDateDebut(),
+        this.tbFilterDateFin(),
+      )
+      .subscribe({
+        next: (data) => {
+          this.tbProduits.set(data);
+          this.tbIsSearching.set(false);
+        },
+        error: () => {
+          this.toast.error('Erreur lors de la recherche.');
+          this.tbIsSearching.set(false);
+        },
+      });
+  }
 }

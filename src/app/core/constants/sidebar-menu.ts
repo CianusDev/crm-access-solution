@@ -336,12 +336,12 @@ export const DEFAULT_MENU: SidebarGroup[] = [
         icon: List,
         roles: [...CREDIT_LIST_ROLES],
       },
-      {
-        label: 'Tirages découvert',
-        href: '/app/credit/tirage/list',
-        icon: CreditCard,
-        roles: [...CREDIT_TIRAGE_ROLES],
-      },
+      // {
+      //   label: 'Tirages découvert',
+      //   href: '/app/credit/tirage/list',
+      //   icon: CreditCard,
+      //   roles: [...CREDIT_TIRAGE_ROLES],
+      // },
       {
         label: 'Employeurs éligibles',
         href: '/app/credit/employeur/list',

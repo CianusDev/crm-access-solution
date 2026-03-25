@@ -188,6 +188,25 @@ export interface CreditStatZone {
   demandeRejete: number;
 }
 
+// ── Tab Total Réseau — tbByProd ───────────────────────────────────────────────
+export interface CreditTbStatut {
+  nombre: number;
+  volume: number;
+}
+
+export interface CreditTbProduit {
+  libelle: string;
+  decaisses: CreditTbStatut;
+  enDecaissement: CreditTbStatut;
+  enComite: CreditTbStatut;
+  enContreVal: CreditTbStatut;
+  enInstruction: CreditTbStatut;
+  nonInstruit: CreditTbStatut;
+  total: CreditTbStatut;
+  probable: CreditTbStatut;
+  valide: CreditTbStatut;
+}
+
 // ── Tirage découvert ──────────────────────────────────────────────────────────
 export interface CreditDemandeDecouvert extends CreditDemande {
   dateEffet?: string;
