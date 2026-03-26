@@ -89,11 +89,13 @@
       </app-dropdown>
     </nav>
 
-    <!-- Main content -->
-    <section class="w-full h-[calc(100svh-4rem)] relative p-6 overflow-y-auto overflow-x-hidden">
-      <app-breadcrumb [items]="breadcrumbItems" />
-      <router-outlet></router-outlet>
+    <!-- Zone contenu + loader (hors scroll) -->
+    <div class="relative flex-1 overflow-hidden">
+      <section class="w-full h-full p-6 overflow-y-auto overflow-x-hidden">
+        <app-breadcrumb [items]="breadcrumbItems" />
+        <router-outlet></router-outlet>
+      </section>
       <app-route-loader></app-route-loader>
-    </section>
+    </div>
   </section>
 </main>

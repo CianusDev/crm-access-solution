@@ -10,6 +10,7 @@ import {
   inject,
   input,
   OnDestroy,
+  OnInit,
   PLATFORM_ID,
   signal,
 } from '@angular/core';
@@ -21,7 +22,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-angular';
-import type { Subscription } from 'rxjs';
+import { fromEvent, Subscription } from 'rxjs';
+import { debounceTime, startWith } from 'rxjs/operators';
 import { SidebarGroup } from './sidebar.interface';
 
 /**
@@ -43,7 +45,7 @@ import { SidebarGroup } from './sidebar.interface';
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sidebar.component.html',
 })
-export class Sidebar implements OnDestroy {
+export class Sidebar implements OnInit, OnDestroy {
   // Groupes du menu (configurable via input)
   readonly groups = input<SidebarGroup[]>(DEFAULT_MENU);
 
@@ -64,7 +66,9 @@ export class Sidebar implements OnDestroy {
   // Etat réduit : si true, seuls les icônes sont visibles (sidebar étroite)
   protected readonly collapsed = signal(false);
   protected readonly hovered = signal(false);
-  protected readonly isCollapsed = computed(() => this.collapsed() && !this.hovered());
+  // Auto-collapse déclenché par la taille d'écran (< 1024px)
+  protected readonly autoCollapsed = signal(false);
+  protected readonly isCollapsed = computed(() => (this.collapsed() || this.autoCollapsed()) && !this.hovered());
 
   // Accordéon : un seul groupe ouvert à la fois ; null => aucun groupe forcé ouvert
   protected readonly openGroupIndex = signal<number | null>(null);
@@ -80,6 +84,9 @@ export class Sidebar implements OnDestroy {
   private readonly localStorageService = inject(LocalStorageService);
   private readonly router = inject(Router);
   private routerSub: Subscription | null = null;
+  private resizeSub: Subscription | null = null;
+
+  private readonly BREAKPOINT = 1024; // px — en dessous: auto-collapsed
 
   constructor() {
     // Restaure l'état réduit si stocké (uniquement navigateur)
@@ -115,11 +122,21 @@ export class Sidebar implements OnDestroy {
     }
   }
 
+  ngOnInit(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    this.resizeSub = fromEvent(window, 'resize')
+      .pipe(debounceTime(100), startWith(null))
+      .subscribe(() => {
+        this.autoCollapsed.set(window.innerWidth < this.BREAKPOINT);
+      });
+  }
+
   ngOnDestroy(): void {
-    if (this.routerSub) {
-      this.routerSub.unsubscribe();
-      this.routerSub = null;
-    }
+    this.routerSub?.unsubscribe();
+    this.routerSub = null;
+    this.resizeSub?.unsubscribe();
+    this.resizeSub = null;
   }
 
   toggleCollapsed(): void {

@@ -21,7 +21,7 @@ import { Subscription } from 'rxjs';
   template: `
     @if (loading()) {
       <div
-        class="absolute h-svh w-full inset-0 z-90 bg-background top-0 left-0 flex items-center justify-center"
+        class="absolute inset-0 z-90 bg-background flex items-center justify-center"
         aria-live="polite"
         aria-busy="true"
       >
