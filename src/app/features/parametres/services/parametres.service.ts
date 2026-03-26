@@ -60,6 +60,15 @@ export class ParametresService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
+  uploadPhotoProfil(userId: number, file: File) {
+    const fd = new FormData();
+    fd.append('utilisateur', String(userId));
+    fd.append('photo', file);
+    return this.api
+      .postFormData<{ photo: string }>('/users/upload_photo', fd)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
   changerStatut(data: { user: number }) {
     return this.api
       .post('/users/activ_desactiv_employe', data)

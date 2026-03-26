@@ -48,7 +48,7 @@
     </thead>
     <tbody appTableBody>
       @for (agent of paginated(); track agent.id) {
-        <tr appTableRow>
+        <tr appTableRow (click)="viewDetail(agent.id)" class="cursor-pointer">
 
           <!-- CORA + Agent -->
           <td appTableCell>

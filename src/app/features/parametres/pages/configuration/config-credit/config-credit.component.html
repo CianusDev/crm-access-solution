@@ -71,45 +71,64 @@
           <lucide-icon [img]="PlusIcon" [size]="12" /> Ajouter
         </button>
       </div>
-      <!-- Grille -->
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <!-- Grille (style dashboard) -->
+      <div class="grid grid-cols-2 gap-px bg-border border border-border sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 rounded-xl overflow-hidden">
         @for (t of pagedCredit(); track t.id) {
-          <app-card>
-            <app-card-content>
-              <div class="flex items-start justify-between gap-2 py-1">
-                <div class="min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    @if (t.code) {
-                      <span class="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-mono text-primary">{{ t.code }}</span>
-                    }
-                    @if (t.cible) {
-                      <span class="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">{{ t.cible }}</span>
-                    }
-                  </div>
-                  <p class="mt-1 text-sm font-medium text-foreground">{{ t.libelle }}</p>
-                  <div class="mt-2 flex items-center gap-2 min-w-0">
-                    @if (t.taux) {
-                      <app-badge variant="outline">{{ t.taux }}%</app-badge>
-                    }
-                    @if (t.mttPlafondCrd) {
-                      <div class="flex flex-1 min-w-0 items-center gap-1.5">
-                        <div class="h-1.5 flex-1 overflow-hidden rounded-full">
-                          <div class="h-full rounded-full bg-primary/70 transition-all duration-500"
-                            [style.width.%]="(t.mttPlafondCrd / maxPlafondCredit()) * 100">
-                          </div>
-                        </div>
-                        <span class="shrink-0 text-xs text-muted-foreground">{{ t.mttPlafondCrd | number }}</span>
-                      </div>
-                    }
-                  </div>
-                </div>
-                <button type="button" (click)="openCreditEdit(t)"
-                  class="inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted">
-                  <lucide-icon [img]="EditIcon" [size]="12" /> Modifier
-                </button>
+          <div class="flex flex-col gap-2 bg-card p-4">
+            <!-- Code + cible + bouton modifier -->
+            <div class="flex items-start justify-between gap-1">
+              <div class="flex flex-wrap gap-1">
+                @if (t.code) {
+                  <span class="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-mono text-primary">{{ t.code }}</span>
+                }
+                @if (t.cible) {
+                  <span class="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">{{ t.cible }}</span>
+                }
               </div>
-            </app-card-content>
-          </app-card>
+              <button type="button" (click)="openCreditEdit(t)"
+                class="shrink-0 inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted">
+                <lucide-icon [img]="EditIcon" [size]="11" /> Modifier
+              </button>
+            </div>
+            <!-- Libellé -->
+            <span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide leading-tight">{{ t.libelle }}</span>
+            <!-- Taux + barre de progression -->
+            @if (t.taux) {
+              <div class="flex items-center gap-1.5">
+                <div class="h-1 flex-1 rounded-full bg-muted overflow-hidden">
+                  <div class="h-full rounded-full bg-primary transition-all duration-700" [style.width.%]="t.taux"></div>
+                </div>
+                <app-badge variant="outline">{{ t.taux }}%</app-badge>
+              </div>
+            }
+            <!-- Fourchette montant -->
+            @if (t.mttMin || t.mttPlafondCrd) {
+              <p class="text-xs text-muted-foreground leading-none">
+                @if (t.mttMin) { {{ t.mttMin | number }} } @else { — }
+                <span class="mx-0.5">→</span>
+                @if (t.mttPlafondCrd) { <span class="font-semibold text-foreground">{{ t.mttPlafondCrd | number }}</span> } @else { — }
+                <span class="ml-0.5">F</span>
+              </p>
+            }
+            <!-- Nb échéances -->
+            @if (t.nbreEcheMax) {
+              <p class="text-[11px] text-muted-foreground">{{ t.nbreEcheMax }} échéance(s) max</p>
+            }
+            <!-- Taux secondaires -->
+            @if (t.commissionRemb || t.fraisClotAntcp || t.assurDecInva) {
+              <div class="flex flex-wrap gap-x-3 gap-y-0.5 border-t border-border pt-2 mt-1">
+                @if (t.commissionRemb) {
+                  <span class="text-[10px] text-muted-foreground">Comm. <span class="font-medium text-foreground">{{ t.commissionRemb }}%</span></span>
+                }
+                @if (t.fraisClotAntcp) {
+                  <span class="text-[10px] text-muted-foreground">Clôt. ant. <span class="font-medium text-foreground">{{ t.fraisClotAntcp }}%</span></span>
+                }
+                @if (t.assurDecInva) {
+                  <span class="text-[10px] text-muted-foreground">Assur. DI <span class="font-medium text-foreground">{{ t.assurDecInva }}%</span></span>
+                }
+              </div>
+            }
+          </div>
         }
       </div>
       @if (filteredCredit().length === 0) {
@@ -269,8 +288,20 @@
           <input type="number" [(ngModel)]="creditForm.mttPlafondCrd" class="input-field" />
         </div>
         <div>
-          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Taux (%)</label>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Taux d'intérêt (%)</label>
           <input type="number" [(ngModel)]="creditForm.taux" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Commission de déboursement (%)</label>
+          <input type="number" [(ngModel)]="creditForm.commissionRemb" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Frais de clôture par anticipation (%)</label>
+          <input type="number" [(ngModel)]="creditForm.fraisClotAntcp" class="input-field" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Assurance décès invalidité (%)</label>
+          <input type="number" [(ngModel)]="creditForm.assurDecInva" class="input-field" />
         </div>
         <div>
           <label class="mb-1.5 block text-xs font-medium text-muted-foreground">Cible</label>

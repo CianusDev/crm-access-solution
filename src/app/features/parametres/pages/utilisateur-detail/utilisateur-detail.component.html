@@ -12,7 +12,32 @@
       <lucide-icon [img]="ArrowLeftIcon" [size]="16" />
     </button>
     <div class="flex items-center gap-3">
-      <app-avatar [initials]="initiales()" size="md" />
+      <!-- Avatar cliquable pour upload (admin uniquement) -->
+      <div class="relative group">
+        <app-avatar
+          [initials]="initiales()"
+          [src]="photoPreview() ?? user()!.photo ?? null"
+          size="md"
+        />
+        @if (isAdmin()) {
+          <label
+            class="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Changer la photo de profil"
+          >
+            @if (isUploadingPhoto()) {
+              <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+            } @else {
+              <lucide-icon [img]="CameraIcon" [size]="16" class="text-white" />
+            }
+            <input
+              type="file"
+              accept="image/*"
+              class="sr-only"
+              (change)="onPhotoSelected($event)"
+            />
+          </label>
+        }
+      </div>
       <div>
         <h1 class="text-xl font-bold text-foreground">{{ user()!.nom | uppercase }} {{ user()!.prenom }}</h1>
         <p class="text-sm text-muted-foreground">{{ user()!.email }}</p>

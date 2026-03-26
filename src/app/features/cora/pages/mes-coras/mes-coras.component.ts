@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { UpperCasePipe } from '@angular/common';
 import { LucideAngularModule, Search, Eye, RefreshCw, MapPin } from 'lucide-angular';
 import {
   CardComponent,
@@ -38,6 +39,7 @@ const PAGE_SIZE = 10;
   selector: 'app-mes-coras',
   templateUrl: './mes-coras.component.html',
   imports: [
+    UpperCasePipe,
     LucideAngularModule,
     CardComponent,
     CardContentComponent,
@@ -74,7 +76,9 @@ export class MesCoras implements OnInit {
         c.perfect?.toLowerCase().includes(q) ||
         c.pmobile?.toLowerCase().includes(q) ||
         c.commune?.libelle?.toLowerCase().includes(q) ||
-        c.quartier?.toLowerCase().includes(q),
+        c.quartier?.toLowerCase().includes(q) ||
+        c.user?.nom?.toLowerCase().includes(q) ||
+        c.user?.prenom?.toLowerCase().includes(q),
     );
   });
 

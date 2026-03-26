@@ -5,7 +5,7 @@ import { NgClass, UpperCasePipe } from '@angular/common';
 import {
   LucideAngularModule,
   ArrowLeft, User, Shield, CreditCard, MapPin,
-  Save, KeyRound, ToggleLeft, ToggleRight, ChevronDown,
+  Save, KeyRound, ToggleLeft, ToggleRight, ChevronDown, Camera,
 } from 'lucide-angular';
 import {
   CardComponent, CardContentComponent, CardHeaderComponent, CardTitleComponent,
@@ -50,6 +50,7 @@ export class UtilisateurDetailComponent {
   readonly ToggleLeftIcon  = ToggleLeft;
   readonly ToggleRightIcon = ToggleRight;
   readonly ChevronDownIcon = ChevronDown;
+  readonly CameraIcon      = Camera;
 
   private readonly route   = inject(ActivatedRoute);
   private readonly router  = inject(Router);
@@ -60,9 +61,11 @@ export class UtilisateurDetailComponent {
   readonly data = input<UtilisateurDetailResolvedData>();
 
   // ── State ─────────────────────────────────────────────────────────────────
-  readonly isLoading  = signal(true);
-  readonly isSaving   = signal(false);
-  readonly user       = signal<Utilisateur | null>(null);
+  readonly isLoading      = signal(true);
+  readonly isSaving       = signal(false);
+  readonly isUploadingPhoto = signal(false);
+  readonly photoPreview   = signal<string | null>(null);
+  readonly user           = signal<Utilisateur | null>(null);
 
   // Référentiels
   readonly profils  = signal<ParametresProfil[]>([]);
@@ -278,6 +281,32 @@ export class UtilisateurDetailComponent {
     const perms = [...this.permissions()];
     perms[i] = { ...perms[i], type: val };
     this.permissions.set(perms);
+  }
+
+  onPhotoSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    // Aperçu local immédiat
+    const reader = new FileReader();
+    reader.onload = (e) => this.photoPreview.set(e.target?.result as string);
+    reader.readAsDataURL(file);
+
+    const u = this.user();
+    if (!u) return;
+    this.isUploadingPhoto.set(true);
+    this.service.uploadPhotoProfil(u.id, file).subscribe({
+      next: (res) => {
+        this.user.update((prev) => prev ? { ...prev, photo: res.photo } : prev);
+        this.toast.success('Photo de profil mise à jour.');
+        this.isUploadingPhoto.set(false);
+      },
+      error: () => {
+        this.photoPreview.set(null);
+        this.toast.error('Erreur lors de l\'upload.');
+        this.isUploadingPhoto.set(false);
+      },
+    });
   }
 
   goBack() { this.router.navigate(['/app/parametres/utilisateurs']); }

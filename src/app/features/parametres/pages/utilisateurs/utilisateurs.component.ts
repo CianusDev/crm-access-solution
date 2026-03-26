@@ -18,8 +18,8 @@ import { ToastService } from '@/core/services/toast/toast.service';
 const PAGE_SIZE = 15;
 
 const STATUT_INFO: Record<number, { label: string; class: string }> = {
-  1: { label: 'Actif',    class: 'bg-green-100 text-green-700' },
-  0: { label: 'Inactif',  class: 'bg-red-100 text-red-700' },
+  1: { label: 'Actif', class: 'bg-green-100 text-green-700' },
+  2: { label: 'Inactif', class: 'bg-red-100 text-red-700' },
 };
 
 @Component({
@@ -38,23 +38,23 @@ const STATUT_INFO: Record<number, { label: string; class: string }> = {
   ],
 })
 export class UtilisateursComponent {
-  readonly SearchIcon  = Search;
-  readonly EyeIcon     = Eye;
+  readonly SearchIcon = Search;
+  readonly EyeIcon = Eye;
   readonly RefreshIcon = RefreshCw;
   readonly UserPlusIcon = UserPlus;
-  readonly UsersIcon   = Users;
+  readonly UsersIcon = Users;
 
-  private readonly router   = inject(Router);
-  private readonly service  = inject(ParametresService);
-  private readonly toast    = inject(ToastService);
+  private readonly router = inject(Router);
+  private readonly service = inject(ParametresService);
+  private readonly toast = inject(ToastService);
 
   readonly utilisateurs = input<Utilisateur[]>();
 
-  readonly users     = signal<Utilisateur[]>([]);
+  readonly users = signal<Utilisateur[]>([]);
   readonly isLoading = signal(false);
-  readonly query     = signal('');
-  readonly page      = signal(1);
-  readonly pageSize  = PAGE_SIZE;
+  readonly query = signal('');
+  readonly page = signal(1);
+  readonly pageSize = PAGE_SIZE;
 
   readonly filtered = computed(() => {
     const q = this.query().toLowerCase().trim();
@@ -76,16 +76,22 @@ export class UtilisateursComponent {
   });
 
   constructor() {
-    effect(() => {
-      const u = this.utilisateurs();
-      if (u) this.users.set(u);
-    }, { allowSignalWrites: true });
+    effect(
+      () => {
+        const u = this.utilisateurs();
+        if (u) this.users.set(u);
+      },
+      { allowSignalWrites: true },
+    );
   }
 
   load() {
     this.isLoading.set(true);
     this.service.getUtilisateurs().subscribe({
-      next: (data) => { this.users.set(data); this.isLoading.set(false); },
+      next: (data) => {
+        this.users.set(data);
+        this.isLoading.set(false);
+      },
       error: (err) => {
         this.toast.error(err?.message ?? 'Erreur lors du chargement.');
         this.isLoading.set(false);
@@ -93,11 +99,18 @@ export class UtilisateursComponent {
     });
   }
 
-  onSearch(value: string) { this.query.set(value); this.page.set(1); }
+  onSearch(value: string) {
+    this.query.set(value);
+    this.page.set(1);
+  }
 
-  viewDetail(id: number) { this.router.navigate(['/app/parametres/utilisateurs', id]); }
+  viewDetail(id: number) {
+    this.router.navigate(['/app/parametres/utilisateurs', id]);
+  }
 
-  initiales(u: Utilisateur): string { return getInitiales(u.nom, u.prenom); }
+  initiales(u: Utilisateur): string {
+    return getInitiales(u.nom, u.prenom);
+  }
 
   statutInfo(statut?: number) {
     return STATUT_INFO[statut ?? 0] ?? { label: '—', class: 'bg-muted text-muted-foreground' };

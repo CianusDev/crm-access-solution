@@ -45,6 +45,7 @@ export interface Utilisateur {
   commune?: ParametresCommune;
   zone?: { id: number; libelle: string };
   sousZone?: { id: number; libelle: string };
+  photo?: string;
 }
 
 export interface SaveUtilisateurDto {
@@ -129,9 +130,12 @@ export interface TypeCredit {
   code?: string;
   libelle: string;
   nbreEcheMax?: number;
+  mttMin?: number;
   mttPlafondCrd?: number;
   taux?: number;
-  mttMin?: number;
+  commissionRemb?: number;
+  fraisClotAntcp?: number;
+  assurDecInva?: number;
   cible?: string;
 }
 

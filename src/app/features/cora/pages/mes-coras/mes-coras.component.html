@@ -55,6 +55,7 @@
                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">CORA</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">PERFECT / P-Mobile</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Zone géographique</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Gestionnaire</th>
                 <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">Agents</th>
                 <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">Statut</th>
                 <th class="px-4 py-3"></th>
@@ -71,6 +72,9 @@
                       <div>
                         <p class="font-semibold text-foreground">{{ c.designation }}</p>
                         <p class="text-xs text-muted-foreground">{{ c.reference }}</p>
+                        @if (c.email) {
+                          <p class="text-xs text-muted-foreground">{{ c.email }}</p>
+                        }
                       </div>
                     </div>
                   </td>
@@ -85,6 +89,15 @@
                   <td class="px-4 py-3">
                     <p class="text-foreground">{{ c.commune?.libelle }}</p>
                     <p class="text-xs text-muted-foreground">{{ c.quartier }}@if (c.rue) {, {{ c.rue }}}</p>
+                  </td>
+
+                  <!-- Gestionnaire -->
+                  <td class="px-4 py-3">
+                    @if (c.user) {
+                      <p class="text-sm font-medium text-foreground">{{ c.user.nom | uppercase }} {{ c.user.prenom }}</p>
+                    } @else {
+                      <span class="text-xs text-muted-foreground">—</span>
+                    }
                   </td>
 
                   <!-- Agents -->

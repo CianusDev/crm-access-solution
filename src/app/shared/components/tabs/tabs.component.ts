@@ -5,6 +5,7 @@ import {
   QueryList,
   AfterContentInit,
   signal,
+  computed,
 } from '@angular/core';
 import { CommonModule, NgTemplateOutlet } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
@@ -17,39 +18,75 @@ import { TabComponent } from './tab.component';
   template: `
     <div class="w-full">
       <!-- Tab List -->
-      <div
-        class="inline-flex h-10 items-center justify-start rounded-md bg-zinc-100 p-1 text-muted-foreground"
-        role="tablist"
-        aria-label="Tabs"
-      >
-        @for (tab of tabs(); track tab.label) {
-          <button
-            role="tab"
-            [attr.aria-selected]="activeTab() === tab.label"
-            [attr.tabindex]="activeTab() === tab.label ? 0 : -1"
-            (click)="selectTab(tab.label)"
-            (keydown.ArrowRight)="nextTab()"
-            (keydown.ArrowLeft)="prevTab()"
-            class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
-            [class]="
-              activeTab() === tab.label
-                ? 'bg-white text-zinc-950 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-700'
-            "
-          >
-            <!-- Icône lucide optionnelle -->
-            @if (tab.icon) {
-              <lucide-icon [img]="tab.icon" [size]="15" [strokeWidth]="2" class="shrink-0" />
-            }
-            <span class="flex flex-col items-start leading-tight">
-              <span>{{ tab.label }}</span>
-              @if (tab.sublabel) {
-                <span class="text-[10px] font-normal opacity-60">{{ tab.sublabel }}</span>
+      @if (variant === 'underline') {
+        <!-- Style underline : pour les tabs de niveau parent -->
+        <div
+          class="flex border-b border-border gap-1"
+          role="tablist"
+          aria-label="Tabs"
+        >
+          @for (tab of tabs(); track tab.label) {
+            <button
+              role="tab"
+              [attr.aria-selected]="activeTab() === tab.label"
+              [attr.tabindex]="activeTab() === tab.label ? 0 : -1"
+              (click)="selectTab(tab.label)"
+              (keydown.ArrowRight)="nextTab()"
+              (keydown.ArrowLeft)="prevTab()"
+              class="inline-flex items-center gap-1.5 whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-all duration-150 focus-visible:outline-none cursor-pointer border-b-2 -mb-px"
+              [class]="
+                activeTab() === tab.label
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+              "
+            >
+              @if (tab.icon) {
+                <lucide-icon [img]="tab.icon" [size]="15" [strokeWidth]="2" class="shrink-0" />
               }
-            </span>
-          </button>
-        }
-      </div>
+              <span class="flex flex-col items-start leading-tight">
+                <span>{{ tab.label }}</span>
+                @if (tab.sublabel) {
+                  <span class="text-[10px] font-normal opacity-60">{{ tab.sublabel }}</span>
+                }
+              </span>
+            </button>
+          }
+        </div>
+      } @else {
+        <!-- Style pills : défaut, pour les tabs enfants -->
+        <div
+          class="inline-flex h-10 items-center justify-start rounded-md bg-zinc-100 p-1 text-muted-foreground"
+          role="tablist"
+          aria-label="Tabs"
+        >
+          @for (tab of tabs(); track tab.label) {
+            <button
+              role="tab"
+              [attr.aria-selected]="activeTab() === tab.label"
+              [attr.tabindex]="activeTab() === tab.label ? 0 : -1"
+              (click)="selectTab(tab.label)"
+              (keydown.ArrowRight)="nextTab()"
+              (keydown.ArrowLeft)="prevTab()"
+              class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
+              [class]="
+                activeTab() === tab.label
+                  ? 'bg-white text-zinc-950 shadow-sm'
+                  : 'text-zinc-500 hover:text-zinc-700'
+              "
+            >
+              @if (tab.icon) {
+                <lucide-icon [img]="tab.icon" [size]="15" [strokeWidth]="2" class="shrink-0" />
+              }
+              <span class="flex flex-col items-start leading-tight">
+                <span>{{ tab.label }}</span>
+                @if (tab.sublabel) {
+                  <span class="text-[10px] font-normal opacity-60">{{ tab.sublabel }}</span>
+                }
+              </span>
+            </button>
+          }
+        </div>
+      }
 
       <!-- Tab Panels -->
       <div class="mt-2 w-full">
@@ -68,6 +105,7 @@ import { TabComponent } from './tab.component';
 })
 export class TabsComponent implements AfterContentInit {
   @Input() defaultTab?: string;
+  @Input() variant: 'pills' | 'underline' = 'pills';
   @ContentChildren(TabComponent) tabComponents!: QueryList<TabComponent>;
 
   activeTab = signal<string>('');

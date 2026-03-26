@@ -81,6 +81,12 @@ export class ApiService {
       .pipe(this.handleResponse<T>());
   }
 
+  postFormData<T>(endpoint: string, formData: FormData): Observable<T> {
+    return this.http
+      .post<T>(`${this.apiUrl}${endpoint}`, formData)
+      .pipe(this.handleResponse<T>());
+  }
+
   delete<T>(endpoint: string): Observable<T> {
     return this.http
       .delete<T>(`${this.apiUrl}${endpoint}`, {
