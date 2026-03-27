@@ -11,18 +11,33 @@
 
   <div class="relative">
 
-    <input
-      appInput
-      [type]="resolvedType()"
-      [attr.aria-invalid]="shouldShowError"
-      [attr.aria-describedby]="shouldShowError ? name() + '-error' : null"
-      [placeholder]="placeholder()"
-      [formControlName]="name()"
-      [attr.min]="min()"
-      [attr.max]="max()"
-      [attr.step]="step()"
-      [class.pr-10]="isPasswordType()"
-    />
+    @if (useNumberFormat()) {
+      <!-- Input formaté milliers : géré manuellement, pas de formControlName sur l'élément -->
+      <input
+        #numInput
+        appInput
+        type="text"
+        inputmode="numeric"
+        [attr.aria-invalid]="shouldShowError"
+        [attr.aria-describedby]="shouldShowError ? name() + '-error' : null"
+        [placeholder]="placeholder()"
+        [class.border-destructive]="shouldShowError"
+        (input)="onNumberInput($event)"
+      />
+    } @else {
+      <input
+        appInput
+        [type]="resolvedType()"
+        [attr.aria-invalid]="shouldShowError"
+        [attr.aria-describedby]="shouldShowError ? name() + '-error' : null"
+        [placeholder]="placeholder()"
+        [formControlName]="name()"
+        [attr.min]="min()"
+        [attr.max]="max()"
+        [attr.step]="step()"
+        [class.pr-10]="isPasswordType()"
+      />
+    }
 
     <!-- Bouton toggle password -->
     @if (isPasswordType()) {

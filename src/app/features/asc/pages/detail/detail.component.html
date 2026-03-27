@@ -7,7 +7,7 @@
     <div class="flex-1 min-w-0">
       <h1 class="text-xl font-bold text-foreground">Détail de la demande</h1>
       @if (demande()?.numDemandeAsc) {
-        <p class="text-xs font-mono text-muted-foreground">
+        <p class="text-xs text-muted-foreground">
           Réf. Perfect : {{ demande()!.numDemandeAsc }}
         </p>
       }
@@ -133,52 +133,100 @@
   @if (demande(); as d) {
     <!-- ── Fiche client ─────────────────────────────────────────────────── -->
     <app-card>
-      <app-card-header>
+      <!-- <app-card-header>
         <app-card-title>Informations client</app-card-title>
-      </app-card-header>
+      </app-card-header> -->
       <app-card-content>
-        <!-- Identity row -->
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
-          <!-- Avatar -->
-          <div
-            class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive font-bold text-lg select-none"
-          >
-            {{ clientInitials() }}
-          </div>
+        <!-- Identity row + Detail grid -->
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Identity row -->
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
+            <!-- Avatar -->
+            <div
+              class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive font-bold text-lg select-none"
+            >
+              {{ clientInitials() }}
+            </div>
 
-          <!-- Name + badges -->
-          <div class="flex-1 min-w-0">
-            <p class="text-lg font-bold text-foreground">{{ d.client?.nomPrenom ?? '—' }}</p>
-            <div class="mt-1 flex flex-wrap items-center gap-2">
-              <span
-                class="rounded-full px-2.5 py-0.5 text-xs font-medium"
-                [class.bg-primary/10]="d.client?.typeAgent === 'SC'"
-                [class.text-primary]="d.client?.typeAgent === 'SC'"
-                [class.bg-secondary]="d.client?.typeAgent !== 'SC'"
-                [class.text-muted-foreground]="d.client?.typeAgent !== 'SC'"
-              >
-                {{ d.client?.typeAgent === 'SC' ? 'Personne morale' : 'Personne physique' }}
-              </span>
-              <span class="text-xs font-mono text-muted-foreground">{{
-                d.client?.codeClient
-              }}</span>
-              @if (d.client?.agence?.libelle) {
-                <span class="text-xs text-muted-foreground"
-                  >· Agence {{ d.client!.agence.libelle }}</span
+            <!-- Name + badges -->
+            <div class="flex-1 min-w-0">
+              <p class="text-lg font-bold text-foreground">{{ d.client?.nomPrenom ?? '—' }}</p>
+              <div class="mt-1 flex flex-wrap items-center gap-2">
+                <span
+                  class="rounded-full px-2.5 py-0.5 text-xs font-medium"
+                  [class.bg-primary/10]="d.client?.typeAgent === 'SC'"
+                  [class.text-primary]="d.client?.typeAgent === 'SC'"
+                  [class.bg-secondary]="d.client?.typeAgent !== 'SC'"
+                  [class.text-muted-foreground]="d.client?.typeAgent !== 'SC'"
                 >
+                  {{ d.client?.typeAgent === 'SC' ? 'Personne morale' : 'Personne physique' }}
+                </span>
+                <span class="text-xs text-muted-foreground">{{
+                  d.client?.codeClient
+                }}</span>
+                @if (d.client?.agence?.libelle) {
+                  <span class="text-xs text-muted-foreground"
+                    >· Agence {{ d.client!.agence.libelle }}</span
+                  >
+                }
+              </div>
+              @if (d.client?.typeAgent === 'SC' && d.client?.gerant?.nomDirigeant) {
+                <p class="mt-1 text-xs text-muted-foreground">
+                  Gérant :
+                  <span class="font-medium text-foreground">{{
+                    d.client!.gerant!.nomDirigeant
+                  }}</span>
+                </p>
               }
             </div>
-            @if (d.client?.typeAgent === 'SC' && d.client?.gerant?.nomDirigeant) {
-              <p class="mt-1 text-xs text-muted-foreground">
-                Gérant :
-                <span class="font-medium text-foreground">{{
-                  d.client!.gerant!.nomDirigeant
-                }}</span>
+          </div>
+
+          <!-- Detail grid -->
+          <div
+            class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 border-l border-border pl-6"
+          >
+            <div>
+              <p class="text-xs text-muted-foreground">Ouverture du compte</p>
+              <p class="text-sm font-medium text-foreground">
+                {{ d.client?.dateOuvertureCompte | date: 'dd MMMM yyyy' }}
               </p>
+            </div>
+            @if (d.client?.montantMaxCreditObtenu) {
+              <div>
+                <p class="text-xs text-muted-foreground">Montant maximal crédit</p>
+                <p class="text-sm font-medium text-foreground">
+                  {{ d.client!.montantMaxCreditObtenu | number }} FCFA
+                </p>
+              </div>
+            }
+            @if (d.agence?.libelle) {
+              <div>
+                <p class="text-xs text-muted-foreground">Agence émettrice</p>
+                <p class="text-sm font-medium text-foreground">{{ d.agence!.libelle }}</p>
+              </div>
+            }
+            @if (d.autreCreditEncours) {
+              <div>
+                <p class="text-xs text-muted-foreground">Autre crédit en cours</p>
+                <p class="text-sm font-medium text-foreground">{{ d.autreCreditEncours }}</p>
+              </div>
+            }
+            @if ((d.client?.autreCreditBeneficie?.length ?? 0) > 0) {
+              <div class="sm:col-span-2">
+                <p class="text-xs text-muted-foreground">Crédits obtenus</p>
+                <div class="mt-1 flex flex-wrap gap-1.5">
+                  @for (c of d.client!.autreCreditBeneficie; track c.typeCreditBenef) {
+                    <span
+                      class="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
+                      >{{ c.typeCreditBenef }}</span
+                    >
+                  }
+                </div>
+              </div>
             }
           </div>
-        </div>
 
+        </div>
         <!-- KPI stats -->
         <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div class="rounded-xl border border-border bg-muted/30 p-4 text-center">
@@ -210,55 +258,12 @@
           </div>
         </div>
 
-        <!-- Detail grid -->
-        <div
-          class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 border-t border-border pt-4"
-        >
-          <div>
-            <p class="text-xs text-muted-foreground">Ouverture du compte</p>
-            <p class="text-sm font-medium text-foreground">
-              {{ d.client?.dateOuvertureCompte | date: 'dd MMMM yyyy' }}
-            </p>
-          </div>
-          @if (d.client?.montantMaxCreditObtenu) {
-            <div>
-              <p class="text-xs text-muted-foreground">Montant maximal crédit</p>
-              <p class="text-sm font-medium text-foreground">
-                {{ d.client!.montantMaxCreditObtenu | number }} FCFA
-              </p>
-            </div>
-          }
-          @if (d.agence?.libelle) {
-            <div>
-              <p class="text-xs text-muted-foreground">Agence émettrice</p>
-              <p class="text-sm font-medium text-foreground">{{ d.agence!.libelle }}</p>
-            </div>
-          }
-          @if (d.autreCreditEncours) {
-            <div>
-              <p class="text-xs text-muted-foreground">Autre crédit en cours</p>
-              <p class="text-sm font-medium text-foreground">{{ d.autreCreditEncours }}</p>
-            </div>
-          }
-          @if ((d.client?.autreCreditBeneficie?.length ?? 0) > 0) {
-            <div class="sm:col-span-2">
-              <p class="text-xs text-muted-foreground">Crédits obtenus</p>
-              <div class="mt-1 flex flex-wrap gap-1.5">
-                @for (c of d.client!.autreCreditBeneficie; track c.typeCreditBenef) {
-                  <span
-                    class="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
-                    >{{ c.typeCreditBenef }}</span
-                  >
-                }
-              </div>
-            </div>
-          }
-        </div>
+
       </app-card-content>
     </app-card>
 
     <!-- ── Montants ──────────────────────────────────────────────────────── -->
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <!-- <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
       <div
         class="flex flex-col items-center gap-1 rounded-xl border border-border bg-card p-5 text-center"
       >
@@ -270,7 +275,7 @@
         class="flex flex-col items-center gap-1 rounded-xl border border-primary/30 bg-primary/5 p-5 text-center"
       >
         <p class="text-xs text-muted-foreground">Montant sollicité</p>
-        <p class="text-2xl font-bold text-primary">{{ d.montantSollicite | number }}</p>
+        <p class="text-2xl font-bold text-primary">{{ d.montantSollicite  | number }}</p>
         <p class="text-xs text-muted-foreground">FCFA</p>
       </div>
       @if (d.montantAccorde) {
@@ -290,12 +295,13 @@
           <p class="text-xs text-muted-foreground">FCFA</p>
         </div>
       }
-    </div>
+    </div> -->
 
     <!-- ── Informations de la demande + Vérifications ───────────────────── -->
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div class="lg:col-span-2 grid grid-cols-1 gap-4">
       <!-- Demande info (2/3) -->
-      <app-card class="lg:col-span-2">
+      <app-card>
         <app-card-header>
           <app-card-title>Informations du chèque</app-card-title>
         </app-card-header>
@@ -303,11 +309,11 @@
           <div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
             <div>
               <p class="text-xs text-muted-foreground">Numéro de chèque</p>
-              <p class="text-sm font-mono font-medium text-foreground">{{ d.cheque?.numcheque ?? '—' }}</p>
+              <p class="text-sm font-medium text-foreground">{{ d.cheque?.numcheque ?? '—' }}</p>
             </div>
             <div>
               <p class="text-xs text-muted-foreground">Numéro de remise</p>
-              <p class="text-sm font-mono font-medium text-foreground">
+              <p class="text-sm font-medium text-foreground">
                 {{ d.cheque?.numTransaction ?? '—' }}
               </p>
             </div>
@@ -332,15 +338,30 @@
             @if (d.numDemandeAsc) {
               <div>
                 <p class="text-xs text-muted-foreground">N° demande Perfect</p>
-                <p class="text-sm font-mono font-medium text-foreground">{{ d.numDemandeAsc }}</p>
+                <p class="text-sm font-medium text-foreground">{{ d.numDemandeAsc }}</p>
               </div>
             }
-            <!-- @if (d.natureObjetReglement) { -->
-              <div>
-                <p class="text-xs text-muted-foreground">Nature de la prestation</p>
-                <p class="text-sm text-foreground">{{ d.cheque?.naturePrestation?.libelle ?? d.natureObjetReglement ?? '—' }}</p>
-              </div>
-            <!-- } -->
+
+            <div>
+              <p class="text-xs text-muted-foreground">Nature de la prestation</p>
+              <p class="text-sm text-foreground">{{ d.cheque?.naturePrestation?.libelle ?? d.natureObjetReglement ?? '—' }}</p>
+            </div>
+
+            <div>
+              <p class="text-xs text-muted-foreground">Montant du chèque</p>
+              <p class="text-sm text-foreground font-medium">{{ (d.cheque?.montantCheque ?? 0) | number }} FCFA</p>
+            </div>
+
+            <div>
+              <p class="text-xs text-muted-foreground">Montant sollicité</p>
+              <p class="text-sm text-foreground font-medium">{{ d.montantSollicite  | number }} FCFA</p>
+            </div>
+
+            <div>
+              <p class="text-xs text-muted-foreground">Montant accordé</p>
+              <p class="text-sm text-foreground font-medium">{{ (d.montantAccorde||0)  | number }} FCFA</p>
+            </div>
+
             @if (d.user) {
               <div>
                 <p class="text-xs text-muted-foreground">Créé par</p>
@@ -356,13 +377,58 @@
           }
         </app-card-content>
       </app-card>
+      <!-- ── Documents ────────────────────────────────────────────────────── -->
+      <app-card >
+        <app-card-header>
+          <app-card-title>Documents</app-card-title>
+        </app-card-header>
+        <app-card-content>
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            @for (
+              doc of [
+                { label: 'Image du chèque', lien: d.cheque?.imageCheque ?? d.cheque?.image },
+                { label: "Preuve de l'existance d'une transaction", lien: d.preuveTransaction },
+                { label: "Preuve de l'existance de l'entreprise", lien: d.preuveEntreprise },
+              ];
+              track doc.label
+            ) {
+              <div
+                class="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-4 py-3 gap-3"
+              >
+                <div class="flex items-center gap-3 min-w-0">
+                  <lucide-icon
+                    [img]="FileTextIcon"
+                    [size]="18"
+                    class="shrink-0"
+                    [class.text-primary]="!!fileUrl(doc.lien)"
+                    [class.text-muted-foreground]="!fileUrl(doc.lien)"
+                  />
+                  <span class="text-sm font-medium text-foreground truncate">{{ doc.label }}</span>
+                </div>
+                @if (fileUrl(doc.lien)) {
+                  <button
+                    type="button"
+                    (click)="openFile(doc.lien)"
+                    class="shrink-0 flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    Voir <lucide-icon [img]="ExternalLinkIcon" [size]="12" />
+                  </button>
+                } @else {
+                  <span class="shrink-0 text-xs text-muted-foreground">Non fourni</span>
+                }
+              </div>
+            }
+          </div>
+        </app-card-content>
+      </app-card>
+      </div>
 
       <!-- Checklist (1/3) -->
-      <app-card>
+      <app-card class="flex flex-col h-full">
         <app-card-header>
           <app-card-title>Vérification</app-card-title>
         </app-card-header>
-        <app-card-content>
+        <app-card-content class="!min-h-0 flex-1">
           @if (hasChecklist()) {
             <ul class="flex flex-col gap-2.5">
               @for (item of checklist(); track item.label) {
@@ -401,50 +467,52 @@
     </div>
 
     <!-- ── Documents ────────────────────────────────────────────────────── -->
-    <app-card>
-      <app-card-header>
-        <app-card-title>Documents</app-card-title>
-      </app-card-header>
-      <app-card-content>
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          @for (
-            doc of [
-              { label: 'Image du chèque', lien: d.cheque?.imageCheque ?? d.cheque?.image },
-              { label: "Preuve de l'existance d'une transaction", lien: d.preuveTransaction },
-              { label: "Preuve de l'existance de l'entreprise", lien: d.preuveEntreprise },
-            ];
-            track doc.label
-          ) {
-            <div
-              class="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-4 py-3 gap-3"
-            >
-              <div class="flex items-center gap-3 min-w-0">
-                <lucide-icon
-                  [img]="FileTextIcon"
-                  [size]="18"
-                  class="shrink-0"
-                  [class.text-primary]="!!fileUrl(doc.lien)"
-                  [class.text-muted-foreground]="!fileUrl(doc.lien)"
-                />
-                <span class="text-sm font-medium text-foreground truncate">{{ doc.label }}</span>
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <!-- ── Documents ────────────────────────────────────────────────────── -->
+      <!-- <app-card class="lg:col-span-2">
+        <app-card-header>
+          <app-card-title>Documents</app-card-title>
+        </app-card-header>
+        <app-card-content>
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            @for (
+              doc of [
+                { label: 'Image du chèque', lien: d.cheque?.imageCheque ?? d.cheque?.image },
+                { label: "Preuve de l'existance d'une transaction", lien: d.preuveTransaction },
+                { label: "Preuve de l'existance de l'entreprise", lien: d.preuveEntreprise },
+              ];
+              track doc.label
+            ) {
+              <div
+                class="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-4 py-3 gap-3"
+              >
+                <div class="flex items-center gap-3 min-w-0">
+                  <lucide-icon
+                    [img]="FileTextIcon"
+                    [size]="18"
+                    class="shrink-0"
+                    [class.text-primary]="!!fileUrl(doc.lien)"
+                    [class.text-muted-foreground]="!fileUrl(doc.lien)"
+                  />
+                  <span class="text-sm font-medium text-foreground truncate">{{ doc.label }}</span>
+                </div>
+                @if (fileUrl(doc.lien)) {
+                  <button
+                    type="button"
+                    (click)="openFile(doc.lien)"
+                    class="shrink-0 flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    Voir <lucide-icon [img]="ExternalLinkIcon" [size]="12" />
+                  </button>
+                } @else {
+                  <span class="shrink-0 text-xs text-muted-foreground">Non fourni</span>
+                }
               </div>
-              @if (fileUrl(doc.lien)) {
-                <button
-                  type="button"
-                  (click)="openFile(doc.lien)"
-                  class="shrink-0 flex items-center gap-1 text-xs text-primary hover:underline"
-                >
-                  Voir <lucide-icon [img]="ExternalLinkIcon" [size]="12" />
-                </button>
-              } @else {
-                <span class="shrink-0 text-xs text-muted-foreground">Non fourni</span>
-              }
-            </div>
-          }
-        </div>
-      </app-card-content>
-    </app-card>
-
+            }
+          </div>
+        </app-card-content>
+      </app-card> -->
+    </div>
     <!-- ── Décision ─────────────────────────────────────────────────────── -->
     @if (d.decision) {
       <app-card>
@@ -523,8 +591,8 @@
               />
               <input
                 type="text"
-                [ngModel]="histQuery()"
-                (ngModelChange)="histQuery.set($event); histPage.set(1)"
+                [value]="histQuery()"
+                (input)="histQuery.set($any($event.target).value); histPage.set(1)"
                 placeholder="Rechercher…"
                 class="w-full rounded-lg border border-border bg-background pl-8 pr-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
@@ -584,10 +652,10 @@
                     <td class="px-3 py-2.5 whitespace-nowrap text-muted-foreground text-xs">
                       {{ h.dateRemise ?? h.dateDemande ?? h.datedemande | date: 'dd/MM/yyyy' }}
                     </td>
-                    <td class="px-3 py-2.5 font-mono text-xs text-foreground">
+                    <td class="px-3 py-2.5 text-xs text-foreground">
                       {{ h.numDemandeAsc ?? '—' }}
                     </td>
-                    <td class="px-3 py-2.5 font-mono text-xs text-foreground">
+                    <td class="px-3 py-2.5 text-xs text-foreground">
                       {{ h.cheque?.numTransaction ?? '—' }}
                     </td>
                     <td class="px-3 py-2.5 text-sm text-foreground">{{ h.cheque?.tireur ?? '—' }}</td>
@@ -738,34 +806,24 @@
     </app-dialog-description>
   </app-dialog-header>
   <app-dialog-content>
-    <div class="flex flex-col gap-1.5">
-      <div class="flex items-center justify-between">
-        <label class="text-xs font-medium text-foreground">
-          Observation
-          @if (pendingAction()?.requireObs) {
-            <span class="ml-0.5 text-destructive">*</span>
-          }
-        </label>
-        @if (pendingAction()?.requireObs) {
-          <span class="text-xs text-muted-foreground">Obligatoire</span>
-        }
+    <form [formGroup]="actionForm" (ngSubmit)="confirmAction()" class="flex flex-col gap-4">
+      <div class="flex flex-col gap-1.5">
+        <app-form-input
+          name="password"
+          type="password"
+          label="Mot de passe"
+          [required]="true"
+          placeholder="Saisissez votre mot de passe"
+        />
+        <app-form-textarea
+          name="observation"
+          label="Observation"
+          [required]="pendingAction()?.requireObs ?? false"
+          [placeholder]="pendingAction()?.requireObs ? 'Saisissez une observation…' : 'Observation (optionnel)'"
+          [rows]="3"
+        />
       </div>
-      <textarea
-        [(ngModel)]="observation"
-        rows="3"
-        [placeholder]="
-          pendingAction()?.requireObs ? 'Saisissez une observation…' : 'Observation (optionnel)'
-        "
-        class="w-full rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 resize-none transition-colors"
-        [class.border-border]="!obsInvalid || !observation"
-        [class.focus:ring-primary]="!obsInvalid || !observation"
-        [class.border-destructive]="obsInvalid && observation !== null"
-        [class.focus:ring-destructive]="obsInvalid"
-      ></textarea>
-      @if (obsInvalid && observation !== undefined) {
-        <p class="text-xs text-destructive">Ce champ est requis pour continuer.</p>
-      }
-    </div>
+    </form>
   </app-dialog-content>
   <app-dialog-footer>
     <button
@@ -782,7 +840,7 @@
       appButton
       size="sm"
       type="button"
-      [disabled]="isLoading() || obsInvalid"
+      [disabled]="isLoading() || obsInvalid || passwordInvalid"
       (click)="confirmAction()"
     >
       @if (isLoading()) {
@@ -798,9 +856,20 @@
   <app-dialog-header>
     <app-dialog-title>Supprimer la demande</app-dialog-title>
     <app-dialog-description>
-      Cette action est irréversible. La demande sera définitivement supprimée.
+      Cette action est irréversible. Veuillez saisir votre mot de passe pour confirmer la suppression définitive.
     </app-dialog-description>
   </app-dialog-header>
+  <app-dialog-content>
+    <form [formGroup]="deleteForm" (ngSubmit)="confirmDelete()" class="flex flex-col gap-1.5">
+      <app-form-input
+        name="password"
+        type="password"
+        label="Mot de passe"
+        [required]="true"
+        placeholder="Saisissez votre mot de passe"
+      />
+    </form>
+  </app-dialog-content>
   <app-dialog-footer>
     <button
       appButton
@@ -817,7 +886,7 @@
       variant="destructive"
       size="sm"
       type="button"
-      [disabled]="isLoading()"
+      [disabled]="isLoading() || passwordInvalid"
       (click)="confirmDelete()"
     >
       @if (isLoading()) {

@@ -38,7 +38,9 @@ import {
 } from '@/shared/components/dialog/dialog.component';
 import { PaginationComponent } from '@/shared/components/pagination/pagination.component';
 import { ButtonDirective } from '@/shared/directives/ui/button/button';
-import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormControl, FormGroup, Validators, FormsModule } from '@angular/forms';
+import { FormInput } from '@/shared/components/form-input/form-input.component';
+import { FormTextarea } from '@/shared/components/form-textarea/form-textarea.component';
 import { AscDemande } from '../../interfaces/asc.interface';
 import { AscService } from '../../services/asc/asc.service';
 import { PermissionService } from '@/core/services/permission/permission.service';
@@ -112,7 +114,6 @@ const FILE_BASE = 'https://crm-fichiers.creditaccess.ci/crm/avance-sur-cheque/';
   imports: [
     DecimalPipe,
     DatePipe,
-    FormsModule,
     LucideAngularModule,
     CardComponent,
     CardContentComponent,
@@ -131,6 +132,10 @@ const FILE_BASE = 'https://crm-fichiers.creditaccess.ci/crm/avance-sur-cheque/';
     DrawerHeaderComponent,
     DrawerTitleComponent,
     DrawerContentComponent,
+    ReactiveFormsModule,
+    FormsModule,
+    FormInput,
+    FormTextarea,
   ],
 })
 export class DetailComponent {
@@ -205,20 +210,44 @@ export class DetailComponent {
   readonly isLoading = signal(false);
   readonly isExporting = signal(false);
 
-  // Pending action: { decision: number, title: string, requireObs: boolean }
   readonly pendingAction = signal<{ decision: number; title: string; requireObs: boolean } | null>(
     null,
   );
-  observation = '';
+
+  actionForm = new FormGroup({
+    observation: new FormControl(''),
+    password: new FormControl('', Validators.required),
+  });
+
+  deleteForm = new FormGroup({
+    password: new FormControl('', Validators.required),
+  });
 
   openAction(decision: number, title: string, requireObs = true) {
     this.pendingAction.set({ decision, title, requireObs });
-    this.observation = '';
+    this.actionForm.reset({ observation: '', password: '' });
+    
+    if (requireObs) {
+      this.actionForm.controls.observation.setValidators(Validators.required);
+    } else {
+      this.actionForm.controls.observation.setValidators(null);
+    }
+    this.actionForm.controls.observation.updateValueAndValidity();
+    
     this.dialogOpen.set(true);
   }
 
   get obsInvalid(): boolean {
-    return !!(this.pendingAction()?.requireObs && !this.observation?.trim());
+    return this.actionForm.controls.observation.invalid;
+  }
+
+  get passwordInvalid(): boolean {
+    return this.actionForm.controls.password.invalid;
+  }
+
+  openDeleteDialog() {
+    this.deleteForm.reset({ password: '' });
+    this.deleteDialogOpen.set(true);
   }
 
   confirmAction() {
@@ -226,41 +255,86 @@ export class DetailComponent {
     const d = this.demande();
     if (!action || !d) return;
 
-    if (action.requireObs && !this.observation?.trim()) return;
+    this.actionForm.markAllAsTouched();
+    if (this.actionForm.invalid) return;
 
-    const obs = this.observation?.trim() || 'Avis favorable';
     this.isLoading.set(true);
-    this.ascService
-      .sendDecision({ idAsc: d.id, decision: action.decision, observation: obs })
-      .subscribe({
-        next: () => {
-          this.toast.success('Action effectuée avec succès.');
+    const password = this.actionForm.value.password || '';
+    this.authService.verifyPassword(password).subscribe({
+      next: (res) => {
+        if (res.statut === 500) {
+          this.toast.error(res.message || 'Mot de passe incorrect.');
           this.isLoading.set(false);
-          this.dialogOpen.set(false);
-          this.router.navigate(['/app/asc/pending']);
-        },
-        error: () => {
-          this.toast.error('Une erreur est survenue. Veuillez réessayer.');
+          return;
+        }
+        
+        if (res.statut === 200) {
+          const obs = this.actionForm.value.observation?.trim() || 'Avis favorable';
+          this.ascService
+            .sendDecision({ idAsc: d.id, decision: action.decision, observation: obs })
+            .subscribe({
+              next: () => {
+                this.toast.success('Action effectuée avec succès.');
+                this.isLoading.set(false);
+                this.dialogOpen.set(false);
+                this.router.navigate(['/app/asc/pending']);
+              },
+              error: () => {
+                this.toast.error('Une erreur est survenue. Veuillez réessayer.');
+                this.isLoading.set(false);
+              },
+            });
+        } else {
+          this.toast.error('Vérification du mot de passe a échoué.');
           this.isLoading.set(false);
-        },
-      });
+        }
+      },
+      error: () => {
+        this.toast.error('Erreur lors de la vérification du mot de passe.');
+        this.isLoading.set(false);
+      }
+    });
   }
 
   confirmDelete() {
     const d = this.demande();
     if (!d) return;
+
+    this.deleteForm.markAllAsTouched();
+    if (this.deleteForm.invalid) return;
+
     this.isLoading.set(true);
-    this.ascService.deleteDemandeAsc(d.id).subscribe({
-      next: () => {
-        this.toast.success('Demande supprimée avec succès.');
-        this.isLoading.set(false);
-        this.deleteDialogOpen.set(false);
-        this.router.navigate(['/app/asc/list']);
+    const password = this.deleteForm.value.password || '';
+    this.authService.verifyPassword(password).subscribe({
+      next: (res) => {
+        if (res.statut === 500) {
+          this.toast.error(res.message || 'Mot de passe incorrect.');
+          this.isLoading.set(false);
+          return;
+        }
+
+        if (res.statut === 200) {
+          this.ascService.deleteDemandeAsc(d.id).subscribe({
+            next: () => {
+              this.toast.success('Demande supprimée avec succès.');
+              this.isLoading.set(false);
+              this.deleteDialogOpen.set(false);
+              this.router.navigate(['/app/asc/list']);
+            },
+            error: () => {
+              this.toast.error('Échec de la suppression.');
+              this.isLoading.set(false);
+            },
+          });
+        } else {
+          this.toast.error('Vérification du mot de passe a échoué.');
+          this.isLoading.set(false);
+        }
       },
       error: () => {
-        this.toast.error('Échec de la suppression.');
+        this.toast.error('Erreur lors de la vérification du mot de passe.');
         this.isLoading.set(false);
-      },
+      }
     });
   }
 

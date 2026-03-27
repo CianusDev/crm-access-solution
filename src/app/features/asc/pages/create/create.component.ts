@@ -1,4 +1,6 @@
 import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { merge, map } from 'rxjs';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
@@ -11,6 +13,7 @@ import {
 } from '@/shared/components/card/card.component';
 import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { FormSelect, SelectOption } from '@/shared/components/form-select/form-select.component';
+import { FormMultiSelect } from '@/shared/components/form-multi-select/form-multi-select.component';
 import { FormTextarea } from '@/shared/components/form-textarea/form-textarea.component';
 import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import { ToastService } from '@/core/services/toast/toast.service';
@@ -30,6 +33,7 @@ import { AscService } from '../../services/asc/asc.service';
     CardTitleComponent,
     FormInput,
     FormSelect,
+    FormMultiSelect,
     FormTextarea,
     ButtonDirective,
   ],
@@ -96,18 +100,30 @@ export class CreateAscComponent implements OnInit {
   ];
 
   // ── Computed step validity ────────────────────────────────────────────────
-  readonly step1Valid = computed(
-    () => !!this.form.get('montantMaxEncaisse')?.value,
+  // On utilise merge(valueChanges, statusChanges) pour capturer toutes les
+  // mises à jour, y compris celles issues de setValue() dans les champs formatés.
+  // On relit getRawValue() directement plutôt que de consommer la valeur émise.
+  private readonly formValue = toSignal(
+    merge(this.form.valueChanges, this.form.statusChanges).pipe(
+      map(() => this.form.getRawValue()),
+    ),
+    { initialValue: this.form.getRawValue() },
   );
+
+  readonly step1Valid = computed(() => {
+    const v = this.formValue();
+    return !!v.montantMaxEncaisse;
+  });
+
   readonly step2Valid = computed(() => {
-    const f = this.form;
+    const v = this.formValue();
     return (
-      !!f.get('tireur')?.value &&
-      !!f.get('dateCheque')?.value &&
-      !!f.get('numcheque')?.value &&
-      !!f.get('numTransaction')?.value &&
-      !!f.get('montantCheque')?.value &&
-      !!f.get('banque')?.value &&
+      !!v.tireur &&
+      !!v.dateCheque &&
+      !!v.numcheque &&
+      !!v.numTransaction &&
+      !!v.montantCheque &&
+      !!v.banque &&
       !!this.imageCheque() &&
       !!this.preuveTransaction() &&
       !!this.preuveEntreprise()
@@ -172,21 +188,29 @@ export class CreateAscComponent implements OnInit {
     fd.append('numcheque', raw.numcheque ?? '');
     fd.append('numTransaction', raw.numTransaction ?? '');
     fd.append('montantCheque', String(raw.montantCheque));
-    fd.append('dateCheque', raw.dateCheque ?? '');
+    fd.append('dateCheque', raw.dateCheque ? new Date(raw.dateCheque).toISOString() : '');
     fd.append('montantMaxEncaisse', String(raw.montantMaxEncaisse));
     fd.append('montantSollicite', String(raw.montantSollicite));
     if (raw.naturePrestation) fd.append('naturePrestation', String(raw.naturePrestation));
     if (raw.description) fd.append('description', raw.description);
+    
+    // Equivalent to old frontend passing array into FormData.append
     const credits = raw.autreCreditEncours ?? [];
-    credits.forEach((c) => fd.append('autreCreditEncours[]', c));
+    fd.append('autreCreditEncours', credits.join(','));
+
     if (this.imageCheque()) fd.append('image', this.imageCheque()!);
     if (this.preuveTransaction()) fd.append('preuveTransaction', this.preuveTransaction()!);
     if (this.preuveEntreprise()) fd.append('preuveEntreprise', this.preuveEntreprise()!);
 
     this.ascService.saveDemandeAsc(fd).subscribe({
-      next: (asc) => {
+      next: (cheque) => {
         this.toast.success('Demande enregistrée avec succès.');
-        this.router.navigate(['/app/asc/detail', asc.id]);
+        if (cheque?.numcheque) {
+          this.router.navigate(['/app/asc/cheque', cheque.numcheque]);
+        } else {
+          // Fallback if routing isn't perfect
+          this.router.navigate(['/app/asc/pending']);
+        }
       },
       error: () => {
         this.toast.error("Erreur lors de l'enregistrement.");

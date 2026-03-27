@@ -18,11 +18,10 @@ import { Component } from '@angular/core';
 @Component({
   selector: 'app-card',
   standalone: true,
-  template: `
-    <div class="rounded-md border border-border bg-background">
-      <ng-content />
-    </div>
-  `,
+  host: {
+    class: 'block rounded-md border border-border bg-background',
+  },
+  template: `<ng-content />`,
 })
 export class CardComponent {}
 

@@ -71,18 +71,18 @@ export class AscService {
 
   saveDemandeAsc(formData: FormData) {
     return this.api
-      .post<{ asc: AscDemande }>(this.endpoint + '/saveAvanceSurCheque', formData)
+      .postFormData<{ cheque: AscCheque }>(this.endpoint + '/saveAvanceSurCheque', formData)
       .pipe(
-        map((res) => res.asc),
+        map((res) => res.cheque),
         catchError((err) => throwError(() => err)),
       );
   }
 
   updateDemandeAsc(id: number, formData: FormData) {
     return this.api
-      .post<{ asc: AscDemande }>(this.endpoint + '/updateCheque/' + id, formData)
+      .postFormData<{ cheque: AscCheque }>(this.endpoint + '/updateCheque/' + id, formData)
       .pipe(
-        map((res) => res.asc),
+        map((res) => res.cheque),
         catchError((err) => throwError(() => err)),
       );
   }

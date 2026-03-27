@@ -94,7 +94,7 @@
               <div class="flex items-center gap-2 rounded-lg border border-border bg-muted/30 p-3">
                 <lucide-icon [img]="DollarSignIcon" [size]="18" class="text-primary shrink-0" />
                 <div>
-                  <p class="text-sm font-bold text-foreground">{{ c.montantChequeAccordeAsc | number }} FCFA</p>
+                  <p class="text-sm font-bold text-foreground">{{ (c.montantChequeAccordeAsc || 0) | number }} FCFA</p>
                   <p class="text-xs text-muted-foreground">Montant max accordé</p>
                 </div>
               </div>
@@ -153,12 +153,12 @@
             <p class="text-sm text-muted-foreground">Aucune demande d'avance sur chèque pour ce client.</p>
           </div>
         } @else {
-          <div class="overflow-x-auto border-t border-border">
+          <div class="overflow-x-auto rounded-xl border-t border-border">
             <table appTable>
               <thead appTableHeader>
                 <tr appTableRow class="bg-muted/30">
-                  <th appTableHead>Référence</th>
-                  <th appTableHead>Chèque</th>
+                  <th appTableHead>N° Demande PERFECT</th>
+                  <th appTableHead>N° cheque PERFECT</th>
                   <th appTableHead>Tireur</th>
                   <th appTableHead>Banque</th>
                   <th appTableHead align="right">Mt sollicité</th>
@@ -178,7 +178,7 @@
                       </p>
                     </td>
                     <td appTableCell>
-                      <span class="font-mono text-xs text-foreground">{{ d.cheque?.numcheque ?? '—' }}</span>
+                      <span class="font-mono text-xs text-foreground">{{ d.cheque?.numTransaction ?? '—' }}</span>
                     </td>
                     <td appTableCell>
                       <span class="text-sm text-foreground">{{ d.cheque?.tireur ?? '—' }}</span>

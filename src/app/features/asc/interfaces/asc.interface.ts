@@ -63,6 +63,7 @@ export interface AscObservation {
 
 export interface AscDemande {
   id: number;
+  numTransaction: string;
   numDemandeAsc?: string;
   dateRemise?: string;
   dateDemande?: string;

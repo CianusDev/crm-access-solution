@@ -1,6 +1,6 @@
 import { InputDirective } from '@/shared/directives/ui/input/input';
 import { LabelDirective } from '@/shared/directives/ui/label/label';
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, booleanAttribute, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, booleanAttribute, computed, effect, inject, input, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LucideAngularModule, Eye, EyeOff } from 'lucide-angular';
 import { merge } from 'rxjs';
@@ -51,6 +51,14 @@ export class FormInput implements OnInit {
   /** Pour number : pas (ex: 0.01 pour les décimales) */
   step = input<number | null>(null);
 
+  /** Formatage milliers en temps réel (uniquement pour type="number") */
+  format = input(false, { transform: booleanAttribute });
+
+  readonly useNumberFormat = computed(() => this.type() === 'number' && this.format());
+
+  private readonly numInputRef = viewChild<ElementRef<HTMLInputElement>>('numInput');
+  private _isTyping = false;
+
   showPassword = signal(false);
 
   isPasswordType = computed(() => this.type() === 'password');
@@ -89,12 +97,56 @@ export class FormInput implements OnInit {
     return null;
   }
 
+  constructor() {
+    // Initialise l'affichage formaté + écoute les changements programmatiques (patchValue, reset…)
+    effect(() => {
+      if (!this.useNumberFormat()) return;
+      const el = this.numInputRef()?.nativeElement;
+      if (!el) return;
+      const ctrl = this.control;
+      if (!ctrl) return;
+      // N'écrase pas ce que l'utilisateur est en train de taper
+      if (this._isTyping) return;
+      const val = ctrl.value;
+      el.value = val != null && val !== '' ? this.toDisplayValue(Number(val)) : '';
+    });
+  }
+
   ngOnInit(): void {
     const ctrl = this.control;
     if (!ctrl) return;
     merge(ctrl.statusChanges, this.formGroupDirective.ngSubmit)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this._tick.update((n) => n + 1));
+
+    if (this.useNumberFormat()) {
+      ctrl.valueChanges
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((val) => {
+          if (this._isTyping) return;
+          const el = this.numInputRef()?.nativeElement;
+          if (!el) return;
+          el.value = val != null && val !== '' ? this.toDisplayValue(Number(val)) : '';
+        });
+    }
+  }
+
+  onNumberInput(event: Event): void {
+    const el = event.target as HTMLInputElement;
+    const digits = el.value.replace(/[^\d]/g, '');
+    const num = digits === '' ? null : Number(digits);
+    const formatted = num != null ? this.toDisplayValue(num) : '';
+    el.value = formatted;
+    const len = formatted.length;
+    el.setSelectionRange(len, len);
+    this._isTyping = true;
+    this.control?.setValue(num, { emitEvent: true });
+    this._isTyping = false;
+  }
+
+  private toDisplayValue(n: number): string {
+    if (isNaN(n)) return '';
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
   }
 
   togglePasswordVisibility(): void {

@@ -1,0 +1,146 @@
+<fieldset class="flex flex-col gap-2">
+
+  @if (label() !== null) {
+    <label appLabel>
+      {{ label() }}
+      @if (required()) {
+        <span class="text-destructive" aria-hidden="true">*</span>
+      }
+    </label>
+  }
+
+  <div class="relative">
+
+    <!-- Trigger -->
+    <button
+      type="button"
+      [attr.aria-expanded]="isOpen()"
+      [attr.aria-haspopup]="'listbox'"
+      [attr.aria-invalid]="shouldShowError"
+      (click)="toggle()"
+      class="flex min-h-9 w-full flex-wrap items-center gap-1.5 rounded-lg border bg-input/20 px-3 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:border-primary focus-visible:ring-primary/50 focus-visible:ring-[2px] disabled:cursor-not-allowed disabled:opacity-50"
+      [class.border-border]="!shouldShowError"
+      [class.border-destructive]="shouldShowError"
+    >
+      <!-- Badges des valeurs sélectionnées -->
+      @if (selectedItems().length > 0) {
+        @for (item of selectedItems(); track item.value) {
+          <span
+            class="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+          >
+            {{ item.label }}
+            <span
+              role="button"
+              [attr.aria-label]="'Retirer ' + item.label"
+              (click)="removeOne(item.value, $event)"
+              class="rounded-sm text-primary/60 hover:text-primary transition-colors"
+            >
+              <lucide-icon [img]="icons.X" [size]="11" />
+            </span>
+          </span>
+        }
+        <!-- Bouton tout effacer -->
+        <span class="ml-auto flex items-center gap-1 shrink-0 pl-1">
+          <span
+            role="button"
+            aria-label="Tout effacer"
+            (click)="clearAll($event)"
+            class="rounded-sm p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            <lucide-icon [img]="icons.X" [size]="13" />
+          </span>
+          <lucide-icon
+            [img]="icons.ChevronDown"
+            [size]="15"
+            class="text-muted-foreground transition-transform duration-200"
+            [class.rotate-180]="isOpen()"
+          />
+        </span>
+      } @else {
+        <span class="truncate text-muted-foreground">{{ placeholder() }}</span>
+        <lucide-icon
+          [img]="icons.ChevronDown"
+          [size]="15"
+          class="ml-auto text-muted-foreground transition-transform duration-200 shrink-0"
+          [class.rotate-180]="isOpen()"
+        />
+      }
+    </button>
+
+    <!-- Dropdown -->
+    @if (isOpen()) {
+      <div
+        role="listbox"
+        [attr.aria-multiselectable]="true"
+        class="absolute z-50 mt-1 w-full rounded-lg border border-border bg-popover shadow-md animate-in fade-in-0 zoom-in-95"
+      >
+        <!-- Recherche -->
+        <div class="flex items-center gap-2 border-b border-border/50 px-3 py-2">
+          <lucide-icon [img]="icons.Search" [size]="14" class="shrink-0 text-muted-foreground" />
+          <input
+            type="text"
+            [placeholder]="searchPlaceholder()"
+            [value]="searchQuery()"
+            (input)="searchQuery.set($any($event.target).value)"
+            (click)="$event.stopPropagation()"
+            class="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+          />
+        </div>
+
+        <!-- Options -->
+        <ul class="max-h-56 overflow-y-auto py-1">
+          @if (filteredOptions().length === 0) {
+            <li class="px-3 py-6 text-center text-sm text-muted-foreground">
+              Aucun résultat trouvé.
+            </li>
+          }
+
+          @for (option of filteredOptions(); track option.value) {
+            <li
+              role="option"
+              [attr.aria-selected]="isSelected(option)"
+              [attr.aria-disabled]="option.disabled"
+              (click)="select(option)"
+              class="flex items-center gap-2 px-3 py-2 text-sm transition-colors select-none"
+              [class.opacity-40]="option.disabled"
+              [class.cursor-not-allowed]="option.disabled"
+              [class.cursor-pointer]="!option.disabled"
+              [class.bg-accent]="isSelected(option)"
+              [class.font-medium]="isSelected(option)"
+            >
+              <!-- Checkbox visuelle -->
+              <span
+                class="flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors"
+                [class.bg-primary]="isSelected(option)"
+                [class.border-primary]="isSelected(option)"
+                [class.border-border]="!isSelected(option)"
+              >
+                @if (isSelected(option)) {
+                  <lucide-icon [img]="icons.Check" [size]="11" class="text-primary-foreground" />
+                }
+              </span>
+              <span [class.text-foreground]="isSelected(option)" [class.text-foreground/80]="!isSelected(option)">
+                {{ option.label }}
+              </span>
+            </li>
+          }
+        </ul>
+
+        <!-- Footer : résumé sélection -->
+        @if (selectedItems().length > 0) {
+          <div class="border-t border-border/50 px-3 py-2 text-xs text-muted-foreground">
+            {{ selectedItems().length }} élément(s) sélectionné(s)
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+
+  @if (shouldShowError) {
+    <span [id]="name() + '-error'" class="text-destructive text-sm" role="alert">
+      {{ errorMessage }}
+    </span>
+  }
+
+</fieldset>

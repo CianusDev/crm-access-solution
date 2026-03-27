@@ -109,4 +109,8 @@ export class AuthService {
   isLoggedIn(): boolean {
     return !!this.getToken();
   }
+
+  verifyPassword(password: string): Observable<{ statut: number; message: string }> {
+    return this.apiService.post<{ statut: number; message: string }>('/users/checkPassword', { password });
+  }
 }
