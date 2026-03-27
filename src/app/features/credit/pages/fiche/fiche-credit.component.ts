@@ -77,7 +77,7 @@ import {
   GarantieVehicule,
 } from '../../interfaces/credit.interface';
 import { FicheCreditResolvedData } from './fiche-credit.resolver';
-import { StripHtmlPipe } from '@/shared/pipes/strip-html.pipe';
+import { StripHtmlPipe } from '@/shared/pipes/strip-html/strip-html.pipe';
 
 type TabId = 'details' | 'documents' | 'checklist' | 'garanties';
 

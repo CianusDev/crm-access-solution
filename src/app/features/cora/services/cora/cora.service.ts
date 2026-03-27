@@ -144,7 +144,10 @@ export class CoraService {
     return this.apiService
       .post<{ agent: AgentCoraDetail }>(this.endpoint + '/save_agent', data)
       .pipe(
-        map((res) => res.agent),
+        map((res) => {
+          const agent = (res as any)?.agent ?? (res as any)?.data?.agent ?? res;
+          return agent as AgentCoraDetail;
+        }),
         catchError((err) => throwError(() => ({ status: err.status, message: err.message }))),
       );
   }

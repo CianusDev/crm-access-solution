@@ -45,7 +45,7 @@ import { Cora, CoraAgent } from '../../interfaces/cora.interface';
 import { CoraService } from '../../services/cora/cora.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Avatar } from '@/shared/components/avatar/avatar.component';
-import { getInitiales, InitialesPipe } from '@/shared/pipes/initiales.pipe';
+import { getInitiales, InitialesPipe } from '@/shared/pipes/initailes/initiales.pipe';
 import { UserRole } from '@/core/models/user.model';
 
 const FORME_JURIDIQUE: Record<number, string> = {

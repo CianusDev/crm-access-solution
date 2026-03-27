@@ -56,6 +56,8 @@ export class CreateAgentComponent implements OnInit {
   // ── Étape 1 : sélection CORA (signaux purs, hors formulaire) ─────────────
   readonly searchQuery = signal('');
   readonly selectedCora = signal<CoraRefDesig | null>(null);
+  readonly selectedCoraId = signal<number | null>(null);
+  readonly isLoadingCora = signal(false);
 
   readonly filteredCoras = computed<CoraRefDesig[]>(() => {
     const q = this.searchQuery().toLowerCase().trim();
@@ -71,10 +73,23 @@ export class CreateAgentComponent implements OnInit {
   selectCora(cora: CoraRefDesig) {
     this.selectedCora.set(cora);
     this.searchQuery.set('');
+    // Fetch the full CORA to get the real numeric id (coras_list_ref_design may not include it)
+    const ref = cora.ref ?? cora.reference ?? '';
+    if (cora.id) {
+      this.selectedCoraId.set(cora.id);
+    } else if (ref) {
+      this.isLoadingCora.set(true);
+      this.coraService.getCoraByRef(ref).subscribe({
+        next: (full) => { this.selectedCoraId.set(full.id); this.isLoadingCora.set(false); },
+        error: () => { this.toast.error('Impossible de récupérer le CORA.'); this.isLoadingCora.set(false); },
+      });
+    }
   }
 
   changeCora() {
     this.selectedCora.set(null);
+    this.selectedCoraId.set(null);
+    this.form.reset();
   }
 
   // ── Étape 2 : formulaire agent ────────────────────────────────────────────
@@ -129,8 +144,8 @@ export class CreateAgentComponent implements OnInit {
   ];
 
   readonly bailOptions: SelectOption[] = [
-    { value: 1, label: 'Habilitation' },
     { value: 2, label: 'Professionnel' },
+    { value: 1, label: 'Habilitation' },
   ];
 
   readonly debitOptions: SelectOption[] = [
@@ -157,11 +172,16 @@ export class CreateAgentComponent implements OnInit {
     this.coraService.getAgentById(+agentId).subscribe({
       next: (agent) => {
         // Pré-sélection du CORA
-        if (agent.cora) {
-          const cora = this.formData()?.coras.find((c) => c.id === agent.cora?.id);
-          if (cora) this.selectedCora.set(cora);
+        if (agent.cora?.id) {
+          this.selectedCoraId.set(agent.cora.id);
+          const found = this.formData()?.coras.find((c) => c.id === agent.cora?.id);
+          this.selectedCora.set(found ?? {
+            id: agent.cora.id,
+            designation: agent.cora.designation ?? '',
+          });
         }
         // Pré-remplissage du formulaire
+        this.form.reset();
         const typeDevice = this.parseJsonArray(agent.typeDevice);
         this.form.patchValue({
           typeUser: agent.typeUser ?? null,
@@ -201,7 +221,7 @@ export class CreateAgentComponent implements OnInit {
   }
 
   submit() {
-    if (!this.selectedCora()) {
+    if (!this.selectedCora() || !this.selectedCoraId()) {
       this.toast.error('Veuillez sélectionner un CORA.');
       return;
     }
@@ -219,7 +239,7 @@ export class CreateAgentComponent implements OnInit {
     );
     const { deviceSmartphone, deviceTablette, deviceOrdinateur, ...rest } = raw;
     const payload: CreateAgentDto = {
-      cora: this.selectedCora()!.id,
+      cora: this.selectedCoraId()!,
       typeUser: rest.typeUser!,
       mobile: rest.mobile!,
       fixe: rest.fixe ?? '',
@@ -258,7 +278,11 @@ export class CreateAgentComponent implements OnInit {
       next: (res) => {
         const agentId = res?.id ?? this.editAgentId();
         this.toast.success(this.isEditMode() ? 'Agent mis à jour avec succès.' : 'Agent enregistré avec succès.');
-        this.router.navigate(['/app/cora/agent', agentId]);
+        if (agentId) {
+          this.router.navigate(['/app/cora/agent', agentId]);
+        } else {
+          this.router.navigate(['/app/cora/pending']);
+        }
       },
       error: () => {
         this.toast.error("Une erreur est survenue lors de l'enregistrement.");

@@ -10,7 +10,7 @@ import {
 } from '@/shared/components/card/card.component';
 import { PaginationComponent } from '@/shared/components/pagination/pagination.component';
 import { Avatar } from '@/shared/components/avatar/avatar.component';
-import { InitialesPipe } from '@/shared/pipes/initiales.pipe';
+import { InitialesPipe } from '@/shared/pipes/initailes/initiales.pipe';
 import { AscDemande } from '../../interfaces/asc.interface';
 
 @Component({
@@ -67,6 +67,10 @@ export class ChequesAttenteComponent {
     this.page.set(1);
   }
 
-  goDetail(id: number)              { this.router.navigate(['/app/asc/detail', id]); }
-  goChequeDetail(numcheque: string) { this.router.navigate(['/app/asc/cheque', numcheque]); }
+  goDetail(id: number) {
+    this.router.navigate(['/app/asc/detail', id]);
+  }
+  goChequeDetail(numcheque: string) {
+    this.router.navigate(['/app/asc/cheque', numcheque]);
+  }
 }

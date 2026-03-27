@@ -17,9 +17,10 @@ const {
   ResponsableFrontOffice: RESPO_FO,
   AdministrationAudit: ADMIN_AUDIT,
   GestionCora: GESTION_CORA,
+  AgentBO: AGENT_BO,
 } = UserRole;
 
-const CORA_VIEWERS = [Admin, DG, DGA, D_EXPL, RESPO_EXPL, CHARGE_CORA, RESPO_FO, ADMIN_AUDIT, GESTION_CORA] as const;
+const CORA_VIEWERS = [Admin, DG, DGA, D_EXPL, RESPO_EXPL, CHARGE_CORA, RESPO_FO, ADMIN_AUDIT, GESTION_CORA, AGENT_BO] as const;
 
 export const coraRoutes: Route = {
   path: 'cora',

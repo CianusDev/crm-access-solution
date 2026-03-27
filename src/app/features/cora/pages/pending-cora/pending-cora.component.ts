@@ -15,7 +15,7 @@ import { LucideAngularModule, Search, Eye, RefreshCw } from 'lucide-angular';
 import { AgentEnAttente } from '../../interfaces/cora.interface';
 import { CoraService } from '../../services/cora/cora.service';
 import { ToastService } from '@/core/services/toast/toast.service';
-import { InitialesPipe } from '@/shared/pipes/initiales.pipe';
+import { InitialesPipe } from '@/shared/pipes/initailes/initiales.pipe';
 
 const PAGE_SIZE = 10;
 
@@ -24,7 +24,7 @@ const STATUT_LABEL: Record<number, string> = {
   2: "En attente d'évaluation",
   3: 'En attente de validation',
   4: "En attente d'approbation",
-  5: "En attente de création des accès",
+  5: 'En attente de création des accès',
   6: 'En attente de clôture',
   7: 'Clôturé',
 };
@@ -135,9 +135,6 @@ export class PendingCoraComponent implements OnInit {
   }
 
   avatarColor(typeUser?: number): string {
-    return typeUser === 1
-      ? 'bg-primary/10 text-primary'
-      : 'bg-muted text-muted-foreground';
+    return typeUser === 1 ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground';
   }
-
 }

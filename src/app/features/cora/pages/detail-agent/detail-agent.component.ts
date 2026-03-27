@@ -52,6 +52,7 @@ import {
   Upload,
   Trash2,
 } from 'lucide-angular';
+import { LightboxComponent, LightboxImage } from '@/shared/components/lightbox/lightbox.component';
 import {
   AgentCoraDetail,
   Decision,
@@ -63,10 +64,11 @@ import { ToastService } from '@/core/services/toast/toast.service';
 import { ParametresService } from '@/features/parametres/services/parametres.service';
 import { SelectOption } from '@/shared/components/form-select/form-select.component';
 import { Avatar } from '@/shared/components/avatar/avatar.component';
-import { getInitiales } from '@/shared/pipes/initiales.pipe';
+import { getInitiales } from '@/shared/pipes/initailes/initiales.pipe';
 import { DatePipe, UpperCasePipe } from '@angular/common';
-import { StripHtmlPipe } from '@/shared/pipes/strip-html.pipe';
+import { StripHtmlPipe } from '@/shared/pipes/strip-html/strip-html.pipe';
 import { UserRole } from '@/core/models/user.model';
+import { FormTextarea } from '@/shared/components/form-textarea/form-textarea.component';
 
 const STATUT_LABEL: Record<number, string> = {
   1: 'Rejeté',
@@ -152,6 +154,7 @@ const IMG_TYPES = ['Mandataire Social', 'Façade', 'Ruelle', 'Espace client', 'P
     HasRolePipe,
     ReactiveFormsModule,
     FormInput,
+    FormTextarea,
     FormSelect,
     FormRichTextarea,
     DialogComponent,
@@ -165,6 +168,7 @@ const IMG_TYPES = ['Mandataire Social', 'Façade', 'Ruelle', 'Espace client', 'P
     DrawerTitleComponent,
     DrawerContentComponent,
     DrawerFooterComponent,
+    LightboxComponent,
   ],
 })
 export class DetailAgentComponent {
@@ -185,6 +189,21 @@ export class DetailAgentComponent {
   readonly PlusIcon = Plus;
   readonly UploadIcon = Upload;
   readonly Trash2Icon = Trash2;
+  // ── Lightbox ──────────────────────────────────────────────────────────────
+  readonly lightboxOpen = signal(false);
+  readonly lightboxImages = signal<LightboxImage[]>([]);
+  readonly lightboxIndex = signal(0);
+
+  openLightbox(type: string, startIndex: number) {
+    const imgs = (this.imagesByType()[type] ?? []).map((img) => ({
+      url: this.fileUrl(img.lien) ?? '',
+      label: img.libelle ?? '',
+    }));
+    if (!imgs.length) return;
+    this.lightboxImages.set(imgs);
+    this.lightboxIndex.set(startIndex);
+    this.lightboxOpen.set(true);
+  }
 
   readonly DOC_TYPES = DOC_TYPES;
   readonly IMG_TYPES = IMG_TYPES;
@@ -224,6 +243,7 @@ export class DetailAgentComponent {
 
   // ── Dialogs ───────────────────────────────────────────────────────────────
   readonly confirmValidationDialogOpen = signal(false);
+  readonly confirmClotureDialogOpen = signal(false);
   readonly decisionDialogOpen = signal(false);
   readonly decisionLoading = signal(false);
   readonly decisionForm = this.fb.group({
@@ -342,9 +362,10 @@ export class DetailAgentComponent {
     const agentId = this.agentData()?.id;
     if (!agentId) return;
     this.uploadingDoc.set(this.currentDocType);
-    const call = files.length === 1
-      ? this.coraService.uploadDocument(agentId, this.currentDocType, files[0])
-      : this.coraService.uploadDocuments(agentId, this.currentDocType, files);
+    const call =
+      files.length === 1
+        ? this.coraService.uploadDocument(agentId, this.currentDocType, files[0])
+        : this.coraService.uploadDocuments(agentId, this.currentDocType, files);
     call.subscribe({
       next: () => {
         this.toast.success('Document(s) chargé(s) avec succès.');
@@ -483,7 +504,8 @@ export class DetailAgentComponent {
     this.evaluationMode.set(mode);
     if (this.agenceOptions().length === 0) {
       this.parametresService.getAgences().subscribe({
-        next: (agences) => this.agenceOptions.set(agences.map((ag) => ({ value: ag.libelle, label: ag.libelle }))),
+        next: (agences) =>
+          this.agenceOptions.set(agences.map((ag) => ({ value: ag.libelle, label: ag.libelle }))),
         error: () => {},
       });
     }
@@ -496,10 +518,25 @@ export class DetailAgentComponent {
         securite: a.evaluation.securite ?? '',
         commentaire: a.evaluation.commentaire ?? '',
       });
-      try { this.evaluationForces.set(JSON.parse(a.evaluation.force ?? '[]')); } catch { this.evaluationForces.set([]); }
-      try { this.evaluationFaiblesses.set(JSON.parse(a.evaluation.faiblesse ?? '[]')); } catch { this.evaluationFaiblesses.set([]); }
+      try {
+        this.evaluationForces.set(JSON.parse(a.evaluation.force ?? '[]'));
+      } catch {
+        this.evaluationForces.set([]);
+      }
+      try {
+        this.evaluationFaiblesses.set(JSON.parse(a.evaluation.faiblesse ?? '[]'));
+      } catch {
+        this.evaluationFaiblesses.set([]);
+      }
     } else {
-      this.evaluationForm.reset({ agentId: a?.id ?? 0, historique: '', agenceProche: '', distanceAgence: 0, securite: '', commentaire: '' });
+      this.evaluationForm.reset({
+        agentId: a?.id ?? 0,
+        historique: '',
+        agenceProche: '',
+        distanceAgence: 0,
+        securite: '',
+        commentaire: '',
+      });
       this.evaluationForces.set([]);
       this.evaluationFaiblesses.set([]);
     }
@@ -508,12 +545,16 @@ export class DetailAgentComponent {
 
   toggleForce(f: string) {
     const current = this.evaluationForces();
-    this.evaluationForces.set(current.includes(f) ? current.filter(x => x !== f) : [...current, f]);
+    this.evaluationForces.set(
+      current.includes(f) ? current.filter((x) => x !== f) : [...current, f],
+    );
   }
 
   toggleFaiblesse(f: string) {
     const current = this.evaluationFaiblesses();
-    this.evaluationFaiblesses.set(current.includes(f) ? current.filter(x => x !== f) : [...current, f]);
+    this.evaluationFaiblesses.set(
+      current.includes(f) ? current.filter((x) => x !== f) : [...current, f],
+    );
   }
 
   saveEvaluation() {
@@ -530,12 +571,15 @@ export class DetailAgentComponent {
       commentaire: v.commentaire!,
     };
     this.evaluationLoading.set(true);
-    const call = this.evaluationMode() === 'ajout'
-      ? this.coraService.saveEvaluation(payload)
-      : this.coraService.updateEvaluation(payload);
+    const call =
+      this.evaluationMode() === 'ajout'
+        ? this.coraService.saveEvaluation(payload)
+        : this.coraService.updateEvaluation(payload);
     call.subscribe({
       next: () => {
-        this.toast.success(this.evaluationMode() === 'ajout' ? 'Évaluation enregistrée.' : 'Évaluation mise à jour.');
+        this.toast.success(
+          this.evaluationMode() === 'ajout' ? 'Évaluation enregistrée.' : 'Évaluation mise à jour.',
+        );
         this.evaluationDialogOpen.set(false);
         this.evaluationLoading.set(false);
         this.goBack();
@@ -590,11 +634,16 @@ export class DetailAgentComponent {
       }
       if (!imgs['Façade']?.length) manquants.push('Img: Façade');
       if (!imgs['Ruelle']?.length) manquants.push('Img: Ruelle');
-      if (!imgs['Espace client']?.length) manquants.push("Img: Espace client");
+      if (!imgs['Espace client']?.length) manquants.push('Img: Espace client');
       if (!imgs['Photo Caisse']?.length) manquants.push('Img: Photo Caisse');
       if (!hasGeo) manquants.push('Géolocalisation');
-      console.warn('[sendForValidation] manquants:', manquants, { docs, imgs, lat: a.latitude, lng: a.longitude });
-      this.toast.error("Manquant : " + manquants.join(', '));
+      console.warn('[sendForValidation] manquants:', manquants, {
+        docs,
+        imgs,
+        lat: a.latitude,
+        lng: a.longitude,
+      });
+      this.toast.error('Manquant : ' + manquants.join(', '));
       return;
     }
 
@@ -620,8 +669,13 @@ export class DetailAgentComponent {
   }
 
   closeAgentAction() {
+    this.confirmClotureDialogOpen.set(true);
+  }
+
+  confirmCloture() {
     const id = this.agent()?.id;
     if (!id) return;
+    this.confirmClotureDialogOpen.set(false);
     this.actionLoading.set(true);
     this.coraService.closeAgent(id).subscribe({
       next: () => {
@@ -657,7 +711,7 @@ export class DetailAgentComponent {
           this.goBack();
         },
         error: (err) => {
-          this.toast.error(err.message ?? 'Erreur lors de l\'enregistrement.');
+          this.toast.error(err.message ?? "Erreur lors de l'enregistrement.");
           this.decisionLoading.set(false);
         },
       });
@@ -675,7 +729,11 @@ export class DetailAgentComponent {
     const { agentId, perfectNumber, pmobileNumber } = this.identifiantPrincipalForm.getRawValue();
     this.identifiantPrincipalLoading.set(true);
     this.coraService
-      .savePerfectNumber({ agent: agentId!, perfectNumber: perfectNumber!, pmobileNumber: pmobileNumber! })
+      .savePerfectNumber({
+        agent: agentId!,
+        perfectNumber: perfectNumber!,
+        pmobileNumber: pmobileNumber!,
+      })
       .subscribe({
         next: () => {
           this.toast.success('Identifiants enregistrés.');
@@ -684,7 +742,7 @@ export class DetailAgentComponent {
           this.goBack();
         },
         error: (err) => {
-          this.toast.error(err.message ?? 'Erreur lors de l\'enregistrement.');
+          this.toast.error(err.message ?? "Erreur lors de l'enregistrement.");
           this.identifiantPrincipalLoading.set(false);
         },
       });
@@ -711,7 +769,7 @@ export class DetailAgentComponent {
           this.goBack();
         },
         error: (err) => {
-          this.toast.error(err.message ?? 'Erreur lors de l\'enregistrement.');
+          this.toast.error(err.message ?? "Erreur lors de l'enregistrement.");
           this.identifiantSousAgentLoading.set(false);
         },
       });

@@ -32,7 +32,7 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { FormSelect } from '@/shared/components/form-select/form-select.component';
 import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { CoraMapComponent } from '../../components/cora-map/cora-map.component';
-import { InitialesPipe } from '@/shared/pipes/initiales.pipe';
+import { InitialesPipe } from '@/shared/pipes/initailes/initiales.pipe';
 import { CoraPdfService } from '../../services/pdf/cora-pdf.service';
 
 const PAGE_SIZE = 10;
@@ -243,27 +243,27 @@ export class ListCoraComponent implements OnInit {
   async exportExcel() {
     this.isExportingExcel.set(true);
     try {
-    const columns: ExcelColumn[] = [
-      { header: 'Référence', key: 'ref', width: 16 },
-      { header: 'Raison Sociale', key: 'raison_social', width: 30 },
-      { header: 'Identifiant Perfect', key: 'identifiant_perfect', width: 22 },
-      { header: 'Identifiant P-Mobile', key: 'identifiant_pmobile', width: 22 },
-      { header: 'Commune', key: 'commune', width: 18 },
-      { header: 'Quartier', key: 'quartier', width: 18 },
-      { header: 'Gestionnaire', key: 'gestionnaire', width: 24 },
-      { header: "Nb d'agences", key: 'nombre_agence', width: 14 },
-    ];
-    const data = this.filtered().map((c) => ({
-      ref: c.reference ?? '',
-      raison_social: c.designation ?? '',
-      identifiant_perfect: c.perfect ?? '',
-      identifiant_pmobile: c.pmobile ?? '',
-      commune: c.commune?.libelle ?? '',
-      quartier: c.quartier ?? '',
-      gestionnaire: c.user ? `${c.user.nom} ${c.user.prenom}` : '',
-      nombre_agence: c.agents?.length ?? 0,
-    }));
-    await this.excelService.export(data, columns, 'liste-coras', 'CORAs');
+      const columns: ExcelColumn[] = [
+        { header: 'Référence', key: 'ref', width: 16 },
+        { header: 'Raison Sociale', key: 'raison_social', width: 30 },
+        { header: 'Identifiant Perfect', key: 'identifiant_perfect', width: 22 },
+        { header: 'Identifiant P-Mobile', key: 'identifiant_pmobile', width: 22 },
+        { header: 'Commune', key: 'commune', width: 18 },
+        { header: 'Quartier', key: 'quartier', width: 18 },
+        { header: 'Gestionnaire', key: 'gestionnaire', width: 24 },
+        { header: "Nb d'agences", key: 'nombre_agence', width: 14 },
+      ];
+      const data = this.filtered().map((c) => ({
+        ref: c.reference ?? '',
+        raison_social: c.designation ?? '',
+        identifiant_perfect: c.perfect ?? '',
+        identifiant_pmobile: c.pmobile ?? '',
+        commune: c.commune?.libelle ?? '',
+        quartier: c.quartier ?? '',
+        gestionnaire: c.user ? `${c.user.nom} ${c.user.prenom}` : '',
+        nombre_agence: c.agents?.length ?? 0,
+      }));
+      await this.excelService.export(data, columns, 'liste-coras', 'CORAs');
     } catch (err: any) {
       this.toast.error(err?.message ?? "Erreur lors de l'export Excel.");
     } finally {

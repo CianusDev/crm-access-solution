@@ -95,32 +95,32 @@
     <!-- Formulaire principal -->
     <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-4">
 
-      <!-- Contact & Type -->
+      <!-- Description de l'Activité -->
       <app-card>
         <app-card-header>
-          <app-card-title>Contact & Type</app-card-title>
+          <app-card-title>Description de l'Activité</app-card-title>
         </app-card-header>
         <app-card-content>
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <app-form-select
-              label="Type d'agent"
-              name="typeUser"
-              placeholder="Sélectionner…"
-              [options]="typeUserOptions"
-              required
-            />
             <app-form-input
-              label="Mobile"
+              label="Téléphone mobile"
               name="mobile"
               type="tel"
               placeholder="Ex: 0700000000"
               required
             />
             <app-form-input
-              label="Fixe"
+              label="Téléphone fixe"
               name="fixe"
               type="tel"
               placeholder="Ex: 2700000000"
+            />
+            <app-form-select
+              label="Type d'agent"
+              name="typeUser"
+              placeholder="Sélectionner…"
+              [options]="typeUserOptions"
+              required
             />
           </div>
         </app-card-content>
@@ -153,16 +153,16 @@
               placeholder="Ex: Rue des Jardins"
             />
             <app-form-input
-              label="Repères"
+              label="Bâtiment / lieu de repère proche (ex: pharmacies, immeubles)"
               name="reperes"
               placeholder="Ex: Près de la pharmacie centrale…"
               required
             />
           </div>
           <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            <app-form-input label="Lot" name="lot" placeholder="Ex: A12" />
-            <app-form-input label="Îlot" name="ilot" placeholder="Ex: 03" />
-            <app-form-input label="Immeuble" name="immeuble" placeholder="Ex: Résidence Lumière" />
+            <app-form-input label="N° Lot" name="lot" placeholder="Ex: A12" />
+            <app-form-input label="N° Îlot" name="ilot" placeholder="Ex: 03" />
+            <app-form-input label="Immeuble / Étage / Porte" name="immeuble" placeholder="Ex: Résidence Lumière" />
             <app-form-input label="Étage" name="etage" placeholder="Ex: 2" />
             <app-form-input label="Porte" name="porte" placeholder="Ex: 204" />
           </div>
@@ -177,7 +177,7 @@
         <app-card-content>
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <app-form-input
-              label="Ancienneté (années)"
+              label="Ancienneté dans le local (an(s))"
               name="ancieneteLocalAn"
               type="number"
               placeholder="Ex: 2"
@@ -185,7 +185,7 @@
               required
             />
             <app-form-input
-              label="Ancienneté (mois)"
+              label="Ancienneté dans le local (mois)"
               name="ancieneteLocalMois"
               type="number"
               placeholder="0–11"
@@ -199,18 +199,6 @@
               placeholder="Sélectionner…"
               [options]="bailOptions"
               required
-            />
-            <app-form-input
-              label="Type de facture"
-              name="typeFacture"
-              placeholder="Ex: Eau, Électricité"
-            />
-          </div>
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <app-form-input
-              label="N° Facture"
-              name="facture"
-              placeholder="Ex: FAC-2024-001"
             />
           </div>
         </app-card-content>
@@ -233,19 +221,19 @@
       <!-- Connexion -->
       <app-card>
         <app-card-header>
-          <app-card-title>Connexion Internet</app-card-title>
+          <app-card-title>Connexion internet</app-card-title>
         </app-card-header>
         <app-card-content>
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <app-form-select
-              label="Type de débit"
+              label="Téléphone"
               name="debit"
               placeholder="Sélectionner…"
               [options]="debitOptions"
               required
             />
             <app-form-select
-              label="Accès internet"
+              label="Connexion internet"
               name="internet"
               placeholder="Sélectionner…"
               [options]="internetOptions"
@@ -262,20 +250,20 @@
         </app-card-header>
         <app-card-content>
           <app-form-textarea
-            label="Description de l'activité"
+            label="Description des activités"
             name="description"
             placeholder="Décrivez l'activité et le local…"
             [rows]="4"
             required
           />
           <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            <app-form-checkbox name="espaceClient" label="Espace client" />
-            <app-form-checkbox name="camera" label="Caméra de sécurité" />
-            <app-form-checkbox name="securite" label="Sécurisé" />
-            <app-form-checkbox name="enDur" label="En dur" />
-            <app-form-checkbox name="ephemere" label="Éphémère" />
-            <app-form-checkbox name="caisseIsole" label="Caisse isolée" />
-            <app-form-checkbox name="caisseNonIsole" label="Caisse non isolée" />
+            <app-form-checkbox name="espaceClient" label="Doté d'un espace client" />
+            <app-form-checkbox name="camera" label="Doté de caméra (s) de surveillance" />
+            <app-form-checkbox name="securite" label="Sécuriser" />
+            <app-form-checkbox name="enDur" label="Construit en dur (Brique, Acier...)" />
+            <app-form-checkbox name="ephemere" label="Construit éphémère" />
+            <app-form-checkbox name="caisseIsole" label="Caisse(s) accessible(s)" />
+            <app-form-checkbox name="caisseNonIsole" label="Caisse(s) inaccessible(s)" />
           </div>
         </app-card-content>
       </app-card>

@@ -10,7 +10,7 @@ import {
   CardTitleComponent,
 } from '@/shared/components/card/card.component';
 import { POWER_BI_LINKS } from '@/core/constants/power-bi-links';
-import { SafeUrlPipe } from '@/shared/pipes/safe-url.pipe';
+import { SafeUrlPipe } from '@/shared/pipes/safe-url/safe-url.pipe';
 import { IframeComponent } from '@/shared/components/iframe/iframe.component';
 import {
   ChartNoAxesCombinedIcon,

@@ -15,7 +15,7 @@ import { CoraPdfService } from '../../services/pdf/cora-pdf.service';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { AuthService } from '@/core/services/auth/auth.service';
 import { Avatar } from '@/shared/components/avatar/avatar.component';
-import { InitialesPipe } from '@/shared/pipes/initiales.pipe';
+import { InitialesPipe } from '@/shared/pipes/initailes/initiales.pipe';
 import { CoraMapComponent } from '../../components/cora-map/cora-map.component';
 
 const STATUT_LABELS: Record<number, string> = {
@@ -55,25 +55,25 @@ const PAGE_SIZE = 10;
   ],
 })
 export class MesCoras implements OnInit {
-  readonly SearchIcon  = Search;
-  readonly EyeIcon     = Eye;
+  readonly SearchIcon = Search;
+  readonly EyeIcon = Eye;
   readonly RefreshIcon = RefreshCw;
-  readonly MapPinIcon  = MapPin;
+  readonly MapPinIcon = MapPin;
   readonly FileTextIcon = FileText;
 
-  private readonly router      = inject(Router);
+  private readonly router = inject(Router);
   private readonly coraService = inject(CoraService);
-  private readonly coraPdf     = inject(CoraPdfService);
-  private readonly toast       = inject(ToastService);
-  private readonly auth        = inject(AuthService);
+  private readonly coraPdf = inject(CoraPdfService);
+  private readonly toast = inject(ToastService);
+  private readonly auth = inject(AuthService);
 
-  readonly coras          = signal<Cora[]>([]);
-  readonly isLoading      = signal(false);
+  readonly coras = signal<Cora[]>([]);
+  readonly isLoading = signal(false);
   readonly isExportingCsv = signal(false);
   readonly isExportingPdf = signal(false);
-  readonly query          = signal('');
-  readonly page           = signal(1);
-  readonly pageSize       = PAGE_SIZE;
+  readonly query = signal('');
+  readonly page = signal(1);
+  readonly pageSize = PAGE_SIZE;
 
   readonly filtered = computed(() => {
     const q = this.query().toLowerCase().trim();
@@ -96,12 +96,17 @@ export class MesCoras implements OnInit {
     return this.filtered().slice(start, start + PAGE_SIZE);
   });
 
-  ngOnInit() { this.load(); }
+  ngOnInit() {
+    this.load();
+  }
 
   load() {
     this.isLoading.set(true);
     this.coraService.getMesCoras().subscribe({
-      next: (data) => { this.coras.set(data); this.isLoading.set(false); },
+      next: (data) => {
+        this.coras.set(data);
+        this.isLoading.set(false);
+      },
       error: (err) => {
         this.toast.error(err.message ?? 'Erreur lors du chargement.');
         this.isLoading.set(false);
@@ -114,7 +119,9 @@ export class MesCoras implements OnInit {
     this.page.set(1);
   }
 
-  viewDetail(reference?: string) { this.router.navigate(['/app/cora', reference || '']); }
+  viewDetail(reference?: string) {
+    this.router.navigate(['/app/cora', reference || '']);
+  }
 
   async exportPDF() {
     this.isExportingPdf.set(true);
@@ -130,8 +137,19 @@ export class MesCoras implements OnInit {
   exportCSV() {
     this.isExportingCsv.set(true);
     try {
-      const headers = ['Réf.', 'N. Perfect', 'N. P-Mobile', 'Désignation', 'Email', 'Commune', 'Quartier', 'Rue', 'Gestionnaire', 'Nombre agence'];
-      const rows = this.filtered().map(c => [
+      const headers = [
+        'Réf.',
+        'N. Perfect',
+        'N. P-Mobile',
+        'Désignation',
+        'Email',
+        'Commune',
+        'Quartier',
+        'Rue',
+        'Gestionnaire',
+        'Nombre agence',
+      ];
+      const rows = this.filtered().map((c) => [
         `AG-${c.reference ?? ''}`,
         c.perfect ?? '',
         c.pmobile ?? '',
@@ -145,7 +163,7 @@ export class MesCoras implements OnInit {
       ]);
 
       const csv = [headers, ...rows]
-        .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+        .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
         .join('\n');
 
       const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -160,6 +178,10 @@ export class MesCoras implements OnInit {
     }
   }
 
-  statutLabel(s: number): string  { return STATUT_LABELS[s]  ?? '—'; }
-  statutClass(s: number): string  { return STATUT_CLASSES[s] ?? 'bg-muted text-muted-foreground'; }
+  statutLabel(s: number): string {
+    return STATUT_LABELS[s] ?? '—';
+  }
+  statutClass(s: number): string {
+    return STATUT_CLASSES[s] ?? 'bg-muted text-muted-foreground';
+  }
 }

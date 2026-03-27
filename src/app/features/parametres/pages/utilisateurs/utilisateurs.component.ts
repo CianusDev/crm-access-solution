@@ -10,7 +10,7 @@ import {
 } from '@/shared/components/card/card.component';
 import { PaginationComponent } from '@/shared/components/pagination/pagination.component';
 import { Avatar } from '@/shared/components/avatar/avatar.component';
-import { getInitiales } from '@/shared/pipes/initiales.pipe';
+import { getInitiales } from '@/shared/pipes/initailes/initiales.pipe';
 import { Utilisateur } from '../../interfaces/parametres.interface';
 import { ParametresService } from '../../services/parametres.service';
 import { ToastService } from '@/core/services/toast/toast.service';

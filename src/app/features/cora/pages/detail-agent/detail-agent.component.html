@@ -379,10 +379,13 @@
                         <p class="text-xs text-muted-foreground italic">Aucune image chargée.</p>
                       } @else {
                         <div class="grid grid-cols-2 gap-2">
-                          @for (img of imagesByType()[type]; track img.reference) {
-                            <a [href]="fileUrl(img.lien)" target="_blank" class="block overflow-hidden rounded-lg border border-border hover:opacity-80 transition-opacity">
+                          @for (img of imagesByType()[type]; track img.reference; let i = $index) {
+                            <button type="button"
+                              (click)="openLightbox(type, i)"
+                              class="block overflow-hidden rounded-lg border border-border hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
                               <img [src]="fileUrl(img.lien)" [alt]="img.libelle" class="h-48 w-full object-cover" />
-                            </a>
+                            </button>
                           }
                         </div>
                       }
@@ -507,6 +510,22 @@
   </app-dialog-footer>
 </app-dialog>
 
+<!-- Dialog : Confirmation clôture -->
+<app-dialog [open]="confirmClotureDialogOpen()" (openChange)="confirmClotureDialogOpen.set($event)" classContainer="max-w-sm">
+  <app-dialog-header>
+    <app-dialog-title>Confirmation</app-dialog-title>
+    <app-dialog-description>Êtes-vous sûr de vouloir clôturer cet Agent ?</app-dialog-description>
+  </app-dialog-header>
+  <app-dialog-footer>
+    <button appButton variant="outline" type="button" (click)="confirmClotureDialogOpen.set(false)">
+      Non
+    </button>
+    <button appButton variant="destructive" type="button" (click)="confirmCloture()">
+      Oui, je confirme
+    </button>
+  </app-dialog-footer>
+</app-dialog>
+
 <!-- Dialog : Prendre une décision -->
 <app-dialog [open]="decisionDialogOpen()" (openChange)="decisionDialogOpen.set($event)" classContainer="max-w-sm">
   <app-dialog-header>
@@ -530,7 +549,7 @@
           }
         </div>
       </div>
-      <app-form-input
+      <app-form-textarea
         name="observation"
         label="Observation"
         type="text"
@@ -681,3 +700,11 @@
     </div>
   </app-drawer-footer>
 </app-drawer>
+
+<!-- Lightbox -->
+<app-lightbox
+  [images]="lightboxImages()"
+  [open]="lightboxOpen()"
+  [startIndex]="lightboxIndex()"
+  (openChange)="lightboxOpen.set($event)"
+/>
