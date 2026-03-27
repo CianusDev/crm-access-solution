@@ -83,7 +83,7 @@
             </thead>
             <tbody class="divide-y divide-border">
               @for (c of paged(); track c.id) {
-                <tr class="hover:bg-muted/30 transition-colors cursor-pointer" (click)="viewDetail(c.id)">
+                <tr class="hover:bg-muted/30 transition-colors cursor-pointer" (click)="viewDetail(c.reference)">
 
                   <!-- Réf. -->
                   <td class="px-4 py-3">
@@ -143,7 +143,7 @@
                   <td class="px-4 py-3 text-right">
                     <button
                       type="button"
-                      (click)="$event.stopPropagation(); viewDetail(c.id)"
+                      (click)="$event.stopPropagation(); viewDetail(c.reference)"
                       class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-foreground"
                     >
                       <lucide-icon [img]="EyeIcon" [size]="14" />

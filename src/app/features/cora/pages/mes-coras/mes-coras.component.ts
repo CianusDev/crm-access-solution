@@ -114,7 +114,7 @@ export class MesCoras implements OnInit {
     this.page.set(1);
   }
 
-  viewDetail(id: number) { this.router.navigate(['/app/cora', id]); }
+  viewDetail(reference?: string) { this.router.navigate(['/app/cora', reference || '']); }
 
   async exportPDF() {
     this.isExportingPdf.set(true);
