@@ -1,4 +1,4 @@
-@let a = agent();
+@let a = agentData();
 
 <div class="pt-4 flex flex-col gap-6">
 
@@ -11,6 +11,14 @@
 
     @if (a) {
       <div class="flex flex-wrap gap-2">
+
+        <!-- Modifier l'agent (statut==2, GestionCora) -->
+        @if (a.statut === 2 && (GestionCoraRole | hasRole)) {
+          <button appButton variant="outline" type="button" (click)="goEditAgent()" class="gap-2">
+            <lucide-icon [img]="PencilIcon" [size]="15" />
+            Modifier
+          </button>
+        }
 
         <!-- Clôturer (statut==6, rôles: GestionCora | AgentBO | ChargeCora) -->
         @if (a.statut === 6 && ([GestionCoraRole, AgentBORole, ChargeCoraRole] | hasRole)) {
@@ -103,7 +111,16 @@
                 <div>
                   <p class="text-xs text-muted-foreground">Contact</p>
                   <p class="font-medium text-foreground">
-                    {{ a.mobile ? '0' + a.mobile : '—' }}{{ a.fixe ? ' | ' + a.fixe : '' }}
+                    {{ a.mobile ? '0' + a.mobile : '—' }}
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-start gap-2 py-2">
+                <lucide-icon [img]="PhoneIcon" [size]="14" class="mt-0.5 shrink-0 text-muted-foreground" />
+                <div>
+                  <p class="text-xs text-muted-foreground">Fixe</p>
+                  <p class="font-medium text-foreground">
+                    {{ a.fixe ? a.fixe : '' }}
                   </p>
                 </div>
               </div>
@@ -161,9 +178,26 @@
             <app-card>
               <app-card-content class="!pt-6">
                 @if (!a.evaluation) {
-                  <p class="text-sm text-muted-foreground italic">Aucune évaluation enregistrée pour cet agent.</p>
+                  <div class="flex flex-col items-center gap-3 py-10 text-center">
+                    <p class="text-sm text-muted-foreground italic">Aucune évaluation enregistrée pour cet agent.</p>
+                    @if (a.statut === 2 && (GestionCoraRole | hasRole)) {
+                      <button appButton type="button" (click)="openEvaluationDialog('ajout')" class="gap-2">
+                        <lucide-icon [img]="PlusIcon" [size]="15" />
+                        Faire une évaluation
+                      </button>
+                    }
+                  </div>
                 } @else {
                   <div class="flex flex-col gap-5 text-sm">
+
+                    @if (a.statut === 2 && (GestionCoraRole | hasRole)) {
+                      <div class="flex justify-end">
+                        <button appButton variant="outline" size="sm" type="button" (click)="openEvaluationDialog('modif')" class="gap-2">
+                          <lucide-icon [img]="PencilIcon" [size]="13" />
+                          Modifier l'évaluation
+                        </button>
+                      </div>
+                    }
 
                     <div>
                       <p class="text-xs font-semibold uppercase text-muted-foreground mb-1">Historique du propriétaire</p>
@@ -234,17 +268,52 @@
           <app-tab label="Documents" [icon]="FileTextIcon">
             <app-card>
               <app-card-content class="!pt-6">
-                <div class="grid sm:grid-cols-3 gap-4">
+                <!-- Input fichier PDF partagé (déclenché programmatiquement) -->
+                <input #docFileInput type="file" multiple accept="application/pdf" class="hidden"
+                  (change)="onDocFilesSelected($event, docFileInput)" />
+
+                <div class="grid  gap-5">
                   @for (type of DOC_TYPES; track type) {
-                    <div>
-                      <p class="text-xs font-semibold uppercase text-muted-foreground mb-2">{{ type }}</p>
+                    <div class="flex flex-col gap-2">
+                      <div class="flex items-center justify-between gap-2">
+                        <p class="text-xs font-semibold uppercase text-muted-foreground">{{ type }}</p>
+                        <!-- Actions (GestionCora, statut==2) -->
+                        @if (a?.statut === 2 && (GestionCoraRole | hasRole)) {
+                          <div class="flex gap-1">
+                            <button appButton variant="outline" size="sm" type="button"
+                              [disabled]="uploadingDoc() === type"
+                              (click)="triggerDocUpload(type, docFileInput)"
+                              class="gap-1 text-xs h-7 px-2"
+                            >
+                              @if (uploadingDoc() === type) {
+                                <span class="h-3 w-3 rounded-full border-2 border-current border-t-transparent animate-spin"></span>
+                              } @else {
+                                <lucide-icon [img]="UploadIcon" [size]="12" />
+                              }
+                              Charger
+                            </button>
+                            @if (documentsByType()[type].length > 0) {
+                              <button appButton variant="destructive" size="sm" type="button"
+                                [disabled]="deletingDoc() === type"
+                                (click)="deleteDocsByType(type)"
+                                class="gap-1 text-xs h-7 px-2"
+                              >
+                                @if (deletingDoc() === type) {
+                                  <span class="h-3 w-3 rounded-full border-2 border-current border-t-transparent animate-spin"></span>
+                                } @else {
+                                  <lucide-icon [img]="Trash2Icon" [size]="12" />
+                                }
+                              </button>
+                            }
+                          </div>
+                        }
+                      </div>
                       @if (documentsByType()[type].length === 0) {
                         <p class="text-xs text-muted-foreground italic">Aucun document chargé.</p>
                       } @else {
                         <div class="flex flex-wrap gap-2">
                           @for (doc of documentsByType()[type]; track doc.reference) {
-                            <button
-                              appButton variant="outline" size="sm" type="button"
+                            <button appButton variant="outline" size="sm" type="button"
                               (click)="openDocument(doc.lien)"
                               class="gap-1.5 text-xs"
                             >
@@ -266,10 +335,46 @@
           <app-tab label="Images" [icon]="ImageIcon">
             <app-card>
               <app-card-content class="!pt-6">
+                <!-- Input image partagé (déclenché programmatiquement) -->
+                <input #imgFileInput type="file" multiple accept="image/*" class="hidden"
+                  (change)="onImgFilesSelected($event, imgFileInput)" />
+
                 <div class="flex flex-col gap-5">
                   @for (type of IMG_TYPES; track type) {
                     <div>
-                      <p class="text-xs font-semibold uppercase text-muted-foreground mb-2">{{ type }}</p>
+                      <div class="flex items-center justify-between gap-2 mb-2">
+                        <p class="text-xs font-semibold uppercase text-muted-foreground">{{ type }}</p>
+                        <!-- Actions (GestionCora, statut==2) -->
+                        @if (a?.statut === 2 && (GestionCoraRole | hasRole)) {
+                          <div class="flex gap-1">
+                            <button appButton variant="outline" size="sm" type="button"
+                              [disabled]="uploadingImg() === type"
+                              (click)="triggerImgUpload(type, imgFileInput)"
+                              class="gap-1 text-xs h-7 px-2"
+                            >
+                              @if (uploadingImg() === type) {
+                                <span class="h-3 w-3 rounded-full border-2 border-current border-t-transparent animate-spin"></span>
+                              } @else {
+                                <lucide-icon [img]="UploadIcon" [size]="12" />
+                              }
+                              Charger
+                            </button>
+                            @if (imagesByType()[type].length > 0) {
+                              <button appButton variant="destructive" size="sm" type="button"
+                                [disabled]="deletingImg() === type"
+                                (click)="deleteImgsByType(type)"
+                                class="gap-1 text-xs h-7 px-2"
+                              >
+                                @if (deletingImg() === type) {
+                                  <span class="h-3 w-3 rounded-full border-2 border-current border-t-transparent animate-spin"></span>
+                                } @else {
+                                  <lucide-icon [img]="Trash2Icon" [size]="12" />
+                                }
+                              </button>
+                            }
+                          </div>
+                        }
+                      </div>
                       @if (imagesByType()[type].length === 0) {
                         <p class="text-xs text-muted-foreground italic">Aucune image chargée.</p>
                       } @else {
@@ -386,6 +491,22 @@
 
 </div>
 
+<!-- Dialog : Confirmation envoi pour validation -->
+<app-dialog [open]="confirmValidationDialogOpen()" (openChange)="confirmValidationDialogOpen.set($event)" classContainer="max-w-sm">
+  <app-dialog-header>
+    <app-dialog-title>Confirmation</app-dialog-title>
+    <app-dialog-description>Êtes-vous sûr de vouloir envoyer cet Agent pour validation ?</app-dialog-description>
+  </app-dialog-header>
+  <app-dialog-footer>
+    <button appButton variant="outline" type="button" (click)="confirmValidationDialogOpen.set(false)">
+      Non
+    </button>
+    <button appButton type="button" (click)="confirmSendForValidation()">
+      Oui, je confirme
+    </button>
+  </app-dialog-footer>
+</app-dialog>
+
 <!-- Dialog : Prendre une décision -->
 <app-dialog [open]="decisionDialogOpen()" (openChange)="decisionDialogOpen.set($event)" classContainer="max-w-sm">
   <app-dialog-header>
@@ -483,3 +604,80 @@
     </button>
   </app-dialog-footer>
 </app-dialog>
+
+<!-- Drawer : Évaluation (ajout / modification) -->
+<app-drawer [open]="evaluationDialogOpen()" (openChange)="evaluationDialogOpen.set($event)" panelClass="max-w-lg">
+  <app-drawer-header>
+    <app-drawer-title>
+      {{ evaluationMode() === 'ajout' ? "Faire une évaluation" : "Modifier l'évaluation" }}
+    </app-drawer-title>
+  </app-drawer-header>
+
+  <app-drawer-content>
+    <form [formGroup]="evaluationForm" class="flex flex-col gap-5">
+
+      <app-form-rich-textarea name="historique" label="Historique du propriétaire" required />
+
+      <div class="grid grid-cols-2 gap-4">
+        <app-form-select name="agenceProche" label="Agence la plus proche" [options]="agenceOptions()" placeholder="Sélectionner une agence" />
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-foreground">Distance</label>
+          <select formControlName="distanceAgence"
+            class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+            <option [value]="0">Moins de 500m</option>
+            <option [value]="1">500m à 1km</option>
+            <option [value]="2">Plus d'un (01) km</option>
+          </select>
+        </div>
+      </div>
+
+      <app-form-rich-textarea name="securite" label="Niveau de sécurité de la zone" required />
+
+      <!-- Forces -->
+      <div class="flex flex-col gap-2">
+        <p class="text-sm font-medium text-foreground">Forces</p>
+        <div class="rounded-lg border border-border p-3 flex flex-col gap-2">
+          @for (f of FORCES; track f) {
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" class="accent-primary"
+                [checked]="evaluationForces().includes(f)"
+                (change)="toggleForce(f)" />
+              {{ f }}
+            </label>
+          }
+        </div>
+      </div>
+
+      <!-- Faiblesses -->
+      <div class="flex flex-col gap-2">
+        <p class="text-sm font-medium text-foreground">Faiblesses</p>
+        <div class="rounded-lg border border-border p-3 flex flex-col gap-2">
+          @for (f of FAIBLESSES; track f) {
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" class="accent-primary"
+                [checked]="evaluationFaiblesses().includes(f)"
+                (change)="toggleFaiblesse(f)" />
+              {{ f }}
+            </label>
+          }
+        </div>
+      </div>
+
+      <app-form-rich-textarea name="commentaire" label="Commentaire du gestionnaire" required />
+
+    </form>
+  </app-drawer-content>
+
+  <app-drawer-footer>
+    <div class="flex justify-end gap-2">
+      <button appButton variant="outline" type="button" (click)="evaluationDialogOpen.set(false)">
+        Annuler
+      </button>
+      <button appButton type="button"
+        [disabled]="evaluationForm.invalid || evaluationLoading()"
+        (click)="saveEvaluation()">
+        @if (evaluationLoading()) { Enregistrement... } @else { Enregistrer }
+      </button>
+    </div>
+  </app-drawer-footer>
+</app-drawer>

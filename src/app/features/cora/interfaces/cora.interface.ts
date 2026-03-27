@@ -29,6 +29,35 @@ export interface Gestionnaire {
   prenom: string;
 }
 
+// Sous-objet "agent" présent dans les réponses de l'ancienne API
+export interface LegacyAgentData {
+  situationMat?: number | string;
+  situationMatri?: number | string; // variante old API
+  mobile?: string;
+  ancieneteLocalAn?: number | string;
+  ancieneteLocalMois?: number | string;
+  bail?: number | string;
+  lot?: string;
+  ilot?: string;
+  immeuble?: string;
+  etage?: number | string;
+  porte?: number | string;
+  quartier?: string;
+  rue?: string;
+  typeFacture?: number | string;
+  facture?: string;
+  tel3g?: number | string;
+  internet?: string | number;
+  reperes?: string | number;
+  espaceClient?: boolean;
+  camera?: boolean;
+  securite?: boolean;
+  caisseIsole?: boolean;
+  enDur?: boolean;
+  ephemere?: boolean;
+  caisseNonIsole?: boolean;
+}
+
 export interface Cora {
   id: number;
   reference?: string;
@@ -53,6 +82,47 @@ export interface Cora {
   user?: CoraUser;
   agents?: CoraAgent[];
   statut?: number;
+  // Mandataire social (détail)
+  dateNaiss?: string;
+  lieuNaiss?: string;
+  nationalite?: { id: number; nationalite?: string } | number;
+  pays?: { id: number; nationalite?: string };
+  typePiece?: number;
+  numeroPiece?: string;
+  situationMat?: number | string;
+  situationMatri?: number | string; // variante old API
+  contactMandataire?: string;
+  ancieneteMmAn?: number;
+  ancieneteMmMois?: number;
+  dateCreation?: string;
+  nombreEmploye?: number;
+  // Local
+  lot?: string;
+  ilot?: string;
+  bail?: number;
+  ancieneteLocalAn?: number;
+  ancieneteLocalMois?: number;
+  immeuble?: string;
+  etage?: string;
+  porte?: string;
+  typeFacture?: number;
+  facture?: string;
+  reperes?: string;
+  autrePartners?: string;
+  debit?: number;
+  internet?: string;
+  description?: string;
+  enDur?: boolean;
+  ephemere?: boolean;
+  espaceClient?: boolean;
+  camera?: boolean;
+  securite?: boolean;
+  caisseIsole?: boolean;
+  caisseNonIsole?: boolean;
+  partners?: string[] | string;
+  typeDevice?: string[] | string;
+  // Sous-objet présent dans les réponses de l'ancienne API
+  agent?: LegacyAgentData;
 }
 
 export interface FileCoraModel {
@@ -94,6 +164,22 @@ export interface AgentCoraDetail {
   commune?: CoraCommune;
   quartier?: string;
   rue?: string;
+  lot?: string;
+  ilot?: string;
+  immeuble?: string;
+  etage?: string;
+  porte?: string;
+  ancieneteLocalAn?: number;
+  ancieneteLocalMois?: number;
+  reperes?: string;
+  bail?: number;
+  typeFacture?: string;
+  facture?: string;
+  debit?: number;
+  tel3g?: number | string; // nom old API, fallback
+  internet?: string | number;
+  description?: string;
+  typeDevice?: string[] | string;
   latitude?: number | null;
   longitude?: number | null;
   typeUser?: number;
@@ -177,7 +263,7 @@ export interface CreateAgentDto {
   facture?: string;
   reperes: string;
   debit: number;
-  internet: number;
+  internet: number | string;
   description: string;
   espaceClient?: boolean;
   camera?: boolean;
@@ -186,5 +272,6 @@ export interface CreateAgentDto {
   enDur?: boolean;
   ephemere?: boolean;
   caisseNonIsole?: boolean;
+  typeDevice?: string[];
   agent?: number;
 }

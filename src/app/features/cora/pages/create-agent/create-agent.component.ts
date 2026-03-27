@@ -17,7 +17,7 @@ import { Component, OnInit, computed, inject, input, signal } from '@angular/cor
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ArrowLeft, Building2, LucideAngularModule, Search, X } from 'lucide-angular';
-import { CoraRefDesig, CreateAgentFormData } from '../../interfaces/cora.interface';
+import { CoraRefDesig, CreateAgentDto, CreateAgentFormData } from '../../interfaces/cora.interface';
 import { CoraService } from '../../services/cora/cora.service';
 
 @Component({
@@ -79,6 +79,8 @@ export class CreateAgentComponent implements OnInit {
 
   // ── Étape 2 : formulaire agent ────────────────────────────────────────────
   readonly isSubmitting = signal(false);
+  readonly isEditMode = signal(false);
+  readonly editAgentId = signal<number | null>(null);
 
   readonly form = this.fb.group({
     typeUser: [null as number | null, Validators.required],
@@ -102,7 +104,7 @@ export class CreateAgentComponent implements OnInit {
     typeFacture: [''],
     facture: [''],
     debit: [null as number | null, Validators.required],
-    internet: [null as number | null, Validators.required],
+    internet: [null as string | null, Validators.required],
     description: ['', Validators.required],
     deviceSmartphone: [false],
     deviceTablette: [false],
@@ -147,6 +149,55 @@ export class CreateAgentComponent implements OnInit {
       const cora = this.formData()?.coras.find((c) => c.id === +coraId);
       if (cora) this.selectedCora.set(cora);
     }
+
+    const agentId = this.route.snapshot.queryParamMap.get('agentId');
+    if (!agentId) return;
+    this.isEditMode.set(true);
+    this.editAgentId.set(+agentId);
+    this.coraService.getAgentById(+agentId).subscribe({
+      next: (agent) => {
+        // Pré-sélection du CORA
+        if (agent.cora) {
+          const cora = this.formData()?.coras.find((c) => c.id === agent.cora?.id);
+          if (cora) this.selectedCora.set(cora);
+        }
+        // Pré-remplissage du formulaire
+        const typeDevice = this.parseJsonArray(agent.typeDevice);
+        this.form.patchValue({
+          typeUser: agent.typeUser ?? null,
+          mobile: agent.mobile ?? '',
+          fixe: agent.fixe ?? '',
+          commune: agent.commune?.id ?? null,
+          quartier: agent.quartier ?? '',
+          rue: agent.rue ?? '',
+          lot: agent.lot ?? '',
+          ilot: agent.ilot ?? '',
+          immeuble: agent.immeuble ?? '',
+          etage: agent.etage ?? '',
+          porte: agent.porte ?? '',
+          ancieneteLocalAn: agent.ancieneteLocalAn ?? null,
+          ancieneteLocalMois: agent.ancieneteLocalMois ?? null,
+          reperes: agent.reperes ?? '',
+          bail: agent.bail ?? null,
+          typeFacture: agent.typeFacture ?? '',
+          facture: agent.facture ?? '',
+          debit: agent.debit ?? (agent.tel3g != null ? Number(agent.tel3g) : null),
+          internet: agent.internet != null ? String(agent.internet) : null,
+          description: agent.description ?? '',
+          espaceClient: agent.espaceClient ?? false,
+          camera: agent.camera ?? false,
+          securite: agent.securite ?? false,
+          caisseIsole: agent.caisseIsole ?? false,
+          enDur: agent.enDur ?? false,
+          ephemere: agent.ephemere ?? false,
+          caisseNonIsole: agent.caisseNonIsole ?? false,
+          deviceSmartphone: typeDevice.includes('SMARTPHONE'),
+          deviceTablette: typeDevice.includes('TABLETTE'),
+          deviceOrdinateur: typeDevice.includes('ORDINATEUR'),
+        });
+      },
+      error: () => this.toast.error('Erreur lors du chargement de l\'agent.'),
+    });
   }
 
   submit() {
@@ -167,17 +218,59 @@ export class CreateAgentComponent implements OnInit {
         (d === 'ORDINATEUR' && raw.deviceOrdinateur),
     );
     const { deviceSmartphone, deviceTablette, deviceOrdinateur, ...rest } = raw;
-    const payload = { ...rest, cora: this.selectedCora()!.id, typeDevice };
-    this.coraService.saveAgent(payload as any).subscribe({
-      next: (agent) => {
-        this.toast.success('Agent enregistré avec succès.');
-        this.router.navigate(['/app/cora/agent', agent.id]);
+    const payload: CreateAgentDto = {
+      cora: this.selectedCora()!.id,
+      typeUser: rest.typeUser!,
+      mobile: rest.mobile!,
+      fixe: rest.fixe ?? '',
+      commune: rest.commune!,
+      quartier: rest.quartier!,
+      rue: rest.rue ?? '',
+      lot: rest.lot ?? '',
+      ilot: rest.ilot ?? '',
+      immeuble: rest.immeuble ?? '',
+      etage: rest.etage ?? '',
+      porte: rest.porte ?? '',
+      ancieneteLocalAn: rest.ancieneteLocalAn!,
+      ancieneteLocalMois: rest.ancieneteLocalMois!,
+      reperes: rest.reperes!,
+      bail: rest.bail!,
+      typeFacture: rest.typeFacture ?? '',
+      facture: rest.facture ?? '',
+      debit: rest.debit!,
+      internet: rest.internet!,
+      description: rest.description!,
+      espaceClient: rest.espaceClient ?? false,
+      camera: rest.camera ?? false,
+      securite: rest.securite ?? false,
+      caisseIsole: rest.caisseIsole ?? false,
+      enDur: rest.enDur ?? false,
+      ephemere: rest.ephemere ?? false,
+      caisseNonIsole: rest.caisseNonIsole ?? false,
+      typeDevice,
+    };
+
+    const call = this.isEditMode()
+      ? this.coraService.updateAgent({ ...payload, agent: this.editAgentId()! })
+      : this.coraService.saveAgent(payload);
+
+    call.subscribe({
+      next: (res) => {
+        const agentId = res?.id ?? this.editAgentId();
+        this.toast.success(this.isEditMode() ? 'Agent mis à jour avec succès.' : 'Agent enregistré avec succès.');
+        this.router.navigate(['/app/cora/agent', agentId]);
       },
       error: () => {
         this.toast.error("Une erreur est survenue lors de l'enregistrement.");
         this.isSubmitting.set(false);
       },
     });
+  }
+
+  private parseJsonArray(val: string[] | string | undefined | null): string[] {
+    if (!val) return [];
+    if (Array.isArray(val)) return val;
+    try { return JSON.parse(val); } catch { return []; }
   }
 
   goBack() {

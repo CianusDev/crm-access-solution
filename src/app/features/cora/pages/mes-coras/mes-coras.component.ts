@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { UpperCasePipe } from '@angular/common';
-import { LucideAngularModule, Search, Eye, RefreshCw, MapPin } from 'lucide-angular';
+import { LucideAngularModule, Search, Eye, RefreshCw, MapPin, FileText } from 'lucide-angular';
 import {
   CardComponent,
   CardContentComponent,
@@ -11,9 +11,12 @@ import {
 import { PaginationComponent } from '@/shared/components/pagination/pagination.component';
 import { Cora } from '../../interfaces/cora.interface';
 import { CoraService } from '../../services/cora/cora.service';
+import { CoraPdfService } from '../../services/pdf/cora-pdf.service';
 import { ToastService } from '@/core/services/toast/toast.service';
+import { AuthService } from '@/core/services/auth/auth.service';
 import { Avatar } from '@/shared/components/avatar/avatar.component';
 import { InitialesPipe } from '@/shared/pipes/initiales.pipe';
+import { CoraMapComponent } from '../../components/cora-map/cora-map.component';
 
 const STATUT_LABELS: Record<number, string> = {
   0: 'Inactif',
@@ -48,6 +51,7 @@ const PAGE_SIZE = 10;
     PaginationComponent,
     Avatar,
     InitialesPipe,
+    CoraMapComponent,
   ],
 })
 export class MesCoras implements OnInit {
@@ -55,16 +59,21 @@ export class MesCoras implements OnInit {
   readonly EyeIcon     = Eye;
   readonly RefreshIcon = RefreshCw;
   readonly MapPinIcon  = MapPin;
+  readonly FileTextIcon = FileText;
 
   private readonly router      = inject(Router);
   private readonly coraService = inject(CoraService);
+  private readonly coraPdf     = inject(CoraPdfService);
   private readonly toast       = inject(ToastService);
+  private readonly auth        = inject(AuthService);
 
-  readonly coras     = signal<Cora[]>([]);
-  readonly isLoading = signal(false);
-  readonly query     = signal('');
-  readonly page      = signal(1);
-  readonly pageSize  = PAGE_SIZE;
+  readonly coras          = signal<Cora[]>([]);
+  readonly isLoading      = signal(false);
+  readonly isExportingCsv = signal(false);
+  readonly isExportingPdf = signal(false);
+  readonly query          = signal('');
+  readonly page           = signal(1);
+  readonly pageSize       = PAGE_SIZE;
 
   readonly filtered = computed(() => {
     const q = this.query().toLowerCase().trim();
@@ -107,6 +116,49 @@ export class MesCoras implements OnInit {
 
   viewDetail(id: number) { this.router.navigate(['/app/cora', id]); }
 
+  async exportPDF() {
+    this.isExportingPdf.set(true);
+    try {
+      const u = this.auth.currentUser();
+      const userName = u ? `${u.nom ?? ''} ${u.prenom ?? ''}`.trim() : '';
+      await this.coraPdf.exportListePDF(this.filtered(), userName);
+    } finally {
+      this.isExportingPdf.set(false);
+    }
+  }
+
+  exportCSV() {
+    this.isExportingCsv.set(true);
+    try {
+      const headers = ['Réf.', 'N. Perfect', 'N. P-Mobile', 'Désignation', 'Email', 'Commune', 'Quartier', 'Rue', 'Gestionnaire', 'Nombre agence'];
+      const rows = this.filtered().map(c => [
+        `AG-${c.reference ?? ''}`,
+        c.perfect ?? '',
+        c.pmobile ?? '',
+        c.designation ?? '',
+        c.email ?? '',
+        c.commune?.libelle ?? '',
+        c.quartier ?? '',
+        c.rue ?? '',
+        c.user ? `${c.user.nom ?? ''} ${c.user.prenom ?? ''}`.trim() : '',
+        String(c.agents?.length ?? 0),
+      ]);
+
+      const csv = [headers, ...rows]
+        .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mes-coras-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      this.isExportingCsv.set(false);
+    }
+  }
 
   statutLabel(s: number): string  { return STATUT_LABELS[s]  ?? '—'; }
   statutClass(s: number): string  { return STATUT_CLASSES[s] ?? 'bg-muted text-muted-foreground'; }

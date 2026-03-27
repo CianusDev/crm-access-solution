@@ -13,10 +13,12 @@ import {
 import { CoraManagersTable } from '../../components/cora-manager-table/cora-managers-table.component';
 import { StatsCardComponent } from '@/shared/components/stats-card/stats-card.component';
 import { DashboardCoraData } from '../../interfaces/dashbaord-cora.interface';
+import { HasRolePipe } from '@/shared/pipes/has-role/has-role.pipe';
+import { UserRole } from '@/core/models/user.model';
 
 @Component({
   selector: 'app-dashboard-cora',
-  imports: [LucideAngularModule, StatsCardComponent, CoraManagersTable, BarChartComponent],
+  imports: [LucideAngularModule, StatsCardComponent, CoraManagersTable, BarChartComponent, HasRolePipe],
   templateUrl: './dashboard-cora.component.html',
 })
 export class DashboardCoraComponent {
@@ -28,6 +30,7 @@ export class DashboardCoraComponent {
   readonly UserIcon = UserIcon;
   readonly UsersIcon = UsersIcon;
   readonly dashboardCoraData = input<DashboardCoraData>();
+  readonly UserRole = UserRole;
 
   readonly coraManagerNames = computed(
     () =>

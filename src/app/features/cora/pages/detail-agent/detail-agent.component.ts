@@ -16,7 +16,16 @@ import {
   DialogContentComponent,
   DialogFooterComponent,
 } from '@/shared/components/dialog/dialog.component';
+import {
+  DrawerComponent,
+  DrawerHeaderComponent,
+  DrawerTitleComponent,
+  DrawerContentComponent,
+  DrawerFooterComponent,
+} from '@/shared/components/drawer/drawer.component';
 import { FormInput } from '@/shared/components/form-input/form-input.component';
+import { FormSelect } from '@/shared/components/form-select/form-select.component';
+import { FormRichTextarea } from '@/shared/components/form-rich-textarea/form-rich-textarea.component';
 import { HasRolePipe } from '@/shared/pipes/has-role/has-role.pipe';
 import { GoogleMap, MapMarker } from '@angular/google-maps';
 import { Component, computed, inject, input, signal } from '@angular/core';
@@ -38,6 +47,10 @@ import {
   Lock,
   KeyRound,
   Gavel,
+  Pencil,
+  Plus,
+  Upload,
+  Trash2,
 } from 'lucide-angular';
 import {
   AgentCoraDetail,
@@ -47,6 +60,8 @@ import {
 } from '../../interfaces/cora.interface';
 import { CoraService } from '../../services/cora/cora.service';
 import { ToastService } from '@/core/services/toast/toast.service';
+import { ParametresService } from '@/features/parametres/services/parametres.service';
+import { SelectOption } from '@/shared/components/form-select/form-select.component';
 import { Avatar } from '@/shared/components/avatar/avatar.component';
 import { getInitiales } from '@/shared/pipes/initiales.pipe';
 import { DatePipe, UpperCasePipe } from '@angular/common';
@@ -137,12 +152,19 @@ const IMG_TYPES = ['Mandataire Social', 'Façade', 'Ruelle', 'Espace client', 'P
     HasRolePipe,
     ReactiveFormsModule,
     FormInput,
+    FormSelect,
+    FormRichTextarea,
     DialogComponent,
     DialogHeaderComponent,
     DialogTitleComponent,
     DialogDescriptionComponent,
     DialogContentComponent,
     DialogFooterComponent,
+    DrawerComponent,
+    DrawerHeaderComponent,
+    DrawerTitleComponent,
+    DrawerContentComponent,
+    DrawerFooterComponent,
   ],
 })
 export class DetailAgentComponent {
@@ -159,6 +181,10 @@ export class DetailAgentComponent {
   readonly LockIcon = Lock;
   readonly KeyRoundIcon = KeyRound;
   readonly GavelIcon = Gavel;
+  readonly PencilIcon = Pencil;
+  readonly PlusIcon = Plus;
+  readonly UploadIcon = Upload;
+  readonly Trash2Icon = Trash2;
 
   readonly DOC_TYPES = DOC_TYPES;
   readonly IMG_TYPES = IMG_TYPES;
@@ -176,12 +202,28 @@ export class DetailAgentComponent {
   private readonly coraService = inject(CoraService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder);
+  private readonly parametresService = inject(ParametresService);
 
   readonly agent = input<AgentCoraDetail>();
+
+  // ── Données locales (rafraîchissables après upload) ───────────────────────
+  private readonly agentOverride = signal<AgentCoraDetail | undefined>(undefined);
+  readonly agentData = computed(() => this.agentOverride() ?? this.agent());
+
+  // ── Upload / delete states ─────────────────────────────────────────────────
+  readonly uploadingDoc = signal<string | null>(null);
+  readonly uploadingImg = signal<string | null>(null);
+  readonly deletingDoc = signal<string | null>(null);
+  readonly deletingImg = signal<string | null>(null);
+
+  // Libelle courant pour le file input partagé
+  private currentDocType = '';
+  private currentImgType = '';
 
   readonly isSubmitting = signal(false);
 
   // ── Dialogs ───────────────────────────────────────────────────────────────
+  readonly confirmValidationDialogOpen = signal(false);
   readonly decisionDialogOpen = signal(false);
   readonly decisionLoading = signal(false);
   readonly decisionForm = this.fb.group({
@@ -207,11 +249,27 @@ export class DetailAgentComponent {
 
   readonly actionLoading = signal(false);
 
+  // ── Dialog évaluation ─────────────────────────────────────────────────────
+  readonly evaluationDialogOpen = signal(false);
+  readonly evaluationLoading = signal(false);
+  readonly evaluationMode = signal<'ajout' | 'modif'>('ajout');
+  readonly evaluationForces = signal<string[]>([]);
+  readonly evaluationFaiblesses = signal<string[]>([]);
+  readonly agenceOptions = signal<SelectOption[]>([]);
+  readonly evaluationForm = this.fb.group({
+    agentId: [0],
+    historique: ['', Validators.required],
+    agenceProche: ['', Validators.required],
+    distanceAgence: [0, Validators.required],
+    securite: ['', Validators.required],
+    commentaire: ['', Validators.required],
+  });
+
   // ── Computed ──────────────────────────────────────────────────────────────
-  readonly initiales = computed(() => getInitiales(this.agent()?.cora?.designation));
+  readonly initiales = computed(() => getInitiales(this.agentData()?.cora?.designation));
 
   readonly mapCenter = computed((): google.maps.LatLngLiteral | null => {
-    const a = this.agent();
+    const a = this.agentData();
     const lat = Number(a?.latitude);
     const lng = Number(a?.longitude);
     return lat && lng ? { lat, lng } : null;
@@ -225,7 +283,7 @@ export class DetailAgentComponent {
 
   readonly forces = computed<string[]>(() => {
     try {
-      return JSON.parse(this.agent()?.evaluation?.force ?? '[]');
+      return JSON.parse(this.agentData()?.evaluation?.force ?? '[]');
     } catch {
       return [];
     }
@@ -233,14 +291,14 @@ export class DetailAgentComponent {
 
   readonly faiblesses = computed<string[]>(() => {
     try {
-      return JSON.parse(this.agent()?.evaluation?.faiblesse ?? '[]');
+      return JSON.parse(this.agentData()?.evaluation?.faiblesse ?? '[]');
     } catch {
       return [];
     }
   });
 
   readonly documentsByType = computed(() => {
-    const docs = this.agent()?.documents ?? [];
+    const docs = this.agentData()?.documents ?? [];
     return DOC_TYPES.reduce(
       (acc, type) => {
         acc[type] = docs.filter((d) => d.libelle === type);
@@ -251,7 +309,7 @@ export class DetailAgentComponent {
   });
 
   readonly imagesByType = computed(() => {
-    const imgs = this.agent()?.images ?? [];
+    const imgs = this.agentData()?.images ?? [];
     return IMG_TYPES.reduce(
       (acc, type) => {
         acc[type] = imgs.filter((i) => i.libelle === type);
@@ -260,6 +318,107 @@ export class DetailAgentComponent {
       {} as Record<string, FileCoraModel[]>,
     );
   });
+
+  // ── Refresh ───────────────────────────────────────────────────────────────
+  private refreshAgent() {
+    const id = this.agentData()?.id;
+    if (!id) return;
+    this.coraService.getAgentById(id).subscribe({
+      next: (data) => this.agentOverride.set(data),
+      error: () => {},
+    });
+  }
+
+  // ── Upload documents ──────────────────────────────────────────────────────
+  triggerDocUpload(libelle: string, input: HTMLInputElement) {
+    this.currentDocType = libelle;
+    input.value = '';
+    input.click();
+  }
+
+  onDocFilesSelected(event: Event, input: HTMLInputElement) {
+    const files = (event.target as HTMLInputElement).files;
+    if (!files || files.length === 0) return;
+    const agentId = this.agentData()?.id;
+    if (!agentId) return;
+    this.uploadingDoc.set(this.currentDocType);
+    const call = files.length === 1
+      ? this.coraService.uploadDocument(agentId, this.currentDocType, files[0])
+      : this.coraService.uploadDocuments(agentId, this.currentDocType, files);
+    call.subscribe({
+      next: () => {
+        this.toast.success('Document(s) chargé(s) avec succès.');
+        this.uploadingDoc.set(null);
+        this.refreshAgent();
+      },
+      error: (err: { message?: string }) => {
+        this.toast.error(err?.message ?? 'Erreur lors du chargement.');
+        this.uploadingDoc.set(null);
+      },
+    });
+    input.value = '';
+  }
+
+  deleteDocsByType(libelle: string) {
+    const agentId = this.agentData()?.id;
+    if (!agentId) return;
+    this.deletingDoc.set(libelle);
+    this.coraService.deleteDocumentsByType(agentId, libelle).subscribe({
+      next: () => {
+        this.toast.success('Documents supprimés.');
+        this.deletingDoc.set(null);
+        this.refreshAgent();
+      },
+      error: (err: { message?: string }) => {
+        this.toast.error(err?.message ?? 'Erreur lors de la suppression.');
+        this.deletingDoc.set(null);
+      },
+    });
+  }
+
+  // ── Upload images ─────────────────────────────────────────────────────────
+  triggerImgUpload(libelle: string, input: HTMLInputElement) {
+    this.currentImgType = libelle;
+    input.value = '';
+    input.click();
+  }
+
+  onImgFilesSelected(event: Event, input: HTMLInputElement) {
+    const files = (event.target as HTMLInputElement).files;
+    if (!files || files.length === 0) return;
+    const agentId = this.agentData()?.id;
+    if (!agentId) return;
+    this.uploadingImg.set(this.currentImgType);
+    this.coraService.uploadImages(agentId, this.currentImgType, files).subscribe({
+      next: () => {
+        this.toast.success('Image(s) chargée(s) avec succès.');
+        this.uploadingImg.set(null);
+        this.refreshAgent();
+      },
+      error: (err: { message?: string }) => {
+        this.toast.error(err?.message ?? 'Erreur lors du chargement.');
+        this.uploadingImg.set(null);
+      },
+    });
+    input.value = '';
+  }
+
+  deleteImgsByType(libelle: string) {
+    const agentId = this.agentData()?.id;
+    if (!agentId) return;
+    this.deletingImg.set(libelle);
+    this.coraService.deleteImagesByType(agentId, libelle).subscribe({
+      next: () => {
+        this.toast.success('Images supprimées.');
+        this.deletingImg.set(null);
+        this.refreshAgent();
+      },
+      error: (err: { message?: string }) => {
+        this.toast.error(err?.message ?? 'Erreur lors de la suppression.');
+        this.deletingImg.set(null);
+      },
+    });
+  }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   statutLabel(statut?: number) {
@@ -308,10 +467,144 @@ export class DetailAgentComponent {
     this.router.navigate(['/app/cora/pending']);
   }
 
+  goEditAgent() {
+    const a = this.agent();
+    if (!a) return;
+    if (a.typeUser === 1) {
+      this.router.navigate(['/app/cora/create'], { queryParams: { coraId: a.cora?.id } });
+    } else {
+      this.router.navigate(['/app/cora/agent/create'], { queryParams: { agentId: a.id } });
+    }
+  }
+
+  // ── Dialog évaluation ─────────────────────────────────────────────────────
+  openEvaluationDialog(mode: 'ajout' | 'modif') {
+    const a = this.agentData();
+    this.evaluationMode.set(mode);
+    if (this.agenceOptions().length === 0) {
+      this.parametresService.getAgences().subscribe({
+        next: (agences) => this.agenceOptions.set(agences.map((ag) => ({ value: ag.libelle, label: ag.libelle }))),
+        error: () => {},
+      });
+    }
+    if (mode === 'modif' && a?.evaluation) {
+      this.evaluationForm.reset({
+        agentId: a.id,
+        historique: a.evaluation.historique ?? '',
+        agenceProche: a.evaluation.agenceProche ?? '',
+        distanceAgence: a.evaluation.distanceAgence ?? 0,
+        securite: a.evaluation.securite ?? '',
+        commentaire: a.evaluation.commentaire ?? '',
+      });
+      try { this.evaluationForces.set(JSON.parse(a.evaluation.force ?? '[]')); } catch { this.evaluationForces.set([]); }
+      try { this.evaluationFaiblesses.set(JSON.parse(a.evaluation.faiblesse ?? '[]')); } catch { this.evaluationFaiblesses.set([]); }
+    } else {
+      this.evaluationForm.reset({ agentId: a?.id ?? 0, historique: '', agenceProche: '', distanceAgence: 0, securite: '', commentaire: '' });
+      this.evaluationForces.set([]);
+      this.evaluationFaiblesses.set([]);
+    }
+    this.evaluationDialogOpen.set(true);
+  }
+
+  toggleForce(f: string) {
+    const current = this.evaluationForces();
+    this.evaluationForces.set(current.includes(f) ? current.filter(x => x !== f) : [...current, f]);
+  }
+
+  toggleFaiblesse(f: string) {
+    const current = this.evaluationFaiblesses();
+    this.evaluationFaiblesses.set(current.includes(f) ? current.filter(x => x !== f) : [...current, f]);
+  }
+
+  saveEvaluation() {
+    if (this.evaluationForm.invalid) return;
+    const v = this.evaluationForm.getRawValue();
+    const payload = {
+      agent: v.agentId!,
+      historique: v.historique!,
+      agenceProche: v.agenceProche!,
+      distanceAgence: Number(v.distanceAgence),
+      securite: v.securite!,
+      forces: this.evaluationForces(),
+      faibesses: this.evaluationFaiblesses(),
+      commentaire: v.commentaire!,
+    };
+    this.evaluationLoading.set(true);
+    const call = this.evaluationMode() === 'ajout'
+      ? this.coraService.saveEvaluation(payload)
+      : this.coraService.updateEvaluation(payload);
+    call.subscribe({
+      next: () => {
+        this.toast.success(this.evaluationMode() === 'ajout' ? 'Évaluation enregistrée.' : 'Évaluation mise à jour.');
+        this.evaluationDialogOpen.set(false);
+        this.evaluationLoading.set(false);
+        this.goBack();
+      },
+      error: (err) => {
+        this.toast.error(err.message ?? "Erreur lors de l'enregistrement.");
+        this.evaluationLoading.set(false);
+      },
+    });
+  }
+
   // ── Actions ───────────────────────────────────────────────────────────────
   sendForValidation() {
-    const id = this.agent()?.id;
+    const a = this.agentData();
+    if (!a?.id) return;
+
+    const docs = this.documentsByType();
+    const imgs = this.imagesByType();
+    const hasGeo = !!a.latitude && !!a.longitude;
+
+    const isPrincipal = a.typeUser === 1;
+    const valid = isPrincipal
+      ? docs["Pièce d'identité"]?.length > 0 &&
+        docs['BIC']?.length > 0 &&
+        docs['RCCM']?.length > 0 &&
+        docs['Contrat de bail']?.length > 0 &&
+        docs['Facture']?.length > 0 &&
+        imgs['Mandataire Social']?.length > 0 &&
+        imgs['Façade']?.length > 0 &&
+        imgs['Ruelle']?.length > 0 &&
+        imgs['Espace client']?.length > 0 &&
+        imgs['Photo Caisse']?.length > 0 &&
+        hasGeo
+      : docs['Contrat de bail']?.length > 0 &&
+        imgs['Façade']?.length > 0 &&
+        imgs['Ruelle']?.length > 0 &&
+        imgs['Espace client']?.length > 0 &&
+        imgs['Photo Caisse']?.length > 0 &&
+        hasGeo;
+
+    if (!valid) {
+      const manquants: string[] = [];
+      if (isPrincipal) {
+        if (!docs["Pièce d'identité"]?.length) manquants.push("Doc: Pièce d'identité");
+        if (!docs['BIC']?.length) manquants.push('Doc: BIC');
+        if (!docs['RCCM']?.length) manquants.push('Doc: RCCM');
+        if (!docs['Contrat de bail']?.length) manquants.push('Doc: Contrat de bail');
+        if (!docs['Facture']?.length) manquants.push('Doc: Facture');
+        if (!imgs['Mandataire Social']?.length) manquants.push('Img: Mandataire Social');
+      } else {
+        if (!docs['Contrat de bail']?.length) manquants.push('Doc: Contrat de bail');
+      }
+      if (!imgs['Façade']?.length) manquants.push('Img: Façade');
+      if (!imgs['Ruelle']?.length) manquants.push('Img: Ruelle');
+      if (!imgs['Espace client']?.length) manquants.push("Img: Espace client");
+      if (!imgs['Photo Caisse']?.length) manquants.push('Img: Photo Caisse');
+      if (!hasGeo) manquants.push('Géolocalisation');
+      console.warn('[sendForValidation] manquants:', manquants, { docs, imgs, lat: a.latitude, lng: a.longitude });
+      this.toast.error("Manquant : " + manquants.join(', '));
+      return;
+    }
+
+    this.confirmValidationDialogOpen.set(true);
+  }
+
+  confirmSendForValidation() {
+    const id = this.agentData()?.id;
     if (!id) return;
+    this.confirmValidationDialogOpen.set(false);
     this.actionLoading.set(true);
     this.coraService.sendAgentForValidation(id).subscribe({
       next: () => {
@@ -320,7 +613,7 @@ export class DetailAgentComponent {
         this.goBack();
       },
       error: (err) => {
-        this.toast.error(err.message ?? 'Erreur lors de l\'envoi.');
+        this.toast.error(err.message ?? "Erreur lors de l'envoi.");
         this.actionLoading.set(false);
       },
     });

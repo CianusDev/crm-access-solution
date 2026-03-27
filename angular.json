@@ -30,11 +30,12 @@
                 "output": "/assets"
               }
             ],
-            "styles": ["src/styles.css"],
+            "styles": ["src/styles.css", "node_modules/quill/dist/quill.snow.css"],
             "scripts": [],
             "allowedCommonJsDependencies": [
               "exceljs",
-              "pdfmake/build/pdfmake"
+              "pdfmake/build/pdfmake",
+              "quill"
             ],
             "security": {
               "allowedHosts": []

@@ -40,6 +40,12 @@ export class CoraService {
       .pipe(catchError((err) => throwError(() => ({ status: err.status, message: err.message }))));
   }
 
+  updateCora(data: CreateCoraDto & { cora: number }) {
+    return this.apiService
+      .put(this.endpoint + '/update_cora', data)
+      .pipe(catchError((err) => throwError(() => ({ status: err.status, message: err.message }))));
+  }
+
   getListCoraData() {
     return forkJoin({
       coras: this.apiService
@@ -186,6 +192,84 @@ export class CoraService {
   savePerfectNumber(data: { agent: number; perfectNumber?: string; pmobileNumber: string }) {
     return this.apiService
       .post(this.endpoint + '/save_perfect_number', data)
+      .pipe(catchError((err) => throwError(() => ({ status: err.status, message: err.message }))));
+  }
+
+  // ── Fichiers ──────────────────────────────────────────────────────────────
+  uploadDocument(agentId: number, libelle: string, file: File) {
+    const fd = new FormData();
+    fd.append('agent', agentId.toString());
+    fd.append('libelle', libelle);
+    fd.append('file', file);
+    return this.apiService
+      .postFormData(this.endpoint + '/save_doc', fd)
+      .pipe(catchError((err) => throwError(() => ({ status: err.status, message: err.message }))));
+  }
+
+  uploadDocuments(agentId: number, libelle: string, files: FileList) {
+    const fd = new FormData();
+    fd.append('agent', agentId.toString());
+    fd.append('libelle', libelle);
+    for (let i = 0; i < files.length; i++) fd.append(`files${i}`, files[i]);
+    fd.append('length', files.length.toString());
+    return this.apiService
+      .postFormData(this.endpoint + '/save_multiple_doc', fd)
+      .pipe(catchError((err) => throwError(() => ({ status: err.status, message: err.message }))));
+  }
+
+  uploadImage(agentId: number, libelle: string, file: File) {
+    const fd = new FormData();
+    fd.append('agent', agentId.toString());
+    fd.append('libelle', libelle);
+    fd.append('description', '');
+    fd.append('photo', file);
+    return this.apiService
+      .postFormData(this.endpoint + '/save_image', fd)
+      .pipe(catchError((err) => throwError(() => ({ status: err.status, message: err.message }))));
+  }
+
+  uploadImages(agentId: number, libelle: string, files: FileList) {
+    const fd = new FormData();
+    fd.append('agent', agentId.toString());
+    fd.append('libelle', libelle);
+    fd.append('description', '');
+    for (let i = 0; i < files.length; i++) fd.append(`photos${i}`, files[i]);
+    fd.append('length', files.length.toString());
+    return this.apiService
+      .postFormData(this.endpoint + '/save_multiples_image', fd)
+      .pipe(catchError((err) => throwError(() => ({ status: err.status, message: err.message }))));
+  }
+
+  deleteDocumentsByType(agentId: number, libelle: string) {
+    return this.apiService
+      .post(this.endpoint + '/delete_multiple_doc', { agent: agentId, libelle })
+      .pipe(catchError((err) => throwError(() => ({ status: err.status, message: err.message }))));
+  }
+
+  deleteImagesByType(agentId: number, libelle: string) {
+    return this.apiService
+      .post(this.endpoint + '/delete_multiple_image', { agent: agentId, libelle })
+      .pipe(catchError((err) => throwError(() => ({ status: err.status, message: err.message }))));
+  }
+
+
+  saveEvaluation(data: {
+    agent: number; historique: string; agenceProche: string;
+    distanceAgence: number; securite: string;
+    forces: string[]; faibesses: string[]; commentaire: string;
+  }) {
+    return this.apiService
+      .post(this.endpoint + '/save_evaluation', data)
+      .pipe(catchError((err) => throwError(() => ({ status: err.status, message: err.message }))));
+  }
+
+  updateEvaluation(data: {
+    agent: number; historique: string; agenceProche: string;
+    distanceAgence: number; securite: string;
+    forces: string[]; faibesses: string[]; commentaire: string;
+  }) {
+    return this.apiService
+      .post(this.endpoint + '/update_evaluation', data)
       .pipe(catchError((err) => throwError(() => ({ status: err.status, message: err.message }))));
   }
 }

@@ -26,9 +26,9 @@ import { ToastService } from '@/core/services/toast/toast.service';
 import { LabelDirective } from '@/shared/directives/ui/label/label';
 import { LucideAngularModule, CheckIcon } from 'lucide-angular';
 import { ButtonComponent } from '@/shared/components/button/button.component';
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CoraFormData, CreateCoraDto } from '../../interfaces/create-cora-dto.interface';
 import { CoraService } from '../../services/cora/cora.service';
 
@@ -52,7 +52,7 @@ import { CoraService } from '../../services/cora/cora.service';
     ReactiveFormsModule,
   ],
 })
-export class CreateCoraComponent {
+export class CreateCoraComponent implements OnInit {
   readonly CheckIcon = CheckIcon;
 
   // ── Constants ────────────────────────────────────────────────────────────
@@ -72,6 +72,10 @@ export class CreateCoraComponent {
   private readonly coraService = inject(CoraService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+
+  readonly isEditMode = signal(false);
+  readonly editCoraId = signal<number | null>(null);
 
   // ── Resolver data ─────────────────────────────────────────────────────────
   readonly formData = input<CoraFormData>();
@@ -105,7 +109,10 @@ export class CreateCoraComponent {
     fonction: ['', Validators.required],
     contactMandataire: ['', Validators.required],
     ancieneteMmAn: [null as number | null, [Validators.required, Validators.min(0)]],
-    ancieneteMmMois: [null as number | null, [Validators.required, Validators.min(0), Validators.max(11)]],
+    ancieneteMmMois: [
+      null as number | null,
+      [Validators.required, Validators.min(0), Validators.max(11)],
+    ],
     nombrePtService: [null as number | null, [Validators.required, Validators.min(1)]],
 
     // Description de l'activité
@@ -125,7 +132,10 @@ export class CreateCoraComponent {
     ilot: [''],
     bail: [null as number | null, Validators.required],
     ancieneteLocalAn: [null as number | null, [Validators.required, Validators.min(0)]],
-    ancieneteLocalMois: [null as number | null, [Validators.required, Validators.min(0), Validators.max(11)]],
+    ancieneteLocalMois: [
+      null as number | null,
+      [Validators.required, Validators.min(0), Validators.max(11)],
+    ],
     immeuble: [''],
     etage: [''],
     porte: [''],
@@ -171,6 +181,110 @@ export class CreateCoraComponent {
       next.has(device) ? next.delete(device) : next.add(device);
       return next;
     });
+  }
+
+  ngOnInit(): void {
+    const coraId = this.route.snapshot.queryParamMap.get('coraId');
+    if (!coraId) return;
+    this.isEditMode.set(true);
+    this.editCoraId.set(+coraId);
+    this.isLoading.set(true);
+    this.coraService.getCoraById(+coraId).subscribe({
+      next: (cora) => {
+        // Fallback sur le sous-objet "agent" de l'ancienne API pour les champs
+        // qui étaient stockés sur l'entité agent (mandataire social)
+        const ag = cora.agent ?? {};
+
+        const partners = this.parseJsonArray(cora.partners);
+        const typeDevice = this.parseJsonArray(cora.typeDevice);
+
+        this.form.patchValue({
+          nomPrenom: cora.nomPrenom ?? '',
+          dateNaiss: cora.dateNaiss ? cora.dateNaiss.slice(0, 10) : '',
+          lieuNaiss: cora.lieuNaiss ?? '',
+          nationalite: this.resolveNationaliteId(cora.pays, cora.nationalite),
+          typePiece: cora.typePiece != null ? Number(cora.typePiece) : null,
+          numeroPiece: cora.numeroPiece ?? '',
+          civilite: cora.civilite != null ? Number(cora.civilite) : null,
+          situationMat: this.resolveSituationMat(cora, ag),
+          fonction: cora.fonction ?? '',
+          contactMandataire: cora.contactMandataire ?? ag.mobile ?? '',
+          ancieneteMmAn: cora.ancieneteMmAn ?? (ag.ancieneteLocalAn != null ? Number(ag.ancieneteLocalAn) : null),
+          ancieneteMmMois: cora.ancieneteMmMois ?? (ag.ancieneteLocalMois != null ? Number(ag.ancieneteLocalMois) : null),
+          nombrePtService: cora.nombrePtService != null ? Number(cora.nombrePtService) : null,
+          designation: cora.designation ?? '',
+          dateCreation: cora.dateCreation ? cora.dateCreation.slice(0, 10) : '',
+          formuleJuridique: cora.formuleJuridique != null ? Number(cora.formuleJuridique) : null,
+          capital: cora.capital != null ? Number(cora.capital) : null,
+          rccm: cora.rccm ?? '',
+          ncc: cora.ncc ?? '',
+          mobile: cora.mobile ?? '',
+          fixe: cora.fixe ?? '',
+          email: cora.email ?? '',
+          nombreEmploye: cora.nombreEmploye ?? null,
+          commune: cora.commune?.id ?? null,
+          quartier: cora.quartier ?? ag.quartier ?? '',
+          lot: cora.lot ?? ag.lot ?? '',
+          ilot: cora.ilot ?? ag.ilot ?? '',
+          bail: cora.bail != null ? Number(cora.bail) : (ag.bail != null ? Number(ag.bail) : null),
+          ancieneteLocalAn: cora.ancieneteLocalAn != null ? Number(cora.ancieneteLocalAn) : null,
+          ancieneteLocalMois: cora.ancieneteLocalMois != null ? Number(cora.ancieneteLocalMois) : null,
+          immeuble: cora.immeuble ?? ag.immeuble ?? '',
+          etage: cora.etage ?? (ag.etage != null ? String(ag.etage) : ''),
+          porte: cora.porte ?? (ag.porte != null ? String(ag.porte) : ''),
+          typeFacture: cora.typeFacture != null ? Number(cora.typeFacture) : (ag.typeFacture != null ? Number(ag.typeFacture) : null),
+          facture: cora.facture ?? ag.facture ?? '',
+          rue: cora.rue ?? ag.rue ?? '',
+          reperes: cora.reperes ?? (ag.reperes != null ? String(ag.reperes) : ''),
+          autrePartners: cora.autrePartners ?? '',
+          debit: cora.debit != null ? Number(cora.debit) : (ag.tel3g != null ? Number(ag.tel3g) : null),
+          internet: cora.internet != null ? String(cora.internet) : (ag.internet != null ? String(ag.internet) : null),
+          description: cora.description ?? '',
+          enDur: cora.enDur ?? ag.enDur ?? false,
+          ephemere: cora.ephemere ?? ag.ephemere ?? false,
+          espaceClient: cora.espaceClient ?? ag.espaceClient ?? false,
+          camera: cora.camera ?? ag.camera ?? false,
+          securite: cora.securite ?? ag.securite ?? false,
+          caisseIsole: cora.caisseIsole ?? ag.caisseIsole ?? false,
+          caisseNonIsole: cora.caisseNonIsole ?? ag.caisseNonIsole ?? false,
+        });
+
+        if (partners.length) this.selectedPartners.set(new Set(partners));
+        if (typeDevice.length) this.selectedDevices.set(new Set(typeDevice));
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.toast.error('Erreur lors du chargement.');
+        this.isLoading.set(false);
+      },
+    });
+  }
+
+  /** Résout l'ID de nationalité : priorité à cora.pays.id (old API), puis cora.nationalite */
+  private resolveNationaliteId(
+    pays: { id: number } | undefined | null,
+    nationalite: { id: number } | number | undefined | null,
+  ): number | null {
+    if (pays?.id != null) return pays.id;
+    if (nationalite == null) return null;
+    if (typeof nationalite === 'number') return nationalite;
+    return nationalite.id ?? null;
+  }
+
+  private resolveSituationMat(
+    cora: { situationMat?: number | string; situationMatri?: number | string },
+    ag: { situationMat?: number | string; situationMatri?: number | string },
+  ): number | null {
+    const raw = cora.situationMat ?? cora.situationMatri ?? ag.situationMat ?? ag.situationMatri;
+    if (raw == null) return null;
+    const n = Number(raw);
+    return isNaN(n) ? null : n;
+  }
+
+  private parseJsonArray(val: string[] | string | undefined | null): string[] {
+    if (!val) return [];
+    if (Array.isArray(val)) return val;
+    try { return JSON.parse(val); } catch { return []; }
   }
 
   // ── Submit ────────────────────────────────────────────────────────────────
@@ -238,13 +352,19 @@ export class CreateCoraComponent {
       statusEnvoyer: 1,
     };
 
-    this.coraService.createCora(dto).subscribe({
+    const call = this.isEditMode()
+      ? this.coraService.updateCora({ ...dto, cora: this.editCoraId()! })
+      : this.coraService.createCora(dto);
+
+    call.subscribe({
       next: () => {
-        this.toast.success('CORA enregistré avec succès.');
-        this.router.navigate(['/app/cora/dashboard']);
+        this.toast.success(
+          this.isEditMode() ? 'CORA mis à jour avec succès.' : 'CORA enregistré avec succès.',
+        );
+        this.router.navigate(['/app/cora/pending']);
       },
-      error: (err) => {
-        this.toast.error(err.message ?? "Une erreur est survenue lors de l'enregistrement.");
+      error: (err: { message?: string }) => {
+        this.toast.error(err?.message ?? "Une erreur est survenue lors de l'enregistrement.");
         this.isLoading.set(false);
       },
     });

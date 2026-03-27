@@ -172,32 +172,33 @@
 
   </div> -->
 
-  <div class="grid lg:grid-cols-2 gap-4">
-    <div class="flex flex-col gap-4">
-      <div class="grid grid-cols-2 gap-4">
-        <app-stats-card
-          title="Agents principaux"
-          [icon]="UserIcon"
-          [value]="data.agencePrincipale||0"
-        />
-        <app-stats-card
-          title="Sous-agents"
-          [icon]="UsersIcon"
-          [value]="data.sousAgence||0"
-        />
-      </div>
-      <app-cora-managers-table [managers]="data?.gestCoras||[]"/>
-    </div>
-    <app-bar-chart
-      title="Dossiers par gestionnaire"
-      subtitle=""
-      [data]="{
-        labels: coraManagerNames(),
-        datasets: [
-          { label: 'Attentes', values: pendingCounts(), colorVar: '--color-chart-1' },
-          { label: 'Validés', values: validatedCounts(),  colorVar: '--color-chart-2' }
-        ]
-      }"
+  <div class="grid grid-cols-2 gap-4">
+    <app-stats-card
+      title="Agents principaux"
+      [icon]="UserIcon"
+      [value]="data.agencePrincipale||0"
+    />
+    <app-stats-card
+      title="Sous-agents"
+      [icon]="UsersIcon"
+      [value]="data.sousAgence||0"
     />
   </div>
+
+  @if (!(UserRole.GestionCora | hasRole)) {
+    <div class="grid lg:grid-cols-2 gap-4">
+      <app-cora-managers-table [managers]="data?.gestCoras||[]"/>
+      <app-bar-chart
+        title="Dossiers par gestionnaire"
+        subtitle=""
+        [data]="{
+          labels: coraManagerNames(),
+          datasets: [
+            { label: 'Attentes', values: pendingCounts(), colorVar: '--color-chart-1' },
+            { label: 'Validés', values: validatedCounts(),  colorVar: '--color-chart-2' }
+          ]
+        }"
+      />
+    </div>
+  }
 </section>
