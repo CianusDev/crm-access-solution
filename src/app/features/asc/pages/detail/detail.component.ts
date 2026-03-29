@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import {
@@ -21,6 +21,7 @@ import {
   History,
   Search,
   Download,
+  Pencil,
 } from 'lucide-angular';
 import {
   CardComponent,
@@ -38,7 +39,13 @@ import {
 } from '@/shared/components/dialog/dialog.component';
 import { PaginationComponent } from '@/shared/components/pagination/pagination.component';
 import { ButtonDirective } from '@/shared/directives/ui/button/button';
-import { ReactiveFormsModule, FormControl, FormGroup, Validators, FormsModule } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormControl,
+  FormGroup,
+  Validators,
+  FormsModule,
+} from '@angular/forms';
 import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { FormTextarea } from '@/shared/components/form-textarea/form-textarea.component';
 import { AscDemande } from '../../interfaces/asc.interface';
@@ -157,6 +164,7 @@ export class DetailComponent {
   readonly HistoryIcon = History;
   readonly SearchIcon = Search;
   readonly DownloadIcon = Download;
+  readonly PencilIcon = Pencil;
 
   private readonly router = inject(Router);
   private readonly ascService = inject(AscService);
@@ -207,6 +215,8 @@ export class DetailComponent {
   // ── Dialogs ────────────────────────────────────────────────────────────
   readonly dialogOpen = signal(false);
   readonly deleteDialogOpen = signal(false);
+  readonly montantAccordeDialogOpen = signal(false);
+  readonly numDemandeDialogOpen = signal(false);
   readonly isLoading = signal(false);
   readonly isExporting = signal(false);
 
@@ -217,7 +227,45 @@ export class DetailComponent {
   actionForm = new FormGroup({
     observation: new FormControl(''),
     password: new FormControl('', Validators.required),
+    dateDecaissement: new FormControl(''),
   });
+
+  montantAccordeForm = new FormGroup({
+    montantAccorde: new FormControl<number | null>(null, Validators.required),
+  });
+
+  numDemandeForm = new FormGroup({
+    numDemandeAsc: new FormControl('', Validators.required),
+  });
+
+  // Editable checklist state (8 items, index 0 = item 1)
+  readonly editableChecklist = signal<boolean[]>([
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+  ]);
+
+  // Désactivation du bouton Dérogation si aucun item coché (à statut 2)
+  readonly derogationDisabled = computed(
+    () => this.demande()?.statut === 2 && !this.editableChecklist().some(Boolean),
+  );
+
+  constructor() {
+    // Initialise la checklist éditable depuis les données du demande dès le chargement
+    effect(() => {
+      const raw = this.demande()?.cheque?.checkliste;
+      let checked: number[] = [];
+      try {
+        if (raw && raw !== 'null') checked = JSON.parse(raw);
+      } catch { /* */ }
+      this.editableChecklist.set([1, 2, 3, 4, 5, 6, 7, 8].map((i) => checked.includes(i)));
+    });
+  }
 
   deleteForm = new FormGroup({
     password: new FormControl('', Validators.required),
@@ -225,15 +273,16 @@ export class DetailComponent {
 
   openAction(decision: number, title: string, requireObs = true) {
     this.pendingAction.set({ decision, title, requireObs });
-    this.actionForm.reset({ observation: '', password: '' });
-    
+    this.actionForm.reset({ observation: '', password: '', dateDecaissement: '' });
+
     if (requireObs) {
       this.actionForm.controls.observation.setValidators(Validators.required);
     } else {
       this.actionForm.controls.observation.setValidators(null);
     }
     this.actionForm.controls.observation.updateValueAndValidity();
-    
+
+
     this.dialogOpen.set(true);
   }
 
@@ -259,7 +308,7 @@ export class DetailComponent {
     if (this.actionForm.invalid) return;
 
     this.isLoading.set(true);
-    const password = this.actionForm.value.password || '';
+    const password = this.actionForm.value.password?.trim() || '';
     this.authService.verifyPassword(password).subscribe({
       next: (res) => {
         if (res.statut === 500) {
@@ -267,11 +316,29 @@ export class DetailComponent {
           this.isLoading.set(false);
           return;
         }
-        
+
         if (res.statut === 200) {
           const obs = this.actionForm.value.observation?.trim() || 'Avis favorable';
+
+          // Include checklist when ASSC_PME approves at statut 2
+          let checkliste: number[] | undefined;
+          if (d.statut === 2 && action.decision === 1) {
+            checkliste = this.editableChecklist()
+              .map((checked, i) => (checked ? i + 1 : null))
+              .filter((v): v is number => v !== null);
+          }
+
+          // Include dateDecaissement for autoriser/confirmer at statut 4/5
+          const dateDecaissement = this.actionForm.value.dateDecaissement?.trim() || undefined;
+
           this.ascService
-            .sendDecision({ idAsc: d.id, decision: action.decision, observation: obs })
+            .sendDecision({
+              idAsc: d.id,
+              decision: action.decision,
+              observation: obs,
+              checkliste,
+              dateDecaissement,
+            })
             .subscribe({
               next: () => {
                 this.toast.success('Action effectuée avec succès.');
@@ -292,7 +359,7 @@ export class DetailComponent {
       error: () => {
         this.toast.error('Erreur lors de la vérification du mot de passe.');
         this.isLoading.set(false);
-      }
+      },
     });
   }
 
@@ -334,8 +401,122 @@ export class DetailComponent {
       error: () => {
         this.toast.error('Erreur lors de la vérification du mot de passe.');
         this.isLoading.set(false);
-      }
+      },
     });
+  }
+
+  // ── Montant accordé ────────────────────────────────────────────────────
+  readonly showMontantAccordeBtn = computed(() => {
+    const s = this.demande()?.statut ?? -1;
+    if (s === 3) return this.permissions.hasRole(UserRole.DGA, UserRole.Admin);
+    if (s === 2 || s === 9)
+      return this.permissions.hasRole(UserRole.assistanteClientelePME, UserRole.Admin);
+    return false;
+  });
+
+  // ── N° demande Perfect ─────────────────────────────────────────────────
+  readonly showNumDemandeBtn = computed(
+    () =>
+      this.demande()?.statut === 10 &&
+      this.permissions.hasRole(
+        UserRole.conseilClientele,
+        UserRole.responsableClient,
+        UserRole.Admin,
+      ),
+  );
+
+  // ── Checklist éditable (ASSC_PME approuver statut 2) ──────────────────
+  readonly checklistEditMode = computed(
+    () =>
+      this.demande()?.statut === 2 &&
+      this.permissions.hasRole(UserRole.assistanteClientelePME, UserRole.Admin),
+  );
+
+  openMontantAccordeDialog() {
+    const d = this.demande();
+    this.montantAccordeForm.reset({
+      montantAccorde: d?.montantAccorde ?? d?.montantSollicite ?? null,
+    });
+    this.montantAccordeDialogOpen.set(true);
+  }
+
+  openNumDemandeDialog() {
+    const d = this.demande();
+    this.numDemandeForm.reset({ numDemandeAsc: d?.numDemandeAsc ?? '' });
+    this.numDemandeDialogOpen.set(true);
+  }
+
+  toggleChecklistItem(index: number) {
+    this.editableChecklist.update((list) => {
+      const copy = [...list];
+      copy[index] = !copy[index];
+      return copy;
+    });
+  }
+
+  saveMontantAccorde() {
+    const d = this.demande();
+    if (!d) return;
+    this.montantAccordeForm.markAllAsTouched();
+    if (this.montantAccordeForm.invalid) return;
+
+    const montantAccorde = this.montantAccordeForm.value.montantAccorde!;
+    const montantSollicite = d.montantSollicite ?? 0;
+    const montantCheque = d.cheque?.montantCheque ?? Infinity;
+
+    if (montantAccorde > montantSollicite) {
+      this.toast.error('Le montant accordé ne peut pas dépasser le montant sollicité.');
+      return;
+    }
+    if (montantAccorde > montantCheque) {
+      this.toast.error('Le montant accordé ne peut pas dépasser le montant du chèque.');
+      return;
+    }
+    const isPME =
+      this.permissions.hasRole(UserRole.assistanteClientelePME) &&
+      !this.permissions.hasRole(UserRole.Admin);
+    if (isPME && montantAccorde >= montantCheque * 0.8) {
+      this.toast.error('Le montant accordé doit être inférieur à 80 % du montant du chèque.');
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.ascService
+      .updateSousDemande(d.id, { montantAccorde, numDemandeAsc: d.numDemandeAsc ?? '' })
+      .subscribe({
+        next: () => {
+          this.toast.success('Montant accordé enregistré avec succès.');
+          this.isLoading.set(false);
+          this.montantAccordeDialogOpen.set(false);
+          this.router.navigate(['/app/asc/pending']);
+        },
+        error: () => {
+          this.toast.error("Erreur lors de l'enregistrement.");
+          this.isLoading.set(false);
+        },
+      });
+  }
+
+  saveNumDemande() {
+    const d = this.demande();
+    if (!d) return;
+    this.numDemandeForm.markAllAsTouched();
+    if (this.numDemandeForm.invalid) return;
+
+    this.isLoading.set(true);
+    this.ascService
+      .updateSousDemande(d.id, { numDemandeAsc: this.numDemandeForm.value.numDemandeAsc ?? '' })
+      .subscribe({
+        next: () => {
+          this.toast.success('Numéro de demande Perfect enregistré.');
+          this.isLoading.set(false);
+          this.numDemandeDialogOpen.set(false);
+        },
+        error: () => {
+          this.toast.error("Erreur lors de l'enregistrement.");
+          this.isLoading.set(false);
+        },
+      });
   }
 
   // ── Computed ───────────────────────────────────────────────────────────
@@ -389,7 +570,11 @@ export class DetailComponent {
   readonly showSoumettre = computed(
     () =>
       [1, 8, 10].includes(this.demande()?.statut ?? -1) &&
-      this.permissions.hasRole(UserRole.conseilClientele, UserRole.responsableClient, UserRole.Admin),
+      this.permissions.hasRole(
+        UserRole.conseilClientele,
+        UserRole.responsableClient,
+        UserRole.Admin,
+      ),
   );
 
   // Rejet selon statut :
@@ -399,8 +584,22 @@ export class DetailComponent {
   readonly showRejeter = computed(() => {
     const s = this.demande()?.statut ?? -1;
     if (s === 2) return this.permissions.hasRole(UserRole.assistanteClientelePME, UserRole.Admin);
-    if (s === 3) return this.permissions.hasRole(UserRole.ResponsableExploitation, UserRole.DirectriceExploitation, UserRole.DirecteurRisque, UserRole.DGA, UserRole.Admin);
-    if (s === 9) return this.permissions.hasRole(UserRole.ResponsableExploitation, UserRole.ResponsableClientelePME, UserRole.DirectriceExploitation, UserRole.DirecteurRisque, UserRole.Admin);
+    if (s === 3)
+      return this.permissions.hasRole(
+        UserRole.ResponsableExploitation,
+        UserRole.DirectriceExploitation,
+        UserRole.DirecteurRisque,
+        UserRole.DGA,
+        UserRole.Admin,
+      );
+    if (s === 9)
+      return this.permissions.hasRole(
+        UserRole.ResponsableExploitation,
+        UserRole.ResponsableClientelePME,
+        UserRole.DirectriceExploitation,
+        UserRole.DirecteurRisque,
+        UserRole.Admin,
+      );
     return false;
   });
 
@@ -412,23 +611,89 @@ export class DetailComponent {
   //   Statut 9  → RESPO_EXPL, RESPO_CLT_PME, D_EXPL, DR
   readonly showAjourner = computed(() => {
     const s = this.demande()?.statut ?? -1;
-    if (s === 2) return this.permissions.hasRole(UserRole.agentAccueil, UserRole.assistanteClientelePME, UserRole.Admin);
-    if (s === 3) return this.permissions.hasRole(UserRole.ResponsableExploitation, UserRole.DirectriceExploitation, UserRole.DirecteurRisque, UserRole.DGA, UserRole.Admin);
+    if (s === 2)
+      return this.permissions.hasRole(
+        UserRole.agentAccueil,
+        UserRole.assistanteClientelePME,
+        UserRole.Admin,
+      );
+    if (s === 3)
+      return this.permissions.hasRole(
+        UserRole.ResponsableExploitation,
+        UserRole.DirectriceExploitation,
+        UserRole.DirecteurRisque,
+        UserRole.DGA,
+        UserRole.Admin,
+      );
     if (s === 4) return this.permissions.hasRole(UserRole.ResponsableFrontOffice, UserRole.Admin);
-    if (s === 8) return this.permissions.hasRole(UserRole.responsableClient, UserRole.conseilClientele, UserRole.Admin);
-    if (s === 9) return this.permissions.hasRole(UserRole.ResponsableExploitation, UserRole.ResponsableClientelePME, UserRole.DirectriceExploitation, UserRole.DirecteurRisque, UserRole.Admin);
+    if (s === 8)
+      return this.permissions.hasRole(
+        UserRole.responsableClient,
+        UserRole.conseilClientele,
+        UserRole.Admin,
+      );
+    if (s === 9)
+      return this.permissions.hasRole(
+        UserRole.ResponsableExploitation,
+        UserRole.ResponsableClientelePME,
+        UserRole.DirectriceExploitation,
+        UserRole.DirecteurRisque,
+        UserRole.Admin,
+      );
     return false;
   });
 
-  // Approbation selon statut :
-  //   Statut 2  → ASSC_PME
-  //   Statut 3  → RESPO_EXPL, D_EXPL, DR, DGA
-  //   Statut 9  → RESPO_EXPL, RESPO_CLT_PME, D_EXPL, DR
+  // Dérogation (decision: 1) — escalade ou approbation paiement :
+  //   Statut 2  → ASSC_PME (label "Dérogation", envoie vers R. Exploitation)
+  //   Statut 3  → RESPO_EXPL, D_EXPL, DR, DGA (label "Approuver le paiement")
+  //   Statut 9  → RESPO_EXPL, RESPO_CLT_PME, D_EXPL, DR (label "Dérogation")
   readonly showApprouver = computed(() => {
     const s = this.demande()?.statut ?? -1;
     if (s === 2) return this.permissions.hasRole(UserRole.assistanteClientelePME, UserRole.Admin);
-    if (s === 3) return this.permissions.hasRole(UserRole.ResponsableExploitation, UserRole.DirectriceExploitation, UserRole.DirecteurRisque, UserRole.DGA, UserRole.Admin);
-    if (s === 9) return this.permissions.hasRole(UserRole.ResponsableExploitation, UserRole.ResponsableClientelePME, UserRole.DirectriceExploitation, UserRole.DirecteurRisque, UserRole.Admin);
+    if (s === 3)
+      return this.permissions.hasRole(
+        UserRole.ResponsableExploitation,
+        UserRole.DirectriceExploitation,
+        UserRole.DirecteurRisque,
+        UserRole.DGA,
+        UserRole.Admin,
+      );
+    if (s === 9)
+      return this.permissions.hasRole(
+        UserRole.ResponsableExploitation,
+        UserRole.ResponsableClientelePME,
+        UserRole.DirectriceExploitation,
+        UserRole.DirecteurRisque,
+        UserRole.Admin,
+      );
+    return false;
+  });
+
+  // Approbation directe (decision: 3) :
+  //   Statut 2  → ASSC_PME, quand montantSollicite ≤ 80% du chèque OU montantAccorde défini
+  //   Statut 9  → RESPO_EXPL, D_EXPL, DR, quand montantSollicite ≤ 80% du chèque
+  readonly showApprouverDirectement = computed(() => {
+    const d = this.demande();
+    const s = d?.statut ?? -1;
+    const montantSollicite = d?.montantSollicite ?? 0;
+    const montantCheque = d?.cheque?.montantCheque ?? 0;
+    const dans80pct = montantCheque > 0 && montantSollicite <= montantCheque * 0.8;
+    const montantAccordeDefini = !!(d?.montantAccorde);
+
+    if (s === 2 && this.permissions.hasRole(UserRole.assistanteClientelePME, UserRole.Admin)) {
+      return dans80pct || montantAccordeDefini;
+    }
+    if (
+      s === 9 &&
+      this.permissions.hasRole(
+        UserRole.ResponsableExploitation,
+        UserRole.DirectriceExploitation,
+        UserRole.DirecteurRisque,
+        UserRole.Admin,
+      )
+    ) {
+      return dans80pct;
+    }
     return false;
   });
 
@@ -443,21 +708,28 @@ export class DetailComponent {
   readonly showConfirmer = computed(
     () =>
       this.demande()?.statut === 5 &&
-      this.permissions.hasRole(UserRole.conseilClientele, UserRole.responsableClient, UserRole.Admin),
+      this.permissions.hasRole(
+        UserRole.conseilClientele,
+        UserRole.responsableClient,
+        UserRole.Admin,
+      ),
   );
 
   // Statut 5 : Admin, RC, CC annulent
   readonly showAnnuler = computed(
     () =>
       this.demande()?.statut === 5 &&
-      this.permissions.hasRole(UserRole.conseilClientele, UserRole.responsableClient, UserRole.Admin),
+      this.permissions.hasRole(
+        UserRole.conseilClientele,
+        UserRole.responsableClient,
+        UserRole.Admin,
+      ),
   );
 
   // Suppression : Admin uniquement (non clôturé / non abouti)
   readonly showDelete = computed(
     () =>
-      ![6, 11].includes(this.demande()?.statut ?? -1) &&
-      this.permissions.hasRole(UserRole.Admin),
+      ![6, 11].includes(this.demande()?.statut ?? -1) && this.permissions.hasRole(UserRole.Admin),
   );
   readonly hasActions = computed(
     () =>
@@ -465,10 +737,13 @@ export class DetailComponent {
       this.showRejeter() ||
       this.showAjourner() ||
       this.showApprouver() ||
+      this.showApprouverDirectement() ||
       this.showAutoriser() ||
       this.showConfirmer() ||
       this.showAnnuler() ||
-      this.showDelete(),
+      this.showDelete() ||
+      this.showMontantAccordeBtn() ||
+      this.showNumDemandeBtn(),
   );
 
   // ── Export PDF ─────────────────────────────────────────────────────────
@@ -483,12 +758,15 @@ export class DetailComponent {
 
     const fmtMontant = (v?: number | null) =>
       v != null ? v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : '—';
-    const fmtDate = (s?: string | null) =>
-      s ? new Date(s).toLocaleDateString('fr-FR') : '—';
+    const fmtDate = (s?: string | null) => (s ? new Date(s).toLocaleDateString('fr-FR') : '—');
     const fmtDateTime = (s?: string | null) => {
       if (!s) return '—';
       const dt = new Date(s);
-      return dt.toLocaleDateString('fr-FR') + ', ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      return (
+        dt.toLocaleDateString('fr-FR') +
+        ', ' +
+        dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+      );
     };
 
     const montantSollicite = fmtMontant(d.montantSollicite) + ' FCFA';
@@ -528,7 +806,10 @@ export class DetailComponent {
                 { text: 'Imprimé le : ', style: 'styleCle' },
                 { text: new Date().toLocaleString('fr-FR'), style: 'styleValeur' },
                 { text: '\n\nImprimé par : ', style: 'styleCle' },
-                { text: currentUser ? `${currentUser.nom} ${currentUser.prenom}` : '—', style: 'styleValeur' },
+                {
+                  text: currentUser ? `${currentUser.nom} ${currentUser.prenom}` : '—',
+                  style: 'styleValeur',
+                },
               ],
             },
           ],
@@ -597,11 +878,17 @@ export class DetailComponent {
                         ...(client?.typeAgent === 'SC'
                           ? [
                               { text: 'Gérant\n ', style: 'styleCle' },
-                              { text: (client.gerant?.nomDirigeant ?? '—') + '\n\n', style: 'styleValeur' },
+                              {
+                                text: (client.gerant?.nomDirigeant ?? '—') + '\n\n',
+                                style: 'styleValeur',
+                              },
                             ]
                           : []),
                         { text: 'Agence\n ', style: 'styleCle' },
-                        { text: 'Agence ' + (client?.agence?.libelle ?? '—') + '\n\n', style: 'styleValeur' },
+                        {
+                          text: 'Agence ' + (client?.agence?.libelle ?? '—') + '\n\n',
+                          style: 'styleValeur',
+                        },
                       ],
                     },
                     {
@@ -617,7 +904,10 @@ export class DetailComponent {
                           text: [
                             { text: 'Type compte\n ', style: 'styleCle' },
                             {
-                              text: (client?.typeAgent === 'SC' ? 'Personne morale' : 'Personne physique') + '\n\n',
+                              text:
+                                (client?.typeAgent === 'SC'
+                                  ? 'Personne morale'
+                                  : 'Personne physique') + '\n\n',
                               style: 'styleValeur',
                             },
                           ],
@@ -627,7 +917,10 @@ export class DetailComponent {
                     {
                       text: [
                         { text: 'Nombre de chèques remisés\n ', style: 'styleCle' },
-                        { text: String(client?.nbreChequeRemise ?? 0) + '\n\n', style: 'styleValeur' },
+                        {
+                          text: String(client?.nbreChequeRemise ?? 0) + '\n\n',
+                          style: 'styleValeur',
+                        },
                         { text: 'Incidents de paiement\n ', style: 'styleCle' },
                         { text: String(client?.nbreIncidentPaie ?? 0), style: 'styleValeur' },
                       ],
@@ -652,7 +945,10 @@ export class DetailComponent {
                           text: [
                             { text: 'Nature de la Prestation\n ', style: 'styleCle' },
                             {
-                              text: (cheque?.naturePrestation?.libelle ?? d.natureObjetReglement ?? '—') + '\n\n',
+                              text:
+                                (cheque?.naturePrestation?.libelle ??
+                                  d.natureObjetReglement ??
+                                  '—') + '\n\n',
                               style: 'styleValeur',
                             },
                           ],
@@ -678,7 +974,10 @@ export class DetailComponent {
                           alignment: 'right',
                           text: [
                             { text: 'N° Chèque PERFECT\n ', style: 'styleCle' },
-                            { text: (cheque?.numTransaction ?? '—') + '\n\n', style: 'styleValeur' },
+                            {
+                              text: (cheque?.numTransaction ?? '—') + '\n\n',
+                              style: 'styleValeur',
+                            },
                           ],
                         },
                       ],
@@ -721,15 +1020,31 @@ export class DetailComponent {
               ],
               ...((d.observation ?? []).length > 0
                 ? (d.observation ?? []).map((obs) => [
-                    { text: obs.user ? `${obs.user.nom} ${obs.user.prenom}` : '—', style: 'valeurTableau' },
+                    {
+                      text: obs.user ? `${obs.user.nom} ${obs.user.prenom}` : '—',
+                      style: 'valeurTableau',
+                    },
                     { text: obs.user?.libelleAgence ?? '—', style: 'valeurTableau' },
                     { text: obs.user?.profil ?? '—', style: 'valeurTableau' },
                     { text: obs.decision ?? '—', style: 'valeurTableau' },
                     { text: obs.observation ?? '—', style: 'valeurTableau' },
                     { text: fmtDateTime(obs.date), style: 'valeurTableau' },
                   ])
-                : [[{ text: 'Aucune observation', colSpan: 6, alignment: 'center', style: 'valeurTableau' }, '', '', '', '', '']]
-              ),
+                : [
+                    [
+                      {
+                        text: 'Aucune observation',
+                        colSpan: 6,
+                        alignment: 'center',
+                        style: 'valeurTableau',
+                      },
+                      '',
+                      '',
+                      '',
+                      '',
+                      '',
+                    ],
+                  ]),
             ],
           },
         },

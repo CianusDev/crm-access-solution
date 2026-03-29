@@ -1,4 +1,4 @@
-<div class="flex flex-col gap-4 mt-4">
+<div class="flex flex-col gap-4 mt-4 pb-12">
   <!-- ── Header ──────────────────────────────────────────────────────────── -->
   <div class="flex flex-wrap items-center gap-3">
     <button appButton variant="ghost" size="icon" type="button" (click)="goBack()">
@@ -73,7 +73,25 @@
       }
 
       @if (showApprouver()) {
-        <button appButton size="sm" type="button" (click)="openAction(1, 'Approuver la demande')">
+        <button
+          appButton
+          size="sm"
+          type="button"
+          [disabled]="derogationDisabled()"
+          (click)="openAction(1, demande()?.statut === 3 ? 'Approuver le paiement' : 'Dérogation', demande()?.statut !== 3)"
+        >
+          <lucide-icon [img]="SendIcon" [size]="14" class="mr-1.5" />
+          {{ demande()?.statut === 3 ? 'Approuver le paiement' : 'Dérogation' }}
+        </button>
+      }
+
+      @if (showApprouverDirectement()) {
+        <button
+          appButton
+          size="sm"
+          type="button"
+          (click)="openAction(3, 'Approuver la demande')"
+        >
           <lucide-icon [img]="CheckCircleIcon" [size]="14" class="mr-1.5" />
           Approuver la demande
         </button>
@@ -125,6 +143,32 @@
         >
           <lucide-icon [img]="XCircleIcon" [size]="14" class="mr-1.5" />
           Annuler le Décaissement
+        </button>
+      }
+
+      @if (showMontantAccordeBtn()) {
+        <button
+          appButton
+          variant="outline"
+          size="sm"
+          type="button"
+          (click)="openMontantAccordeDialog()"
+        >
+          <lucide-icon [img]="PencilIcon" [size]="14" class="mr-1.5" />
+          Définir montant accordé
+        </button>
+      }
+
+      @if (showNumDemandeBtn()) {
+        <button
+          appButton
+          variant="outline"
+          size="sm"
+          type="button"
+          (click)="openNumDemandeDialog()"
+        >
+          <lucide-icon [img]="PencilIcon" [size]="14" class="mr-1.5" />
+          N° demande PERFECT
         </button>
       }
     </div>
@@ -428,8 +472,26 @@
         <app-card-header>
           <app-card-title>Vérification</app-card-title>
         </app-card-header>
-        <app-card-content class="!min-h-0 flex-1">
-          @if (hasChecklist()) {
+        <app-card-content class="!min-h-0 !pt-0 flex-1">
+          @if (checklistEditMode()) {
+            <!-- Editable checklist for ASSC_PME at statut 2 -->
+            <p class="text-xs text-muted-foreground">Cochez les critères vérifiés :</p>
+            <ul class="flex flex-col gap-2.5">
+              @for (item of checklist(); track item.label; let i = $index) {
+                <li>
+                  <label class="flex cursor-pointer items-center gap-2.5">
+                    <input
+                      type="checkbox"
+                      class="h-4 w-4 cursor-pointer rounded border-border accent-primary"
+                      [checked]="editableChecklist()[i]"
+                      (change)="toggleChecklistItem(i)"
+                    />
+                    <span class="text-sm text-foreground">{{ item.label }}</span>
+                  </label>
+                </li>
+              }
+            </ul>
+          } @else if (hasChecklist()) {
             <ul class="flex flex-col gap-2.5">
               @for (item of checklist(); track item.label) {
                 <li class="flex items-center gap-2.5">
@@ -807,7 +869,7 @@
   </app-dialog-header>
   <app-dialog-content>
     <form [formGroup]="actionForm" (ngSubmit)="confirmAction()" class="flex flex-col gap-4">
-      <div class="flex flex-col gap-1.5">
+      <div class="flex flex-col gap-3">
         <app-form-input
           name="password"
           type="password"
@@ -822,6 +884,33 @@
           [placeholder]="pendingAction()?.requireObs ? 'Saisissez une observation…' : 'Observation (optionnel)'"
           [rows]="3"
         />
+        @if ([4, 5].includes(demande()?.statut ?? -1) && pendingAction()?.decision === 1) {
+          <app-form-input
+            name="dateDecaissement"
+            type="date"
+            label="Date de décaissement"
+          />
+        }
+        @if (demande()?.statut === 2 && pendingAction()?.decision === 1) {
+          <div class="flex flex-col gap-2">
+            <p class="text-sm font-medium text-foreground">Critères de vérification</p>
+            <ul class="flex flex-col gap-2">
+              @for (item of checklist(); track item.label; let i = $index) {
+                <li>
+                  <label class="flex cursor-pointer items-center gap-2.5">
+                    <input
+                      type="checkbox"
+                      class="h-4 w-4 cursor-pointer rounded border-border accent-primary"
+                      [checked]="editableChecklist()[i]"
+                      (change)="toggleChecklistItem(i)"
+                    />
+                    <span class="text-sm text-foreground">{{ item.label }}</span>
+                  </label>
+                </li>
+              }
+            </ul>
+          </div>
+        }
       </div>
     </form>
   </app-dialog-content>
@@ -847,6 +936,96 @@
         <lucide-icon [img]="LoaderIcon" [size]="14" class="mr-1.5 animate-spin" />
       }
       Confirmer
+    </button>
+  </app-dialog-footer>
+</app-dialog>
+
+<!-- ── Dialog : Montant accordé ──────────────────────────────────────── -->
+<app-dialog [(open)]="montantAccordeDialogOpen" [closeOnOverlay]="!isLoading()">
+  <app-dialog-header>
+    <app-dialog-title>Définir le montant accordé</app-dialog-title>
+    <app-dialog-description>
+      Le montant accordé doit être ≤ montant sollicité ({{ demande()?.montantSollicite | number }} FCFA) et ≤ montant du chèque.
+    </app-dialog-description>
+  </app-dialog-header>
+  <app-dialog-content>
+    <form [formGroup]="montantAccordeForm" (ngSubmit)="saveMontantAccorde()" class="flex flex-col gap-3">
+      <app-form-input
+        name="montantAccorde"
+        type="number"
+        format
+        label="Montant accordé (FCFA)"
+        [required]="true"
+        placeholder="Ex: 800 000"
+      />
+    </form>
+  </app-dialog-content>
+  <app-dialog-footer>
+    <button
+      appButton
+      variant="outline"
+      size="sm"
+      type="button"
+      [disabled]="isLoading()"
+      (click)="montantAccordeDialogOpen.set(false)"
+    >
+      Annuler
+    </button>
+    <button
+      appButton
+      size="sm"
+      type="button"
+      [disabled]="isLoading() || montantAccordeForm.invalid"
+      (click)="saveMontantAccorde()"
+    >
+      @if (isLoading()) {
+        <lucide-icon [img]="LoaderIcon" [size]="14" class="mr-1.5 animate-spin" />
+      }
+      Enregistrer
+    </button>
+  </app-dialog-footer>
+</app-dialog>
+
+<!-- ── Dialog : N° demande Perfect ────────────────────────────────────── -->
+<app-dialog [(open)]="numDemandeDialogOpen" [closeOnOverlay]="!isLoading()">
+  <app-dialog-header>
+    <app-dialog-title>Numéro de demande PERFECT</app-dialog-title>
+    <app-dialog-description>
+      Saisissez le numéro de référence généré dans le système PERFECT.
+    </app-dialog-description>
+  </app-dialog-header>
+  <app-dialog-content>
+    <form [formGroup]="numDemandeForm" (ngSubmit)="saveNumDemande()" class="flex flex-col gap-3">
+      <app-form-input
+        name="numDemandeAsc"
+        label="N° demande PERFECT"
+        [required]="true"
+        placeholder="Ex: ASC-2024-00123"
+      />
+    </form>
+  </app-dialog-content>
+  <app-dialog-footer>
+    <button
+      appButton
+      variant="outline"
+      size="sm"
+      type="button"
+      [disabled]="isLoading()"
+      (click)="numDemandeDialogOpen.set(false)"
+    >
+      Annuler
+    </button>
+    <button
+      appButton
+      size="sm"
+      type="button"
+      [disabled]="isLoading() || numDemandeForm.invalid"
+      (click)="saveNumDemande()"
+    >
+      @if (isLoading()) {
+        <lucide-icon [img]="LoaderIcon" [size]="14" class="mr-1.5 animate-spin" />
+      }
+      Enregistrer
     </button>
   </app-dialog-footer>
 </app-dialog>

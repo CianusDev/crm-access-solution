@@ -93,9 +93,10 @@ export class AscService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
-  sendDecision(data: { idAsc: number; decision: number; observation?: string }) {
+  sendDecision(data: { idAsc: number; decision: number; observation?: string; checkliste?: number[]; dateDecaissement?: string }) {
+    const { idAsc, ...rest } = data;
     return this.api
-      .post<{ status: number; message?: string }>(this.endpoint + '/saveDecisionAsc', data)
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveDecisionAsc', { avCheque: idAsc, ...rest })
       .pipe(catchError((err) => throwError(() => err)));
   }
 
@@ -160,7 +161,7 @@ export class AscService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
-  updateSousDemande(id: number, data: { numcheque: string; montantSollicite: number; numDemandeAsc?: string }) {
+  updateSousDemande(id: number, data: { numcheque?: string; montantSollicite?: number; numDemandeAsc?: string; montantAccorde?: number }) {
     return this.api
       .post<{ status: number; message?: string }>(this.endpoint + '/updateAsc/' + id, data)
       .pipe(catchError((err) => throwError(() => err)));
