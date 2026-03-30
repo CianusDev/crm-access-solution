@@ -25,7 +25,8 @@ export function navigateByStatut(router: Router, demande: CreditDemande): void {
 
   if (tirage === 1) {
     if (STATUTS_TIRAGE_DETAIL.includes(statut)) {
-      router.navigate(['/app/credit/tirage', refDemande]);
+      const extras = demande.refTirage ? { queryParams: { refDecouvert: demande.refTirage } } : {};
+      router.navigate(['/app/credit/tirage', refDemande], extras);
     } else {
       router.navigate(['/app/credit', refDemande]);
     }

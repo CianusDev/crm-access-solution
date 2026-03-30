@@ -12,11 +12,6 @@
         </p>
       }
     </div>
-    @if (statut(); as s) {
-      <span class="rounded-full px-3 py-1 text-xs font-semibold" [class]="s.class">{{
-        s.label
-      }}</span>
-    }
     @if (demande()?.statut === 6) {
       <button appButton variant="outline" size="sm" type="button" (click)="exportPdf()" [disabled]="isExporting()" class="gap-2">
         @if (isExporting()) {
@@ -30,149 +25,159 @@
     }
   </div>
 
-  <!-- ── Boutons d'action ─────────────────────────────────────────────── -->
-  @if (hasActions()) {
-    <div class="flex flex-wrap items-center justify-end gap-2 rounded-xl">
-      @if (showDelete()) {
-        <button
-          appButton
-          variant="destructive"
-          size="sm"
-          type="button"
-          (click)="deleteDialogOpen.set(true)"
-        >
-          <lucide-icon [img]="Trash2Icon" [size]="14" class="mr-1.5" />
-          Supprimer cette demande
-        </button>
-      }
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    @if (statut(); as s) {
+      <span class="rounded-full px-3 py-1 text-xs font-semibold" [class]="s.class">{{
+        s.label
+      }}</span>
+    }
 
-      @if (showAjourner()) {
-        <button
-          appButton
-          variant="outline"
-          size="sm"
-          type="button"
-          (click)="openAction(2, 'Ajourner la demande')"
-        >
-          <lucide-icon [img]="AjournerIcon" [size]="14" />
-          Ajourner
-        </button>
-      }
+    <!-- ── Boutons d'action ─────────────────────────────────────────────── -->
+    @if (hasActions()) {
+      <div class="flex flex-wrap items-center justify-end gap-2 rounded-xl">
+        @if (showDelete()) {
+          <button
+            appButton
+            variant="destructive"
+            size="sm"
+            type="button"
+            (click)="deleteDialogOpen.set(true)"
+          >
+            <lucide-icon [img]="Trash2Icon" [size]="14" class="mr-1.5" />
+            Supprimer cette demande
+          </button>
+        }
 
-      @if (showRejeter()) {
-        <button
-          appButton
-          variant="outline"
-          size="sm"
-          type="button"
-          (click)="openAction(0, 'Rejeter la demande')"
-        >
-          <lucide-icon [img]="XCircleIcon" [size]="14" class="mr-1.5" />
-          Rejeter
-        </button>
-      }
+        @if (showAjourner()) {
+          <button
+            appButton
+            variant="outline"
+            size="sm"
+            type="button"
+            (click)="openAction(2, 'Ajourner la demande')"
+          >
+            <lucide-icon [img]="AjournerIcon" [size]="14" />
+            Ajourner
+          </button>
+        }
 
-      @if (showApprouver()) {
-        <button
-          appButton
-          size="sm"
-          type="button"
-          [disabled]="derogationDisabled()"
-          (click)="openAction(1, demande()?.statut === 3 ? 'Approuver le paiement' : 'Dérogation', demande()?.statut !== 3)"
-        >
-          <lucide-icon [img]="SendIcon" [size]="14" class="mr-1.5" />
-          {{ demande()?.statut === 3 ? 'Approuver le paiement' : 'Dérogation' }}
-        </button>
-      }
+        @if (showRejeter()) {
+          <button
+            appButton
+            variant="outline"
+            size="sm"
+            type="button"
+            (click)="openAction(0, 'Rejeter la demande')"
+          >
+            <lucide-icon [img]="XCircleIcon" [size]="14" class="mr-1.5" />
+            Rejeter
+          </button>
+        }
 
-      @if (showApprouverDirectement()) {
-        <button
-          appButton
-          size="sm"
-          type="button"
-          (click)="openAction(3, 'Approuver la demande')"
-        >
-          <lucide-icon [img]="CheckCircleIcon" [size]="14" class="mr-1.5" />
-          Approuver la demande
-        </button>
-      }
+        @if (showApprouver()) {
+          <button
+            appButton
+            size="sm"
+            type="button"
+            [disabled]="derogationDisabled()"
+            (click)="openAction(1, demande()?.statut === 3 ? 'Approuver le paiement' : 'Dérogation', demande()?.statut !== 3)"
+          >
+            <lucide-icon [img]="SendIcon" [size]="14" class="mr-1.5" />
+            {{ demande()?.statut === 3 ? 'Approuver le paiement' : 'Dérogation' }}
+          </button>
+        }
 
-      @if (showSoumettre()) {
-        <button
-          appButton
-          size="sm"
-          type="button"
-          (click)="openAction(1, 'Soumettre la demande', false)"
-        >
-          <lucide-icon [img]="SendIcon" [size]="14" class="mr-1.5" />
-          Soumettre
-        </button>
-      }
+        @if (showApprouverDirectement()) {
+          <button
+            appButton
+            size="sm"
+            type="button"
+            variant="success"
+            [disabled]="derogationDisabled()"
+            (click)="openAction(3, 'Approuver la demande')"
+          >
+            <lucide-icon [img]="CheckCircleIcon" [size]="14" class="mr-1.5" />
+            Approuver la demande
+          </button>
+        }
 
-      @if (showAutoriser()) {
-        <button
-          appButton
-          size="sm"
-          type="button"
-          (click)="openAction(1, 'Autoriser le Décaissement', false, false)"
-        >
-          <lucide-icon [img]="CheckCircleIcon" [size]="14" class="mr-1.5" />
-          Autoriser le Décaissement
-        </button>
-      }
+        @if (showSoumettre()) {
+          <button
+            appButton
+            size="sm"
+            type="button"
+            (click)="openAction(1, 'Soumettre la demande', false)"
+          >
+            <lucide-icon [img]="SendIcon" [size]="14" class="mr-1.5" />
+            Soumettre
+          </button>
+        }
 
-      @if (showConfirmer()) {
-        <button
-          appButton
-          size="sm"
-          type="button"
-          (click)="openAction(1, 'Confirmer le Décaissement', false, false)"
-        >
-          <lucide-icon [img]="CheckCircleIcon" [size]="14" class="mr-1.5" />
-          Confirmer le Décaissement
-        </button>
-      }
+        @if (showAutoriser()) {
+          <button
+            appButton
+            size="sm"
+            type="button"
+            (click)="openAction(1, 'Autoriser le Décaissement', false, false)"
+          >
+            <lucide-icon [img]="CheckCircleIcon" [size]="14" class="mr-1.5" />
+            Autoriser le Décaissement
+          </button>
+        }
 
-      @if (showAnnuler()) {
-        <button
-          appButton
-          variant="outline"
-          size="sm"
-          type="button"
-          (click)="openAction(4, 'Annuler le Décaissement', false, false)"
-        >
-          <lucide-icon [img]="XCircleIcon" [size]="14" class="mr-1.5" />
-          Annuler le Décaissement
-        </button>
-      }
+        @if (showConfirmer()) {
+          <button
+            appButton
+            size="sm"
+            type="button"
+            (click)="openAction(1, 'Confirmer le Décaissement', false, false)"
+          >
+            <lucide-icon [img]="CheckCircleIcon" [size]="14" class="mr-1.5" />
+            Confirmer le Décaissement
+          </button>
+        }
 
-      @if (showMontantAccordeBtn()) {
-        <button
-          appButton
-          variant="outline"
-          size="sm"
-          type="button"
-          (click)="openMontantAccordeDialog()"
-        >
-          <lucide-icon [img]="PencilIcon" [size]="14" class="mr-1.5" />
-          Définir montant accordé
-        </button>
-      }
+        @if (showAnnuler()) {
+          <button
+            appButton
+            variant="outline"
+            size="sm"
+            type="button"
+            (click)="openAction(4, 'Annuler le Décaissement', false, false)"
+          >
+            <lucide-icon [img]="XCircleIcon" [size]="14" class="mr-1.5" />
+            Annuler le Décaissement
+          </button>
+        }
 
-      @if (showNumDemandeBtn()) {
-        <button
-          appButton
-          variant="outline"
-          size="sm"
-          type="button"
-          (click)="openNumDemandeDialog()"
-        >
-          <lucide-icon [img]="PencilIcon" [size]="14" class="mr-1.5" />
-          N° demande PERFECT
-        </button>
-      }
-    </div>
-  }
+        @if (showMontantAccordeBtn()) {
+          <button
+            appButton
+            variant="outline"
+            size="sm"
+            type="button"
+            (click)="openMontantAccordeDialog()"
+          >
+            <lucide-icon [img]="PencilIcon" [size]="14" class="mr-1.5" />
+            Modifier montant accordé
+          </button>
+        }
+
+        @if (showNumDemandeBtn()) {
+          <button
+            appButton
+            variant="outline"
+            size="sm"
+            type="button"
+            (click)="openNumDemandeDialog()"
+          >
+            <lucide-icon [img]="PencilIcon" [size]="14" class="mr-1.5" />
+            N° demande PERFECT
+          </button>
+        }
+      </div>
+    }
+  </div>
 
   @if (demande(); as d) {
     <!-- ── Fiche client ─────────────────────────────────────────────────── -->
@@ -431,8 +436,8 @@
             @for (
               doc of [
                 { label: 'Image du chèque', lien: d.cheque?.imageCheque ?? d.cheque?.image },
-                { label: "Preuve de l'existance d'une transaction", lien: d.preuveTransaction },
-                { label: "Preuve de l'existance de l'entreprise", lien: d.preuveEntreprise },
+                { label: "Preuve de l'existance d'une transaction", lien: d.cheque?.preuveTransaction },
+                { label: "Preuve de l'existance de l'entreprise", lien: d.cheque?.preuveEntreprise },
               ];
               track doc.label
             ) {
@@ -893,7 +898,7 @@
             label="Date de décaissement"
           />
         }
-        @if (demande()?.statut === 2 && pendingAction()?.decision === 1) {
+        <!-- @if (demande()?.statut === 2 && (pendingAction()?.decision === 1 || pendingAction()?.decision === 3)) {
           <div class="flex flex-col gap-2">
             <p class="text-sm font-medium text-foreground">Critères de vérification</p>
             <ul class="flex flex-col gap-2">
@@ -912,7 +917,7 @@
               }
             </ul>
           </div>
-        }
+        } -->
       </div>
     </form>
   </app-dialog-content>
@@ -945,7 +950,7 @@
 <!-- ── Dialog : Montant accordé ──────────────────────────────────────── -->
 <app-dialog [(open)]="montantAccordeDialogOpen" [closeOnOverlay]="!isLoading()">
   <app-dialog-header>
-    <app-dialog-title>Définir le montant accordé</app-dialog-title>
+    <app-dialog-title>Modifier le montant accordé</app-dialog-title>
     <app-dialog-description>
       Le montant accordé doit être ≤ montant sollicité ({{ demande()?.montantSollicite | number }} FCFA) et ≤ montant du chèque.
     </app-dialog-description>

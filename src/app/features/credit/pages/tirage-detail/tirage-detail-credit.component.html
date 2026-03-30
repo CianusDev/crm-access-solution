@@ -1,27 +1,30 @@
-<div class="flex flex-col gap-6 mt-4">
+<div class="flex flex-col gap-5 mt-4">
 
-  <!-- En-tête -->
-  <div class="flex items-center gap-3">
+  <!-- ── En-tête ─────────────────────────────────────────────────────────── -->
+  <div class="flex items-start gap-3">
     <button
       type="button"
       (click)="goBack()"
-      class="flex items-center justify-center h-8 w-8 rounded-md border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+      class="mt-0.5 flex items-center justify-center h-8 w-8 shrink-0 rounded-md border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
     >
       <lucide-icon [img]="ChevronLeftIcon" [size]="16" />
     </button>
-    <div>
+
+    <div class="flex-1 min-w-0">
       <h1 class="text-xl font-bold text-foreground">Détail du tirage</h1>
       @if (demande(); as d) {
-        <p class="text-sm text-muted-foreground font-mono">{{ d.refDemande }}</p>
+        <p class="text-sm text-muted-foreground font-mono mt-0.5">{{ d.refDemande }}</p>
       }
     </div>
+
     @if (demande(); as d) {
-      <div class="ml-auto">
+      <div class="flex items-center gap-2 flex-wrap justify-end shrink-0">
         <app-badge [variant]="statutInfo().variant">{{ statutInfo().label }}</app-badge>
       </div>
     }
   </div>
 
+  <!-- ── Chargement ──────────────────────────────────────────────────────── -->
   @if (isLoading()) {
     <div class="flex items-center justify-center py-20">
       <span class="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
@@ -30,176 +33,414 @@
   }
 
   @if (!isLoading() && demande(); as d) {
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
 
-      <!-- Colonne gauche : profil client -->
-      <div class="flex flex-col gap-4">
-        <app-card>
-          <app-card-header>
-            <app-card-title>Client</app-card-title>
-          </app-card-header>
-          <app-card-content>
-            <div class="flex flex-col items-center gap-3 pb-4">
-              <div class="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                @if (isPersonneMorale()) {
-                  <lucide-icon [img]="Building2Icon" [size]="24" class="text-primary" />
-                } @else {
-                  <lucide-icon [img]="UserIcon" [size]="24" class="text-primary" />
-                }
-              </div>
-              <div class="text-center">
-                <p class="text-sm font-semibold text-foreground">{{ d.client.nomPrenom }}</p>
-                <p class="text-xs text-muted-foreground font-mono mt-0.5">{{ d.client.codeClient }}</p>
-                <span class="mt-1.5 inline-block rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                  {{ isPersonneMorale() ? 'Personne morale' : 'Personne physique' }}
-                </span>
-              </div>
-            </div>
-            @if (d.client.agence) {
-              <div class="border-t border-border pt-3 text-center">
-                <span class="text-xs text-muted-foreground">Agence {{ d.client.agence.libelle }}</span>
-              </div>
+    <!-- ── Barre d'actions ────────────────────────────────────────────────── -->
+    @if (showEnvoyer() || showActionsComite() || showActionsDG()) {
+      <div class="flex flex-wrap gap-2 p-3 rounded-lg border border-border bg-muted/30">
+
+        <!-- Statut 1 : Envoyer le dossier -->
+        @if (showEnvoyer()) {
+          <button
+            type="button"
+            (click)="openAction(1, 'Envoyer le dossier')"
+            class="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 h-9 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
+          >
+            <lucide-icon [img]="SendIcon" [size]="14" />
+            Envoyer le dossier
+          </button>
+        }
+
+        <!-- Statuts 28/10/11 : actions comité -->
+        @if (showActionsComite()) {
+          <button
+            type="button"
+            (click)="openAction(0, 'Rejeter le dossier')"
+            class="inline-flex items-center gap-1.5 rounded-md bg-destructive px-4 h-9 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 transition-colors cursor-pointer"
+          >
+            <lucide-icon [img]="XIcon" [size]="14" />
+            Rejeter
+          </button>
+          <button
+            type="button"
+            (click)="openAction(2, 'Ajourner le dossier')"
+            class="inline-flex items-center gap-1.5 rounded-md border border-amber-500 text-amber-600 px-4 h-9 text-sm font-medium hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/20 transition-colors cursor-pointer"
+          >
+            <lucide-icon [img]="RotateCcwIcon" [size]="14" />
+            Ajourner
+          </button>
+
+          @if (!hasAlreadyVotedComite()) {
+            <!-- Pas encore voté → Faire le comité -->
+            <button
+              type="button"
+              (click)="comiteDialogOpen = true"
+              class="inline-flex items-center gap-1.5 rounded-md border border-primary text-primary px-4 h-9 text-sm font-medium hover:bg-primary/10 transition-colors cursor-pointer"
+            >
+              <lucide-icon [img]="AwardIcon" [size]="14" />
+              Faire le comité
+            </button>
+          } @else {
+            <!-- Déjà voté → Envoyer le tirage (ou valider) -->
+            <button
+              type="button"
+              (click)="openAction(1, 'Envoyer le tirage')"
+              class="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-4 h-9 text-sm font-medium text-white hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 transition-colors cursor-pointer"
+            >
+              <lucide-icon [img]="SendIcon" [size]="14" />
+              Envoyer le tirage
+            </button>
+          }
+        }
+
+        <!-- Statut 12 : validation DG -->
+        @if (showActionsDG()) {
+          <button
+            type="button"
+            (click)="openAction(0, 'Rejeter le dossier')"
+            class="inline-flex items-center gap-1.5 rounded-md bg-destructive px-4 h-9 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 transition-colors cursor-pointer"
+          >
+            <lucide-icon [img]="XIcon" [size]="14" />
+            Rejeter
+          </button>
+          <button
+            type="button"
+            (click)="openAction(2, 'Ajourner le dossier')"
+            class="inline-flex items-center gap-1.5 rounded-md border border-amber-500 text-amber-600 px-4 h-9 text-sm font-medium hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/20 transition-colors cursor-pointer"
+          >
+            <lucide-icon [img]="RotateCcwIcon" [size]="14" />
+            Ajourner
+          </button>
+          <button
+            type="button"
+            (click)="decisionDialogOpen = true"
+            class="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-4 h-9 text-sm font-medium text-white hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 transition-colors cursor-pointer"
+          >
+            <lucide-icon [img]="CircleCheckIcon" [size]="14" />
+            Valider le dossier
+          </button>
+        }
+
+      </div>
+    }
+
+    <!-- ── Onglets ─────────────────────────────────────────────────────────── -->
+    <app-tabs variant="underline">
+
+      <!-- ── Onglet Dossier ───────────────────────────────────────────────── -->
+      <app-tab label="Dossier">
+        <div class="pt-4 grid grid-cols-1 gap-6 lg:grid-cols-2">
+
+          <!-- Colonne gauche -->
+          <div class="flex flex-col gap-4">
+
+            <!-- Carte découvert parent -->
+            <app-tirage-decouvert-card [fiche]="ficheDecouvert()" />
+
+            <!-- Carte tirage -->
+            <app-tirage-dossier-card [demande]="demande()" [resume]="resume()" />
+
+          </div>
+
+          <!-- Colonne droite -->
+          <div class="flex flex-col gap-4">
+
+            <!-- Proposition AR -->
+            @if (resume()?.proposition; as prop) {
+              <app-card>
+                <app-card-header>
+                  <app-card-title>Proposition de l'AR</app-card-title>
+                </app-card-header>
+                <app-card-content>
+                  <div class="flex flex-col gap-0">
+                    @if (prop.montantPropose) {
+                      <div class="flex justify-between py-1.5 border-b border-border/40">
+                        <span class="text-xs text-muted-foreground">Montant proposé</span>
+                        <span class="text-xs font-semibold text-foreground">
+                          {{ prop.montantPropose.toLocaleString('fr-FR') }} FCFA
+                        </span>
+                      </div>
+                    }
+                    @if (prop.duree) {
+                      <div class="flex justify-between py-1.5 border-b border-border/40">
+                        <span class="text-xs text-muted-foreground">Durée proposée</span>
+                        <span class="text-xs font-medium text-foreground">{{ prop.duree }} mois</span>
+                      </div>
+                    }
+                    @if (prop.mensualite) {
+                      <div class="flex justify-between py-1.5 border-b border-border/40">
+                        <span class="text-xs text-muted-foreground">Mensualité</span>
+                        <span class="text-xs font-medium text-foreground">
+                          {{ prop.mensualite.toLocaleString('fr-FR') }} FCFA
+                        </span>
+                      </div>
+                    }
+                    @if (prop.user?.nomPrenom) {
+                      <div class="flex justify-between py-1.5">
+                        <span class="text-xs text-muted-foreground">Par</span>
+                        <span class="text-xs font-medium text-foreground">{{ prop.user!.nomPrenom }}</span>
+                      </div>
+                    }
+                  </div>
+                  @if (prop.motivation) {
+                    <div class="mt-3 pt-3 border-t border-border/40">
+                      <p class="text-xs text-muted-foreground mb-1">Motivation</p>
+                      <p class="text-xs text-foreground/80 leading-relaxed">{{ prop.motivation }}</p>
+                    </div>
+                  }
+                </app-card-content>
+              </app-card>
             }
-          </app-card-content>
-        </app-card>
 
-        <!-- Détails du tirage -->
-        <app-card>
-          <app-card-header>
-            <app-card-title>Informations</app-card-title>
-          </app-card-header>
-          <app-card-content>
-            <div class="flex flex-col gap-2">
+            <!-- Votes du comité -->
+            @if (resume()?.comites?.length) {
+              <app-card>
+                <app-card-header>
+                  <app-card-title>Votes du comité</app-card-title>
+                </app-card-header>
+                <app-card-content>
+                  <div class="flex flex-col divide-y divide-border/50">
+                    @for (vote of resume()!.comites!; track vote.id ?? $index) {
+                      <div class="py-2.5">
+                        <div class="flex justify-between items-start">
+                          <span class="text-xs font-medium text-foreground">
+                            {{ vote.user?.nomPrenom ?? 'Membre' }}
+                          </span>
+                          <span class="text-xs font-semibold text-primary">
+                            {{ (vote.montantPropose ?? 0).toLocaleString('fr-FR') }} FCFA
+                          </span>
+                        </div>
+                        @if (vote.commentaire) {
+                          <p class="text-xs text-muted-foreground mt-1 leading-relaxed">{{ vote.commentaire }}</p>
+                        }
+                      </div>
+                    }
+                  </div>
+                </app-card-content>
+              </app-card>
+            }
 
-              <div class="flex justify-between py-1 border-b border-border/50">
-                <span class="text-xs text-muted-foreground">Type de crédit</span>
-                <span class="text-xs font-medium text-foreground">{{ d.typeCredit.libelle }}</span>
-              </div>
+            <!-- Décision finale -->
+            @if (fiche()?.decision; as dec) {
+              <app-card>
+                <app-card-header>
+                  <app-card-title>Décision finale</app-card-title>
+                </app-card-header>
+                <app-card-content>
+                  <div class="flex flex-col gap-0">
+                    @if (dec.montantPropose) {
+                      <div class="flex justify-between py-1.5 border-b border-border/40">
+                        <span class="text-xs text-muted-foreground">Montant proposé</span>
+                        <span class="text-xs font-semibold text-foreground">
+                          {{ dec.montantPropose.toLocaleString('fr-FR') }} FCFA
+                        </span>
+                      </div>
+                    }
+                    @if (dec.montantEmprunte) {
+                      <div class="flex justify-between py-1.5 border-b border-border/40">
+                        <span class="text-xs text-muted-foreground">Montant accordé</span>
+                        <span class="text-xs font-semibold text-green-600 dark:text-green-400">
+                          {{ dec.montantEmprunte.toLocaleString('fr-FR') }} FCFA
+                        </span>
+                      </div>
+                    }
+                    @if (dec.duree) {
+                      <div class="flex justify-between py-1.5 border-b border-border/40">
+                        <span class="text-xs text-muted-foreground">Durée accordée</span>
+                        <span class="text-xs font-medium text-foreground">{{ dec.duree }} mois</span>
+                      </div>
+                    }
+                    @if (dec.mensualite) {
+                      <div class="flex justify-between py-1.5 border-b border-border/40">
+                        <span class="text-xs text-muted-foreground">Mensualité</span>
+                        <span class="text-xs font-medium text-foreground">
+                          {{ dec.mensualite.toLocaleString('fr-FR') }} FCFA
+                        </span>
+                      </div>
+                    }
+                    @if (dec.fraisDossier) {
+                      <div class="flex justify-between py-1.5 border-b border-border/40">
+                        <span class="text-xs text-muted-foreground">Frais de dossier</span>
+                        <span class="text-xs font-medium text-foreground">
+                          {{ dec.fraisDossier.toLocaleString('fr-FR') }} FCFA
+                        </span>
+                      </div>
+                    }
+                    @if (dec.commissionDeboursement) {
+                      <div class="flex justify-between py-1.5 border-b border-border/40">
+                        <span class="text-xs text-muted-foreground">Commission débours.</span>
+                        <span class="text-xs font-medium text-foreground">
+                          {{ dec.commissionDeboursement.toLocaleString('fr-FR') }} FCFA
+                        </span>
+                      </div>
+                    }
+                    @if (dec.deposit) {
+                      <div class="flex justify-between py-1.5">
+                        <span class="text-xs text-muted-foreground">Dépôt de garantie</span>
+                        <span class="text-xs font-medium text-foreground">{{ dec.deposit }} %</span>
+                      </div>
+                    }
+                  </div>
+                  @if (dec.commentaire) {
+                    <div class="mt-3 pt-3 border-t border-border/40">
+                      <p class="text-xs text-muted-foreground mb-1">Commentaire</p>
+                      <p class="text-xs text-foreground/80 leading-relaxed">{{ dec.commentaire }}</p>
+                    </div>
+                  }
+                </app-card-content>
+              </app-card>
+            }
 
-              @if (d.typeActivite) {
-                <div class="flex justify-between py-1 border-b border-border/50">
-                  <span class="text-xs text-muted-foreground">Secteur d'activité</span>
-                  <span class="text-xs font-medium text-foreground">{{ d.typeActivite.libelle }}</span>
-                </div>
-              }
+          </div>
+        </div>
+      </app-tab>
 
-              <div class="flex justify-between py-1 border-b border-border/50">
-                <span class="text-xs text-muted-foreground">Montant demandé</span>
-                <span class="text-xs font-semibold text-primary">
-                  {{ d.montantSollicite | number:'1.0-0':'fr-FR' }} FCFA
-                </span>
-              </div>
+      <!-- ── Onglet Documents ─────────────────────────────────────────────── -->
+      <app-tab label="Documents">
+        <div class="pt-4">
+          <app-tirage-documents-panel
+            [ref]="ref()"
+            [documentsIn]="documents()"
+          />
+        </div>
+      </app-tab>
 
-              <div class="flex justify-between py-1 border-b border-border/50">
-                <span class="text-xs text-muted-foreground">Durée</span>
-                <span class="text-xs font-medium text-foreground">{{ d.nbreEcheanceSollicite }} mois</span>
-              </div>
-
-              <div class="flex justify-between py-1 border-b border-border/50">
-                <span class="text-xs text-muted-foreground">Échéance souhaitée</span>
-                <span class="text-xs font-medium text-foreground">
-                  {{ d.montantEcheSouhaite | number:'1.0-0':'fr-FR' }} FCFA
-                </span>
-              </div>
-
-              <div class="flex justify-between py-1">
-                <span class="text-xs text-muted-foreground">Date de demande</span>
-                <span class="text-xs font-medium text-foreground">{{ d.dateDemande | date:'dd/MM/yyyy' }}</span>
-              </div>
-
-            </div>
-          </app-card-content>
-        </app-card>
-
-        <!-- Décision (si disponible) -->
-        @if (fiche()?.decision; as dec) {
+      <!-- ── Onglet Historique ────────────────────────────────────────────── -->
+      <app-tab label="Historique">
+        <div class="pt-4">
           <app-card>
             <app-card-header>
-              <app-card-title>Décision</app-card-title>
+              <app-card-title>Historique des actions</app-card-title>
             </app-card-header>
             <app-card-content>
-              <div class="flex flex-col gap-2">
-                @if (dec.montantPropose) {
-                  <div class="flex justify-between py-1 border-b border-border/50">
-                    <span class="text-xs text-muted-foreground">Montant proposé</span>
-                    <span class="text-xs font-semibold text-foreground">
-                      {{ dec.montantPropose | number:'1.0-0':'fr-FR' }} FCFA
-                    </span>
-                  </div>
-                }
-                @if (dec.montantEmprunte) {
-                  <div class="flex justify-between py-1 border-b border-border/50">
-                    <span class="text-xs text-muted-foreground">Montant accordé</span>
-                    <span class="text-xs font-semibold text-success">
-                      {{ dec.montantEmprunte | number:'1.0-0':'fr-FR' }} FCFA
-                    </span>
-                  </div>
-                }
-                @if (dec.duree) {
-                  <div class="flex justify-between py-1">
-                    <span class="text-xs text-muted-foreground">Durée accordée</span>
-                    <span class="text-xs font-medium text-foreground">{{ dec.duree }} mois</span>
-                  </div>
-                }
-              </div>
-            </app-card-content>
-          </app-card>
-        }
-      </div>
 
-      <!-- Colonne droite : historique -->
-      <app-card>
-        <app-card-header>
-          <app-card-title>Historique des actions</app-card-title>
-        </app-card-header>
-        <app-card-content>
-
-          @if (observations().length === 0) {
-            <div class="flex flex-col items-center justify-center py-10 gap-3">
-              <div class="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                <lucide-icon [img]="MessageSquareIcon" [size]="18" class="text-muted-foreground" />
-              </div>
-              <p class="text-sm text-muted-foreground">Aucune action enregistrée</p>
-            </div>
-          } @else {
-            <div class="flex flex-col gap-0">
-              @for (obs of observations(); track obs.id; let last = $last) {
-                <div class="flex gap-3" [class.pb-6]="!last">
-                  <!-- Timeline dot -->
-                  <div class="flex flex-col items-center">
-                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-background">
-                      <lucide-icon [img]="ClockIcon" [size]="13" class="text-primary" />
-                    </div>
-                    @if (!last) {
-                      <div class="flex-1 w-px bg-border mt-1"></div>
-                    }
+              @if (observations().length === 0) {
+                <div class="flex flex-col items-center justify-center py-10 gap-3">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                    <lucide-icon [img]="MessageSquareIcon" [size]="18" class="text-muted-foreground" />
                   </div>
-                  <!-- Content -->
-                  <div class="flex-1 pb-1">
-                    <div class="flex items-center justify-between gap-2">
-                      <p class="text-sm font-medium text-foreground">{{ obs.operation ?? obs.libelle ?? obs.decision ?? 'Action' }}</p>
-                      <span class="text-xs text-muted-foreground whitespace-nowrap">
-                        {{ obs.date | date:'dd/MM/yyyy HH:mm' }}
-                      </span>
+                  <p class="text-sm text-muted-foreground">Aucune action enregistrée</p>
+                </div>
+              } @else {
+                <div class="flex flex-col gap-0">
+                  @for (obs of observations(); track obs.id; let last = $last) {
+                    <div class="flex gap-3" [class.pb-6]="!last">
+                      <div class="flex flex-col items-center">
+                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-background">
+                          <lucide-icon [img]="ClockIcon" [size]="13" class="text-primary" />
+                        </div>
+                        @if (!last) {
+                          <div class="flex-1 w-px bg-border mt-1"></div>
+                        }
+                      </div>
+                      <div class="flex-1 pb-1">
+                        <div class="flex items-center justify-between gap-2">
+                          <p class="text-sm font-medium text-foreground">
+                            {{ obs.operation ?? obs.libelle ?? obs.decision ?? 'Action' }}
+                          </p>
+                          <span class="text-xs text-muted-foreground whitespace-nowrap">
+                            {{ obs.date | date:'dd/MM/yyyy HH:mm' }}
+                          </span>
+                        </div>
+                        @if (obs.user?.nomPrenom) {
+                          <p class="text-xs text-muted-foreground mt-0.5">par {{ obs.user!.nomPrenom }}</p>
+                        }
+                        @if (obs.observation) {
+                          <p class="mt-1.5 text-xs text-foreground/80 rounded-md bg-muted px-3 py-2">
+                            {{ obs.observation }}
+                          </p>
+                        }
+                      </div>
                     </div>
-                    @if (obs.user?.nomPrenom) {
-                      <p class="text-xs text-muted-foreground mt-0.5">par {{ obs.user!.nomPrenom }}</p>
-                    }
-                    @if (obs.observation) {
-                      <p class="mt-1.5 text-xs text-foreground/80 rounded-md bg-muted px-3 py-2">
-                        {{ obs.observation }}
-                      </p>
-                    }
-                  </div>
+                  }
                 </div>
               }
-            </div>
-          }
 
-        </app-card-content>
-      </app-card>
+            </app-card-content>
+          </app-card>
+        </div>
+      </app-tab>
 
-    </div>
+    </app-tabs>
   }
 
 </div>
+
+<!-- ── Dialog : action simple (rejeter / ajourner / envoyer) ──────────── -->
+<app-dialog [(open)]="actionDialogOpen">
+  <app-dialog-header>
+    <app-dialog-title>{{ currentAction?.title ?? "Confirmer l'action" }}</app-dialog-title>
+    <app-dialog-description>
+      Dossier {{ ref() }}. Cette action sera enregistrée dans l'historique.
+    </app-dialog-description>
+  </app-dialog-header>
+
+  <div class="pb-2 flex flex-col gap-3">
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-medium text-foreground">
+        Observation <span class="text-muted-foreground">(optionnel)</span>
+      </label>
+      <textarea
+        rows="3"
+        placeholder="Observation ou commentaire"
+        [ngModel]="actionObs()"
+        (ngModelChange)="actionObs.set($event)"
+        class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 resize-none"
+      ></textarea>
+    </div>
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-medium text-foreground">
+        Mot de passe <span class="text-destructive">*</span>
+      </label>
+      <input
+        type="password"
+        placeholder="Votre mot de passe pour confirmer"
+        [ngModel]="actionPwd()"
+        (ngModelChange)="actionPwd.set($event)"
+        class="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50"
+      />
+    </div>
+  </div>
+
+  <app-dialog-footer>
+    <button
+      type="button"
+      (click)="actionDialogOpen = false"
+      class="flex h-9 items-center rounded-md border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
+    >
+      Annuler
+    </button>
+    <button
+      type="button"
+      (click)="submitAction()"
+      [disabled]="!actionPwd().trim() || isSubmittingAction()"
+      class="flex h-9 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      @if (isSubmittingAction()) {
+        <span class="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent mr-2"></span>
+        Envoi…
+      } @else {
+        Confirmer
+      }
+    </button>
+  </app-dialog-footer>
+</app-dialog>
+
+<!-- ── Dialog : décision comité ───────────────────────────────────────── -->
+<app-tirage-comite-dialog
+  [(open)]="comiteDialogOpen"
+  [ref]="ref()"
+  [demande]="demande()"
+  [ficheDecouvert]="ficheDecouvert()"
+  [resume]="resume()"
+  (submitted)="reloadAll()"
+/>
+
+<!-- ── Dialog : décision finale DG ───────────────────────────────────── -->
+<app-tirage-decision-dialog
+  [(open)]="decisionDialogOpen"
+  [ref]="ref()"
+  [demande]="demande()"
+  [ficheDecouvert]="ficheDecouvert()"
+  [resume]="resume()"
+  (submitted)="reloadAll()"
+/>

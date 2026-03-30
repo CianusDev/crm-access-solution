@@ -179,7 +179,7 @@
                 @for (d of c.demandes; track d.id) {
                   <div class="px-4 py-3 hover:bg-muted/20 transition-colors">
                     <div class="flex items-start gap-3">
-                      <div class="flex-1 min-w-0">
+                      <div class="flex-1 flex flex-row-reverse justify-between min-w-0">
                         <!-- Statut + N° demande -->
                         <div class="flex items-center gap-2 flex-wrap">
                           <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium" [class]="statutClass(d.statut)">
@@ -191,12 +191,12 @@
                         </div>
                         <!-- Montants + date -->
                         <div class="mt-1 flex items-center gap-4 flex-wrap text-sm">
-                          <span class="text-muted-foreground">Sollicité : <strong class="text-foreground">{{ d.montantSollicite | number }} FCFA</strong></span>
+                          @if (d.dateDemande ?? d.datedemande) {
+                            <span class="text-xs text-muted-foreground">Date : <span class="font-semibold">{{ (d.dateDemande ?? d.datedemande) | date:'dd/MM/yyyy' }}</span></span>
+                          }
+                            <span class="text-muted-foreground">Sollicité : <strong class="text-foreground">{{ d.montantSollicite | number }} FCFA</strong></span>
                           @if (d.numDemandeAsc) {
                             <span class="text-muted-foreground">Accordé : <strong class="text-green-600">{{ (d.montantAccorde ?? d.montantSollicite) | number }} FCFA</strong></span>
-                          }
-                          @if (d.dateDemande ?? d.datedemande) {
-                            <span class="text-xs text-muted-foreground">{{ (d.dateDemande ?? d.datedemande) | date:'dd/MM/yyyy' }}</span>
                           }
                         </div>
                       </div>

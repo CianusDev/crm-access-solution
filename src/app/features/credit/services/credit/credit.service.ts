@@ -18,6 +18,8 @@ import {
   CreditObservation,
   CreditResume,
   CreditSaveDemande,
+  CreditSaveComite,
+  CreditSaveDecisionFinale,
   CreditSaveTirage,
   Employeur,
   EmployeurDocument,
@@ -491,6 +493,18 @@ export class CreditService {
         this.endpoint + '/saveCrdTirage',
         data,
       )
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveComiteDecision(data: CreditSaveComite) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveComite', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveDecisionFinale(data: CreditSaveDecisionFinale) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveCrDecision', data)
       .pipe(catchError((err) => throwError(() => err)));
   }
 

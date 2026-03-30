@@ -1,0 +1,79 @@
+<app-dialog [(open)]="open" classContainer="max-w-lg">
+  <app-dialog-header>
+    <app-dialog-title>
+      <span class="flex items-center gap-2">
+        <lucide-icon [img]="CircleCheckIcon" [size]="18" class="text-green-600 dark:text-green-400" />
+        Validation finale du dossier
+      </span>
+    </app-dialog-title>
+    <app-dialog-description>
+      Décision définitive du Directeur Général pour le tirage {{ ref() }}.
+    </app-dialog-description>
+  </app-dialog-header>
+
+  <!-- Infos de référence (lecture seule) -->
+  <div class="flex flex-col gap-2 rounded-md bg-muted/50 border border-border/60 px-4 py-3 mb-1">
+    @if (montantDecouvertAccorde(); as mda) {
+      <div class="flex justify-between text-xs">
+        <span class="text-muted-foreground">Montant découvert accordé</span>
+        <span class="font-semibold text-foreground">{{ mda | number:'1.0-0':'fr-FR' }} FCFA</span>
+      </div>
+    }
+    @if (montantTirageSollicite(); as mts) {
+      <div class="flex justify-between text-xs">
+        <span class="text-muted-foreground">Montant tirage sollicité</span>
+        <span class="font-semibold text-primary">{{ mts | number:'1.0-0':'fr-FR' }} FCFA</span>
+      </div>
+    }
+    @if (resume()?.comites?.[0]?.montantPropose; as mc) {
+      <div class="flex justify-between text-xs border-t border-border/40 pt-2 mt-1">
+        <span class="text-muted-foreground">Montant proposé par le comité</span>
+        <span class="font-semibold text-foreground">{{ mc | number:'1.0-0':'fr-FR' }} FCFA</span>
+      </div>
+    }
+    <div class="flex justify-between text-xs">
+      <span class="text-muted-foreground">Durée</span>
+      <span class="font-medium text-foreground">1 mois (fixe)</span>
+    </div>
+  </div>
+
+  <!-- Formulaire -->
+  <form [formGroup]="form" class="flex flex-col gap-4 pt-1">
+    <app-form-input
+      name="montantPropose"
+      label="Montant validé (FCFA)"
+      type="number"
+      placeholder="Ex : 5 000 000"
+      required
+    />
+    <app-form-textarea
+      name="commentaire"
+      label="Commentaire / Décision"
+      placeholder="Commentaire de validation du Directeur Général…"
+      required
+    />
+  </form>
+
+  <app-dialog-footer>
+    <button
+      type="button"
+      (click)="cancel()"
+      class="flex h-9 items-center rounded-md border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
+    >
+      Annuler
+    </button>
+    <button
+      type="button"
+      (click)="submit()"
+      [disabled]="form.invalid || isSubmitting()"
+      appButton
+    >
+      @if (isSubmitting()) {
+        <span class="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent mr-2"></span>
+        Validation…
+      } @else {
+        Valider le dossier
+      }
+    </button>
+  </app-dialog-footer>
+</app-dialog>

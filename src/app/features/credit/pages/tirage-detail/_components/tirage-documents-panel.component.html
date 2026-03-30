@@ -1,0 +1,161 @@
+<app-card>
+  <app-card-header>
+    <div class="flex items-center justify-between w-full">
+      <app-card-title>Documents annexes</app-card-title>
+      @if (!showUploadForm) {
+        <button
+          type="button"
+          (click)="showUploadForm = true"
+          appButton
+          size="sm"
+          variant="outline"
+        >
+          <lucide-icon [img]="FilePlusIcon" [size]="14" />
+          Ajouter un document
+        </button>
+      }
+    </div>
+  </app-card-header>
+  <app-card-content>
+
+    <!-- Formulaire d'upload -->
+    @if (showUploadForm) {
+      <div class="rounded-lg border border-border bg-muted/30 p-4 mb-4 flex flex-col gap-3">
+        <p class="text-sm font-medium text-foreground">Nouveau document</p>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-foreground">Libellé <span class="text-destructive">*</span></label>
+          <input
+            type="text"
+            [(ngModel)]="uploadLibelle"
+            placeholder="Ex : Contrat signé, Pièce d'identité…"
+            class="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50"
+          />
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-foreground">Fichier (PDF) <span class="text-destructive">*</span></label>
+          <label
+            class="flex items-center gap-2 h-9 rounded-md border border-dashed border-border bg-background px-3 text-sm text-muted-foreground cursor-pointer hover:border-primary hover:text-primary transition-colors"
+          >
+            <lucide-icon [img]="UploadIcon" [size]="14" />
+            {{ selectedFile ? selectedFile.name : 'Choisir un fichier…' }}
+            <input type="file" accept="application/pdf" (change)="onFileSelected($event)" class="hidden" />
+          </label>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-1">
+          <button
+            type="button"
+            (click)="cancelUpload()"
+            class="flex h-8 items-center rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            (click)="upload()"
+            [disabled]="!selectedFile || !uploadLibelle.trim() || isUploading"
+            appButton
+            size="sm"
+          >
+            @if (isUploading) {
+              <span class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent mr-1.5"></span>
+              Envoi…
+            } @else {
+              <lucide-icon [img]="UploadIcon" [size]="13" />
+              Envoyer
+            }
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Liste des documents -->
+    @if (documents().length === 0 && documentsIn().length === 0) {
+      <div class="flex flex-col items-center justify-center py-10 gap-3">
+        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+          <lucide-icon [img]="FileTextIcon" [size]="18" class="text-muted-foreground" />
+        </div>
+        <p class="text-sm text-muted-foreground">Aucun document annexe</p>
+      </div>
+    } @else {
+      @let docs = documents().length > 0 ? documents() : documentsIn();
+      <div class="flex flex-col divide-y divide-border/50">
+        @for (doc of docs; track doc.id) {
+          <div class="flex items-center gap-3 py-2.5">
+            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
+              <lucide-icon [img]="FileTextIcon" [size]="15" class="text-primary" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-foreground truncate">{{ doc.libelle }}</p>
+              <div class="flex items-center gap-3 mt-0.5">
+                @if (doc.user?.nomPrenom) {
+                  <span class="text-xs text-muted-foreground">{{ doc.user!.nomPrenom }}</span>
+                }
+                @if (doc.createdAt) {
+                  <span class="text-xs text-muted-foreground">{{ doc.createdAt | date:'dd/MM/yyyy' }}</span>
+                }
+              </div>
+            </div>
+            <!-- Actions -->
+            <div class="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                (click)="openDoc(doc.document)"
+                title="Ouvrir"
+                class="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+              >
+                <lucide-icon [img]="ExternalLinkIcon" [size]="14" />
+              </button>
+              <button
+                type="button"
+                (click)="confirmDelete(doc)"
+                title="Supprimer"
+                class="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+              >
+                <lucide-icon [img]="Trash2Icon" [size]="14" />
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+  </app-card-content>
+</app-card>
+
+<!-- Dialog confirmation suppression -->
+<app-dialog [(open)]="deleteDialogOpen" classContainer="max-w-sm">
+  <app-dialog-header>
+    <app-dialog-title>Supprimer le document</app-dialog-title>
+    <app-dialog-description>
+      @if (docToDelete) {
+        Voulez-vous vraiment supprimer <strong>« {{ docToDelete.libelle }} »</strong> ?
+        Cette action est irréversible.
+      }
+    </app-dialog-description>
+  </app-dialog-header>
+  <app-dialog-footer>
+    <button
+      type="button"
+      (click)="deleteDialogOpen = false"
+      class="flex h-9 items-center rounded-md border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
+    >
+      Annuler
+    </button>
+    <button
+      type="button"
+      (click)="executeDelete()"
+      [disabled]="isDeleting"
+      class="flex h-9 items-center rounded-md bg-destructive px-4 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 transition-colors cursor-pointer disabled:opacity-50"
+    >
+      @if (isDeleting) {
+        <span class="h-4 w-4 animate-spin rounded-full border-2 border-destructive-foreground border-t-transparent mr-2"></span>
+        Suppression…
+      } @else {
+        Supprimer
+      }
+    </button>
+  </app-dialog-footer>
+</app-dialog>

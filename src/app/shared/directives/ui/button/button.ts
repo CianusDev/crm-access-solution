@@ -14,6 +14,7 @@ export const buttonVariants = cva(
         secondary: 'bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80', // Style secondaire
         ghost: 'hover:bg-accent hover:text-accent-foreground', // Style fantôme
         link: 'text-primary underline-offset-4 hover:underline', // Style lien
+        success: 'bg-green-500 text-white shadow-xs hover:bg-green-600', // Style succès
       },
       size: {
         default: 'h-9 px-4 py-2', // Taille par défaut

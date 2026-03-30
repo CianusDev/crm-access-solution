@@ -185,7 +185,7 @@ const CREDIT_AGENCE_ROLES = [
   CDC,
 ] as const;
 // Créer demande
-const CREDIT_CREATE_ROLES = [Admin, ACJ, CE, GP, CC, RC] as const;
+const CREDIT_CREATE_ROLES = [Admin, ACJ, CE, GP] as const;
 // Liste des demandes (old: très large — toutes les agences + siège sauf quelques rôles purs BO)
 const CREDIT_LIST_ROLES = [
   Admin,

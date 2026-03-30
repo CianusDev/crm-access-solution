@@ -82,7 +82,7 @@ const CREDIT_AGENCE = [
   CDC,
 ] as const;
 
-const CREDIT_CREATE = [Admin, ACJ, CE, GP, CC, RC] as const;
+const CREDIT_CREATE = [Admin, ACJ, CE, GP] as const;
 
 const CREDIT_ALL = [
   ...new Set([

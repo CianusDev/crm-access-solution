@@ -220,9 +220,12 @@ export class DetailComponent {
   readonly isLoading = signal(false);
   readonly isExporting = signal(false);
 
-  readonly pendingAction = signal<{ decision: number; title: string; requireObs: boolean; showObs: boolean } | null>(
-    null,
-  );
+  readonly pendingAction = signal<{
+    decision: number;
+    title: string;
+    requireObs: boolean;
+    showObs: boolean;
+  } | null>(null);
 
   actionForm = new FormGroup({
     observation: new FormControl(''),
@@ -262,7 +265,9 @@ export class DetailComponent {
       let checked: number[] = [];
       try {
         if (raw && raw !== 'null') checked = JSON.parse(raw);
-      } catch { /* */ }
+      } catch {
+        /* */
+      }
       this.editableChecklist.set([1, 2, 3, 4, 5, 6, 7, 8].map((i) => checked.includes(i)));
     });
   }
@@ -281,7 +286,6 @@ export class DetailComponent {
       this.actionForm.controls.observation.setValidators(null);
     }
     this.actionForm.controls.observation.updateValueAndValidity();
-
 
     this.dialogOpen.set(true);
   }
@@ -320,9 +324,9 @@ export class DetailComponent {
         if (res.statut === 200) {
           const obs = this.actionForm.value.observation?.trim() || 'Avis favorable';
 
-          // Include checklist when ASSC_PME approves at statut 2
+          // Include checklist when ASSC_PME approves at statut 2 (dérogation or direct approval)
           let checkliste: number[] | undefined;
-          if (d.statut === 2 && action.decision === 1) {
+          if (d.statut === 2 && (action.decision === 1 || action.decision === 3)) {
             checkliste = this.editableChecklist()
               .map((checked, i) => (checked ? i + 1 : null))
               .filter((v): v is number => v !== null);
@@ -588,7 +592,14 @@ export class DetailComponent {
     const d = this.demande();
     const s = d?.statut ?? -1;
     if (![1, 8, 10].includes(s)) return false;
-    if (!this.permissions.hasRole(UserRole.conseilClientele, UserRole.responsableClient, UserRole.Admin)) return false;
+    if (
+      !this.permissions.hasRole(
+        UserRole.conseilClientele,
+        UserRole.responsableClient,
+        UserRole.Admin,
+      )
+    )
+      return false;
     if (s === 10) return this.memeAgence() && !!d?.numDemandeAsc;
     if (s === 8) return this.memeAgence();
     return true;
@@ -646,7 +657,8 @@ export class DetailComponent {
     if (s === 8)
       return (
         this.permissions.hasRole(UserRole.Admin) ||
-        (this.permissions.hasRole(UserRole.responsableClient, UserRole.conseilClientele) && this.memeAgence())
+        (this.permissions.hasRole(UserRole.responsableClient, UserRole.conseilClientele) &&
+          this.memeAgence())
       );
     if (s === 9)
       return this.permissions.hasRole(
@@ -666,7 +678,11 @@ export class DetailComponent {
   readonly showApprouver = computed(() => {
     const s = this.demande()?.statut ?? -1;
     if (s === 2)
-      return this.permissions.hasRole(UserRole.agentAccueil, UserRole.assistanteClientelePME, UserRole.Admin);
+      return this.permissions.hasRole(
+        UserRole.agentAccueil,
+        UserRole.assistanteClientelePME,
+        UserRole.Admin,
+      );
     if (s === 3)
       return this.permissions.hasRole(
         UserRole.ResponsableExploitation,
@@ -695,7 +711,7 @@ export class DetailComponent {
     const montantSollicite = d?.montantSollicite ?? 0;
     const montantCheque = d?.cheque?.montantCheque ?? 0;
     const dans80pct = montantCheque > 0 && montantSollicite <= montantCheque * 0.8;
-    const montantAccordeDefini = !!(d?.montantAccorde);
+    const montantAccordeDefini = !!d?.montantAccorde;
 
     if (s === 2 && this.permissions.hasRole(UserRole.assistanteClientelePME, UserRole.Admin)) {
       return dans80pct || montantAccordeDefini;

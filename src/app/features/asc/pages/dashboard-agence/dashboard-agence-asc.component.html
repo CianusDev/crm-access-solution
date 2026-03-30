@@ -9,7 +9,7 @@
     <div class="flex items-center gap-2">
       @for (y of years; track y) {
         <button type="button" (click)="load(y)"
-          class="rounded-md border px-3 py-1.5 text-sm font-medium transition-colors"
+          class="rounded-md border px-3 py-1.5 text-sm bg-background font-medium transition-colors"
           [class.bg-primary]="selectedYear() === y"
           [class.text-primary-foreground]="selectedYear() === y"
           [class.border-primary]="selectedYear() === y"
@@ -89,7 +89,7 @@
               </div>
             </app-card-title>
           </app-card-header>
-          <app-card-content>
+          <app-card-content class="!pt-0">
             <div class="flex flex-col gap-3">
               @for (client of topClients().slice(0, 3); track $index; let i = $index) {
                 <div class="flex items-center gap-3">

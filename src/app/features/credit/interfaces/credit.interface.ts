@@ -448,7 +448,7 @@ export interface CreditComiteDecision {
   motivation?: string;
   commentaire?: string;
   statut?: number;
-  user?: { nomPrenom?: string; profil?: { name: string; libelle: string } };
+  user?: { id?: number; nomPrenom?: string; profil?: { name: string; libelle: string } };
 }
 
 export interface CreditPropositionAR {
@@ -661,6 +661,58 @@ export interface CreditAnalyseDemandeDetail extends CreditFicheDemandeDetail {
   propositionAR?: CreditPropositionAR;
   precomites?: CreditComiteDecision[];
   comites?: CreditComiteDecision[];
+}
+
+// ── Payloads comité / décision finale ────────────────────────────────────────
+export interface CreditSaveComite {
+  refDemande: string;
+  decision: number;          // toujours 1
+  montantPropose: number;
+  montantEmprunte: number;   // = montantPropose
+  mensualite: number;        // = montantPropose
+  duree: number;             // = 1 (1 mois fixe pour tirage)
+  fraisDossier: number;
+  commissionDeboursement: number;
+  assurDecesInvalidite: number;
+  assurMultiRisk: number;
+  acteNotarie: number;
+  montantActeNotarie: number;
+  authGage: number;
+  hypotheque: number;        // = 2
+  tauxCouverture: number;
+  periodeGrace: number;      // = 2
+  nbreMoisGrace: number;
+  deposit: number;
+  dateEcheanceSouhaite?: string;
+  argumentaire: string;
+  motivation?: string;
+  checkliste?: string[];
+  // Champ comité vs décision finale
+  comite?: number;
+  precomite?: number;
+}
+
+export interface CreditSaveDecisionFinale {
+  refDemande: string;
+  montantPropose: number;
+  montantEmprunte: number;
+  mensualite: number;
+  duree: number;
+  fraisDossier: number;
+  commissionDeboursement: number;
+  assurDecesInvalidite: number;
+  assurMultiRisk: number;
+  acteNotarie: number;
+  montantActeNotarie: number;
+  authGage: number;
+  hypotheque: number;
+  tauxCouverture: number;
+  periodeGrace: number;
+  nbreMoisGrace: number;
+  deposit: number;
+  dateEcheanceSouhaite?: string;
+  commentaire: string;
+  checkliste?: string[];
 }
 
 // ── Action workflow payload ───────────────────────────────────────────────────
