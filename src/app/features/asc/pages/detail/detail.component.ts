@@ -220,7 +220,7 @@ export class DetailComponent {
   readonly isLoading = signal(false);
   readonly isExporting = signal(false);
 
-  readonly pendingAction = signal<{ decision: number; title: string; requireObs: boolean } | null>(
+  readonly pendingAction = signal<{ decision: number; title: string; requireObs: boolean; showObs: boolean } | null>(
     null,
   );
 
@@ -271,8 +271,8 @@ export class DetailComponent {
     password: new FormControl('', Validators.required),
   });
 
-  openAction(decision: number, title: string, requireObs = true) {
-    this.pendingAction.set({ decision, title, requireObs });
+  openAction(decision: number, title: string, requireObs = true, showObs = true) {
+    this.pendingAction.set({ decision, title, requireObs, showObs });
     this.actionForm.reset({ observation: '', password: '', dateDecaissement: '' });
 
     if (requireObs) {
@@ -408,16 +408,24 @@ export class DetailComponent {
   // ── Montant accordé ────────────────────────────────────────────────────
   readonly showMontantAccordeBtn = computed(() => {
     const s = this.demande()?.statut ?? -1;
-    if (s === 3) return this.permissions.hasRole(UserRole.DGA, UserRole.Admin);
+    if (s === 3)
+      return this.permissions.hasRole(
+        UserRole.ResponsableExploitation,
+        UserRole.DirectriceExploitation,
+        UserRole.DirecteurRisque,
+        UserRole.DGA,
+        UserRole.Admin,
+      );
     if (s === 2 || s === 9)
       return this.permissions.hasRole(UserRole.assistanteClientelePME, UserRole.Admin);
     return false;
   });
 
-  // ── N° demande Perfect ─────────────────────────────────────────────────
+  // ── N° demande Perfect (statut 10, même agence) ───────────────────────
   readonly showNumDemandeBtn = computed(
     () =>
       this.demande()?.statut === 10 &&
+      this.memeAgence() &&
       this.permissions.hasRole(
         UserRole.conseilClientele,
         UserRole.responsableClient,
@@ -566,16 +574,25 @@ export class DetailComponent {
 
   // ── Visibilité boutons (statut + rôle — conforme old frontend) ────────
 
-  // Statut 1/8/10 : RC ou CC soumet
-  readonly showSoumettre = computed(
-    () =>
-      [1, 8, 10].includes(this.demande()?.statut ?? -1) &&
-      this.permissions.hasRole(
-        UserRole.conseilClientele,
-        UserRole.responsableClient,
-        UserRole.Admin,
-      ),
-  );
+  // Même agence : user et client doivent appartenir à la même agence (statut 10)
+  readonly memeAgence = computed(() => {
+    const userAgenceCode = this.authService.currentUser()?.agence?.code;
+    const clientAgenceCode = this.demande()?.client?.agence?.code;
+    if (!userAgenceCode || !clientAgenceCode) return false;
+    return userAgenceCode === clientAgenceCode;
+  });
+
+  // Statut 1/8 : RC ou CC soumet directement
+  // Statut 10  : RC ou CC soumet UNIQUEMENT si même agence ET numDemandeAsc renseigné
+  readonly showSoumettre = computed(() => {
+    const d = this.demande();
+    const s = d?.statut ?? -1;
+    if (![1, 8, 10].includes(s)) return false;
+    if (!this.permissions.hasRole(UserRole.conseilClientele, UserRole.responsableClient, UserRole.Admin)) return false;
+    if (s === 10) return this.memeAgence() && !!d?.numDemandeAsc;
+    if (s === 8) return this.memeAgence();
+    return true;
+  });
 
   // Rejet selon statut :
   //   Statut 2  → ASSC_PME
@@ -627,10 +644,9 @@ export class DetailComponent {
       );
     if (s === 4) return this.permissions.hasRole(UserRole.ResponsableFrontOffice, UserRole.Admin);
     if (s === 8)
-      return this.permissions.hasRole(
-        UserRole.responsableClient,
-        UserRole.conseilClientele,
-        UserRole.Admin,
+      return (
+        this.permissions.hasRole(UserRole.Admin) ||
+        (this.permissions.hasRole(UserRole.responsableClient, UserRole.conseilClientele) && this.memeAgence())
       );
     if (s === 9)
       return this.permissions.hasRole(
@@ -649,7 +665,8 @@ export class DetailComponent {
   //   Statut 9  → RESPO_EXPL, RESPO_CLT_PME, D_EXPL, DR (label "Dérogation")
   readonly showApprouver = computed(() => {
     const s = this.demande()?.statut ?? -1;
-    if (s === 2) return this.permissions.hasRole(UserRole.assistanteClientelePME, UserRole.Admin);
+    if (s === 2)
+      return this.permissions.hasRole(UserRole.agentAccueil, UserRole.assistanteClientelePME, UserRole.Admin);
     if (s === 3)
       return this.permissions.hasRole(
         UserRole.ResponsableExploitation,
@@ -704,27 +721,25 @@ export class DetailComponent {
       this.permissions.hasRole(UserRole.ResponsableFrontOffice, UserRole.Admin),
   );
 
-  // Statut 5 : Admin, RC, CC confirment
-  readonly showConfirmer = computed(
-    () =>
-      this.demande()?.statut === 5 &&
-      this.permissions.hasRole(
-        UserRole.conseilClientele,
-        UserRole.responsableClient,
-        UserRole.Admin,
-      ),
-  );
+  // Statut 5 : Admin toujours, RC/CC uniquement si même agence
+  readonly showConfirmer = computed(() => {
+    if (this.demande()?.statut !== 5) return false;
+    if (this.permissions.hasRole(UserRole.Admin)) return true;
+    return (
+      this.permissions.hasRole(UserRole.conseilClientele, UserRole.responsableClient) &&
+      this.memeAgence()
+    );
+  });
 
-  // Statut 5 : Admin, RC, CC annulent
-  readonly showAnnuler = computed(
-    () =>
-      this.demande()?.statut === 5 &&
-      this.permissions.hasRole(
-        UserRole.conseilClientele,
-        UserRole.responsableClient,
-        UserRole.Admin,
-      ),
-  );
+  // Statut 5 : Admin toujours, RC/CC uniquement si même agence
+  readonly showAnnuler = computed(() => {
+    if (this.demande()?.statut !== 5) return false;
+    if (this.permissions.hasRole(UserRole.Admin)) return true;
+    return (
+      this.permissions.hasRole(UserRole.conseilClientele, UserRole.responsableClient) &&
+      this.memeAgence()
+    );
+  });
 
   // Suppression : Admin uniquement (non clôturé / non abouti)
   readonly showDelete = computed(

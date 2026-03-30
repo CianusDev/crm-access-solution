@@ -114,7 +114,7 @@
           appButton
           size="sm"
           type="button"
-          (click)="openAction(1, 'Autoriser le Décaissement')"
+          (click)="openAction(1, 'Autoriser le Décaissement', false, false)"
         >
           <lucide-icon [img]="CheckCircleIcon" [size]="14" class="mr-1.5" />
           Autoriser le Décaissement
@@ -126,7 +126,7 @@
           appButton
           size="sm"
           type="button"
-          (click)="openAction(1, 'Confirmer le Décaissement')"
+          (click)="openAction(1, 'Confirmer le Décaissement', false, false)"
         >
           <lucide-icon [img]="CheckCircleIcon" [size]="14" class="mr-1.5" />
           Confirmer le Décaissement
@@ -139,7 +139,7 @@
           variant="outline"
           size="sm"
           type="button"
-          (click)="openAction(4, 'Annuler le Décaissement')"
+          (click)="openAction(4, 'Annuler le Décaissement', false, false)"
         >
           <lucide-icon [img]="XCircleIcon" [size]="14" class="mr-1.5" />
           Annuler le Décaissement
@@ -877,14 +877,16 @@
           [required]="true"
           placeholder="Saisissez votre mot de passe"
         />
-        <app-form-textarea
-          name="observation"
-          label="Observation"
-          [required]="pendingAction()?.requireObs ?? false"
-          [placeholder]="pendingAction()?.requireObs ? 'Saisissez une observation…' : 'Observation (optionnel)'"
-          [rows]="3"
-        />
-        @if ([4, 5].includes(demande()?.statut ?? -1) && pendingAction()?.decision === 1) {
+        @if (pendingAction()?.showObs) {
+          <app-form-textarea
+            name="observation"
+            label="Observation"
+            [required]="pendingAction()?.requireObs ?? false"
+            [placeholder]="pendingAction()?.requireObs ? 'Saisissez une observation…' : 'Observation (optionnel)'"
+            [rows]="3"
+          />
+        }
+        @if (demande()?.statut === 5 && pendingAction()?.decision === 1) {
           <app-form-input
             name="dateDecaissement"
             type="date"
@@ -979,7 +981,7 @@
       (click)="saveMontantAccorde()"
     >
       @if (isLoading()) {
-        <lucide-icon [img]="LoaderIcon" [size]="14" class="mr-1.5 animate-spin" />
+        <lucide-icon [img]="LoaderIcon" [size]="14" class="animate-spin" />
       }
       Enregistrer
     </button>
@@ -1023,7 +1025,7 @@
       (click)="saveNumDemande()"
     >
       @if (isLoading()) {
-        <lucide-icon [img]="LoaderIcon" [size]="14" class="mr-1.5 animate-spin" />
+        <lucide-icon [img]="LoaderIcon" [size]="14" class="animate-spin" />
       }
       Enregistrer
     </button>
@@ -1069,7 +1071,7 @@
       (click)="confirmDelete()"
     >
       @if (isLoading()) {
-        <lucide-icon [img]="LoaderIcon" [size]="14" class="mr-1.5 animate-spin" />
+        <lucide-icon [img]="LoaderIcon" [size]="14" class=" animate-spin" />
       }
       Supprimer
     </button>
