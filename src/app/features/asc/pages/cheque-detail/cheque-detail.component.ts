@@ -37,6 +37,7 @@ import { Avatar } from '@/shared/components/avatar/avatar.component';
 import { InitialesPipe } from '@/shared/pipes/initailes/initiales.pipe';
 import { AscCheque, AscDemande } from '../../interfaces/asc.interface';
 import { AuthService } from '@/core/services/auth/auth.service';
+import { PermissionService } from '@/core/services/permission/permission.service';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { PdfExportService } from '@/core/services/export/pdf-export.service';
 import { LogoBase64 } from '@/features/credit/enumeration/logo_base64.enum';
@@ -67,6 +68,8 @@ const STATUT_INFO: Record<number, { label: string; cls: string }> = {
   10: { label: 'Création dans PERFECT', cls: 'bg-cyan-100 text-cyan-700 border border-cyan-300' },
   11: { label: 'Décaissement annulé', cls: 'bg-slate-100 text-slate-600 border border-slate-200' },
 };
+
+const FILE_BASE = 'https://crm-fichiers.creditaccess.ci/crm/avance-sur-cheque/';
 
 const CHECKLIST_LABELS = [
   'Type de client',
@@ -119,6 +122,7 @@ export class ChequeDetailComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly ascService = inject(AscService);
   private readonly authService = inject(AuthService);
+  private readonly permissions = inject(PermissionService);
   private readonly toast = inject(ToastService);
   private readonly pdfService = inject(PdfExportService);
 
@@ -155,7 +159,7 @@ export class ChequeDetailComponent implements OnInit {
     if (!raw) return [];
     try {
       const parsed: number[] = JSON.parse(raw);
-      return CHECKLIST_LABELS.map((label, i) => ({ label, checked: parsed[i] === 1 }));
+      return CHECKLIST_LABELS.map((label, i) => ({ label, checked: parsed.includes(i + 1) }));
     } catch {
       return [];
     }
@@ -176,7 +180,7 @@ export class ChequeDetailComponent implements OnInit {
 
   /** Chèque remisé depuis plus de 10 jours → ajout de demande bloqué */
   readonly isChequeTooOld = computed(() => {
-    const dateRemise = this.cheque()?.dateCheque;
+    const dateRemise = this.cheque()?.dateRemise;
     if (!dateRemise) return false;
     const diff = (Date.now() - new Date(dateRemise).getTime()) / (1000 * 60 * 60 * 24);
     return diff > 10;
@@ -194,10 +198,9 @@ export class ChequeDetailComponent implements OnInit {
     return user.agence?.code === cheque.client.agence.code;
   });
 
-  readonly isRcOrCc = computed(() => {
-    const role = this.authService.currentUser()?.role;
-    return role === UserRole.responsableClient || role === UserRole.conseilClientele;
-  });
+  readonly isRcOrCc = computed(() =>
+    this.permissions.hasRole(UserRole.responsableClient, UserRole.conseilClientele),
+  );
 
   /** Bouton "Modifier le chèque" visible : 1 seule demande + statut=1 + même agence */
   readonly canEditCheque = computed(() => {
@@ -233,7 +236,7 @@ export class ChequeDetailComponent implements OnInit {
     this.router.navigate(['/app/asc/detail', id]);
   }
   openDoc(url?: string) {
-    if (url) window.open(url, '_blank');
+    if (url) window.open(FILE_BASE + url, '_blank');
   }
 
   goModifCheque() {

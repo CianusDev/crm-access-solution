@@ -44,6 +44,7 @@ export interface AscCheque {
   banque?: string;
   montantCheque?: number;
   dateCheque?: string;
+  dateRemise?: string;
   imageCheque?: string;
   image?: string;
   checkliste?: string; // JSON stringified number[]
