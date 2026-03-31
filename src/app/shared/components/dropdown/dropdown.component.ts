@@ -43,7 +43,7 @@ import { DropdownAlign, DropdownItem } from './dropdown.interface';
               @if (item.icon) {
                 <lucide-icon [img]="item.icon" size="16" aria-hidden="true" />
               }
-              <span>{{ item.label }}</span>
+              <span>{{ item.label }} <span class="text-red-500">*</span></span>
             </button>
           }
         }

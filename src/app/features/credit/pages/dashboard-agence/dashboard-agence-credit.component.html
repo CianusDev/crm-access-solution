@@ -25,63 +25,72 @@
   }
 
   <!-- KPI cards -->
-  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-    @if (isLoading()) {
+  @if (isLoading()) {
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
       @for (_ of [1,2,3,4,5,6]; track $index) {
-        <div class="h-24 rounded-xl border border-border bg-muted/30 animate-pulse"></div>
+        <div class="h-20 rounded-md border border-border bg-muted/30 animate-pulse"></div>
       }
-    } @else {
+    </div>
+  } @else {
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
       @for (kpi of kpis(); track kpi.label) {
-        <div class="rounded-xl border border-border bg-card p-4 flex flex-col gap-1">
-          <span class="text-xs text-muted-foreground leading-tight">{{ kpi.label }}</span>
-          <span class="text-2xl font-bold" [class]="kpi.colorText">{{ kpi.value | number }}</span>
-        </div>
+        <app-stats-card
+          [title]="kpi.label"
+          [value]="kpi.value"
+          [icon]="kpi.icon"
+          [iconBackground]="kpi.iconBackground"
+          [iconClass]="kpi.iconClass"
+        />
       }
-    }
-  </div>
+    </div>
+  }
 
   <!-- Montant total + répartition par type crédit -->
-  <app-card>
-    <app-card-header>
-      <app-card-title>Montant total proposé</app-card-title>
-    </app-card-header>
-    <app-card-content>
-      @if (isLoading()) {
-        <div class="h-8 w-48 rounded bg-muted animate-pulse mb-4"></div>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          @for (_ of [1,2,3,4]; track $index) {
-            <div class="h-20 rounded-lg bg-muted animate-pulse"></div>
+  <div class="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+
+    @if (isLoading()) {
+      <div class="flex items-center justify-center py-16">
+        <span class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></span>
+      </div>
+    } @else {
+
+      <!-- Hero -->
+      <div class="flex flex-col items-center justify-center py-8 gap-1 border-b border-border bg-muted/20">
+        <p class="text-4xl font-extrabold tracking-tight text-foreground">
+          {{ dashboard()?.sommeTotaleMontantsProposes ?? 0 | number }}
+          <span class="text-2xl font-bold text-primary ml-1">FCFA</span>
+        </p>
+        <div class="flex items-center gap-1.5 mt-1">
+          <app-badge variant="secondary">100%</app-badge>
+          <span class="text-sm text-muted-foreground">Montant total proposé</span>
+        </div>
+      </div>
+
+      <!-- Grille par type de crédit -->
+      @if (typesCreditWithPct().length > 0) {
+        <div class="grid grid-cols-2 gap-px bg-border sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          @for (tc of typesCreditWithPct(); track tc.id) {
+            <div class="flex flex-col gap-2 bg-card p-4">
+              <div class="flex items-center justify-between gap-1">
+                <span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide leading-tight">{{ tc.libelle }}</span>
+                <app-badge variant="outline">{{ tc.pourcentage }}%</app-badge>
+              </div>
+              <div class="h-1 w-full rounded-full bg-muted overflow-hidden">
+                <div class="h-full rounded-full bg-primary transition-all duration-700" [style.width.%]="tc.pourcentage"></div>
+              </div>
+              <p class="text-sm font-bold text-foreground leading-none">
+                {{ tc.montant | number }}
+                <span class="text-[11px] font-normal text-muted-foreground ml-0.5">F</span>
+              </p>
+            </div>
           }
         </div>
       } @else {
-        <p class="text-3xl font-bold text-foreground mb-1">
-          {{ formatMontant(dashboard()?.sommeTotaleMontantsProposes ?? 0) }}
-          <span class="text-base font-semibold text-primary ml-1">FCFA</span>
-        </p>
-        <p class="text-xs text-muted-foreground mb-4">Montant total de toutes les demandes proposées</p>
-
-        @if (typesCreditWithPct().length > 0) {
-          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            @for (tc of typesCreditWithPct(); track tc.id) {
-              <div class="rounded-lg border border-border bg-muted/30 p-3 flex flex-col gap-2">
-                <p class="text-xs font-medium text-foreground leading-tight">{{ tc.libelle }}</p>
-                <p class="text-lg font-bold text-foreground">
-                  {{ formatMontant(tc.montant) }}
-                  <span class="text-xs font-normal text-muted-foreground">F</span>
-                </p>
-                <div class="h-1.5 w-full rounded-full bg-border overflow-hidden">
-                  <div class="h-full rounded-full bg-primary transition-all" [style.width.%]="tc.pourcentage"></div>
-                </div>
-                <p class="text-xs text-muted-foreground">{{ tc.pourcentage }}%</p>
-              </div>
-            }
-          </div>
-        } @else {
-          <p class="text-sm text-muted-foreground">Aucune donnée disponible.</p>
-        }
+        <p class="px-6 py-4 text-sm text-muted-foreground">Aucune donnée disponible.</p>
       }
-    </app-card-content>
-  </app-card>
+    }
+
+  </div>
 
   <!-- Filtres -->
   <app-card>

@@ -1,12 +1,12 @@
 <div class="flex flex-col gap-4 mt-4">
 
-  <!-- En-tête -->
+  <!-- En-tête minimal (breadcrumb + ref + actions) -->
   <div class="flex items-center gap-3 flex-wrap">
-    <button type="button" (click)="goBack()" appButton variant="ghost" size="sm"
+    <!-- <button type="button" (click)="goBack()" appButton variant="ghost" size="sm"
       class="flex items-center gap-1.5 shrink-0">
       <lucide-icon [img]="ChevronLeftIcon" [size]="16" />
       Retour
-    </button>
+    </button> -->
 
     @if (isLoading()) {
       <div class="flex-1 min-w-0">
@@ -14,14 +14,15 @@
         <div class="h-4 w-32 rounded bg-muted/60 animate-pulse"></div>
       </div>
     } @else {
-      <div class="flex-1 min-w-0">
-        <h1 class="text-xl font-bold text-foreground truncate">{{ ref() }}</h1>
+      <!-- <div class="flex-1 min-w-0">
         @if (ficheHeader(); as h) {
-          <p class="text-sm text-muted-foreground">{{ h.client.nomPrenom }}</p>
+        <h1 class="text-xl font-bold text-foreground truncate">{{ h.client.nomPrenom  }}</h1>
         }
-      </div>
+          <p class="text-sm text-muted-foreground">Ref: {{ ref() }}</p>
+
+      </div> -->
       @if (ficheHeader(); as h) {
-        <app-badge [variant]="statutVariant(h.statut)">{{ statutLabel(h.statut) }}</app-badge>
+        <app-badge class="mr-auto" [variant]="statutVariant(h.statut)">{{ statutLabel(h.statut) }}</app-badge>
       }
     }
 
@@ -46,10 +47,20 @@
     </div>
   }
 
+  <!-- ── Carte résumé client + demande (style old frontend) ───────────── -->
+  @if (!isLoading()) {
+    <app-analyse-header-card
+      [fiche]="ficheHeader()"
+      (chargerDocuments)="onChargerDocuments($event)"
+      (envoyerDossier)="switchTab('envoi')" />
+  } @else {
+    <div class="h-40 rounded-xl border border-border bg-card animate-pulse"></div>
+  }
+
   <!-- Tabs -->
   <div class="overflow-x-auto">
     <div class="flex gap-1 border-b border-border min-w-max">
-      @for (tab of tabs; track tab.id) {
+      @for (tab of tabs(); track tab.id) {
         <button
           type="button"
           (click)="switchTab(tab.id)"
@@ -67,6 +78,12 @@
 
   <!-- Contenu selon l'onglet actif -->
   @switch (activeTab()) {
+    @case ('demande') {
+      <app-demande-section
+        [ficheHeader]="ficheHeader()"
+        [analyseDemande]="demande()"
+        [fiche]="fiche()" />
+    }
     @case ('activite') {
       <app-activite-section [ref]="ref()" />
     }
@@ -83,7 +100,7 @@
       <app-garanties-section [ref]="ref()" />
     }
     @case ('cautions') {
-      <app-cautions-section [ref]="ref()" />
+      <app-cautions-section [ref]="ref()" [isGP]="isGP()" [prefilledDoc]="pendingDocLibelle()" />
     }
     @case ('swot') {
       <app-swot-section [ref]="ref()" />

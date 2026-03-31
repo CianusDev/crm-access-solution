@@ -12,7 +12,6 @@ import {
   CardHeaderComponent,
   CardTitleComponent,
 } from '@/shared/components/card/card.component';
-import { BadgeComponent } from '@/shared/components/badge/badge.component';
 import { CreditFicheDemandeDetail, CreditResume } from '../../../interfaces/credit.interface';
 
 @Component({
@@ -26,7 +25,6 @@ import { CreditFicheDemandeDetail, CreditResume } from '../../../interfaces/cred
     CardContentComponent,
     CardHeaderComponent,
     CardTitleComponent,
-    BadgeComponent,
   ],
   template: `
     @if (demande(); as d) {

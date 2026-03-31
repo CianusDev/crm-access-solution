@@ -101,3 +101,16 @@ si on avait l'image en png du logo dans
   un fonction qui transforme limage en
   base64, et l'utiliser dans le service
   de pdf a la demande ?
+  
+  
+
+a des forumlaire et elements manquant
+  encore :
+  - formulaire de modification de infos de
+  demande de credit
+  - ajout et modification
+  (magasin,facture,bon de commande)
+
+  NB: pour les info de demande de credit ,
+  c'est duplique , on peut reunir les
+  info dans un seul composant non ?

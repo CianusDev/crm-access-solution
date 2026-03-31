@@ -75,7 +75,7 @@ export class CardContentComponent {}
   selector: 'app-card-footer',
   standalone: true,
   template: `
-    <div class="flex items-center p-6 pt-0">
+    <div class="flex items-center p-6 pt-0!">
       <ng-content />
     </div>
   `,

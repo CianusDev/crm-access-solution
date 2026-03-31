@@ -1,0 +1,81 @@
+@if (ficheHeader(); as d) {
+  <div class="flex flex-col md:flex-row gap-4 items-start">
+
+    <!-- ── Sidebar navigation ──────────────────────────────────────────── -->
+    <nav class="w-full md:w-52 shrink-0">
+      <div class="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+        <ul class="flex flex-row md:flex-col overflow-x-auto md:overflow-x-visible">
+          @for (item of sidebarItems(); track item.id) {
+            <li class="shrink-0 md:shrink">
+              <button
+                type="button"
+                (click)="activeSubSection.set(item.id)"
+                class="w-full text-left px-3 py-2.5 text-sm transition-colors whitespace-nowrap md:whitespace-normal"
+                [class.bg-primary]="activeSubSection() === item.id"
+                [class.text-primary-foreground]="activeSubSection() === item.id"
+                [class.font-medium]="activeSubSection() === item.id"
+                [class.text-foreground]="activeSubSection() !== item.id"
+                [class.hover:bg-muted]="activeSubSection() !== item.id">
+                {{ item.label }}
+              </button>
+            </li>
+          }
+        </ul>
+      </div>
+    </nav>
+
+    <!-- ── Content panel ───────────────────────────────────────────────── -->
+    <div class="flex-1 min-w-0">
+      @switch (activeSubSection()) {
+
+        @case ('credit') {
+          <app-credit-info-form [demande]="formDemande()" />
+        }
+
+        @case ('client') {
+          @if (isPersonneMorale()) {
+            <app-client-pm-card [client]="d.client" />
+          } @else {
+            <app-client-pp-card [client]="d.client" />
+          }
+        }
+
+        @case ('signataires') {
+          <app-signataires-card [signataires]="d.client.signataires ?? []" />
+        }
+
+        @case ('bon-commande') {
+          <app-bon-commande-form [ref]="d.refDemande" />
+        }
+
+        @case ('facture') {
+          <app-facture-form [ref]="d.refDemande" />
+        }
+
+        @case ('vehicules') {
+          <div class="flex flex-col items-center justify-center py-16 text-center rounded-xl border border-dashed border-border">
+            <p class="text-sm text-muted-foreground">Section Véhicules — à venir</p>
+          </div>
+        }
+
+        @case ('magasin') {
+          <app-magasin-form
+            [ref]="d.refDemande"
+            [codeClient]="d.client.codeClient"
+            [initialMagasins]="fiche()?.magasins ?? []" />
+        }
+
+        @default {
+          <app-credit-info-form [demande]="formDemande()" />
+        }
+
+      }
+    </div>
+
+  </div>
+} @else {
+  <div class="flex flex-col items-center justify-center py-16 text-center">
+    <lucide-icon [img]="FileTextIcon" [size]="32" class="text-muted-foreground/50 mb-3" />
+    <p class="text-sm text-muted-foreground">Données de la demande non disponibles.</p>
+  </div>
+}

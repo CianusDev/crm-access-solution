@@ -30,43 +30,70 @@ export interface CreditSignataire {
 }
 
 export interface CreditClient {
+  id?: number;
   codeClient: string;
   nomPrenom: string;
-  typeAgent: 'PP' | 'PM' | string;
-  agence?: { libelle: string };
-  // Contact (PP & PM)
+  nom?: string;
+  typeAgent: 'PP' | 'PM' | 'SC' | string;
+  tpePme?: string; // "PME" | "TPE"
+  agence?: { id?: number; code?: string; libelle: string };
+  // Contact commun
   indicatifCel?: string;
-  numCel?: string;
+  numCel?: string;      // alias legacy
+  telPortable?: string; // champ réel API
   telFixe?: string;
+  telConjoint?: string;
   email?: string;
   nationalite?: CreditNationalite;
-  // PP spécifique
+  // Adresse commune PP & PM
   commune?: CreditCommune;
   quartier?: string;
   rue?: string;
   lot?: string;
   villa?: string;
-  adresse?: string;
+  facture?: string;     // Adresse CIE / SODECI
+  adresse?: string;     // Adresse postale
   batimentProche?: string;
   domicille?: string;
+  // PP spécifique
+  sexe?: string;
+  situationMatri?: string;
+  typePiece?: string;
+  numPiece?: string;
+  validitePiece?: string;
+  lieuNaiss?: string;
+  profession?: string;
   dataNaiss?: string;
   dateInscription?: string;
-  latittude?: string | number | null;  // typo conservé pour compatibilité API
+  latittude?: string | number | null;
   longitude?: string | number | null;
-  // PP signataires PM
+  // Signataires (PM)
   signataires?: CreditSignataire[];
   // PM spécifique
   denomination?: string;
   rccm?: string;
   entreprise?: {
-    rccm?: string;
-    denomination?: string;
-    statutJuridique?: string | number;
+    codeAdherent?: string;
     nomDirigeant?: string;
+    dateNaissanceDirig?: string;
     NumEnregistrement?: string;
     capitalSocial?: number;
-    ncc?: string;
+    statutJuridique?: string | number;
     dateCreation?: string;
+    rccm?: string;
+    ncc?: string;
+    denomination?: string;
+    typeActivite?: number;
+    typeClientele?: number;
+    ancienneteSecteur?: string;
+    concurence?: number;
+    impactEnvironnement?: number;
+    typeLocal?: number;
+    statutLocal?: number;
+    ancienneteLocal?: string;
+    impots?: number;
+    numCnss?: string;
+    numContribuable?: string;
   };
 }
 
@@ -327,6 +354,70 @@ export interface CreditSaveDemande {
   montantEcheSouhaite: number;
   nbreEcheDiffere?: number | null;
   description: string;
+}
+
+export interface CreditUpdateDemande {
+  refDemande: string;
+  codeClient: string;
+  typeCredit: number;
+  objetCredit: string;
+  typeActivite: number;
+  montantSollicite: number;
+  nbreEcheanceSollicite: number;
+  montantEcheSouhaite: number;
+  nbreEcheDiffere?: number | null;
+  description: string;
+  numTransaction?: string;
+  fraisDemande?: number | null;
+  margePondere?: number | null;
+  autreCommentAgCredit?: string;
+}
+
+export interface CreditSaveMagasin {
+  refDemande: string;
+  codeClient: string;
+  crMagasin?: number | null;
+  numMagasin?: string;
+  blocCommerciale?: string;
+  etage?: string;
+  localisation?: string;
+  MontantPartPorte?: number | null;
+  montantLoyer?: number | null;
+  fraisReservation?: number | null;
+  acompte?: number | null;
+  acomptePercu?: number | null;
+}
+
+export interface CreditSaveFacture {
+  refDemande: string;
+  crFacture?: number | null;
+  numFacture?: string;
+  entreprise?: string;
+  dateFacture?: string;
+  dateEcheance?: string;
+  mtHt?: number | null;
+  mtTtc?: number | null;
+  adresse?: string;
+  refClient?: string;
+  tel?: string;
+  cel?: string;
+  rccm?: string;
+  cc?: string;
+}
+
+export interface CreditSaveBonCommande {
+  refDemande: string;
+  bonDeCommande?: number | null;
+  numBonCmde?: string;
+  entreprise?: string;
+  dateBonCmde?: string;
+  mtHt?: number | null;
+  mtTtc?: number | null;
+  adresse?: string;
+  tel?: string;
+  cel?: string;
+  rccm?: string;
+  cc?: string;
 }
 
 // ── Fiche crédit ─────────────────────────────────────────────────────────────

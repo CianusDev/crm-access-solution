@@ -1,6 +1,12 @@
 import { Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import {
+  FormsModule,
+  ReactiveFormsModule,
+  FormGroup,
+  FormControl,
+  Validators,
+} from '@angular/forms';
 import { DatePipe, DecimalPipe, JsonPipe } from '@angular/common';
 import {
   LucideAngularModule,
@@ -25,6 +31,8 @@ import {
   SearchableSelectComponent,
   SelectOption,
 } from '@/shared/components/searchable-select/searchable-select.component';
+import { FormInput } from '@/shared/components/form-input/form-input.component';
+import { FormTextarea } from '@/shared/components/form-textarea/form-textarea.component';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { UserRole } from '@/core/models/user.model';
 import { PermissionService } from '@/core/services/permission/permission.service';
@@ -58,6 +66,7 @@ const OBJETS_CREDIT: SelectOption[] = [
   templateUrl: './create-credit.component.html',
   imports: [
     FormsModule,
+    ReactiveFormsModule,
     DatePipe,
     DecimalPipe,
     LucideAngularModule,
@@ -67,6 +76,8 @@ const OBJETS_CREDIT: SelectOption[] = [
     CardTitleComponent,
     ButtonDirective,
     SearchableSelectComponent,
+    FormInput,
+    FormTextarea,
     JsonPipe,
   ],
 })
@@ -90,13 +101,16 @@ export class CreateCreditComponent implements OnInit {
   readonly data = input<CreateCreditResolvedData>();
 
   constructor() {
-    effect(() => {
-      const data = this.data();
-      if (!data) return;
-      this.typesActivite.set(data.typesActivite);
-      this.typesCredit.set(data.typesCredit);
-      this.isLoadingRefs.set(false);
-    }, { allowSignalWrites: true });
+    effect(
+      () => {
+        const data = this.data();
+        if (!data) return;
+        this.typesActivite.set(data.typesActivite);
+        this.typesCredit.set(data.typesCredit);
+        this.isLoadingRefs.set(false);
+      },
+      { allowSignalWrites: true },
+    );
   }
 
   // ── State ──────────────────────────────────────────────────────────────
@@ -117,31 +131,33 @@ export class CreateCreditComponent implements OnInit {
   readonly typesCredit = signal<CreditTypeCredit[]>([]);
   readonly typesActivite = signal<CreditTypeActivite[]>([]);
 
-  // ── Form fields ────────────────────────────────────────────────────────
+  // ── Selects (signal — non couverts par FormGroup) ──────────────────────
   readonly fcTypeCredit = signal<number | null>(null);
   readonly fcObjetCredit = signal<string | null>(null);
   readonly fcTypeActivite = signal<number | null>(null);
-  readonly fcMontant = signal('');
-  readonly fcDuree = signal('');
-  readonly fcMontantEche = signal('');
-  readonly fcDiffere = signal('');
-  readonly fcDescription = signal('');
+
+  // ── FormGroup ─────────────────────────────────────────────────────────
+  readonly creditForm = new FormGroup({
+    montant: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
+    duree: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
+    montantEche: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
+    differe: new FormControl<number | null>(null, [Validators.min(0)]),
+    description: new FormControl('', [Validators.required, Validators.minLength(10)]),
+  });
 
   readonly isSaving = signal(false);
   readonly submitted = signal(false);
 
   // ── Permissions ────────────────────────────────────────────────────────
-  /** Le profil connecté peut créer un tirage découvert */
-  readonly canCreateTirage = computed(() =>
-    this.permissions.hasRole(...PROFILS_TIRAGE),
-  );
+  readonly canCreateTirage = computed(() => this.permissions.hasRole(...PROFILS_TIRAGE));
 
-  /** Codes de types de crédit autorisés selon le profil */
   private readonly allowedCodes = computed<string[]>(() => {
     const role = this.permissions.userRole();
     if (role === UserRole.GestionnairePortefeuilles || role === UserRole.Admin) return CODES_GP;
-    if (role === UserRole.AgentCommercialJunior || role === UserRole.ChefEquipe) return CODES_ACJ_CE;
-    if (role === UserRole.responsableClient || role === UserRole.conseilClientele) return CODES_RC_CC;
+    if (role === UserRole.AgentCommercialJunior || role === UserRole.ChefEquipe)
+      return CODES_ACJ_CE;
+    if (role === UserRole.responsableClient || role === UserRole.conseilClientele)
+      return CODES_RC_CC;
     return [];
   });
 
@@ -159,59 +175,29 @@ export class CreateCreditComponent implements OnInit {
 
   readonly objetsCreditOptions: SelectOption[] = OBJETS_CREDIT;
 
-  // ── Validation par champ ───────────────────────────────────────────────
-  readonly errors = computed(() => {
-    const montant = Number(this.fcMontant());
-    const duree = Number(this.fcDuree());
-    const montantEche = Number(this.fcMontantEche());
-    const differe = String(this.fcDiffere()).trim();
-    const isTirage = this.choix() === '2';
-    const max = this.montantMax();
-
-    return {
-      typeCredit: !isTirage && this.fcTypeCredit() === null
+  // ── Validation des selects ─────────────────────────────────────────────
+  readonly selectErrors = computed(() => ({
+    typeCredit:
+      this.submitted() && this.choix() !== '2' && !this.fcTypeCredit()
         ? 'Veuillez sélectionner un type de crédit'
         : null,
+    objetCredit:
+      this.submitted() && !this.fcObjetCredit() ? "Veuillez sélectionner l'objet du crédit" : null,
+    typeActivite:
+      this.submitted() && !this.fcTypeActivite()
+        ? "Veuillez sélectionner un secteur d'activité"
+        : null,
+  }));
 
-      objetCredit: !this.fcObjetCredit() ? "Veuillez sélectionner l'objet du crédit" : null,
-
-      typeActivite:
-        this.fcTypeActivite() === null ? "Veuillez sélectionner un secteur d'activité" : null,
-
-      montant: !String(this.fcMontant()).trim()
-        ? 'Le montant est obligatoire'
-        : isNaN(montant) || montant <= 0
-          ? 'Le montant doit être un nombre positif'
-          : isTirage && max > 0 && montant > max
-            ? `Le montant ne peut pas excéder ${new Intl.NumberFormat('fr-FR').format(max)} FCFA`
-            : null,
-
-      duree: !String(this.fcDuree()).trim()
-        ? 'La durée est obligatoire'
-        : !Number.isInteger(duree) || duree < 1
-          ? 'La durée doit être un entier ≥ 1'
-          : null,
-
-      montantEche: !String(this.fcMontantEche()).trim()
-        ? "Le montant d'échéance est obligatoire"
-        : isNaN(montantEche) || montantEche <= 0
-          ? 'Le montant doit être un nombre positif'
-          : null,
-
-      differe:
-        differe && (!Number.isInteger(Number(differe)) || Number(differe) < 0)
-          ? 'La valeur doit être un entier ≥ 0'
-          : null,
-
-      description: !String(this.fcDescription()).trim()
-        ? 'La description est obligatoire'
-        : String(this.fcDescription()).trim().length < 10
-          ? 'La description doit contenir au moins 10 caractères'
-          : null,
-    };
+  readonly formValid = computed(() => {
+    const isTirage = this.choix() === '2';
+    return (
+      this.creditForm.valid &&
+      !!this.fcObjetCredit() &&
+      !!this.fcTypeActivite() &&
+      (isTirage || !!this.fcTypeCredit())
+    );
   });
-
-  readonly formValid = computed(() => Object.values(this.errors()).every((e) => e === null));
 
   readonly isPersonneMorale = computed(() => this.client()?.typeAgent !== 'PP');
 
@@ -291,6 +277,15 @@ export class CreateCreditComponent implements OnInit {
     const objetCredit = this.fcObjetCredit();
     if (!d || typeCredit === null || typeActivite === null || !objetCredit) return;
 
+    const v = this.creditForm.value;
+    const max = this.montantMax();
+    if (max > 0 && (v.montant ?? 0) > max) {
+      this.toast.error(
+        `Le montant ne peut pas excéder ${new Intl.NumberFormat('fr-FR').format(max)} FCFA`,
+      );
+      return;
+    }
+
     this.isSaving.set(true);
     this.creditService
       .saveTirage({
@@ -298,11 +293,11 @@ export class CreateCreditComponent implements OnInit {
         typeCredit,
         objetCredit,
         typeActivite,
-        montantSollicite: Number(this.fcMontant()),
-        nbreEcheanceSollicite: Number(this.fcDuree()),
-        montantEcheSouhaite: Number(this.fcMontantEche()),
-        nbreEcheDiffere: String(this.fcDiffere()).trim() ? Number(this.fcDiffere()) : null,
-        description: String(this.fcDescription()).trim(),
+        montantSollicite: v.montant!,
+        nbreEcheanceSollicite: v.duree!,
+        montantEcheSouhaite: v.montantEche!,
+        nbreEcheDiffere: v.differe ?? null,
+        description: v.description!.trim(),
         numDmde: this.numPerfect(),
       })
       .subscribe({
@@ -333,6 +328,7 @@ export class CreateCreditComponent implements OnInit {
     const objetCredit = this.fcObjetCredit();
     if (!c || typeCredit === null || typeActivite === null || !objetCredit) return;
 
+    const v = this.creditForm.value;
     this.isSaving.set(true);
     this.creditService
       .saveDemandeCredit({
@@ -340,11 +336,11 @@ export class CreateCreditComponent implements OnInit {
         typeCredit,
         objetCredit,
         typeActivite,
-        montantSollicite: Number(this.fcMontant()),
-        nbreEcheanceSollicite: Number(this.fcDuree()),
-        montantEcheSouhaite: Number(this.fcMontantEche()),
-        nbreEcheDiffere: String(this.fcDiffere()).trim() ? Number(this.fcDiffere()) : null,
-        description: String(this.fcDescription()).trim(),
+        montantSollicite: v.montant!,
+        nbreEcheanceSollicite: v.duree!,
+        montantEcheSouhaite: v.montantEche!,
+        nbreEcheDiffere: v.differe ?? null,
+        description: v.description!.trim(),
       })
       .subscribe({
         next: (res) => {
@@ -353,13 +349,11 @@ export class CreateCreditComponent implements OnInit {
             this.isSaving.set(false);
             this.router.navigate(['/app/credit/list']);
           } else {
-            console.error('Erreur API:', res);
             this.toast.error(res.message ?? "Erreur lors de l'enregistrement.");
             this.isSaving.set(false);
           }
         },
         error: (error) => {
-          console.error('Erreur API:', error);
           this.toast.error(error.message ?? "Erreur lors de l'enregistrement.");
           this.isSaving.set(false);
         },
@@ -372,13 +366,9 @@ export class CreateCreditComponent implements OnInit {
 
   private resetForm() {
     this.submitted.set(false);
+    this.creditForm.reset();
     this.fcTypeCredit.set(null);
     this.fcObjetCredit.set(null);
     this.fcTypeActivite.set(null);
-    this.fcMontant.set('');
-    this.fcDuree.set('');
-    this.fcMontantEche.set('');
-    this.fcDiffere.set('');
-    this.fcDescription.set('');
   }
 }

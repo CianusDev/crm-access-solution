@@ -9,6 +9,12 @@ import {
   AlertCircle,
   FileText,
   X,
+  FilePlus,
+  Activity,
+  Users,
+  Flag,
+  CheckCircle,
+  XCircle,
 } from 'lucide-angular';
 import {
   CardComponent,
@@ -17,6 +23,7 @@ import {
   CardTitleComponent,
 } from '@/shared/components/card/card.component';
 import { BadgeComponent } from '@/shared/components/badge/badge.component';
+import { StatsCardComponent } from '@/shared/components/stats-card/stats-card.component';
 import { Avatar } from '@/shared/components/avatar/avatar.component';
 import { PaginationComponent } from '@/shared/components/pagination/pagination.component';
 import { ButtonDirective } from '@/shared/directives/ui/button/button';
@@ -45,6 +52,7 @@ import { DashboardAgenceCreditResolvedData } from './dashboard-agence-credit.res
     CardHeaderComponent,
     CardTitleComponent,
     BadgeComponent,
+    StatsCardComponent,
     Avatar,
     PaginationComponent,
     ButtonDirective,
@@ -52,11 +60,17 @@ import { DashboardAgenceCreditResolvedData } from './dashboard-agence-credit.res
   ],
 })
 export class DashboardAgenceCreditComponent {
-  readonly SearchIcon = Search;
-  readonly RefreshIcon = RefreshCw;
+  readonly SearchIcon     = Search;
+  readonly RefreshIcon    = RefreshCw;
   readonly AlertCircleIcon = AlertCircle;
-  readonly FileTextIcon = FileText;
-  readonly XIcon = X;
+  readonly FileTextIcon   = FileText;
+  readonly XIcon          = X;
+  readonly FilePlusIcon   = FilePlus;
+  readonly ActivityIcon   = Activity;
+  readonly UsersIcon      = Users;
+  readonly FlagIcon       = Flag;
+  readonly CheckCircleIcon = CheckCircle;
+  readonly XCircleIcon    = XCircle;
 
   private readonly creditService = inject(CreditService);
   private readonly router = inject(Router);
@@ -109,12 +123,12 @@ export class DashboardAgenceCreditComponent {
   readonly kpis = computed(() => {
     const d = this.dashboard();
     return [
-      { label: 'En cours de création', value: d?.demandeEnCrea ?? 0, colorText: 'text-slate-700' },
-      { label: "En cours d'analyse",   value: d?.demandeArs ?? 0,    colorText: 'text-blue-700'  },
-      { label: 'En comité',            value: d?.demandeEnComite ?? 0, colorText: 'text-amber-700' },
-      { label: 'Levée de recommandation', value: d?.demandeEnLeveRecom ?? 0, colorText: 'text-purple-700' },
-      { label: 'Clôturées',            value: d?.demandeCloture ?? 0, colorText: 'text-green-700' },
-      { label: 'Rejetées',             value: d?.demandeRejete ?? 0,  colorText: 'text-red-700'   },
+      { label: 'En cours de création',    value: d?.demandeEnCrea ?? 0,       icon: FilePlus,      iconBackground: 'bg-slate-100',  iconClass: 'text-slate-600'  },
+      { label: "En cours d'analyse",      value: d?.demandeArs ?? 0,          icon: Activity,      iconBackground: 'bg-blue-100',   iconClass: 'text-blue-600'   },
+      { label: 'En comité',               value: d?.demandeEnComite ?? 0,     icon: Users,         iconBackground: 'bg-amber-100',  iconClass: 'text-amber-600'  },
+      { label: 'Levée de recommandation', value: d?.demandeEnLeveRecom ?? 0,  icon: Flag,          iconBackground: 'bg-purple-100', iconClass: 'text-purple-600' },
+      { label: 'Clôturées',               value: d?.demandeCloture ?? 0,      icon: CheckCircle,   iconBackground: 'bg-green-100',  iconClass: 'text-green-600'  },
+      { label: 'Rejetées',                value: d?.demandeRejete ?? 0,       icon: XCircle,       iconBackground: 'bg-red-100',    iconClass: 'text-red-600'    },
     ];
   });
 

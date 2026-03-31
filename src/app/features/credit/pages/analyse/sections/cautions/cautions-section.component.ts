@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, input, signal } from '@angular/core';
+import { Component, OnInit, inject, input, signal, effect } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import {
@@ -34,9 +34,17 @@ import {
 import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { CreditService } from '../../../../services/credit/credit.service';
-import { CautionSolidaire, DocumentAnalyse } from '../../../../interfaces/credit.interface';
+import { CautionSolidaire } from '../../../../interfaces/credit.interface';
 
 const DOC_BASE_URL = 'https://crm-fichiers.creditaccess.ci/crm/credit-ca/';
+
+type DocRow = {
+  id?: number;
+  libelle?: string;
+  document?: string;
+  createdAt?: string;
+  user?: { nomPrenom?: string };
+};
 
 @Component({
   selector: 'app-cautions-section',
@@ -64,24 +72,26 @@ const DOC_BASE_URL = 'https://crm-fichiers.creditaccess.ci/crm/credit-ca/';
   ],
 })
 export class CautionsSectionComponent implements OnInit {
-  ref = input<string>('');
+  ref       = input<string>('');
+  isGP      = input<boolean>(false);
+  prefilledDoc = input<{ libelle: string; version: number } | null>(null);
 
-  readonly PlusIcon = Plus;
-  readonly Trash2Icon = Trash2;
+  readonly PlusIcon        = Plus;
+  readonly Trash2Icon      = Trash2;
   readonly AlertCircleIcon = AlertCircle;
-  readonly UserCheckIcon = UserCheck;
-  readonly FileTextIcon = FileText;
-  readonly UploadIcon = Upload;
+  readonly UserCheckIcon   = UserCheck;
+  readonly FileTextIcon    = FileText;
+  readonly UploadIcon      = Upload;
 
-  private readonly fb = inject(FormBuilder);
+  private readonly fb            = inject(FormBuilder);
   private readonly creditService = inject(CreditService);
-  private readonly toast = inject(ToastService);
+  private readonly toast         = inject(ToastService);
 
   // ── State ──────────────────────────────────────────────────────────────
   readonly isLoading = signal(false);
-  readonly error = signal<string | null>(null);
-  readonly cautions = signal<CautionSolidaire[]>([]);
-  readonly documents = signal<DocumentAnalyse[]>([]);
+  readonly error     = signal<string | null>(null);
+  readonly cautions  = signal<CautionSolidaire[]>([]);
+  readonly documents = signal<DocRow[]>([]);
 
   // Caution drawer
   cautionDrawerOpen = false;
@@ -100,13 +110,21 @@ export class CautionsSectionComponent implements OnInit {
 
   // ── Forms ──────────────────────────────────────────────────────────────
   readonly cautionForm = this.fb.group({
-    nom: ['', Validators.required],
-    prenom: ['', Validators.required],
-    telephone: [''],
-    profession: [''],
-    adresse: [''],
+    nom:            ['', Validators.required],
+    prenom:         ['', Validators.required],
+    telephone:      [''],
+    profession:     [''],
+    adresse:        [''],
     montantCaution: [null as number | null],
   });
+
+  // ── Constructor ────────────────────────────────────────────────────────
+  constructor() {
+    effect(() => {
+      const d = this.prefilledDoc();
+      if (d) this.openUploadDoc(d.libelle);
+    });
+  }
 
   // ── Lifecycle ──────────────────────────────────────────────────────────
   ngOnInit() {
@@ -116,22 +134,36 @@ export class CautionsSectionComponent implements OnInit {
   loadData() {
     this.isLoading.set(true);
     this.error.set(null);
-    this.creditService.getAnalyseFinanciere(this.ref()).subscribe({
-      next: (data) => {
-        if (!data?.demande) {
-          this.error.set('Données du dossier introuvables.');
+
+    if (this.isGP()) {
+      this.creditService.getDocuments(this.ref()).subscribe({
+        next: (docs) => {
+          this.documents.set(docs);
           this.isLoading.set(false);
-          return;
-        }
-        this.cautions.set(data.demande.cautionsSolidaires ?? []);
-        this.documents.set(data.demande.documentsAnalyse ?? []);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.error.set('Impossible de charger les données du dossier.');
-        this.isLoading.set(false);
-      },
-    });
+        },
+        error: () => {
+          this.error.set('Impossible de charger les documents.');
+          this.isLoading.set(false);
+        },
+      });
+    } else {
+      this.creditService.getAnalyseFinanciere(this.ref()).subscribe({
+        next: (data) => {
+          if (!data?.demande) {
+            this.error.set('Données du dossier introuvables.');
+            this.isLoading.set(false);
+            return;
+          }
+          this.cautions.set(data.demande.cautionsSolidaires ?? []);
+          this.documents.set(data.demande.documentsAnalyse ?? []);
+          this.isLoading.set(false);
+        },
+        error: () => {
+          this.error.set('Impossible de charger les données du dossier.');
+          this.isLoading.set(false);
+        },
+      });
+    }
   }
 
   formatMontant(n: number | undefined): string {
@@ -150,13 +182,13 @@ export class CautionsSectionComponent implements OnInit {
     const val = this.cautionForm.value;
     this.isSavingCaution.set(true);
     this.creditService.saveCautionSolidaire({
-      nom: val.nom,
-      prenom: val.prenom,
-      telephone: val.telephone || null,
-      profession: val.profession || null,
-      adresse: val.adresse || null,
+      nom:            val.nom,
+      prenom:         val.prenom,
+      telephone:      val.telephone || null,
+      profession:     val.profession || null,
+      adresse:        val.adresse || null,
       montantCaution: val.montantCaution,
-      refDemande: this.ref(),
+      refDemande:     this.ref(),
     }).subscribe({
       next: () => {
         this.toast.success('Caution enregistrée.');
@@ -172,8 +204,8 @@ export class CautionsSectionComponent implements OnInit {
   }
 
   // ── Documents ──────────────────────────────────────────────────────────
-  openUploadDoc() {
-    this.docLibelle.set('');
+  openUploadDoc(libelle = '') {
+    this.docLibelle.set(libelle);
     this.selectedFile = null;
     this.docDrawerOpen = true;
   }
@@ -190,7 +222,12 @@ export class CautionsSectionComponent implements OnInit {
     fd.append('libelle', this.docLibelle().trim());
     fd.append('document', this.selectedFile);
     this.isUploadingDoc.set(true);
-    this.creditService.uploadDocumentAnalyse(fd).subscribe({
+
+    const upload$ = this.isGP()
+      ? this.creditService.uploadDocument(fd)
+      : this.creditService.uploadDocumentAnalyse(fd);
+
+    upload$.subscribe({
       next: () => {
         this.toast.success('Document ajouté.');
         this.docDrawerOpen = false;
@@ -225,9 +262,11 @@ export class CautionsSectionComponent implements OnInit {
     const { type, id } = this.deleteTarget;
     this.deleteDialogOpen = false;
     this.isDeleting.set(true);
-    const obs$ =
-      type === 'caution'
-        ? this.creditService.deleteCautionSolidaire(id)
+
+    const obs$ = type === 'caution'
+      ? this.creditService.deleteCautionSolidaire(id)
+      : this.isGP()
+        ? this.creditService.deleteDocument(id)
         : this.creditService.deleteDocumentAnalyse(id);
 
     obs$.subscribe({

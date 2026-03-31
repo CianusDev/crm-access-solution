@@ -7,5 +7,6 @@ export interface DropdownItem {
   readonly icon?: LucideIconData;
   readonly disabled?: boolean;
   readonly separator?: boolean;
+  readonly required?: boolean;
   readonly action?: () => void;
 }

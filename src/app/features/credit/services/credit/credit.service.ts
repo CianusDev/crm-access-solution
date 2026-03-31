@@ -18,6 +18,10 @@ import {
   CreditObservation,
   CreditResume,
   CreditSaveDemande,
+  CreditUpdateDemande,
+  CreditSaveMagasin,
+  CreditSaveFacture,
+  CreditSaveBonCommande,
   CreditSaveComite,
   CreditSaveDecisionFinale,
   CreditSaveTirage,
@@ -554,6 +558,42 @@ export class CreditService {
         this.endpoint + '/saveDemandeCredit',
         data,
       )
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  updateClientPP(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/update_client', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  updateClientPM(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/update_client_entreprise', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  updateDemandeCredit(data: CreditUpdateDemande) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/updateDemandeCredit', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveMagasin(data: CreditSaveMagasin) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveCrMagasin', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveFacture(data: CreditSaveFacture) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveCrFacture', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveBonCommande(data: CreditSaveBonCommande) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveBonCmde', data)
       .pipe(catchError((err) => throwError(() => err)));
   }
 

@@ -196,7 +196,7 @@
                   @if (c.ville) {
                     <div class="flex items-center gap-2">
                       <lucide-icon [img]="MapPinIcon" [size]="13" class="text-muted-foreground shrink-0" />
-                      <span class="text-xs text-foreground">{{ c.ville.libelle  }}@if (c.domicille) {, {{ c.domicille | json }}}</span>
+                      <span class="text-xs text-foreground">{{ c.ville.libelle }}@if (c.domicille) {, {{ c.domicille | json }}}</span>
                     </div>
                   }
                   @if (c.dataNaiss) {
@@ -218,12 +218,10 @@
                       <span class="text-xs font-medium text-foreground">{{ c.entreprise!.NumEnregistrement }}</span>
                     </div>
                   }
-                  @if (c.ville) {
-                    <div class="flex justify-between py-1">
-                      <span class="text-xs text-muted-foreground">Localisation</span>
-                      <span class="text-xs font-medium text-foreground">{{ c.ville }}</span>
-                    </div>
-                  }
+                  <div class="flex justify-between py-1">
+                    <span class="text-xs text-muted-foreground">Localisation</span>
+                    <span class="text-xs font-medium text-foreground">{{ c.ville || "-" }}</span>
+                  </div>
                 }
                 @if (c.dateInscription) {
                   <div class="flex justify-between py-1 border-t border-border/50 mt-1">
@@ -261,7 +259,7 @@
               <span class="ml-3 text-sm text-muted-foreground">Chargement des références…</span>
             </div>
           } @else {
-            <div class="flex flex-col gap-5">
+            <form [formGroup]="creditForm" (ngSubmit)="save()" class="flex flex-col gap-5">
 
               <!-- Type de crédit -->
               <div class="flex flex-col gap-1.5">
@@ -274,40 +272,22 @@
                   placeholder="Sélectionner un type de crédit…"
                   (valueChange)="fcTypeCredit.set($event !== null ? +$event : null)"
                 />
-                @if (submitted() && errors().typeCredit) {
-                  <p class="text-xs text-destructive">{{ errors().typeCredit }}</p>
+                @if (selectErrors().typeCredit) {
+                  <p class="text-xs text-destructive">{{ selectErrors().typeCredit }}</p>
                 }
               </div>
 
               @if (fcTypeCredit() !== null) {
                 <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
 
-                  <!-- Montant sollicité -->
-                  <div class="flex flex-col gap-1.5">
-                    <label class="text-sm font-medium text-foreground">
-                      Montant demandé <span class="text-destructive">*</span>
-                    </label>
-                    <div class="flex">
-                      <input
-                        type="number"
-                        min="0"
-                        [ngModel]="fcMontant()"
-                        (ngModelChange)="fcMontant.set($event)"
-                        placeholder="0"
-                        class="h-9 flex-1 rounded-l-md border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
-                        [class.border-destructive]="submitted() && errors().montant"
-                        [class.border-border]="!submitted() || !errors().montant"
-                        [class.focus:border-destructive]="submitted() && errors().montant"
-                        [class.focus:border-primary]="!submitted() || !errors().montant"
-                      />
-                      <span class="flex items-center rounded-r-md border border-l-0 border-border bg-muted px-3 text-xs text-muted-foreground">
-                        FCFA
-                      </span>
-                    </div>
-                    @if (submitted() && errors().montant) {
-                      <p class="text-xs text-destructive">{{ errors().montant }}</p>
-                    }
-                  </div>
+                  <app-form-input
+                    name="montant"
+                    label="Montant demandé (FCFA)"
+                    type="number"
+                    format
+                    placeholder="0"
+                    required
+                  />
 
                   <!-- Objet du crédit -->
                   <div class="flex flex-col gap-1.5">
@@ -320,8 +300,8 @@
                       placeholder="Sélectionner un objet…"
                       (valueChange)="fcObjetCredit.set($event !== null ? '' + $event : null)"
                     />
-                    @if (submitted() && errors().objetCredit) {
-                      <p class="text-xs text-destructive">{{ errors().objetCredit }}</p>
+                    @if (selectErrors().objetCredit) {
+                      <p class="text-xs text-destructive">{{ selectErrors().objetCredit }}</p>
                     }
                   </div>
 
@@ -336,107 +316,46 @@
                       placeholder="Sélectionner un secteur…"
                       (valueChange)="fcTypeActivite.set($event !== null ? +$event : null)"
                     />
-                    @if (submitted() && errors().typeActivite) {
-                      <p class="text-xs text-destructive">{{ errors().typeActivite }}</p>
+                    @if (selectErrors().typeActivite) {
+                      <p class="text-xs text-destructive">{{ selectErrors().typeActivite }}</p>
                     }
                   </div>
 
-                  <!-- Durée de remboursement -->
-                  <div class="flex flex-col gap-1.5">
-                    <label class="text-sm font-medium text-foreground">
-                      Durée de remboursement <span class="text-destructive">*</span>
-                    </label>
-                    <div class="flex">
-                      <input
-                        type="number"
-                        min="1"
-                        [ngModel]="fcDuree()"
-                        (ngModelChange)="fcDuree.set($event)"
-                        placeholder="0"
-                        class="h-9 flex-1 rounded-l-md border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
-                        [class.border-destructive]="submitted() && errors().duree"
-                        [class.border-border]="!submitted() || !errors().duree"
-                      />
-                      <span class="flex items-center rounded-r-md border border-l-0 border-border bg-muted px-3 text-xs text-muted-foreground">
-                        Mois
-                      </span>
-                    </div>
-                    @if (submitted() && errors().duree) {
-                      <p class="text-xs text-destructive">{{ errors().duree }}</p>
-                    }
-                  </div>
+                  <app-form-input
+                    name="duree"
+                    label="Durée de remboursement (Mois)"
+                    type="number"
+                    placeholder="0"
+                    [min]="1"
+                    required
+                  />
 
-                  <!-- Montant échéance souhaitée -->
-                  <div class="flex flex-col gap-1.5">
-                    <label class="text-sm font-medium text-foreground">
-                      Montant échéance souhaitée <span class="text-destructive">*</span>
-                    </label>
-                    <div class="flex">
-                      <input
-                        type="number"
-                        min="0"
-                        [ngModel]="fcMontantEche()"
-                        (ngModelChange)="fcMontantEche.set($event)"
-                        placeholder="0"
-                        class="h-9 flex-1 rounded-l-md border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
-                        [class.border-destructive]="submitted() && errors().montantEche"
-                        [class.border-border]="!submitted() || !errors().montantEche"
-                      />
-                      <span class="flex items-center rounded-r-md border border-l-0 border-border bg-muted px-3 text-xs text-muted-foreground">
-                        FCFA
-                      </span>
-                    </div>
-                    @if (submitted() && errors().montantEche) {
-                      <p class="text-xs text-destructive">{{ errors().montantEche }}</p>
-                    }
-                  </div>
+                  <app-form-input
+                    name="montantEche"
+                    label="Montant échéance souhaitée (FCFA)"
+                    type="number"
+                    format
+                    placeholder="0"
+                    required
+                  />
 
-                  <!-- Nb échéances différées (optionnel) -->
-                  <div class="flex flex-col gap-1.5">
-                    <label class="text-sm font-medium text-foreground">
-                      Échéances différées
-                      <span class="ml-1 text-xs font-normal text-muted-foreground">(optionnel)</span>
-                    </label>
-                    <div class="flex">
-                      <input
-                        type="number"
-                        min="0"
-                        [ngModel]="fcDiffere()"
-                        (ngModelChange)="fcDiffere.set($event)"
-                        placeholder="0"
-                        class="h-9 flex-1 rounded-l-md border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
-                        [class.border-destructive]="submitted() && errors().differe"
-                        [class.border-border]="!submitted() || !errors().differe"
-                      />
-                      <span class="flex items-center rounded-r-md border border-l-0 border-border bg-muted px-3 text-xs text-muted-foreground">
-                        Mois
-                      </span>
-                    </div>
-                    @if (submitted() && errors().differe) {
-                      <p class="text-xs text-destructive">{{ errors().differe }}</p>
-                    }
-                  </div>
+                  <app-form-input
+                    name="differe"
+                    label="Échéances différées (Mois)"
+                    type="number"
+                    placeholder="0"
+                    [min]="0"
+                  />
 
                 </div>
 
-                <!-- Description -->
-                <div class="flex flex-col gap-1.5">
-                  <label class="text-sm font-medium text-foreground">
-                    Description de l'utilisation du crédit <span class="text-destructive">*</span>
-                  </label>
-                  <textarea
-                    rows="5"
-                    [ngModel]="fcDescription()"
-                    (ngModelChange)="fcDescription.set($event)"
-                    placeholder="Décrivez l'utilisation prévue du crédit…"
-                    class="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none"
-                    [class.border-destructive]="submitted() && errors().description"
-                    [class.border-border]="!submitted() || !errors().description"
-                  ></textarea>
-                  @if (submitted() && errors().description) {
-                    <p class="text-xs text-destructive">{{ errors().description }}</p>
-                  }
-                </div>
+                <app-form-textarea
+                  name="description"
+                  label="Description de l'utilisation du crédit"
+                  placeholder="Décrivez l'utilisation prévue du crédit…"
+                  [rows]="5"
+                  required
+                />
 
                 <!-- Actions -->
                 <div class="flex justify-end gap-3 border-t border-border pt-4">
@@ -449,8 +368,7 @@
                   </button>
                   <button
                     appButton
-                    type="button"
-                    (click)="save()"
+                    type="submit"
                     [disabled]="isSaving()"
                   >
                     @if (isSaving()) {
@@ -464,7 +382,7 @@
                 </div>
               }
 
-            </div>
+            </form>
           }
 
         </app-card-content>
@@ -590,7 +508,7 @@
                 <span class="ml-3 text-sm text-muted-foreground">Chargement des références…</span>
               </div>
             } @else {
-              <div class="flex flex-col gap-5">
+              <form [formGroup]="creditForm" (ngSubmit)="saveTirage()" class="flex flex-col gap-5">
 
                 <!-- Montant cap info -->
                 @if (montantMax() > 0) {
@@ -604,31 +522,14 @@
 
                 <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
 
-                  <!-- Montant sollicité -->
-                  <div class="flex flex-col gap-1.5">
-                    <label class="text-sm font-medium text-foreground">
-                      Montant demandé <span class="text-destructive">*</span>
-                    </label>
-                    <div class="flex">
-                      <input
-                        type="number"
-                        min="0"
-                        [max]="montantMax() || null"
-                        [ngModel]="fcMontant()"
-                        (ngModelChange)="fcMontant.set($event)"
-                        placeholder="0"
-                        class="h-9 flex-1 rounded-l-md border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
-                        [class.border-destructive]="submitted() && errors().montant"
-                        [class.border-border]="!submitted() || !errors().montant"
-                      />
-                      <span class="flex items-center rounded-r-md border border-l-0 border-border bg-muted px-3 text-xs text-muted-foreground">
-                        FCFA
-                      </span>
-                    </div>
-                    @if (submitted() && errors().montant) {
-                      <p class="text-xs text-destructive">{{ errors().montant }}</p>
-                    }
-                  </div>
+                  <app-form-input
+                    name="montant"
+                    label="Montant demandé (FCFA)"
+                    type="number"
+                    format
+                    placeholder="0"
+                    required
+                  />
 
                   <!-- Objet du crédit -->
                   <div class="flex flex-col gap-1.5">
@@ -641,8 +542,8 @@
                       placeholder="Sélectionner un objet…"
                       (valueChange)="fcObjetCredit.set($event !== null ? '' + $event : null)"
                     />
-                    @if (submitted() && errors().objetCredit) {
-                      <p class="text-xs text-destructive">{{ errors().objetCredit }}</p>
+                    @if (selectErrors().objetCredit) {
+                      <p class="text-xs text-destructive">{{ selectErrors().objetCredit }}</p>
                     }
                   </div>
 
@@ -657,107 +558,46 @@
                       placeholder="Sélectionner un secteur…"
                       (valueChange)="fcTypeActivite.set($event !== null ? +$event : null)"
                     />
-                    @if (submitted() && errors().typeActivite) {
-                      <p class="text-xs text-destructive">{{ errors().typeActivite }}</p>
+                    @if (selectErrors().typeActivite) {
+                      <p class="text-xs text-destructive">{{ selectErrors().typeActivite }}</p>
                     }
                   </div>
 
-                  <!-- Durée de remboursement -->
-                  <div class="flex flex-col gap-1.5">
-                    <label class="text-sm font-medium text-foreground">
-                      Durée de remboursement <span class="text-destructive">*</span>
-                    </label>
-                    <div class="flex">
-                      <input
-                        type="number"
-                        min="1"
-                        [ngModel]="fcDuree()"
-                        (ngModelChange)="fcDuree.set($event)"
-                        placeholder="0"
-                        class="h-9 flex-1 rounded-l-md border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
-                        [class.border-destructive]="submitted() && errors().duree"
-                        [class.border-border]="!submitted() || !errors().duree"
-                      />
-                      <span class="flex items-center rounded-r-md border border-l-0 border-border bg-muted px-3 text-xs text-muted-foreground">
-                        Mois
-                      </span>
-                    </div>
-                    @if (submitted() && errors().duree) {
-                      <p class="text-xs text-destructive">{{ errors().duree }}</p>
-                    }
-                  </div>
+                  <app-form-input
+                    name="duree"
+                    label="Durée de remboursement (Mois)"
+                    type="number"
+                    placeholder="0"
+                    [min]="1"
+                    required
+                  />
 
-                  <!-- Montant échéance souhaitée -->
-                  <div class="flex flex-col gap-1.5">
-                    <label class="text-sm font-medium text-foreground">
-                      Montant échéance souhaitée <span class="text-destructive">*</span>
-                    </label>
-                    <div class="flex">
-                      <input
-                        type="number"
-                        min="0"
-                        [ngModel]="fcMontantEche()"
-                        (ngModelChange)="fcMontantEche.set($event)"
-                        placeholder="0"
-                        class="h-9 flex-1 rounded-l-md border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
-                        [class.border-destructive]="submitted() && errors().montantEche"
-                        [class.border-border]="!submitted() || !errors().montantEche"
-                      />
-                      <span class="flex items-center rounded-r-md border border-l-0 border-border bg-muted px-3 text-xs text-muted-foreground">
-                        FCFA
-                      </span>
-                    </div>
-                    @if (submitted() && errors().montantEche) {
-                      <p class="text-xs text-destructive">{{ errors().montantEche }}</p>
-                    }
-                  </div>
+                  <app-form-input
+                    name="montantEche"
+                    label="Montant échéance souhaitée (FCFA)"
+                    type="number"
+                    format
+                    placeholder="0"
+                    required
+                  />
 
-                  <!-- Nb échéances différées (optionnel) -->
-                  <div class="flex flex-col gap-1.5">
-                    <label class="text-sm font-medium text-foreground">
-                      Échéances différées
-                      <span class="ml-1 text-xs font-normal text-muted-foreground">(optionnel)</span>
-                    </label>
-                    <div class="flex">
-                      <input
-                        type="number"
-                        min="0"
-                        [ngModel]="fcDiffere()"
-                        (ngModelChange)="fcDiffere.set($event)"
-                        placeholder="0"
-                        class="h-9 flex-1 rounded-l-md border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
-                        [class.border-destructive]="submitted() && errors().differe"
-                        [class.border-border]="!submitted() || !errors().differe"
-                      />
-                      <span class="flex items-center rounded-r-md border border-l-0 border-border bg-muted px-3 text-xs text-muted-foreground">
-                        Mois
-                      </span>
-                    </div>
-                    @if (submitted() && errors().differe) {
-                      <p class="text-xs text-destructive">{{ errors().differe }}</p>
-                    }
-                  </div>
+                  <app-form-input
+                    name="differe"
+                    label="Échéances différées (Mois)"
+                    type="number"
+                    placeholder="0"
+                    [min]="0"
+                  />
 
                 </div>
 
-                <!-- Description -->
-                <div class="flex flex-col gap-1.5">
-                  <label class="text-sm font-medium text-foreground">
-                    Description de l'utilisation du crédit <span class="text-destructive">*</span>
-                  </label>
-                  <textarea
-                    rows="5"
-                    [ngModel]="fcDescription()"
-                    (ngModelChange)="fcDescription.set($event)"
-                    placeholder="Décrivez l'utilisation prévue du crédit…"
-                    class="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none"
-                    [class.border-destructive]="submitted() && errors().description"
-                    [class.border-border]="!submitted() || !errors().description"
-                  ></textarea>
-                  @if (submitted() && errors().description) {
-                    <p class="text-xs text-destructive">{{ errors().description }}</p>
-                  }
-                </div>
+                <app-form-textarea
+                  name="description"
+                  label="Description de l'utilisation du crédit"
+                  placeholder="Décrivez l'utilisation prévue du crédit…"
+                  [rows]="5"
+                  required
+                />
 
                 <!-- Actions -->
                 <div class="flex justify-end gap-3 border-t border-border pt-4">
@@ -770,8 +610,7 @@
                   </button>
                   <button
                     appButton
-                    type="button"
-                    (click)="saveTirage()"
+                    type="submit"
                     [disabled]="isSaving() || isTirageExpire()"
                   >
                     @if (isSaving()) {
@@ -784,12 +623,11 @@
                   </button>
                 </div>
 
-              </div>
+              </form>
             }
 
           </app-card-content>
         </app-card>
-
       </div>
     }
   }
