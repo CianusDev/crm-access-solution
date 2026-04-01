@@ -82,7 +82,7 @@
     <!-- ══ DOCUMENTS ANNEXES ═════════════════════════════════════════════ -->
     <app-card>
       <app-card-header>
-        <div class="flex items-center justify-between w-full">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-3">
           <div class="flex items-center gap-2">
             <app-card-title>Documents annexes</app-card-title>
             @if (documents().length > 0) {
@@ -91,10 +91,23 @@
               </span>
             }
           </div>
-          <button type="button" (click)="openUploadDoc()" appButton size="sm">
-            <lucide-icon [img]="UploadIcon" [size]="14" />
-            Ajouter
-          </button>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <!-- Champ de recherche -->
+            <div class="relative flex-1 sm:flex-initial sm:min-w-[250px]">
+              <lucide-icon [img]="SearchIcon" [size]="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                [value]="searchQuery()"
+                (input)="filterDocuments($any($event.target).value)"
+                placeholder="Rechercher un document..."
+                class="h-9 w-full rounded-lg border border-border bg-input/20 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-[2px] focus:ring-primary/50"
+              />
+            </div>
+            <button type="button" (click)="openUploadDoc()" appButton size="sm" class="shrink-0">
+              <lucide-icon [img]="UploadIcon" [size]="14" />
+              Ajouter
+            </button>
+          </div>
         </div>
       </app-card-header>
       <app-card-content>
@@ -107,43 +120,53 @@
               Ajouter un document
             </button>
           </div>
+        } @else if (documentsFiltered().length === 0) {
+          <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
+            <lucide-icon [img]="SearchIcon" [size]="32" class="text-muted-foreground/40" />
+            <p class="text-sm text-muted-foreground">Aucun document trouvé pour "{{ searchQuery() }}"</p>
+          </div>
         } @else {
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b border-border bg-muted/10">
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Libellé</th>
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Ajouté par</th>
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Date</th>
-                <th class="px-4 py-2 w-20"></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (doc of documents(); track doc.id) {
-                <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
-                  <td class="px-4 py-2.5 font-medium">{{ doc.libelle }}</td>
-                  <td class="px-4 py-2.5 text-muted-foreground">{{ doc.user?.nomPrenom ?? '—' }}</td>
-                  <td class="px-4 py-2.5 text-muted-foreground">{{ doc.createdAt | date:'dd/MM/yyyy' }}</td>
-                  <td class="px-4 py-2.5">
-                    <div class="flex items-center gap-0.5 justify-end">
-                      @if (doc.document) {
-                        <button type="button"
-                          (click)="downloadDocument(doc.document, doc.libelle ?? 'document')"
-                          title="Télécharger"
-                          class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer">
-                          <lucide-icon [img]="FileTextIcon" [size]="13" />
-                        </button>
-                      }
-                      <button type="button"
-                        (click)="openDelete('doc', doc.id!, doc.libelle ?? '')"
-                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
-                        <lucide-icon [img]="Trash2Icon" [size]="13" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            @for (doc of documentsFiltered(); track doc.id) {
+              <div class="group relative flex flex-col rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all overflow-hidden">
+                <!-- En-tête avec icône -->
+                <div class="flex items-center justify-center h-24 bg-gradient-to-br from-primary/5 to-primary/10 border-b border-border">
+                  <lucide-icon [img]="FileTextIcon" [size]="40" class="text-primary/60" />
+                </div>
+                
+                <!-- Contenu -->
+                <div class="flex-1 p-4">
+                  <h4 class="font-semibold text-sm text-foreground line-clamp-2 mb-2">{{ doc.libelle }}</h4>
+                  <div class="flex flex-col gap-1 text-xs text-muted-foreground">
+                    @if (doc.user?.nomPrenom) {
+                      <p class="truncate">Par: {{ doc.user!.nomPrenom }}</p>
+                    }
+                    @if (doc.createdAt) {
+                      <p>Le: {{ doc.createdAt | date:'dd/MM/yyyy' }}</p>
+                    }
+                  </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex items-center justify-end gap-1 px-3 py-2 border-t border-border bg-muted/20">
+                  @if (doc.document) {
+                    <button type="button"
+                      (click)="downloadDocument(doc.document, doc.libelle ?? 'document')"
+                      title="Télécharger"
+                      class="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer">
+                      <lucide-icon [img]="FileTextIcon" [size]="14" />
+                    </button>
+                  }
+                  <button type="button"
+                    (click)="openDelete('doc', doc.id!, doc.libelle ?? '')"
+                    title="Supprimer"
+                    class="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                    <lucide-icon [img]="Trash2Icon" [size]="14" />
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
         }
       </app-card-content>
     </app-card>

@@ -9,6 +9,7 @@ import {
   UserCheck,
   FileText,
   Upload,
+  Search,
 } from 'lucide-angular';
 import {
   CardComponent,
@@ -83,6 +84,7 @@ export class CautionsSectionComponent implements OnInit {
   readonly UserCheckIcon   = UserCheck;
   readonly FileTextIcon    = FileText;
   readonly UploadIcon      = Upload;
+  readonly SearchIcon      = Search;
 
   private readonly fb            = inject(FormBuilder);
   private readonly creditService = inject(CreditService);
@@ -93,6 +95,8 @@ export class CautionsSectionComponent implements OnInit {
   readonly error     = signal<string | null>(null);
   readonly cautions  = signal<CautionSolidaire[]>([]);
   readonly documents = signal<DocRow[]>([]);
+  readonly documentsFiltered = signal<DocRow[]>([]);
+  readonly searchQuery = signal('');
 
   // Caution drawer
   cautionDrawerOpen = false;
@@ -140,6 +144,7 @@ export class CautionsSectionComponent implements OnInit {
       this.creditService.getDocuments(this.ref()).subscribe({
         next: (docs) => {
           this.documents.set(docs);
+          this.documentsFiltered.set(docs);
           this.isLoading.set(false);
         },
         error: () => {
@@ -157,6 +162,7 @@ export class CautionsSectionComponent implements OnInit {
           }
           this.cautions.set(data.demande.cautionsSolidaires ?? []);
           this.documents.set(data.demande.documentsAnalyse ?? []);
+          this.documentsFiltered.set(data.demande.documentsAnalyse ?? []);
           this.isLoading.set(false);
         },
         error: () => {
@@ -164,6 +170,18 @@ export class CautionsSectionComponent implements OnInit {
           this.isLoading.set(false);
         },
       });
+    }
+  }
+
+  filterDocuments(query: string) {
+    this.searchQuery.set(query);
+    const q = query.toLowerCase().trim();
+    if (!q) {
+      this.documentsFiltered.set(this.documents());
+    } else {
+      this.documentsFiltered.set(
+        this.documents().filter(doc => doc.libelle?.toLowerCase().includes(q))
+      );
     }
   }
 

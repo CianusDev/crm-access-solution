@@ -119,3 +119,6 @@ a des forumlaire et elements manquant
 dans la section signataire il manque quelque info
  a afficher et un champs pour upload la photo de
 profil du a
+
+
+j'aimerai que du me creer un builder de pdf qui va me permettre de creer des contrats , document officielle , avec posibliter d'ajouter des logo en gros de personnaliser le pdf commence je veux et pour generer le template a utiliser dans n'importe quel codebase react , angular , ou framework js ! ainsi de la doc pour l'integrer dans sa codebase
