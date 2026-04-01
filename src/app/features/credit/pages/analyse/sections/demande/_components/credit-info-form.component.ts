@@ -10,7 +10,15 @@ import {
 } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
-import { LucideAngularModule, CirclePause, ShieldAlert, Pencil, X, Save } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  CirclePause,
+  ShieldAlert,
+  Pencil,
+  X,
+  Save,
+  AlertCircle,
+} from 'lucide-angular';
 import {
   CardComponent,
   CardContentComponent,
@@ -61,7 +69,18 @@ const OBJETS_CREDIT_MAP: Record<string | number, string> = {
     FormTextarea,
   ],
   template: `
-    @if (demande(); as d) {
+    @if (isLoading()) {
+      <div class="space-y-3">
+        <div class="h-48 rounded-xl border border-border bg-white animate-pulse"></div>
+      </div>
+    } @else if (error()) {
+      <div
+        class="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3"
+      >
+        <lucide-icon [img]="AlertCircleIcon" [size]="16" class="text-destructive shrink-0" />
+        <p class="text-sm text-destructive">{{ error() }}</p>
+      </div>
+    } @else if (demande(); as d) {
       <app-card>
         <app-card-header>
           <div class="flex items-center justify-between w-full flex-wrap gap-2">
@@ -163,14 +182,12 @@ const OBJETS_CREDIT_MAP: Record<string | number, string> = {
                 >
               </div>
             </div>
-            @if (d.description) {
-              <div class="mt-4 rounded-lg border border-border bg-muted/30 p-4">
-                <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  Description
-                </p>
-                <p class="text-sm text-foreground leading-relaxed">{{ d.description }}</p>
-              </div>
-            }
+            <div class="mt-4 rounded-lg border border-border bg-muted/30 p-4">
+              <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                Description de l'utilisation du crédit
+              </p>
+              <p class="text-sm text-foreground leading-relaxed">{{ d.description || '—' }}</p>
+            </div>
 
             <!-- ── Mode édition ───────────────────────────────────────── -->
           } @else {
@@ -203,8 +220,6 @@ const OBJETS_CREDIT_MAP: Record<string | number, string> = {
                   type="number"
                   [min]="0"
                 />
-
-                <!-- <app-form-input name="numTransaction" label="N° Perfect (optionnel)" type="text" /> -->
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -274,6 +289,7 @@ const OBJETS_CREDIT_MAP: Record<string | number, string> = {
 export class CreditInfoFormComponent implements OnInit {
   readonly CirclePauseIcon = CirclePause;
   readonly ShieldAlertIcon = ShieldAlert;
+  readonly AlertCircleIcon = AlertCircle;
   readonly PencilIcon = Pencil;
   readonly XIcon = X;
   readonly SaveIcon = Save;
@@ -281,9 +297,12 @@ export class CreditInfoFormComponent implements OnInit {
   private readonly creditService = inject(CreditService);
   private readonly toast = inject(ToastService);
 
-  readonly demande = input<CreditFicheDemandeDetail | null>(null);
+  readonly ref = input.required<string>();
   readonly updated = output<void>();
 
+  readonly demande = signal<CreditFicheDemandeDetail | null>(null);
+  readonly isLoading = signal(false);
+  readonly error = signal<string | null>(null);
   readonly editing = signal(false);
   readonly saving = signal(false);
 
@@ -319,8 +338,23 @@ export class CreditInfoFormComponent implements OnInit {
   });
 
   ngOnInit() {
-    // Pre-load options for faster edit UX
     this.loadOptions();
+    this.loadDetails();
+  }
+
+  loadDetails() {
+    this.isLoading.set(true);
+    this.error.set(null);
+    this.creditService.getDetailsDemande(this.ref()).subscribe({
+      next: (data) => {
+        this.demande.set(data);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.error.set('Impossible de charger les détails de la demande.');
+        this.isLoading.set(false);
+      },
+    });
   }
 
   private loadOptions() {
@@ -342,7 +376,7 @@ export class CreditInfoFormComponent implements OnInit {
     this.form.reset({
       typeCredit: d.typeCredit?.id ?? null,
       objetCredit: d.objetCredit != null ? String(d.objetCredit) : null,
-      typeActivite: (d.typeActivite as any)?.id ?? null,
+      typeActivite: (d.typeActivite as unknown as { id: number })?.id ?? null,
       montantSollicite: d.montantSollicite,
       nbreEcheanceSollicite: d.nbreEcheanceSollicite,
       montantEcheSouhaite: d.montantEcheSouhaite,
@@ -381,10 +415,13 @@ export class CreditInfoFormComponent implements OnInit {
       })
       .subscribe({
         next: (res) => {
+          console.log();
           this.saving.set(false);
-          if (res.status === 1) {
+          console.log('Update response:', res);
+          if (res.status === 1 || res.message?.toLowerCase() === 'success') {
             this.toast.success('Demande mise à jour avec succès.');
             this.editing.set(false);
+            this.loadDetails();
             this.updated.emit();
           } else {
             this.toast.error(res.message ?? 'Échec de la mise à jour.');

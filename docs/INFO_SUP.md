@@ -114,3 +114,8 @@ a des forumlaire et elements manquant
   NB: pour les info de demande de credit ,
   c'est duplique , on peut reunir les
   info dans un seul composant non ?
+
+
+dans la section signataire il manque quelque info
+ a afficher et un champs pour upload la photo de
+profil du a

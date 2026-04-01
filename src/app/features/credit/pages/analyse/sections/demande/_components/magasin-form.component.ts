@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
 import { LucideAngularModule, Store, Plus, Pencil, X, Save } from 'lucide-angular';
@@ -68,16 +68,58 @@ import { CreditMagasin } from '../../../../../interfaces/credit.interface';
                       <span class="text-xs font-medium font-mono text-foreground">{{ m.numMagasin }}</span>
                     </div>
                   }
-                  @if (m.adresse) {
+                  @if (m.blocCommerciale) {
                     <div class="flex justify-between py-1.5 border-b border-border/40">
-                      <span class="text-xs text-muted-foreground">Adresse</span>
-                      <span class="text-xs font-medium text-foreground">{{ m.adresse }}</span>
+                      <span class="text-xs text-muted-foreground">Bloc commercial</span>
+                      <span class="text-xs font-medium text-foreground">{{ m.blocCommerciale }}</span>
+                    </div>
+                  }
+                  @if (m.etage) {
+                    <div class="flex justify-between py-1.5 border-b border-border/40">
+                      <span class="text-xs text-muted-foreground">Étage</span>
+                      <span class="text-xs font-medium text-foreground">{{ m.etage }}</span>
+                    </div>
+                  }
+                  @if (m.localisation) {
+                    <div class="flex justify-between py-1.5 border-b border-border/40">
+                      <span class="text-xs text-muted-foreground">Localisation</span>
+                      <span class="text-xs font-medium text-foreground">{{ m.localisation }}</span>
                     </div>
                   }
                   @if (m.telephone) {
                     <div class="flex justify-between py-1.5 border-b border-border/40">
                       <span class="text-xs text-muted-foreground">Téléphone</span>
                       <span class="text-xs font-medium text-foreground">{{ m.telephone }}</span>
+                    </div>
+                  }
+                  @if (m.MontantPartPorte != null) {
+                    <div class="flex justify-between py-1.5 border-b border-border/40">
+                      <span class="text-xs text-muted-foreground">Montant part de porte</span>
+                      <span class="text-xs font-medium text-foreground">{{ formatMontant(m.MontantPartPorte) }}</span>
+                    </div>
+                  }
+                  @if (m.montantLoyer != null) {
+                    <div class="flex justify-between py-1.5 border-b border-border/40">
+                      <span class="text-xs text-muted-foreground">Montant loyer</span>
+                      <span class="text-xs font-medium text-foreground">{{ formatMontant(m.montantLoyer) }}</span>
+                    </div>
+                  }
+                  @if (m.fraisReservation != null) {
+                    <div class="flex justify-between py-1.5 border-b border-border/40">
+                      <span class="text-xs text-muted-foreground">Frais de réservation</span>
+                      <span class="text-xs font-medium text-foreground">{{ formatMontant(+m.fraisReservation) }}</span>
+                    </div>
+                  }
+                  @if (m.acompte != null) {
+                    <div class="flex justify-between py-1.5 border-b border-border/40">
+                      <span class="text-xs text-muted-foreground">Acompte</span>
+                      <span class="text-xs font-medium text-foreground">{{ formatMontant(+m.acompte) }}</span>
+                    </div>
+                  }
+                  @if (m.acomptePercu != null) {
+                    <div class="flex justify-between py-1.5 border-b border-border/40">
+                      <span class="text-xs text-muted-foreground">Acompte perçu</span>
+                      <span class="text-xs font-medium text-foreground">{{ formatMontant(+m.acomptePercu) }}</span>
                     </div>
                   }
                 </div>
@@ -145,6 +187,7 @@ export class MagasinFormComponent {
   readonly ref            = input.required<string>();
   readonly codeClient     = input.required<string>();
   readonly initialMagasins = input<CreditMagasin[]>([]);
+  readonly magasinSaved = output<void>();
 
   readonly magasins   = signal<CreditMagasin[]>([]);
   readonly showForm   = signal(false);
@@ -168,6 +211,11 @@ export class MagasinFormComponent {
     this.magasins.set(this.initialMagasins());
   }
 
+  formatMontant(n: number | undefined | null): string {
+    if (n == null || isNaN(+n)) return '—';
+    return new Intl.NumberFormat('fr-FR').format(+n) + ' FCFA';
+  }
+
   openAdd() {
     this.editingId = null;
     this.form.reset();
@@ -178,15 +226,15 @@ export class MagasinFormComponent {
     this.editingId = m.id ?? null;
     this.form.reset({
       numMagasin:       m.numMagasin ?? null,
-      blocCommerciale:  null,
-      etage:            null,
-      localisation:     m.adresse ?? null,
+      blocCommerciale:  m.blocCommerciale ?? null,
+      etage:            m.etage ?? null,
+      localisation:     m.localisation ?? null,
       telephone:        m.telephone ?? null,
-      MontantPartPorte: null,
-      montantLoyer:     null,
-      fraisReservation: null,
-      acompte:          null,
-      acomptePercu:     null,
+      MontantPartPorte: m.MontantPartPorte ?? null,
+      montantLoyer:     m.montantLoyer ?? null,
+      fraisReservation: m.fraisReservation != null ? +m.fraisReservation : null,
+      acompte:          m.acompte != null ? +m.acompte : null,
+      acomptePercu:     m.acomptePercu != null ? +m.acomptePercu : null,
     });
     this.showForm.set(true);
   }
@@ -220,6 +268,7 @@ export class MagasinFormComponent {
           this.toast.success('Magasin enregistré avec succès.');
           this.showForm.set(false);
           this.editingId = null;
+          this.magasinSaved.emit();
         } else {
           this.toast.error(res.message ?? 'Échec de l\'enregistrement.');
         }

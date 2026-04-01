@@ -15,6 +15,7 @@ import {
   CreditDetailAgence,
   CreditDocumentAnnexe,
   CreditFiche,
+  CreditFicheDemandeDetail,
   CreditObservation,
   CreditResume,
   CreditSaveDemande,
@@ -243,6 +244,15 @@ export class CreditService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
+  getDetailsDemande(ref: string) {
+    return this.api
+      .get<{ demande: CreditFicheDemandeDetail }>(this.endpoint + '/getDetailsDemande/' + ref)
+      .pipe(
+        map((res) => res.demande),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
   getGarantiesDemande(ref: string) {
     return this.api
       .get<{ demande: GarantiesData }>(this.endpoint + '/getGarantiesDemande/' + ref)
@@ -272,7 +282,7 @@ export class CreditService {
 
   uploadDocument(formData: FormData) {
     return this.api
-      .post<{ status: number; message?: string }>(this.endpoint + '/saveDocAnnexe', formData)
+      .postFormData<{ status: number; message?: string }>(this.endpoint + '/saveDocAnnexe', formData)
       .pipe(catchError((err) => throwError(() => err)));
   }
 
@@ -438,7 +448,7 @@ export class CreditService {
 
   uploadDocumentAnalyse(formData: FormData) {
     return this.api
-      .post<{ status: number; message?: string }>(this.endpoint + '/saveDocAnalyse', formData)
+      .postFormData<{ status: number; message?: string }>(this.endpoint + '/saveDocAnalyse', formData)
       .pipe(catchError((err) => throwError(() => err)));
   }
 
@@ -624,6 +634,42 @@ export class CreditService {
   updateMontantEmprunte(data: Record<string, unknown>) {
     return this.api
       .post<{ status: number; message?: string }>(this.endpoint + '/mis_a_jour_montant_emprunter', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  // ── Véhicules demandés (Crédit Auto) ──────────────────────────────────────
+  saveInfoCrAuto(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveInfoCrAuto', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteInfoCrAuto(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteCrAuto/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  // ── Signataires ───────────────────────────────────────────────────────────
+  updateSignataire(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/updtateSignataire', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  updateSignataireAvecPhoto(formData: FormData) {
+    return this.api
+      .postFormData<{ status: number; message?: string }>(this.endpoint + '/updateProfilImgCaution', formData)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  // ── Référentiel pays / communes ──────────────────────────────────────────
+  getPaysCommuneData() {
+    return this.api
+      .get<{
+        pays: { id: number; nationalite: string }[];
+        communes: { id: number; libelle: string }[];
+      }>('/pays_commune')
       .pipe(catchError((err) => throwError(() => err)));
   }
 }

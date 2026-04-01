@@ -43,7 +43,12 @@ import { DropdownAlign, DropdownItem } from './dropdown.interface';
               @if (item.icon) {
                 <lucide-icon [img]="item.icon" size="16" aria-hidden="true" />
               }
-              <span>{{ item.label }} <span class="text-red-500">*</span></span>
+              <span>
+                {{ item.label }}
+                @if (item.required) {
+                  <span class="text-red-500">*</span>
+                }
+              </span>
             </button>
           }
         }
@@ -75,7 +80,7 @@ export class Dropdown {
 
   itemClasses(item: DropdownItem, index: number): string {
     const base =
-      'relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors';
+      'relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-left outline-none transition-colors';
     const focused = this.focusedIndex() === index ? 'bg-accent text-accent-foreground' : '';
     const disabled = item.disabled ? 'pointer-events-none opacity-50' : '';
     return `${base} ${focused} ${disabled}`.trim();

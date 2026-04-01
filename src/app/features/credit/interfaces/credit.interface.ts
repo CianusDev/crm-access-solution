@@ -15,18 +15,26 @@ export interface CreditCommune {
 }
 
 export interface CreditSignataire {
+  id?: number;
   nom?: string;
   prenom?: string;
+  email?: string;
+  sexe?: string;
+  situationMatri?: string;
+  codTypePiece?: string;
   numPiece?: string;
   nationalite?: CreditNationalite;
   lieuNaiss?: string;
+  quartier?: string;
   rue?: string;
   commune?: CreditCommune;
   dateNaissance?: string;
+  dateStatut?: string;
   dateDelivrancePiece?: string;
   dateExpirationPiece?: string;
   lieuDelivrance?: string;
   numTelephone?: string;
+  photoProfil?: string;
 }
 
 export interface CreditClient {
@@ -494,8 +502,28 @@ export interface CreditUserGarantie {
 export interface CreditMagasin {
   id?: number;
   numMagasin?: string;
+  blocCommerciale?: string;
+  etage?: string;
+  localisation?: string;
   adresse?: string;
   telephone?: string;
+  MontantPartPorte?: number;
+  montantLoyer?: number;
+  fraisReservation?: number | string;
+  acompte?: number | string;
+  acomptePercu?: number | string;
+}
+
+export interface CreditAutoInfo {
+  id?: number;
+  marque?: string;
+  typeCommercial?: string;
+  nbrePlace?: string | number;
+  puissanceFiscale?: string | number;
+  dateMiseEnCirculation?: string;
+  immatriculation?: string;
+  vehiculeVu?: string | number;
+  couleur?: string;
 }
 
 export interface CreditFiche {
@@ -505,6 +533,7 @@ export interface CreditFiche {
   pret?: { numPret?: string; numContrat?: string };
   usersGaranties?: CreditUserGarantie[];
   magasins?: CreditMagasin[];
+  infosCrAuto?: CreditAutoInfo[];
   nombreDemandes?: number;
 }
 

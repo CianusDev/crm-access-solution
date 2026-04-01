@@ -614,7 +614,7 @@ export class ClientPmCardComponent implements OnInit {
       .subscribe({
         next: (res) => {
           this.saving.set(false);
-          if (res.status === 1) {
+          if (res.status === 1 || res.message?.toLowerCase() === 'success') {
             this.toast.success('Informations mises à jour.');
             this.editing.set(false);
           } else {

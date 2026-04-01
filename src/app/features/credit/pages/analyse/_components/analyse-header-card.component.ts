@@ -6,6 +6,7 @@ import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import { Dropdown } from '@/shared/components/dropdown/dropdown.component';
 import { DropdownItem } from '@/shared/components/dropdown/dropdown.interface';
 import { CreditFicheDemandeDetail } from '../../../interfaces/credit.interface';
+import { RequiredDoc } from '../../../constants/required-documents';
 
 const OBJETS_CREDIT: Record<string | number, string> = {
   1: 'Fonds de roulement',
@@ -70,6 +71,7 @@ const PREDEFINED_DOC_TYPES = [
             appButton
             size="sm"
             class="flex items-center gap-1.5"
+            [disabled]="!canSendDossier()"
             (click)="envoyerDossier.emit()"
           >
             <lucide-icon [img]="SendIcon" [size]="14" />
@@ -250,6 +252,9 @@ export class AnalyseHeaderCardComponent {
   readonly ChevronDownIcon = ChevronDown;
 
   readonly fiche = input<CreditFicheDemandeDetail | null>(null);
+  readonly requiredDocs = input<RequiredDoc[]>([]);
+  readonly uploadedDocLibelles = input<string[]>([]);
+  readonly canSendDossier = input<boolean>(true);
 
   readonly chargerDocuments = output<string | null>();
   readonly envoyerDossier = output<void>();
@@ -269,12 +274,27 @@ export class AnalyseHeaderCardComponent {
     return STATUT_JURIDIQUE[key] ?? String(sj);
   });
 
-  readonly docTypeItems = computed<DropdownItem[]>(() =>
-    PREDEFINED_DOC_TYPES.map((label) => ({
+  /** Dropdown items : docs requis selon le type de crédit, ou fallback générique */
+  readonly docTypeItems = computed<DropdownItem[]>(() => {
+    const required = this.requiredDocs();
+    const uploaded = this.uploadedDocLibelles().map((l) => l.trim().toLowerCase());
+
+    if (required.length > 0) {
+      return required.map((doc) => {
+        const alreadyUploaded = uploaded.some((u) => u === doc.libelle.trim().toLowerCase());
+        return {
+          label: doc.libelle,
+          required: doc.obligation,
+          disabled: alreadyUploaded,
+          action: () => this.chargerDocuments.emit(doc.libelle),
+        };
+      });
+    }
+
+    // Fallback : liste générique
+    return PREDEFINED_DOC_TYPES.map((label) => ({
       label,
-      icon: Upload,
-      required: true,
       action: () => this.chargerDocuments.emit(label),
-    })),
-  );
+    }));
+  });
 }

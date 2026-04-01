@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, input, signal, effect } from '@angular/core';
+import { Component, OnInit, inject, input, output, signal, effect } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import {
@@ -75,6 +75,7 @@ export class CautionsSectionComponent implements OnInit {
   ref       = input<string>('');
   isGP      = input<boolean>(false);
   prefilledDoc = input<{ libelle: string; version: number } | null>(null);
+  readonly docsChanged = output<void>();
 
   readonly PlusIcon        = Plus;
   readonly Trash2Icon      = Trash2;
@@ -233,6 +234,7 @@ export class CautionsSectionComponent implements OnInit {
         this.docDrawerOpen = false;
         this.isUploadingDoc.set(false);
         this.selectedFile = null;
+        this.docsChanged.emit();
         this.docLibelle.set('');
         this.loadData();
       },
@@ -274,6 +276,7 @@ export class CautionsSectionComponent implements OnInit {
         this.toast.success('Supprimé avec succès.');
         this.isDeleting.set(false);
         this.deleteTarget = null;
+        this.docsChanged.emit();
         this.loadData();
       },
       error: () => {

@@ -31,11 +31,13 @@
         class="flex items-center justify-center h-9 w-9 rounded-md border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50">
         <lucide-icon [img]="RefreshIcon" [size]="15" [class.animate-spin]="isLoading()" />
       </button>
-      <button type="button" (click)="goFiche()" appButton variant="outline" size="sm"
-        class="flex items-center gap-1.5">
-        <lucide-icon [img]="FileTextIcon" [size]="14" />
-        Voir la fiche
-      </button>
+      @if (!isGP()) {
+        <button type="button" (click)="goFiche()" appButton variant="outline" size="sm"
+          class="flex items-center gap-1.5">
+          <lucide-icon [img]="FileTextIcon" [size]="14" />
+          Voir la fiche
+        </button>
+      }
     </div>
   </div>
 
@@ -51,8 +53,11 @@
   @if (!isLoading()) {
     <app-analyse-header-card
       [fiche]="ficheHeader()"
+      [requiredDocs]="requiredDocs()"
+      [uploadedDocLibelles]="uploadedDocLibelles()"
+      [canSendDossier]="canSendDossier()"
       (chargerDocuments)="onChargerDocuments($event)"
-      (envoyerDossier)="switchTab('envoi')" />
+      (envoyerDossier)="openEnvoiDialog()" />
   } @else {
     <div class="h-40 rounded-xl border border-border bg-card animate-pulse"></div>
   }
@@ -82,7 +87,8 @@
       <app-demande-section
         [ficheHeader]="ficheHeader()"
         [analyseDemande]="demande()"
-        [fiche]="fiche()" />
+        [fiche]="fiche()"
+        (dataChanged)="loadHeader()" />
     }
     @case ('activite') {
       <app-activite-section [ref]="ref()" />
@@ -100,7 +106,7 @@
       <app-garanties-section [ref]="ref()" />
     }
     @case ('cautions') {
-      <app-cautions-section [ref]="ref()" [isGP]="isGP()" [prefilledDoc]="pendingDocLibelle()" />
+      <app-cautions-section [ref]="ref()" [isGP]="isGP()" [prefilledDoc]="pendingDocLibelle()" (docsChanged)="onDocsChanged()" />
     }
     @case ('swot') {
       <app-swot-section [ref]="ref()" />
@@ -112,5 +118,34 @@
       <app-envoi-section [ref]="ref()" />
     }
   }
+
+  <!-- ── Dialog confirmation envoi dossier ──────────────────────────────── -->
+  <app-dialog [(open)]="envoiDialogOpen">
+    <app-dialog-header>
+      <app-dialog-title>Confirmer l'envoi du dossier</app-dialog-title>
+      <app-dialog-description>
+        Veuillez confirmer l'envoi de ce dossier de crédit.
+      </app-dialog-description>
+    </app-dialog-header>
+
+    <form [formGroup]="envoiForm" class="flex flex-col gap-4 py-2">
+      <app-form-input name="password" type="password" label="Mot de passe" [required]="true" />
+      <app-form-textarea name="observation" label="Commentaire" placeholder="Ajouter un commentaire… (facultatif)" [rows]="2" />
+      @if (envoiError()) {
+        <p class="text-sm text-destructive">{{ envoiError() }}</p>
+      }
+    </form>
+
+    <app-dialog-footer>
+      <button type="button" appButton variant="outline" size="sm"
+        (click)="envoiDialogOpen = false" [disabled]="envoiLoading()">
+        Annuler
+      </button>
+      <button type="button" appButton size="sm"
+        (click)="confirmEnvoi()" [disabled]="envoiLoading()">
+        {{ envoiLoading() ? 'Vérification…' : 'Confirmer' }}
+      </button>
+    </app-dialog-footer>
+  </app-dialog>
 
 </div>

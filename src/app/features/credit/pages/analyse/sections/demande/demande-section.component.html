@@ -29,7 +29,7 @@
       @switch (activeSubSection()) {
 
         @case ('credit') {
-          <app-credit-info-form [demande]="formDemande()" />
+          <app-credit-info-form [ref]="d.refDemande" />
         }
 
         @case ('client') {
@@ -41,7 +41,7 @@
         }
 
         @case ('signataires') {
-          <app-signataires-card [signataires]="d.client.signataires ?? []" />
+          <app-signataires-card [signataires]="d.client.signataires ?? []" (signatairesUpdated)="dataChanged.emit()" />
         }
 
         @case ('bon-commande') {
@@ -53,20 +53,22 @@
         }
 
         @case ('vehicules') {
-          <div class="flex flex-col items-center justify-center py-16 text-center rounded-xl border border-dashed border-border">
-            <p class="text-sm text-muted-foreground">Section Véhicules — à venir</p>
-          </div>
+          <app-vehicules-form
+            [ref]="d.refDemande"
+            [initialVehicules]="fiche()?.infosCrAuto ?? []"
+            (vehiculeSaved)="dataChanged.emit()" />
         }
 
         @case ('magasin') {
           <app-magasin-form
             [ref]="d.refDemande"
             [codeClient]="d.client.codeClient"
-            [initialMagasins]="fiche()?.magasins ?? []" />
+            [initialMagasins]="fiche()?.magasins ?? []"
+            (magasinSaved)="dataChanged.emit()" />
         }
 
         @default {
-          <app-credit-info-form [demande]="formDemande()" />
+          <app-credit-info-form [ref]="d.refDemande" />
         }
 
       }

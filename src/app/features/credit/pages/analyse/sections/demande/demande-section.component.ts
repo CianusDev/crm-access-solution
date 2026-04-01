@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { LucideAngularModule, FileText } from 'lucide-angular';
 import { CreditFiche, CreditFicheDemandeDetail } from '../../../../interfaces/credit.interface';
 import { CreditInfoFormComponent } from './_components/credit-info-form.component';
@@ -8,6 +8,7 @@ import { SignatairesCardComponent } from './_components/signataires-card.compone
 import { MagasinFormComponent } from './_components/magasin-form.component';
 import { FactureFormComponent } from './_components/facture-form.component';
 import { BonCommandeFormComponent } from './_components/bon-commande-form.component';
+import { VehiculesFormComponent } from './_components/vehicules-form.component';
 
 interface SubSection {
   id: string;
@@ -27,6 +28,7 @@ interface SubSection {
     MagasinFormComponent,
     FactureFormComponent,
     BonCommandeFormComponent,
+    VehiculesFormComponent,
   ],
 })
 export class DemandeSectionComponent {
@@ -35,6 +37,7 @@ export class DemandeSectionComponent {
   readonly ficheHeader    = input<CreditFicheDemandeDetail | null>(null);
   readonly analyseDemande = input<CreditFicheDemandeDetail | null>(null);
   readonly fiche          = input<CreditFiche | null>(null);
+  readonly dataChanged    = output<void>();
 
   /**
    * Données pour le formulaire : ficheHeader comme base (typeCredit, client…)

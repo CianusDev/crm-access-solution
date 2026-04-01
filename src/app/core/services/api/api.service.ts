@@ -30,10 +30,18 @@ export class ApiService {
     return map<T, T>((res) => {
       const body = res as unknown as Record<string, unknown>;
 
+      // console.log('API Response:', body); // Log the response for debugging
+
       if (body['status'] === 0) {
         this.localStorageService.removeState(TOKEN);
         this.localStorageService.removeState(USER_ID);
         this.router.navigate(['/auth/login']);
+      }
+
+      if (body['message'] && body['message'].toString().toLowerCase() === 'success') {
+        return res;
+        // console.warn('API Warning:', body['message'].toString().toLowerCase());
+        // this.toast.warning(String(body['message']) ?? DEFAULT_ERROR_MESSAGE);
       }
 
       if (body['status'] && typeof body['status'] === 'number' && body['status'] >= 400) {
@@ -82,9 +90,7 @@ export class ApiService {
   }
 
   postFormData<T>(endpoint: string, formData: FormData): Observable<T> {
-    return this.http
-      .post<T>(`${this.apiUrl}${endpoint}`, formData)
-      .pipe(this.handleResponse<T>());
+    return this.http.post<T>(`${this.apiUrl}${endpoint}`, formData).pipe(this.handleResponse<T>());
   }
 
   delete<T>(endpoint: string): Observable<T> {

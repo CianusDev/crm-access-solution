@@ -4,4 +4,5 @@ export const environment: Environment = {
   production: false,
   apiUrl: 'https://backend-dev.creditaccess.ci/api',
   logLevel: 'debug',
+  documentsUrl: 'https://backend-dev.creditaccess.ci',
 };
