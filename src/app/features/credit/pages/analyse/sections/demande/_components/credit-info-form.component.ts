@@ -108,7 +108,7 @@ const OBJETS_CREDIT_MAP: Record<string | number, string> = {
                 </span>
               }
             </div>
-            @if (!editing()) {
+            @if (!editing() && !readOnly()) {
               <button
                 type="button"
                 appButton
@@ -298,6 +298,7 @@ export class CreditInfoFormComponent implements OnInit {
   private readonly toast = inject(ToastService);
 
   readonly ref = input.required<string>();
+  readonly readOnly = input<boolean>(false);
   readonly updated = output<void>();
 
   readonly demande = signal<CreditFicheDemandeDetail | null>(null);

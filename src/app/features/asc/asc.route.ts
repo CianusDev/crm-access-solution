@@ -21,11 +21,12 @@ const {
   ResponsableClientelePME: RESPO_CLT_PME,
   responsableClient: RC,
   ChefAgence: CA,
+  ChefAgenceAdjoint: CAA,
   conseilClientele: CC,
 } = UserRole;
 
 const ASC_SIEGE  = [Admin, ADMIN_AUDIT, DG, DGA, D_EXPL, ASSC_PME, RESPO_FO, AGENT_ACC, RESPO_EXPL, RESPO_CLT_PME] as const;
-const ASC_AGENCE = [RC, CA, CC] as const;
+const ASC_AGENCE = [RC, CA, CAA, CC] as const;
 const ASC_ALL    = [...ASC_SIEGE, ...ASC_AGENCE] as const;
 const ASC_CREATE = [Admin, RC, CC] as const;
 
@@ -84,7 +85,7 @@ export const ascRoutes: Route = {
     },
     {
       path: 'tireurs',
-      canActivate: [roleGuard([...ASC_SIEGE])],
+      canActivate: [roleGuard([...ASC_ALL])],
       resolve: { tireurs: tireursAscResolver },
       loadComponent: () =>
         import('./pages/tireurs/tireurs.component').then((m) => m.TireursComponent),

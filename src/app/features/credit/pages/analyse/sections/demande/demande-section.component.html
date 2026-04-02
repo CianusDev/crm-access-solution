@@ -29,7 +29,7 @@
       @switch (activeSubSection()) {
 
         @case ('credit') {
-          <app-credit-info-form [ref]="d.refDemande" />
+          <app-credit-info-form [ref]="d.refDemande" [readOnly]="readOnly()" />
         }
 
         @case ('client') {

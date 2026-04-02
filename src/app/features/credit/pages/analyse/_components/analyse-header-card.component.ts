@@ -71,7 +71,33 @@ const PREDEFINED_DOC_TYPES = [
         <div
           class="flex items-center justify-end gap-2 px-4 py-2.5 border-b border-border bg-muted/30 flex-wrap"
         >
-          @if (isRCCC()) {
+          @if (isCACaa()) {
+            <!-- CA/CAA: Affecter à un AR (statut 4 ou 5) -->
+            @if (d.statut === 4 || d.statut === 5) {
+              <button
+                type="button"
+                appButton
+                variant="outline"
+                size="sm"
+                class="flex items-center gap-1.5 border-amber-500 text-amber-600 hover:bg-amber-50"
+                (click)="ajournerDossier.emit()"
+              >
+                <lucide-icon [img]="RotateCcwIcon" [size]="14" />
+                Ajourner
+              </button>
+              
+              <button
+                type="button"
+                appButton
+                size="sm"
+                class="flex items-center gap-1.5"
+                (click)="affecterAR.emit()"
+              >
+                <lucide-icon [img]="SendIcon" [size]="14" />
+                Affecter le dossier à un AR
+              </button>
+            }
+          } @else if (isRCCC()) {
             <!-- RC/CC: Ajourner -->
             <button
               type="button"
@@ -363,12 +389,14 @@ export class AnalyseHeaderCardComponent {
   readonly uploadedDocLibelles = input<string[]>([]);
   readonly canSendDossier = input<boolean>(true);
   readonly isRCCC = input<boolean>(false);
+  readonly isCACaa = input<boolean>(false);
   readonly confirmationFrais = input<boolean>(false);
 
   readonly chargerDocuments = output<string | null>();
   readonly envoyerDossier = output<void>();
   readonly ajournerDossier = output<void>();
   readonly ajouterPerfect = output<void>();
+  readonly affecterAR = output<void>();
   readonly confirmationFraisChange = output<boolean>();
 
   readonly isPersonneMorale = computed(() => this.fiche()?.client?.typeAgent !== 'PP');

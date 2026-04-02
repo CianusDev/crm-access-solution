@@ -51,8 +51,19 @@ import {
   DrawerContentComponent,
 } from '@/shared/components/drawer/drawer.component';
 import { DatePipe } from '@angular/common';
+import { StripHtmlPipe } from '@/shared/pipes/strip-html/strip-html.pipe';
 
-type TabId = 'demande' | 'activite' | 'achats' | 'tresorerie' | 'familial' | 'garanties' | 'cautions' | 'swot' | 'geolocalisation' | 'envoi';
+type TabId =
+  | 'demande'
+  | 'activite'
+  | 'achats'
+  | 'tresorerie'
+  | 'familial'
+  | 'garanties'
+  | 'cautions'
+  | 'swot'
+  | 'geolocalisation'
+  | 'envoi';
 
 interface Tab {
   id: TabId;
@@ -61,24 +72,29 @@ interface Tab {
   roles?: UserRole[];
 }
 
-const GP_ROLES: UserRole[] = [UserRole.GestionnairePortefeuilles, UserRole.GestionnairePortefeuillesJunior];
+const GP_ROLES: UserRole[] = [
+  UserRole.GestionnairePortefeuilles,
+  UserRole.GestionnairePortefeuillesJunior,
+];
 const RC_CC_ROLES: UserRole[] = [UserRole.responsableClient, UserRole.conseilClientele];
+const CA_CAA_ROLES: UserRole[] = [UserRole.ChefAgence, UserRole.ChefAgenceAdjoint];
 
 const ALL_TABS: Tab[] = [
-  { id: 'demande',        label: 'Demande de crédit' },
-  { id: 'activite',       label: 'Profil Activité',       roles: [] },
-  { id: 'achats',         label: 'Achats & Charges',      roles: [] },
-  { id: 'tresorerie',     label: 'Trésorerie',            roles: [] },
-  { id: 'familial',       label: 'Profil Familial',       roles: [] },
-  { id: 'garanties',      label: 'Actifs & Garanties',    roles: [] },
-  { id: 'cautions',       label: 'Documents',             roles: [] },
-  { id: 'swot',           label: 'SWOT & Comités',        roles: [] },
-  { id: 'geolocalisation',label: 'Géolocalisation' },
-  { id: 'envoi',          label: 'Envoi & Validation' },
+  { id: 'demande', label: 'Demande de crédit' },
+  { id: 'activite', label: 'Profil Activité', roles: [] },
+  { id: 'achats', label: 'Achats & Charges', roles: [] },
+  { id: 'tresorerie', label: 'Trésorerie', roles: [] },
+  { id: 'familial', label: 'Profil Familial', roles: [] },
+  { id: 'garanties', label: 'Actifs & Garanties', roles: [] },
+  { id: 'cautions', label: 'Documents', roles: [] },
+  { id: 'swot', label: 'SWOT & Comités', roles: [] },
+  { id: 'geolocalisation', label: 'Géolocalisation' },
+  { id: 'envoi', label: 'Envoi & Validation' },
 ];
 
 const GP_TAB_IDS: TabId[] = ['demande', 'cautions', 'geolocalisation'];
 const RC_CC_TAB_IDS: TabId[] = ['demande', 'cautions', 'geolocalisation'];
+const CA_CAA_TAB_IDS: TabId[] = ['demande', 'cautions', 'geolocalisation'];
 
 @Component({
   selector: 'app-analyse-credit',
@@ -112,21 +128,22 @@ const RC_CC_TAB_IDS: TabId[] = ['demande', 'cautions', 'geolocalisation'];
     DrawerHeaderComponent,
     DrawerTitleComponent,
     DrawerContentComponent,
+    StripHtmlPipe,
   ],
 })
 export class AnalyseCreditComponent implements OnInit {
-  readonly ChevronLeftIcon  = ChevronLeft;
-  readonly RefreshIcon      = RefreshCw;
-  readonly AlertCircleIcon  = AlertCircle;
-  readonly FileTextIcon     = FileText;
+  readonly ChevronLeftIcon = ChevronLeft;
+  readonly RefreshIcon = RefreshCw;
+  readonly AlertCircleIcon = AlertCircle;
+  readonly FileTextIcon = FileText;
   readonly MessageSquareIcon = MessageSquare;
 
-  private readonly route             = inject(ActivatedRoute);
-  private readonly router            = inject(Router);
-  private readonly fb                = inject(FormBuilder);
-  private readonly creditService     = inject(CreditService);
-  private readonly authService       = inject(AuthService);
-  private readonly toast             = inject(ToastService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder);
+  private readonly creditService = inject(CreditService);
+  private readonly authService = inject(AuthService);
+  private readonly toast = inject(ToastService);
   private readonly permissionService = inject(PermissionService);
 
   readonly data = input<AnalyseCreditResolvedData>();
@@ -137,7 +154,12 @@ export class AnalyseCreditComponent implements OnInit {
       if (!data) return;
       this.fiche.set(data.fiche);
       this.ficheHeader.set(data.fiche.demande);
-      console.log('[AnalyseCredit] typeCredit:', data.fiche.demande?.typeCredit, 'statutJuridique:', data.fiche.demande?.client?.entreprise?.statutJuridique);
+      console.log(
+        '[AnalyseCredit] typeCredit:',
+        data.fiche.demande?.typeCredit,
+        'statutJuridique:',
+        data.fiche.demande?.client?.entreprise?.statutJuridique,
+      );
       if (data.analyse?.demande) {
         this.demande.set(data.analyse.demande as CreditFicheDemandeDetail);
       }
@@ -149,8 +171,8 @@ export class AnalyseCreditComponent implements OnInit {
         this.loadObservations(ref);
       }
 
-      // Charger les documents pour vérifier la complétude (GP / RC/CC)
-      if (this.isGP() || this.isRCCC()) {
+      // Charger les documents pour vérifier la complétude (GP / RC/CC / CA/CAA)
+      if (this.isGP() || this.isRCCC() || this.isCACaa()) {
         this.loadUploadedDocs();
       }
     });
@@ -159,28 +181,34 @@ export class AnalyseCreditComponent implements OnInit {
   readonly statuts = CREDIT_STATUTS;
 
   // ── Role-based tab filtering ───────────────────────────────────────────
-  readonly isGP   = computed(() => this.permissionService.hasRole(...GP_ROLES));
+  readonly isGP = computed(() => this.permissionService.hasRole(...GP_ROLES));
   readonly isRCCC = computed(() => this.permissionService.hasRole(...RC_CC_ROLES));
+  readonly isCACaa = computed(() => this.permissionService.hasRole(...CA_CAA_ROLES));
 
   readonly tabs = computed<Tab[]>(() => {
     if (this.isGP()) {
-      return ALL_TABS.filter(t => GP_TAB_IDS.includes(t.id));
+      return ALL_TABS.filter((t) => GP_TAB_IDS.includes(t.id));
     }
     if (this.isRCCC()) {
-      return ALL_TABS.filter(t => RC_CC_TAB_IDS.includes(t.id));
+      return ALL_TABS.filter((t) => RC_CC_TAB_IDS.includes(t.id));
+    }
+    if (this.isCACaa()) {
+      return ALL_TABS.filter((t) => CA_CAA_TAB_IDS.includes(t.id));
     }
     return ALL_TABS;
   });
 
   // ── State ──────────────────────────────────────────────────────────────
-  readonly ref        = signal('');
-  readonly isLoading  = signal(false);
+  readonly ref = signal('');
+  readonly isLoading = signal(false);
   readonly ficheHeader = signal<CreditFicheDemandeDetail | null>(null);
-  readonly fiche       = signal<import('../../interfaces/credit.interface').CreditFiche | null>(null);
-  readonly demande    = signal<CreditFicheDemandeDetail | null>(null);
-  readonly observations = signal<import('../../interfaces/credit.interface').CreditObservation[]>([]);
-  readonly error      = signal<string | null>(null);
-  readonly activeTab  = signal<TabId>('demande');
+  readonly fiche = signal<import('../../interfaces/credit.interface').CreditFiche | null>(null);
+  readonly demande = signal<CreditFicheDemandeDetail | null>(null);
+  readonly observations = signal<import('../../interfaces/credit.interface').CreditObservation[]>(
+    [],
+  );
+  readonly error = signal<string | null>(null);
+  readonly activeTab = signal<TabId>('demande');
   readonly pendingDocLibelle = signal<{ libelle: string; version: number } | null>(null);
   private pendingDocVersion = 0;
 
@@ -220,10 +248,10 @@ export class AnalyseCreditComponent implements OnInit {
   // ── Dialog envoi dossier ──────────────────────────────────────────────
   envoiDialogOpen = false;
   readonly envoiLoading = signal(false);
-  readonly envoiError   = signal<string | null>(null);
+  readonly envoiError = signal<string | null>(null);
 
   readonly envoiForm = this.fb.group({
-    password:    ['', Validators.required],
+    password: ['', Validators.required],
     observation: [''],
   });
 
@@ -238,10 +266,22 @@ export class AnalyseCreditComponent implements OnInit {
   // ── Dialog Ajourner ───────────────────────────────────────────────────
   ajournerDialogOpen = false;
   readonly ajournerLoading = signal(false);
-  readonly ajournerError   = signal<string | null>(null);
+  readonly ajournerError = signal<string | null>(null);
 
   readonly ajournerForm = this.fb.group({
-    password:    ['', Validators.required],
+    password: ['', Validators.required],
+    observation: [''],
+  });
+
+  // ── Dialog Affecter AR ────────────────────────────────────────────────
+  affecterARDialogOpen = false;
+  readonly affecterARLoading = signal(false);
+  readonly affecterARError = signal<string | null>(null);
+
+  readonly affecterARForm = this.fb.group({
+    zone: ['', Validators.required],
+    ar: ['', Validators.required],
+    password: ['', Validators.required],
     observation: [''],
   });
 
@@ -257,7 +297,10 @@ export class AnalyseCreditComponent implements OnInit {
     this.error.set(null);
 
     this.creditService.getFicheCredit(this.ref()).subscribe({
-      next: (fiche) => { this.fiche.set(fiche); this.ficheHeader.set(fiche.demande); },
+      next: (fiche) => {
+        this.fiche.set(fiche);
+        this.ficheHeader.set(fiche.demande);
+      },
       error: () => {},
     });
 
@@ -293,7 +336,7 @@ export class AnalyseCreditComponent implements OnInit {
     const r = this.ref();
     if (!r) return;
     this.creditService.getDocuments(r).subscribe({
-      next: (docs) => this.uploadedDocLibelles.set(docs.map(d => d.libelle ?? '')),
+      next: (docs) => this.uploadedDocLibelles.set(docs.map((d) => d.libelle ?? '')),
       error: () => {},
     });
   }
@@ -335,27 +378,29 @@ export class AnalyseCreditComponent implements OnInit {
           this.envoiLoading.set(false);
           return;
         }
-        this.creditService.saveCrdObservation({
-          refDemande: this.ref(),
-          decision: 1,
-          observation: observation || '',
-          password: password ?? '',
-        }).subscribe({
-          next: (data) => {
-            this.envoiLoading.set(false);
-            this.envoiDialogOpen = false;
-            if (data.status === 200) {
-              this.toast.success('Le dossier a été envoyé avec succès.');
-              this.router.navigate(['/app/credit/list']);
-            } else {
-              this.toast.error(data.message ?? "Échec de l'envoi du dossier.");
-            }
-          },
-          error: () => {
-            this.envoiLoading.set(false);
-            this.toast.error("Erreur lors de l'envoi du dossier.");
-          },
-        });
+        this.creditService
+          .saveCrdObservation({
+            refDemande: this.ref(),
+            decision: 1,
+            observation: observation || '',
+            password: password ?? '',
+          })
+          .subscribe({
+            next: (data) => {
+              this.envoiLoading.set(false);
+              this.envoiDialogOpen = false;
+              if (data.status === 200) {
+                this.toast.success('Le dossier a été envoyé avec succès.');
+                this.router.navigate(['/app/credit/list']);
+              } else {
+                this.toast.error(data.message ?? "Échec de l'envoi du dossier.");
+              }
+            },
+            error: () => {
+              this.envoiLoading.set(false);
+              this.toast.error("Erreur lors de l'envoi du dossier.");
+            },
+          });
       },
       error: () => {
         this.envoiError.set('Mot de passe incorrect.');
@@ -377,21 +422,23 @@ export class AnalyseCreditComponent implements OnInit {
       return;
     }
     this.perfectLoading.set(true);
-    this.creditService.updateDemandeCredit({
-      refDemande: this.ref(),
-      numTransaction: this.perfectForm.value.numTransaction!,
-    } as never).subscribe({
-      next: () => {
-        this.perfectLoading.set(false);
-        this.perfectDialogOpen = false;
-        this.toast.success('N° demande Perfect enregistré.');
-        this.loadHeader();
-      },
-      error: () => {
-        this.perfectLoading.set(false);
-        this.toast.error("Erreur lors de l'enregistrement.");
-      },
-    });
+    this.creditService
+      .updateDemandeCredit({
+        refDemande: this.ref(),
+        numTransaction: this.perfectForm.value.numTransaction!,
+      } as never)
+      .subscribe({
+        next: () => {
+          this.perfectLoading.set(false);
+          this.perfectDialogOpen = false;
+          this.toast.success('N° demande Perfect enregistré.');
+          this.loadHeader();
+        },
+        error: () => {
+          this.perfectLoading.set(false);
+          this.toast.error("Erreur lors de l'enregistrement.");
+        },
+      });
   }
 
   // ── Ajourner ──────────────────────────────────────────────────────────
@@ -417,33 +464,44 @@ export class AnalyseCreditComponent implements OnInit {
           this.ajournerLoading.set(false);
           return;
         }
-        this.creditService.saveCrdObservation({
-          refDemande: this.ref(),
-          decision: 2,
-          observation: observation || '',
-          password: password ?? '',
-        }).subscribe({
-          next: (data) => {
-            this.ajournerLoading.set(false);
-            this.ajournerDialogOpen = false;
-            if (data.status === 200) {
-              this.toast.success('Le dossier a été ajourné.');
-              this.router.navigate(['/app/credit/list']);
-            } else {
-              this.toast.error(data.message ?? "Échec de l'ajournement.");
-            }
-          },
-          error: () => {
-            this.ajournerLoading.set(false);
-            this.toast.error("Erreur lors de l'ajournement.");
-          },
-        });
+        this.creditService
+          .saveCrdObservation({
+            refDemande: this.ref(),
+            decision: 2,
+            observation: observation || '',
+            password: password ?? '',
+          })
+          .subscribe({
+            next: (data) => {
+              this.ajournerLoading.set(false);
+              this.ajournerDialogOpen = false;
+              if (data.status === 200) {
+                this.toast.success('Le dossier a été ajourné.');
+                this.router.navigate(['/app/credit/list']);
+              } else {
+                this.toast.error(data.message ?? "Échec de l'ajournement.");
+              }
+            },
+            error: () => {
+              this.ajournerLoading.set(false);
+              this.toast.error("Erreur lors de l'ajournement.");
+            },
+          });
       },
       error: () => {
         this.ajournerError.set('Mot de passe incorrect.');
         this.ajournerLoading.set(false);
       },
     });
+  }
+
+  // ── Affecter AR ───────────────────────────────────────────────────────
+  openAffecterARDialog() {
+    // TODO: Charger la liste des zones et AR
+    this.affecterARForm.reset();
+    this.affecterARError.set(null);
+    this.affecterARDialogOpen = true;
+    this.toast.info('Fonctionnalité en cours de développement');
   }
 
   goBack() {

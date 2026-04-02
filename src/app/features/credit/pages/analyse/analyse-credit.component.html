@@ -31,13 +31,6 @@
         class="flex items-center justify-center h-9 w-9 rounded-md border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50">
         <lucide-icon [img]="RefreshIcon" [size]="15" [class.animate-spin]="isLoading()" />
       </button>
-      @if (!isGP() && !isRCCC()) {
-        <button type="button" (click)="goFiche()" appButton variant="outline" size="sm"
-          class="flex items-center gap-1.5">
-          <lucide-icon [img]="FileTextIcon" [size]="14" />
-          Voir la fiche
-        </button>
-      }
     </div>
   </div>
 
@@ -57,11 +50,13 @@
       [uploadedDocLibelles]="uploadedDocLibelles()"
       [canSendDossier]="canSendDossier()"
       [isRCCC]="isRCCC()"
+      [isCACaa]="isCACaa()"
       [confirmationFrais]="confirmationFrais()"
       (chargerDocuments)="onChargerDocuments($event)"
       (envoyerDossier)="openEnvoiDialog()"
       (ajournerDossier)="openAjournerDialog()"
       (ajouterPerfect)="openPerfectDialog()"
+      (affecterAR)="openAffecterARDialog()"
       (confirmationFraisChange)="confirmationFrais.set($event)" />
   } @else {
     <div class="h-40 rounded-xl border border-border bg-card animate-pulse"></div>
@@ -93,7 +88,7 @@
         [ficheHeader]="ficheHeader()"
         [analyseDemande]="demande()"
         [fiche]="fiche()"
-        [readOnly]="isRCCC()"
+        [readOnly]="isRCCC() || isCACaa()"
         (dataChanged)="loadHeader()" />
     }
     @case ('activite') {
@@ -112,7 +107,7 @@
       <app-garanties-section [ref]="ref()" />
     }
     @case ('cautions') {
-      <app-cautions-section [ref]="ref()" [isGP]="isGP() || isRCCC()" [prefilledDoc]="pendingDocLibelle()" (docsChanged)="onDocsChanged()" />
+      <app-cautions-section [ref]="ref()" [isGP]="isGP() || isRCCC() || isCACaa()" [prefilledDoc]="pendingDocLibelle()" (docsChanged)="onDocsChanged()" />
     }
     @case ('swot') {
       <app-swot-section [ref]="ref()" />
@@ -264,7 +259,7 @@
                 <!-- Observation text -->
                 @if (obs.observation) {
                   <p class="text-sm text-muted-foreground mb-3 leading-relaxed lowercase">
-                    {{ obs.observation }}
+                    {{ obs.observation | stripHtml }}
                   </p>
                 }
 
@@ -276,7 +271,7 @@
                       {{ obs.user?.nom }} {{ obs.user?.prenom }}
                     </p>
                     <p class="text-xs text-muted-foreground leading-tight truncate">
-                      {{ obs.user?.profil?.libelle ?? '—' }}
+                      {{ obs.user?.profil?.libelle ?? obs.user?.profil ?? '—' }}
                     </p>
                   </div>
                 </div>
