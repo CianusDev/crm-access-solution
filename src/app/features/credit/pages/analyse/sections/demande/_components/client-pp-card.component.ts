@@ -36,7 +36,7 @@ import { CreditClient } from '../../../../../interfaces/credit.interface';
         <app-card-header>
           <div class="flex items-center justify-between w-full">
             <app-card-title>Personne physique</app-card-title>
-            @if (!editing()) {
+            @if (!editing() && !readOnly()) {
               <button type="button" appButton variant="outline" size="sm"
                 class="flex items-center gap-1.5" (click)="startEdit()">
                 <lucide-icon [img]="PencilIcon" [size]="13" /> Modifier
@@ -229,8 +229,9 @@ export class ClientPpCardComponent {
   private readonly creditService = inject(CreditService);
   private readonly toast         = inject(ToastService);
 
-  readonly client  = input<CreditClient | null>(null);
-  readonly editing = signal(false);
+  readonly client   = input<CreditClient | null>(null);
+  readonly readOnly = input<boolean>(false);
+  readonly editing  = signal(false);
   readonly saving  = signal(false);
 
   readonly form = new FormGroup({

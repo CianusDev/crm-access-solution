@@ -93,7 +93,7 @@ function labelOf(map: Record<number, string>, val?: number | string | null): str
         <app-card-header>
           <div class="flex items-center justify-between w-full">
             <app-card-title>Personne morale</app-card-title>
-            @if (!editing()) {
+            @if (!editing() && !readOnly()) {
               <button
                 type="button"
                 appButton
@@ -441,7 +441,8 @@ export class ClientPmCardComponent implements OnInit {
   private readonly creditService = inject(CreditService);
   private readonly toast = inject(ToastService);
 
-  readonly client = input<CreditClient | null>(null);
+  readonly client   = input<CreditClient | null>(null);
+  readonly readOnly = input<boolean>(false);
 
   readonly editing = signal(false);
   readonly saving = signal(false);

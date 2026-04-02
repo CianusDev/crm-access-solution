@@ -206,36 +206,38 @@ function formatDateForApi(val: string): string {
                         }
                       </div>
                       <!-- Bouton upload photo -->
-                      <button
-                        type="button"
-                        appButton
-                        variant="ghost"
-                        size="sm"
-                        class="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-primary p-0 hover:bg-primary/90"
-                        (click)="photoInput.click()"
-                        [disabled]="uploadingPhoto()"
-                      >
-                        @if (uploadingPhoto()) {
-                          <lucide-icon
-                            [img]="Loader2"
-                            [size]="14"
-                            class="text-primary-foreground animate-spin"
-                          />
-                        } @else {
-                          <lucide-icon
-                            [img]="CameraIcon"
-                            [size]="14"
-                            class="text-primary-foreground"
-                          />
-                        }
-                      </button>
-                      <input
-                        #photoInput
-                        type="file"
-                        class="hidden"
-                        accept="image/*"
-                        (change)="onPhotoChange($event, s)"
-                      />
+                      @if (!readOnly()) {
+                        <button
+                          type="button"
+                          appButton
+                          variant="ghost"
+                          size="sm"
+                          class="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-primary p-0 hover:bg-primary/90"
+                          (click)="photoInput.click()"
+                          [disabled]="uploadingPhoto()"
+                        >
+                          @if (uploadingPhoto()) {
+                            <lucide-icon
+                              [img]="Loader2"
+                              [size]="14"
+                              class="text-primary-foreground animate-spin"
+                            />
+                          } @else {
+                            <lucide-icon
+                              [img]="CameraIcon"
+                              [size]="14"
+                              class="text-primary-foreground"
+                            />
+                          }
+                        </button>
+                        <input
+                          #photoInput
+                          type="file"
+                          class="hidden"
+                          accept="image/*"
+                          (change)="onPhotoChange($event, s)"
+                        />
+                      }
                     </div>
 
                     <div class="flex-1">
@@ -247,16 +249,18 @@ function formatDateForApi(val: string): string {
                       }
                     </div>
 
-                    <button
-                      type="button"
-                      appButton
-                      variant="ghost"
-                      size="sm"
-                      (click)="startEdit($index, s)"
-                      class="shrink-0"
-                    >
-                      <lucide-icon [img]="PencilIcon" [size]="14" />
-                    </button>
+                    @if (!readOnly()) {
+                      <button
+                        type="button"
+                        appButton
+                        variant="ghost"
+                        size="sm"
+                        (click)="startEdit($index, s)"
+                        class="shrink-0"
+                      >
+                        <lucide-icon [img]="PencilIcon" [size]="14" />
+                      </button>
+                    }
                   </div>
 
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0">
@@ -406,6 +410,7 @@ export class SignatairesCardComponent implements OnInit {
   private readonly toast = inject(ToastService);
 
   readonly signataires = input<CreditSignataire[]>([]);
+  readonly readOnly = input<boolean>(false);
   readonly signatairesUpdated = output<void>();
 
   // ── Dropdown options (loaded once) ────────────────────────────────────

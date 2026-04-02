@@ -7,6 +7,7 @@ import {
   RefreshCw,
   AlertCircle,
   FileText,
+  MessageSquare,
 } from 'lucide-angular';
 import { BadgeComponent } from '@/shared/components/badge/badge.component';
 import { ButtonDirective } from '@/shared/directives/ui/button/button';
@@ -42,6 +43,14 @@ import {
   getRequiredDocsForGP,
   allRequiredDocsUploaded,
 } from '../../constants/required-documents';
+import { Avatar } from '@/shared/components/avatar/avatar.component';
+import {
+  DrawerComponent,
+  DrawerHeaderComponent,
+  DrawerTitleComponent,
+  DrawerContentComponent,
+} from '@/shared/components/drawer/drawer.component';
+import { DatePipe } from '@angular/common';
 
 type TabId = 'demande' | 'activite' | 'achats' | 'tresorerie' | 'familial' | 'garanties' | 'cautions' | 'swot' | 'geolocalisation' | 'envoi';
 
@@ -53,6 +62,7 @@ interface Tab {
 }
 
 const GP_ROLES: UserRole[] = [UserRole.GestionnairePortefeuilles, UserRole.GestionnairePortefeuillesJunior];
+const RC_CC_ROLES: UserRole[] = [UserRole.responsableClient, UserRole.conseilClientele];
 
 const ALL_TABS: Tab[] = [
   { id: 'demande',        label: 'Demande de crédit' },
@@ -67,8 +77,8 @@ const ALL_TABS: Tab[] = [
   { id: 'envoi',          label: 'Envoi & Validation' },
 ];
 
-// Onglets visibles pour le GP / GPJ
 const GP_TAB_IDS: TabId[] = ['demande', 'cautions', 'geolocalisation'];
+const RC_CC_TAB_IDS: TabId[] = ['demande', 'cautions', 'geolocalisation'];
 
 @Component({
   selector: 'app-analyse-credit',
@@ -76,6 +86,7 @@ const GP_TAB_IDS: TabId[] = ['demande', 'cautions', 'geolocalisation'];
   imports: [
     ReactiveFormsModule,
     LucideAngularModule,
+    DatePipe,
     BadgeComponent,
     ButtonDirective,
     DialogComponent,
@@ -96,6 +107,11 @@ const GP_TAB_IDS: TabId[] = ['demande', 'cautions', 'geolocalisation'];
     GeolocalisationSectionComponent,
     EnvoiSectionComponent,
     DemandeSectionComponent,
+    Avatar,
+    DrawerComponent,
+    DrawerHeaderComponent,
+    DrawerTitleComponent,
+    DrawerContentComponent,
   ],
 })
 export class AnalyseCreditComponent implements OnInit {
@@ -103,6 +119,7 @@ export class AnalyseCreditComponent implements OnInit {
   readonly RefreshIcon      = RefreshCw;
   readonly AlertCircleIcon  = AlertCircle;
   readonly FileTextIcon     = FileText;
+  readonly MessageSquareIcon = MessageSquare;
 
   private readonly route             = inject(ActivatedRoute);
   private readonly router            = inject(Router);
@@ -126,8 +143,14 @@ export class AnalyseCreditComponent implements OnInit {
       }
       this.isLoading.set(false);
 
-      // Charger les documents pour vérifier la complétude (GP)
-      if (this.isGP()) {
+      // Charger les observations
+      const ref = data.fiche.demande?.refDemande;
+      if (ref) {
+        this.loadObservations(ref);
+      }
+
+      // Charger les documents pour vérifier la complétude (GP / RC/CC)
+      if (this.isGP() || this.isRCCC()) {
         this.loadUploadedDocs();
       }
     });
@@ -136,11 +159,15 @@ export class AnalyseCreditComponent implements OnInit {
   readonly statuts = CREDIT_STATUTS;
 
   // ── Role-based tab filtering ───────────────────────────────────────────
-  readonly isGP = computed(() => this.permissionService.hasRole(...GP_ROLES));
+  readonly isGP   = computed(() => this.permissionService.hasRole(...GP_ROLES));
+  readonly isRCCC = computed(() => this.permissionService.hasRole(...RC_CC_ROLES));
 
   readonly tabs = computed<Tab[]>(() => {
     if (this.isGP()) {
       return ALL_TABS.filter(t => GP_TAB_IDS.includes(t.id));
+    }
+    if (this.isRCCC()) {
+      return ALL_TABS.filter(t => RC_CC_TAB_IDS.includes(t.id));
     }
     return ALL_TABS;
   });
@@ -151,6 +178,7 @@ export class AnalyseCreditComponent implements OnInit {
   readonly ficheHeader = signal<CreditFicheDemandeDetail | null>(null);
   readonly fiche       = signal<import('../../interfaces/credit.interface').CreditFiche | null>(null);
   readonly demande    = signal<CreditFicheDemandeDetail | null>(null);
+  readonly observations = signal<import('../../interfaces/credit.interface').CreditObservation[]>([]);
   readonly error      = signal<string | null>(null);
   readonly activeTab  = signal<TabId>('demande');
   readonly pendingDocLibelle = signal<{ libelle: string; version: number } | null>(null);
@@ -168,18 +196,51 @@ export class AnalyseCreditComponent implements OnInit {
   });
 
   readonly canSendDossier = computed(() => {
-    if (!this.isGP()) return true;
-    const required = this.requiredDocs();
-    if (required.length === 0) return true;
-    return allRequiredDocsUploaded(required, this.uploadedDocLibelles());
+    if (this.isGP()) {
+      const required = this.requiredDocs();
+      if (required.length === 0) return true;
+      return allRequiredDocsUploaded(required, this.uploadedDocLibelles());
+    }
+    if (this.isRCCC()) {
+      const h = this.ficheHeader();
+      if (!h?.numTransaction) return false;
+      // DECOUVERT (015) n'a pas besoin du checkbox frais
+      if (h.typeCredit?.code === '015') return true;
+      return this.confirmationFrais();
+    }
+    return true;
   });
 
-  // ── Dialog envoi dossier ────────────────────────────────────────────────
+  // ── RC/CC specific state ──────────────────────────────────────────────
+  readonly confirmationFrais = signal(false);
+
+  // ── Drawer observations ───────────────────────────────────────────────
+  readonly obsDrawerOpen = signal(false);
+
+  // ── Dialog envoi dossier ──────────────────────────────────────────────
   envoiDialogOpen = false;
   readonly envoiLoading = signal(false);
   readonly envoiError   = signal<string | null>(null);
 
   readonly envoiForm = this.fb.group({
+    password:    ['', Validators.required],
+    observation: [''],
+  });
+
+  // ── Dialog N° demande Perfect ─────────────────────────────────────────
+  perfectDialogOpen = false;
+  readonly perfectLoading = signal(false);
+
+  readonly perfectForm = this.fb.group({
+    numTransaction: ['', Validators.required],
+  });
+
+  // ── Dialog Ajourner ───────────────────────────────────────────────────
+  ajournerDialogOpen = false;
+  readonly ajournerLoading = signal(false);
+  readonly ajournerError   = signal<string | null>(null);
+
+  readonly ajournerForm = this.fb.group({
     password:    ['', Validators.required],
     observation: [''],
   });
@@ -216,9 +277,16 @@ export class AnalyseCreditComponent implements OnInit {
       },
     });
 
-    if (this.isGP()) {
+    if (this.isGP() || this.isRCCC()) {
       this.loadUploadedDocs();
     }
+  }
+
+  loadObservations(ref: string) {
+    this.creditService.getObservations(ref).subscribe({
+      next: (obs) => this.observations.set(obs),
+      error: () => this.observations.set([]),
+    });
   }
 
   loadUploadedDocs() {
@@ -292,6 +360,88 @@ export class AnalyseCreditComponent implements OnInit {
       error: () => {
         this.envoiError.set('Mot de passe incorrect.');
         this.envoiLoading.set(false);
+      },
+    });
+  }
+
+  // ── N° Perfect ─────────────────────────────────────────────────────────
+  openPerfectDialog() {
+    const h = this.ficheHeader();
+    this.perfectForm.reset({ numTransaction: h?.numTransaction ?? '' });
+    this.perfectDialogOpen = true;
+  }
+
+  savePerfect() {
+    if (this.perfectForm.invalid) {
+      this.perfectForm.markAllAsTouched();
+      return;
+    }
+    this.perfectLoading.set(true);
+    this.creditService.updateDemandeCredit({
+      refDemande: this.ref(),
+      numTransaction: this.perfectForm.value.numTransaction!,
+    } as never).subscribe({
+      next: () => {
+        this.perfectLoading.set(false);
+        this.perfectDialogOpen = false;
+        this.toast.success('N° demande Perfect enregistré.');
+        this.loadHeader();
+      },
+      error: () => {
+        this.perfectLoading.set(false);
+        this.toast.error("Erreur lors de l'enregistrement.");
+      },
+    });
+  }
+
+  // ── Ajourner ──────────────────────────────────────────────────────────
+  openAjournerDialog() {
+    this.ajournerForm.reset();
+    this.ajournerError.set(null);
+    this.ajournerDialogOpen = true;
+  }
+
+  confirmAjourner() {
+    if (this.ajournerForm.invalid) {
+      this.ajournerForm.markAllAsTouched();
+      return;
+    }
+    const { password, observation } = this.ajournerForm.value;
+    this.ajournerLoading.set(true);
+    this.ajournerError.set(null);
+
+    this.authService.verifyPassword(password!).subscribe({
+      next: (res) => {
+        if (res.statut === 500) {
+          this.ajournerError.set(res.message || 'Mot de passe incorrect.');
+          this.ajournerLoading.set(false);
+          return;
+        }
+        this.creditService.saveCrdObservation({
+          refDemande: this.ref(),
+          decision: 2,
+          observation: observation || '',
+          password: password ?? '',
+        }).subscribe({
+          next: (data) => {
+            this.ajournerLoading.set(false);
+            this.ajournerDialogOpen = false;
+            if (data.status === 200) {
+              this.toast.success('Le dossier a été ajourné.');
+              this.router.navigate(['/app/credit/list']);
+            } else {
+              this.toast.error(data.message ?? "Échec de l'ajournement.");
+            }
+          },
+          error: () => {
+            this.ajournerLoading.set(false);
+            this.toast.error("Erreur lors de l'ajournement.");
+          },
+        });
+      },
+      error: () => {
+        this.ajournerError.set('Mot de passe incorrect.');
+        this.ajournerLoading.set(false);
       },
     });
   }

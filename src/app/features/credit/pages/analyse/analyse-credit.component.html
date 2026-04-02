@@ -31,7 +31,7 @@
         class="flex items-center justify-center h-9 w-9 rounded-md border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50">
         <lucide-icon [img]="RefreshIcon" [size]="15" [class.animate-spin]="isLoading()" />
       </button>
-      @if (!isGP()) {
+      @if (!isGP() && !isRCCC()) {
         <button type="button" (click)="goFiche()" appButton variant="outline" size="sm"
           class="flex items-center gap-1.5">
           <lucide-icon [img]="FileTextIcon" [size]="14" />
@@ -56,8 +56,13 @@
       [requiredDocs]="requiredDocs()"
       [uploadedDocLibelles]="uploadedDocLibelles()"
       [canSendDossier]="canSendDossier()"
+      [isRCCC]="isRCCC()"
+      [confirmationFrais]="confirmationFrais()"
       (chargerDocuments)="onChargerDocuments($event)"
-      (envoyerDossier)="openEnvoiDialog()" />
+      (envoyerDossier)="openEnvoiDialog()"
+      (ajournerDossier)="openAjournerDialog()"
+      (ajouterPerfect)="openPerfectDialog()"
+      (confirmationFraisChange)="confirmationFrais.set($event)" />
   } @else {
     <div class="h-40 rounded-xl border border-border bg-card animate-pulse"></div>
   }
@@ -88,6 +93,7 @@
         [ficheHeader]="ficheHeader()"
         [analyseDemande]="demande()"
         [fiche]="fiche()"
+        [readOnly]="isRCCC()"
         (dataChanged)="loadHeader()" />
     }
     @case ('activite') {
@@ -106,7 +112,7 @@
       <app-garanties-section [ref]="ref()" />
     }
     @case ('cautions') {
-      <app-cautions-section [ref]="ref()" [isGP]="isGP()" [prefilledDoc]="pendingDocLibelle()" (docsChanged)="onDocsChanged()" />
+      <app-cautions-section [ref]="ref()" [isGP]="isGP() || isRCCC()" [prefilledDoc]="pendingDocLibelle()" (docsChanged)="onDocsChanged()" />
     }
     @case ('swot') {
       <app-swot-section [ref]="ref()" />
@@ -118,6 +124,57 @@
       <app-envoi-section [ref]="ref()" />
     }
   }
+
+  <!-- ── Dialog N° demande Perfect (RC/CC) ────────────────────────────── -->
+  <app-dialog [(open)]="perfectDialogOpen">
+    <app-dialog-header>
+      <app-dialog-title>N° demande Perfect</app-dialog-title>
+      <app-dialog-description>
+        Saisissez le numéro de la demande dans le système Perfect.
+      </app-dialog-description>
+    </app-dialog-header>
+    <form [formGroup]="perfectForm" class="flex flex-col gap-4 py-2">
+      <app-form-input name="numTransaction" label="N° demande Perfect" [required]="true" />
+    </form>
+    <app-dialog-footer>
+      <button type="button" appButton variant="outline" size="sm"
+        (click)="perfectDialogOpen = false" [disabled]="perfectLoading()">
+        Annuler
+      </button>
+      <button type="button" appButton size="sm"
+        (click)="savePerfect()" [disabled]="perfectLoading()">
+        {{ perfectLoading() ? 'Enregistrement…' : 'Enregistrer' }}
+      </button>
+    </app-dialog-footer>
+  </app-dialog>
+
+  <!-- ── Dialog Ajourner (RC/CC) ────────────────────────────────────────── -->
+  <app-dialog [(open)]="ajournerDialogOpen">
+    <app-dialog-header>
+      <app-dialog-title>Ajourner le dossier</app-dialog-title>
+      <app-dialog-description>
+        Vous êtes sur le point d'ajourner ce dossier de crédit.
+      </app-dialog-description>
+    </app-dialog-header>
+    <form [formGroup]="ajournerForm" class="flex flex-col gap-4 py-2">
+      <app-form-input name="password" type="password" label="Mot de passe" [required]="true" />
+      <app-form-textarea name="observation" label="Motif" placeholder="Saisissez le motif de l'ajournement…" [rows]="3" />
+      @if (ajournerError()) {
+        <p class="text-sm text-destructive">{{ ajournerError() }}</p>
+      }
+    </form>
+    <app-dialog-footer>
+      <button type="button" appButton variant="outline" size="sm"
+        (click)="ajournerDialogOpen = false" [disabled]="ajournerLoading()">
+        Annuler
+      </button>
+      <button type="button" appButton variant="default" size="sm"
+        class="bg-amber-500 hover:bg-amber-600 text-white"
+        (click)="confirmAjourner()" [disabled]="ajournerLoading()">
+        {{ ajournerLoading() ? 'Vérification…' : 'Confirmer l\'ajournement' }}
+      </button>
+    </app-dialog-footer>
+  </app-dialog>
 
   <!-- ── Dialog confirmation envoi dossier ──────────────────────────────── -->
   <app-dialog [(open)]="envoiDialogOpen">
@@ -147,5 +204,88 @@
       </button>
     </app-dialog-footer>
   </app-dialog>
+
+  <!-- ── FAB : Observations ──────────────────────────────────────────────── -->
+  @if (fiche()) {
+    <button
+      type="button"
+      (click)="obsDrawerOpen.set(true)"
+      class="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors"
+    >
+      <lucide-icon [img]="MessageSquareIcon" [size]="16" />
+      @if (observations().length > 0) {
+        <span
+          class="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-xs font-bold"
+        >
+          {{ observations().length }}
+        </span>
+      }
+    </button>
+  }
+
+  <!-- ── Drawer : Observations et Commentaires ───────────────────────────── -->
+  <app-drawer [open]="obsDrawerOpen()" (openChange)="obsDrawerOpen.set($event)">
+    <app-drawer-header>
+      <div class="flex items-center gap-2">
+        <lucide-icon [img]="MessageSquareIcon" [size]="16" class="text-muted-foreground" />
+        <app-drawer-title>Observations et Commentaires</app-drawer-title>
+        @if (observations().length > 0) {
+          <span class="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+            {{ observations().length }}
+          </span>
+        }
+      </div>
+    </app-drawer-header>
+    <app-drawer-content>
+      @if (observations().length === 0) {
+        <div class="flex flex-col items-center gap-3 py-16 text-center">
+          <lucide-icon [img]="MessageSquareIcon" [size]="36" class="text-muted-foreground/20" />
+          <p class="text-sm text-muted-foreground">Aucune observation enregistrée.</p>
+        </div>
+      } @else {
+        <ul class="relative ml-3 border-l border-border flex flex-col gap-3 py-1">
+          @for (obs of observations(); track obs.date) {
+            <li class="relative pl-5">
+              <!-- Dot positionné sur la ligne -->
+              <span
+                class="absolute -left-[5px] top-0 h-2.5 w-2.5 rounded-full bg-primary ring-[3px] ring-primary/20"
+              ></span>
+
+              <!-- Card -->
+              <div class="rounded-xl border border-border bg-card p-3.5 shadow-sm">
+                <!-- Header -->
+                <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 mb-2">
+                  <h6 class="text-sm font-semibold text-foreground">{{ obs.decision }}</h6>
+                  <span class="text-xs text-muted-foreground whitespace-nowrap">
+                    {{ obs.date | date: 'dd MMM yyyy' }} à {{ obs.date | date: 'HH:mm' }}
+                  </span>
+                </div>
+
+                <!-- Observation text -->
+                @if (obs.observation) {
+                  <p class="text-sm text-muted-foreground mb-3 leading-relaxed lowercase">
+                    {{ obs.observation }}
+                  </p>
+                }
+
+                <!-- Footer -->
+                <div class="border-t border-border pt-2.5 mt-2.5 flex items-center gap-2">
+                  <app-avatar />
+                  <div class="min-w-0">
+                    <p class="text-xs font-medium text-foreground leading-tight truncate">
+                      {{ obs.user?.nom }} {{ obs.user?.prenom }}
+                    </p>
+                    <p class="text-xs text-muted-foreground leading-tight truncate">
+                      {{ obs.user?.profil?.libelle ?? '—' }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </app-drawer-content>
+  </app-drawer>
 
 </div>

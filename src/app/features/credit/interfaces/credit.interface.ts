@@ -130,6 +130,37 @@ export interface CreditDemande {
   client: CreditClient;
   typeCredit: CreditTypeCredit;
   avsFond?: CreditAvsFond;
+  bonDeCommande?: CreditBonDeCommande;
+  crFacture?: CreditFacture;
+}
+
+export interface CreditBonDeCommande {
+  id?: number;
+  numBonCmde?: string;
+  entreprise?: string;
+  dateBonCmde?: string;
+  mtHt?: number;
+  mtTtc?: number;
+  adresse?: string;
+  tel?: string;
+  cel?: string;
+  rccm?: string;
+  cc?: string;
+}
+
+export interface CreditFacture {
+  id?: number;
+  numFacture?: string;
+  entreprise?: string;
+  dateFacture?: string;
+  dateEcheance?: string;
+  mtHt?: number;
+  mtTtc?: number;
+  adresse?: string;
+  tel?: string;
+  cel?: string;
+  rccm?: string;
+  cc?: string;
 }
 
 export interface CreditTypeItem {

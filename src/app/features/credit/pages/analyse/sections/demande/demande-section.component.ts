@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { LucideAngularModule, FileText } from 'lucide-angular';
-import { CreditFiche, CreditFicheDemandeDetail } from '../../../../interfaces/credit.interface';
+import { CreditBonDeCommande, CreditFacture, CreditFiche, CreditFicheDemandeDetail } from '../../../../interfaces/credit.interface';
+import { CreditService } from '../../../../services/credit/credit.service';
 import { CreditInfoFormComponent } from './_components/credit-info-form.component';
 import { ClientPpCardComponent } from './_components/client-pp-card.component';
 import { ClientPmCardComponent } from './_components/client-pm-card.component';
@@ -34,10 +35,16 @@ interface SubSection {
 export class DemandeSectionComponent {
   readonly FileTextIcon = FileText;
 
+  private readonly creditService = inject(CreditService);
+
   readonly ficheHeader    = input<CreditFicheDemandeDetail | null>(null);
   readonly analyseDemande = input<CreditFicheDemandeDetail | null>(null);
   readonly fiche          = input<CreditFiche | null>(null);
+  readonly readOnly       = input<boolean>(false);
   readonly dataChanged    = output<void>();
+
+  readonly bonDeCommande = signal<CreditBonDeCommande | null>(null);
+  readonly crFacture     = signal<CreditFacture | null>(null);
 
   /**
    * Données pour le formulaire : ficheHeader comme base (typeCredit, client…)
@@ -51,6 +58,18 @@ export class DemandeSectionComponent {
   });
 
   readonly activeSubSection = signal<string>('credit');
+
+  ngOnInit() {
+    const ref = this.ficheHeader()?.refDemande;
+    if (ref) {
+      this.creditService.getDetailsDemande(ref).subscribe({
+        next: (demande) => {
+          this.bonDeCommande.set(demande?.bonDeCommande ?? null);
+          this.crFacture.set(demande?.crFacture ?? null);
+        },
+      });
+    }
+  }
 
   readonly isPersonneMorale = computed(() => this.ficheHeader()?.client?.typeAgent !== 'PP');
 

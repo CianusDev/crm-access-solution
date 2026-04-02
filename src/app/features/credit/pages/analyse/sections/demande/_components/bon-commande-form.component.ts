@@ -12,17 +12,7 @@ import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { CreditService } from '../../../../../services/credit/credit.service';
 import { ToastService } from '@/core/services/toast/toast.service';
-
-interface BonCommandeItem {
-  id?: number;
-  numBonCmde?: string;
-  entreprise?: string;
-  dateBonCmde?: string;
-  mtHt?: number;
-  mtTtc?: number;
-  adresse?: string;
-  tel?: string;
-}
+import { CreditBonDeCommande } from '../../../../../interfaces/credit.interface';
 
 @Component({
   selector: 'app-bon-commande-form',
@@ -47,7 +37,7 @@ interface BonCommandeItem {
             <lucide-icon [img]="ClipboardListIcon" [size]="16" class="text-muted-foreground" />
             <app-card-title>Bons de commande</app-card-title>
           </div>
-          @if (!showForm()) {
+          @if (!showForm() && !readOnly()) {
             <button type="button" appButton size="sm" class="flex items-center gap-1.5"
               (click)="openAdd()">
               <lucide-icon [img]="PlusIcon" [size]="13" />
@@ -66,17 +56,19 @@ interface BonCommandeItem {
                   <p class="text-sm font-semibold text-foreground">
                     Bon de commande {{ b.numBonCmde ? '#' + b.numBonCmde : ($index + 1) }}
                   </p>
-                  <button type="button" appButton variant="ghost" size="sm"
-                    class="flex items-center gap-1 text-xs"
-                    (click)="openEdit(b)">
-                    <lucide-icon [img]="PencilIcon" [size]="12" />
-                    Modifier
-                  </button>
+                  @if (!readOnly()) {
+                    <button type="button" appButton variant="ghost" size="sm"
+                      class="flex items-center gap-1 text-xs"
+                      (click)="openEdit(b)">
+                      <lucide-icon [img]="PencilIcon" [size]="12" />
+                      Modifier
+                    </button>
+                  }
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0">
                   @if (b.entreprise) {
                     <div class="flex justify-between py-1.5 border-b border-border/40">
-                      <span class="text-xs text-muted-foreground">Entreprise</span>
+                      <span class="text-xs text-muted-foreground">Commanditaire (Entreprise)</span>
                       <span class="text-xs font-medium text-foreground">{{ b.entreprise }}</span>
                     </div>
                   }
@@ -86,16 +78,46 @@ interface BonCommandeItem {
                       <span class="text-xs font-medium text-foreground">{{ b.dateBonCmde | date:'dd/MM/yyyy' }}</span>
                     </div>
                   }
-                  @if (b.mtHt) {
+                  @if (b.mtHt != null) {
                     <div class="flex justify-between py-1.5 border-b border-border/40">
                       <span class="text-xs text-muted-foreground">Montant HT</span>
                       <span class="text-xs font-medium text-foreground">{{ b.mtHt | number:'1.0-0':'fr-FR' }} FCFA</span>
                     </div>
                   }
-                  @if (b.mtTtc) {
+                  @if (b.mtTtc != null) {
                     <div class="flex justify-between py-1.5 border-b border-border/40">
                       <span class="text-xs text-muted-foreground">Montant TTC</span>
                       <span class="text-xs font-medium text-foreground">{{ b.mtTtc | number:'1.0-0':'fr-FR' }} FCFA</span>
+                    </div>
+                  }
+                  @if (b.adresse) {
+                    <div class="flex justify-between py-1.5 border-b border-border/40">
+                      <span class="text-xs text-muted-foreground">Localisation</span>
+                      <span class="text-xs font-medium text-foreground">{{ b.adresse }}</span>
+                    </div>
+                  }
+                  @if (b.tel) {
+                    <div class="flex justify-between py-1.5 border-b border-border/40">
+                      <span class="text-xs text-muted-foreground">Téléphone</span>
+                      <span class="text-xs font-medium text-foreground">{{ b.tel }}</span>
+                    </div>
+                  }
+                  @if (b.cel) {
+                    <div class="flex justify-between py-1.5 border-b border-border/40">
+                      <span class="text-xs text-muted-foreground">Cellulaire</span>
+                      <span class="text-xs font-medium text-foreground">{{ b.cel }}</span>
+                    </div>
+                  }
+                  @if (b.rccm) {
+                    <div class="flex justify-between py-1.5 border-b border-border/40">
+                      <span class="text-xs text-muted-foreground">RCCM</span>
+                      <span class="text-xs font-medium text-foreground">{{ b.rccm }}</span>
+                    </div>
+                  }
+                  @if (b.cc) {
+                    <div class="flex justify-between py-1.5 border-b border-border/40">
+                      <span class="text-xs text-muted-foreground">CC</span>
+                      <span class="text-xs font-medium text-foreground">{{ b.cc }}</span>
                     </div>
                   }
                 </div>
@@ -156,9 +178,10 @@ export class BonCommandeFormComponent {
   private readonly toast         = inject(ToastService);
 
   readonly ref         = input.required<string>();
-  readonly initialBons = input<BonCommandeItem[]>([]);
+  readonly initialBons = input<CreditBonDeCommande[]>([]);
+  readonly readOnly    = input<boolean>(false);
 
-  readonly bons      = signal<BonCommandeItem[]>([]);
+  readonly bons      = signal<CreditBonDeCommande[]>([]);
   readonly showForm  = signal(false);
   readonly saving    = signal(false);
   private editingId: number | null = null;
@@ -186,7 +209,7 @@ export class BonCommandeFormComponent {
     this.showForm.set(true);
   }
 
-  openEdit(b: BonCommandeItem) {
+  openEdit(b: CreditBonDeCommande) {
     this.editingId = b.id ?? null;
     this.form.reset({
       numBonCmde: b.numBonCmde ?? null, entreprise: b.entreprise ?? null,

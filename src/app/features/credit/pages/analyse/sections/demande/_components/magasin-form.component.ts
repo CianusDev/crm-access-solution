@@ -36,7 +36,7 @@ import { CreditMagasin } from '../../../../../interfaces/credit.interface';
             <lucide-icon [img]="StoreIcon" [size]="16" class="text-muted-foreground" />
             <app-card-title>Info magasin</app-card-title>
           </div>
-          @if (!showForm()) {
+          @if (!showForm() && !readOnly()) {
             <button type="button" appButton size="sm" class="flex items-center gap-1.5"
               (click)="openAdd()">
               <lucide-icon [img]="PlusIcon" [size]="13" />
@@ -54,12 +54,14 @@ import { CreditMagasin } from '../../../../../interfaces/credit.interface';
               <div class="rounded-lg border border-border bg-muted/20 p-4">
                 <div class="flex items-center justify-between mb-2">
                   <p class="text-sm font-semibold text-foreground">Magasin {{ $index + 1 }}</p>
-                  <button type="button" appButton variant="ghost" size="sm"
-                    class="flex items-center gap-1 text-xs"
-                    (click)="openEdit(m, $index)">
-                    <lucide-icon [img]="PencilIcon" [size]="12" />
-                    Modifier
-                  </button>
+                  @if (!readOnly()) {
+                    <button type="button" appButton variant="ghost" size="sm"
+                      class="flex items-center gap-1 text-xs"
+                      (click)="openEdit(m, $index)">
+                      <lucide-icon [img]="PencilIcon" [size]="12" />
+                      Modifier
+                    </button>
+                  }
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0">
                   @if (m.numMagasin) {
@@ -187,6 +189,7 @@ export class MagasinFormComponent {
   readonly ref            = input.required<string>();
   readonly codeClient     = input.required<string>();
   readonly initialMagasins = input<CreditMagasin[]>([]);
+  readonly readOnly        = input<boolean>(false);
   readonly magasinSaved = output<void>();
 
   readonly magasins   = signal<CreditMagasin[]>([]);

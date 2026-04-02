@@ -12,18 +12,7 @@ import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { CreditService } from '../../../../../services/credit/credit.service';
 import { ToastService } from '@/core/services/toast/toast.service';
-
-interface FactureItem {
-  id?: number;
-  numFacture?: string;
-  entreprise?: string;
-  dateFacture?: string;
-  dateEcheance?: string;
-  mtHt?: number;
-  mtTtc?: number;
-  adresse?: string;
-  tel?: string;
-}
+import { CreditFacture } from '../../../../../interfaces/credit.interface';
 
 @Component({
   selector: 'app-facture-form',
@@ -48,7 +37,7 @@ interface FactureItem {
             <lucide-icon [img]="ReceiptIcon" [size]="16" class="text-muted-foreground" />
             <app-card-title>Factures</app-card-title>
           </div>
-          @if (!showForm()) {
+          @if (!showForm() && !readOnly()) {
             <button type="button" appButton size="sm" class="flex items-center gap-1.5"
               (click)="openAdd()">
               <lucide-icon [img]="PlusIcon" [size]="13" />
@@ -158,10 +147,11 @@ export class FactureFormComponent {
   private readonly creditService = inject(CreditService);
   private readonly toast         = inject(ToastService);
 
-  readonly ref        = input.required<string>();
-  readonly initialFactures = input<FactureItem[]>([]);
+  readonly ref             = input.required<string>();
+  readonly initialFactures = input<CreditFacture[]>([]);
+  readonly readOnly        = input<boolean>(false);
 
-  readonly factures  = signal<FactureItem[]>([]);
+  readonly factures  = signal<CreditFacture[]>([]);
   readonly showForm  = signal(false);
   readonly saving    = signal(false);
   private editingId: number | null = null;
@@ -191,7 +181,7 @@ export class FactureFormComponent {
     this.showForm.set(true);
   }
 
-  openEdit(f: FactureItem) {
+  openEdit(f: CreditFacture) {
     this.editingId = f.id ?? null;
     this.form.reset({
       numFacture: f.numFacture ?? null, entreprise: f.entreprise ?? null,

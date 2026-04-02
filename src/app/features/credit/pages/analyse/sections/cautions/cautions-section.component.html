@@ -94,7 +94,7 @@
           <div class="flex items-center gap-2 w-full sm:w-auto">
             <!-- Champ de recherche -->
             <div class="relative flex-1 sm:flex-initial sm:min-w-[250px]">
-              <lucide-icon [img]="SearchIcon" [size]="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <lucide-icon [img]="SearchIcon" [size]="14" class="absolute left-1.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
               <input
                 type="text"
                 [value]="searchQuery()"
@@ -126,37 +126,20 @@
             <p class="text-sm text-muted-foreground">Aucun document trouvé pour "{{ searchQuery() }}"</p>
           </div>
         } @else {
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
             @for (doc of documentsFiltered(); track doc.id) {
-              <div class="group relative flex flex-col rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all overflow-hidden">
+              <div
+                class="group relative flex flex-col rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all overflow-hidden">
                 <!-- En-tête avec icône -->
-                <div class="flex items-center justify-center h-24 bg-gradient-to-br from-primary/5 to-primary/10 border-b border-border">
+                <div
+                  (click)="downloadDocument(doc.document!, doc.libelle ?? 'document')"
+                  class="flex flex-col items-center justify-center h-32 p-4 gap-3 bg-gradient-to-br from-primary/5 to-primary/10 border-b border-border">
                   <lucide-icon [img]="FileTextIcon" [size]="40" class="text-primary/60" />
+                  <h4 class="font-semibold text-sm text-center text-foreground line-clamp-3 mb-2">{{ doc.libelle }}</h4>
                 </div>
-                
-                <!-- Contenu -->
-                <div class="flex-1 p-4">
-                  <h4 class="font-semibold text-sm text-foreground line-clamp-2 mb-2">{{ doc.libelle }}</h4>
-                  <div class="flex flex-col gap-1 text-xs text-muted-foreground">
-                    @if (doc.user?.nomPrenom) {
-                      <p class="truncate">Par: {{ doc.user!.nomPrenom }}</p>
-                    }
-                    @if (doc.createdAt) {
-                      <p>Le: {{ doc.createdAt | date:'dd/MM/yyyy' }}</p>
-                    }
-                  </div>
-                </div>
-                
+
                 <!-- Actions -->
                 <div class="flex items-center justify-end gap-1 px-3 py-2 border-t border-border bg-muted/20">
-                  @if (doc.document) {
-                    <button type="button"
-                      (click)="downloadDocument(doc.document, doc.libelle ?? 'document')"
-                      title="Télécharger"
-                      class="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer">
-                      <lucide-icon [img]="FileTextIcon" [size]="14" />
-                    </button>
-                  }
                   <button type="button"
                     (click)="openDelete('doc', doc.id!, doc.libelle ?? '')"
                     title="Supprimer"

@@ -1,6 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { DecimalPipe, DatePipe } from '@angular/common';
-import { LucideAngularModule, Building2, User, Upload, Send, ChevronDown } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  Building2,
+  User,
+  Upload,
+  Send,
+  ChevronDown,
+  RotateCcw,
+  Plus,
+  Pencil,
+} from 'lucide-angular';
 import { BadgeComponent } from '@/shared/components/badge/badge.component';
 import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import { Dropdown } from '@/shared/components/dropdown/dropdown.component';
@@ -44,39 +55,120 @@ const PREDEFINED_DOC_TYPES = [
 @Component({
   selector: 'app-analyse-header-card',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, DatePipe, LucideAngularModule, BadgeComponent, ButtonDirective, Dropdown],
+  imports: [
+    FormsModule,
+    DecimalPipe,
+    DatePipe,
+    LucideAngularModule,
+    BadgeComponent,
+    ButtonDirective,
+    Dropdown,
+  ],
   template: `
     @if (fiche(); as d) {
       <div class="rounded-xl border border-border bg-card shadow-sm">
         <!-- Action buttons row -->
         <div
-          class="flex items-center justify-end gap-2 px-4 py-2.5 border-b border-border bg-muted/30"
+          class="flex items-center justify-end gap-2 px-4 py-2.5 border-b border-border bg-muted/30 flex-wrap"
         >
-          <app-dropdown class="min-w-96!" [items]="docTypeItems()" align="start">
+          @if (isRCCC()) {
+            <!-- RC/CC: Ajourner -->
             <button
               type="button"
               appButton
               variant="outline"
               size="sm"
-              class="flex items-center min-w-96! gap-1.5"
-              dropdownTrigger
+              class="flex items-center gap-1.5 border-amber-500 text-amber-600 hover:bg-amber-50"
+              (click)="ajournerDossier.emit()"
             >
-              <lucide-icon [img]="UploadIcon" [size]="14" />
-              Charger les documents
-              <lucide-icon [img]="ChevronDownIcon" [size]="12" />
+              <lucide-icon [img]="RotateCcwIcon" [size]="14" />
+              Ajourner
             </button>
-          </app-dropdown>
-          <button
-            type="button"
-            appButton
-            size="sm"
-            class="flex items-center gap-1.5"
-            [disabled]="!canSendDossier()"
-            (click)="envoyerDossier.emit()"
-          >
-            <lucide-icon [img]="SendIcon" [size]="14" />
-            Envoyer le dossier
-          </button>
+
+            <!-- RC/CC: N° Perfect -->
+            @if (!d.numTransaction) {
+              <button
+                type="button"
+                appButton
+                variant="outline"
+                size="sm"
+                class="flex items-center gap-1.5"
+                (click)="ajouterPerfect.emit()"
+              >
+                <lucide-icon [img]="PlusIcon" [size]="14" />
+                Ajouter le N° demande Perfect
+              </button>
+            } @else {
+              <button
+                type="button"
+                appButton
+                variant="outline"
+                size="sm"
+                class="flex items-center gap-1.5"
+                (click)="ajouterPerfect.emit()"
+              >
+                <lucide-icon [img]="PencilIcon" [size]="14" />
+                Modifier N° Perfect
+              </button>
+            }
+
+            <!-- RC/CC: Checkbox frais (non-DECOUVERT + numTransaction) -->
+            @if (d.numTransaction && d.typeCredit?.code !== '015') {
+              <label class="flex items-center gap-2 text-sm cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  [ngModel]="confirmationFrais()"
+                  (ngModelChange)="confirmationFraisChange.emit($event)"
+                  class="h-4 w-4 rounded border-border text-primary accent-primary"
+                />
+                <span class="font-medium text-foreground text-xs"
+                  >Avez-vous prélevé les frais de demande ?</span
+                >
+              </label>
+            }
+
+            <!-- RC/CC: Envoyer (visible si numTransaction existe) -->
+            @if (d.numTransaction) {
+              <button
+                type="button"
+                appButton
+                size="sm"
+                class="flex items-center gap-1.5"
+                [disabled]="!canSendDossier()"
+                (click)="envoyerDossier.emit()"
+              >
+                <lucide-icon [img]="SendIcon" [size]="14" />
+                Envoyer le dossier
+              </button>
+            }
+          } @else {
+            <!-- GP / Other: Charger docs + Envoyer -->
+            <app-dropdown class="min-w-96!" [items]="docTypeItems()" align="start">
+              <button
+                type="button"
+                appButton
+                variant="outline"
+                size="sm"
+                class="flex items-center min-w-96! gap-1.5"
+                dropdownTrigger
+              >
+                <lucide-icon [img]="UploadIcon" [size]="14" />
+                Charger les documents
+                <lucide-icon [img]="ChevronDownIcon" [size]="12" />
+              </button>
+            </app-dropdown>
+            <button
+              type="button"
+              appButton
+              size="sm"
+              class="flex items-center gap-1.5"
+              [disabled]="!canSendDossier()"
+              (click)="envoyerDossier.emit()"
+            >
+              <lucide-icon [img]="SendIcon" [size]="14" />
+              Envoyer le dossier
+            </button>
+          }
         </div>
 
         <!-- Main summary -->
@@ -122,7 +214,9 @@ const PREDEFINED_DOC_TYPES = [
                   }
                   @if (d.client.entreprise?.dateCreation) {
                     <div class="flex items-center gap-1 py-1 border-b border-border/40">
-                      <span class="text-xs text-muted-foreground shrink-0">Date de création</span>
+                      <span class="text-xs text-muted-foreground shrink-0"
+                        >Date de création de l'entreprise
+                      </span>
                       <span class="text-xs font-medium text-foreground ml-auto">{{
                         d.client.entreprise!.dateCreation | date: 'dd/MM/yyyy'
                       }}</span>
@@ -170,6 +264,16 @@ const PREDEFINED_DOC_TYPES = [
                     <span class="text-xs text-muted-foreground shrink-0">Adresse</span>
                     <span class="text-xs font-medium text-foreground ml-auto truncate">{{
                       d.client.villa
+                    }}</span>
+                  </div>
+                }
+                @if (d.dateDemande) {
+                  <div class="flex items-center gap-1 py-1 border-b border-border/40">
+                    <span class="text-xs text-muted-foreground shrink-0"
+                      >Date de creation de dossier</span
+                    >
+                    <span class="text-xs font-medium text-foreground ml-auto truncate">{{
+                      d.dateDemande | date: 'dd/MM/yyyy'
                     }}</span>
                   </div>
                 }
@@ -250,14 +354,22 @@ export class AnalyseHeaderCardComponent {
   readonly UploadIcon = Upload;
   readonly SendIcon = Send;
   readonly ChevronDownIcon = ChevronDown;
+  readonly RotateCcwIcon = RotateCcw;
+  readonly PlusIcon = Plus;
+  readonly PencilIcon = Pencil;
 
   readonly fiche = input<CreditFicheDemandeDetail | null>(null);
   readonly requiredDocs = input<RequiredDoc[]>([]);
   readonly uploadedDocLibelles = input<string[]>([]);
   readonly canSendDossier = input<boolean>(true);
+  readonly isRCCC = input<boolean>(false);
+  readonly confirmationFrais = input<boolean>(false);
 
   readonly chargerDocuments = output<string | null>();
   readonly envoyerDossier = output<void>();
+  readonly ajournerDossier = output<void>();
+  readonly ajouterPerfect = output<void>();
+  readonly confirmationFraisChange = output<boolean>();
 
   readonly isPersonneMorale = computed(() => this.fiche()?.client?.typeAgent !== 'PP');
 

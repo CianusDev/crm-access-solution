@@ -34,28 +34,29 @@
 
         @case ('client') {
           @if (isPersonneMorale()) {
-            <app-client-pm-card [client]="d.client" />
+            <app-client-pm-card [client]="d.client" [readOnly]="readOnly()" />
           } @else {
-            <app-client-pp-card [client]="d.client" />
+            <app-client-pp-card [client]="d.client" [readOnly]="readOnly()" />
           }
         }
 
         @case ('signataires') {
-          <app-signataires-card [signataires]="d.client.signataires ?? []" (signatairesUpdated)="dataChanged.emit()" />
+          <app-signataires-card [signataires]="d.client.signataires ?? []" [readOnly]="readOnly()" (signatairesUpdated)="dataChanged.emit()" />
         }
 
         @case ('bon-commande') {
-          <app-bon-commande-form [ref]="d.refDemande" />
+          <app-bon-commande-form [ref]="d.refDemande" [initialBons]="bonDeCommande() ? [bonDeCommande()!] : []" [readOnly]="readOnly()" />
         }
 
         @case ('facture') {
-          <app-facture-form [ref]="d.refDemande" />
+          <app-facture-form [ref]="d.refDemande" [initialFactures]="crFacture() ? [crFacture()!] : []" [readOnly]="readOnly()" />
         }
 
         @case ('vehicules') {
           <app-vehicules-form
             [ref]="d.refDemande"
             [initialVehicules]="fiche()?.infosCrAuto ?? []"
+            [readOnly]="readOnly()"
             (vehiculeSaved)="dataChanged.emit()" />
         }
 
@@ -64,6 +65,7 @@
             [ref]="d.refDemande"
             [codeClient]="d.client.codeClient"
             [initialMagasins]="fiche()?.magasins ?? []"
+            [readOnly]="readOnly()"
             (magasinSaved)="dataChanged.emit()" />
         }
 

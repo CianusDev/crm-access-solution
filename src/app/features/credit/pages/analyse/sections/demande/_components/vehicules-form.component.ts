@@ -55,7 +55,7 @@ const VEHICULE_VU_OPTIONS: SelectOption[] = [
             <lucide-icon [img]="CarIcon" [size]="16" class="text-muted-foreground" />
             <app-card-title>Véhicules demandés</app-card-title>
           </div>
-          @if (!showForm()) {
+          @if (!showForm() && !readOnly()) {
             <button type="button" appButton size="sm" class="flex items-center gap-1.5"
               (click)="openAdd()">
               <lucide-icon [img]="PlusIcon" [size]="13" />
@@ -73,18 +73,20 @@ const VEHICULE_VU_OPTIONS: SelectOption[] = [
               <div class="rounded-lg border border-border bg-muted/20 p-4">
                 <div class="flex items-center justify-between mb-2">
                   <p class="text-sm font-semibold text-foreground">Véhicule {{ $index + 1 }}</p>
-                  <div class="flex items-center gap-1">
-                    <button type="button" appButton variant="ghost" size="sm"
-                      class="flex items-center gap-1 text-xs"
-                      (click)="openEdit(v)">
-                      <lucide-icon [img]="PencilIcon" [size]="12" />
-                    </button>
-                    <button type="button" appButton variant="ghost" size="sm"
-                      class="flex items-center gap-1 text-xs text-destructive"
-                      (click)="openDelete(v)">
-                      <lucide-icon [img]="Trash2Icon" [size]="12" />
-                    </button>
-                  </div>
+                  @if (!readOnly()) {
+                    <div class="flex items-center gap-1">
+                      <button type="button" appButton variant="ghost" size="sm"
+                        class="flex items-center gap-1 text-xs"
+                        (click)="openEdit(v)">
+                        <lucide-icon [img]="PencilIcon" [size]="12" />
+                      </button>
+                      <button type="button" appButton variant="ghost" size="sm"
+                        class="flex items-center gap-1 text-xs text-destructive"
+                        (click)="openDelete(v)">
+                        <lucide-icon [img]="Trash2Icon" [size]="12" />
+                      </button>
+                    </div>
+                  }
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0">
                   @if (v.marque) {
@@ -219,6 +221,7 @@ export class VehiculesFormComponent implements OnInit {
 
   readonly ref              = input.required<string>();
   readonly initialVehicules = input<CreditAutoInfo[]>([]);
+  readonly readOnly         = input<boolean>(false);
   readonly vehiculeSaved    = output<void>();
 
   readonly vehicules = signal<CreditAutoInfo[]>([]);

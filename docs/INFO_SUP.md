@@ -122,3 +122,28 @@ profil du a
 
 
 j'aimerai que du me creer un builder de pdf qui va me permettre de creer des contrats , document officielle , avec posibliter d'ajouter des logo en gros de personnaliser le pdf commence je veux et pour generer le template a utiliser dans n'importe quel codebase react , angular , ou framework js ! ainsi de la doc pour l'integrer dans sa codebase
+
+on j'ai corriger le reste moi meme ,
+  maintenant :
+  je suis connecter en tant que RC/CC:
+  je doit avoir les meme vu de le GP sur la
+  page de l'analyse fincancier a
+  difference que :
+  - il faut les buttons "ajourner" et
+  "Ajouter N demande perfect" avec leur
+  formulaire
+  - pas de possibiliter de modifier les
+  info de la personne moral , des
+  signataire, info magasin , vehicule
+  demander .
+  - Le button "Envoyer" s'affiche si le N
+  demande perfect existe
+  - Pour certain type de  credit , il faut
+  cocher un checkbox "Avez-vous prelever
+  les frais de demande"
+
+  ya surement certain condition ou element
+  que j'ai surement omis  donc si tu les
+  trouve ajouter les , tout sa tu doit te
+  referer au old frontend
+  dateDemandedateDemande
