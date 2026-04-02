@@ -11,7 +11,7 @@ import {
 import { PaginationComponent } from '@/shared/components/pagination/pagination.component';
 import { Avatar } from '@/shared/components/avatar/avatar.component';
 import { InitialesPipe } from '@/shared/pipes/initailes/initiales.pipe';
-import { AscDemande } from '../../interfaces/asc.interface';
+import { AscCheque, AscDemande } from '../../interfaces/asc.interface';
 
 @Component({
   selector: 'app-cheques-attente',
@@ -37,7 +37,7 @@ export class ChequesAttenteComponent {
 
   private readonly router = inject(Router);
 
-  readonly cheques = input<AscDemande[]>([]);
+  readonly cheques = input<AscCheque[]>([]);
 
   readonly query = signal('');
   readonly page = signal(1);
@@ -51,9 +51,9 @@ export class ChequesAttenteComponent {
       (d) =>
         d.client?.nomPrenom?.toLowerCase().includes(q) ||
         d.client?.codeClient?.toLowerCase().includes(q) ||
-        d.cheque?.numcheque?.toLowerCase().includes(q) ||
-        d.cheque?.numTransaction?.toLowerCase().includes(q) ||
-        d.cheque?.tireur?.toLowerCase().includes(q),
+        d.numcheque?.toLowerCase().includes(q) ||
+        d.numTransaction?.toLowerCase().includes(q) ||
+        d.tireur?.toLowerCase().includes(q),
     );
   });
 
@@ -71,6 +71,11 @@ export class ChequesAttenteComponent {
     this.router.navigate(['/app/asc/detail', id]);
   }
   goChequeDetail(numcheque: string) {
+    this.router.navigate(['/app/asc/cheque', numcheque]);
+  }
+
+  // Navigate to cheque detail when clicking on row
+  goToChequeDetail(numcheque: string) {
     this.router.navigate(['/app/asc/cheque', numcheque]);
   }
 }

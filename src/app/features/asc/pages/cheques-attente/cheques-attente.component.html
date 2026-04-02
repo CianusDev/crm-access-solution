@@ -14,7 +14,7 @@
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex items-center gap-2">
           <lucide-icon [img]="ClockIcon" [size]="15" class="text-orange-500" />
-          <app-card-title>Chèques en attente</app-card-title>
+          <app-card-title>Chèques en cours</app-card-title>
           <span class="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
             {{ filtered().length }}
           </span>
@@ -54,12 +54,12 @@
             </thead>
             <tbody class="divide-y divide-border">
               @for (d of paged(); track d.id) {
-                <tr class="hover:bg-muted/30 transition-colors cursor-pointer" (click)="goDetail(d.id)">
+                <tr class="hover:bg-muted/30 transition-colors cursor-pointer" (click)="goToChequeDetail(d.numcheque ?? '')">
 
                   <!-- N° Chèque + date -->
                   <td class="px-4 py-3">
-                    <p class="font-mono font-medium text-foreground">{{ d.cheque?.numcheque ?? '—' }}</p>
-                    <p class="text-xs text-muted-foreground">{{ (d.dateRemise ?? d.dateDemande ?? d.datedemande) | date:'dd/MM/yyyy' }}</p>
+                    <p class="font-medium text-foreground">{{ d.numcheque ?? '—' }}</p>
+                    <p class="text-xs text-muted-foreground">{{ d.dateRemise | date:'dd/MM/yyyy' }}</p>
                   </td>
 
                   <!-- Client -->
@@ -74,15 +74,15 @@
                   </td>
 
                   <!-- Tireur -->
-                  <td class="px-4 py-3 text-foreground">{{ d.cheque?.tireur ?? '—' }}</td>
+                  <td class="px-4 py-3 text-foreground">{{ d.tireur ?? '—' }}</td>
 
                   <!-- Banque -->
-                  <td class="px-4 py-3 text-foreground">{{ d.cheque?.banque ?? '—' }}</td>
+                  <td class="px-4 py-3 text-foreground">{{ d.banque ?? '—' }}</td>
 
                   <!-- Montant -->
                   <td class="px-4 py-3 text-right">
                     <span class="inline-block rounded-full bg-primary/10 px-3 py-0.5 text-sm font-semibold text-primary whitespace-nowrap">
-                      {{ (d.cheque?.montantCheque ?? 0) | number }} FCFA
+                      {{ (d.montantCheque ?? 0) | number }} FCFA
                     </span>
                   </td>
 
@@ -91,20 +91,22 @@
                     <div class="flex items-center justify-end gap-1">
                       <button
                         type="button"
-                        (click)="$event.stopPropagation(); goChequeDetail(d.cheque?.numcheque ?? '')"
+                        (click)="$event.stopPropagation(); goChequeDetail(d.numcheque ?? '')"
                         title="Détail du chèque"
                         class="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
                       >
                         <lucide-icon [img]="FileTextIcon" [size]="13" /> Chèque
                       </button>
-                      <button
-                        type="button"
-                        (click)="$event.stopPropagation(); goDetail(d.id)"
-                        title="Détail de la demande"
-                        class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-foreground"
-                      >
-                        <lucide-icon [img]="EyeIcon" [size]="14" />
-                      </button>
+                      @if (d.demandes && d.demandes.length > 0) {
+                        <button
+                          type="button"
+                          (click)="$event.stopPropagation(); goDetail(d.demandes[0].id)"
+                          title="Détail de la demande"
+                          class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-foreground"
+                        >
+                          <lucide-icon [img]="EyeIcon" [size]="14" />
+                        </button>
+                      }
                     </div>
                   </td>
 
