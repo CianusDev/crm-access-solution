@@ -1,0 +1,3 @@
+TS2305: Module '"@/shared/components/dropdown/dropdown.component"' has no exported member 'DropdownComponent'.
+
+src/app/features/credit/pages/analyse/sections/cautions/cautions-section.component.ts:43:2

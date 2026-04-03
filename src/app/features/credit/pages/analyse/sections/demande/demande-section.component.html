@@ -29,7 +29,11 @@
       @switch (activeSubSection()) {
 
         @case ('credit') {
-          <app-credit-info-form [ref]="d.refDemande" [readOnly]="readOnly()" />
+          <app-credit-info-form
+            [ref]="d.refDemande"
+            [detailFromParent]="demandeDetails()"
+            [readOnly]="readOnly()"
+            (updated)="dataChanged.emit()" />
         }
 
         @case ('client') {
@@ -45,11 +49,17 @@
         }
 
         @case ('bon-commande') {
-          <app-bon-commande-form [ref]="d.refDemande" [initialBons]="bonDeCommande() ? [bonDeCommande()!] : []" [readOnly]="readOnly()" />
+          <app-bon-commande-form
+            [ref]="d.refDemande"
+            [initialBons]="demandeDetails()?.bonDeCommande ? [demandeDetails()!.bonDeCommande!] : []"
+            [readOnly]="readOnly()" />
         }
 
         @case ('facture') {
-          <app-facture-form [ref]="d.refDemande" [initialFactures]="crFacture() ? [crFacture()!] : []" [readOnly]="readOnly()" />
+          <app-facture-form
+            [ref]="d.refDemande"
+            [initialFactures]="demandeDetails()?.crFacture ? [demandeDetails()!.crFacture!] : []"
+            [readOnly]="readOnly()" />
         }
 
         @case ('vehicules') {
@@ -69,8 +79,27 @@
             (magasinSaved)="dataChanged.emit()" />
         }
 
+        @case ('avis-acj') {
+          <app-pre-evaluation-acj-readonly [preEvaluation]="demandeDetails()?.preEvaluationAcjCe ?? null" />
+        }
+
+        @case ('avis-ce') {
+          <app-pre-evaluation-ce-readonly [preEvaluation]="demandeDetails()?.preEvaluationAcjCe ?? null" />
+        }
+
+        @case ('employeur') {
+          <app-employeur-demande-readonly [employeur]="demandeDetails()?.employeur ?? null" />
+        }
+
+        @case ('decision-finale') {
+          <app-decision-finale-demande-readonly [decision]="decisionAffiche()" />
+        }
+
         @default {
-          <app-credit-info-form [ref]="d.refDemande" />
+          <app-credit-info-form
+            [ref]="d.refDemande"
+            [detailFromParent]="demandeDetails()"
+            (updated)="dataChanged.emit()" />
         }
 
       }

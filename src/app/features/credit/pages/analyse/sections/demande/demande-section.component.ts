@@ -1,7 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { LucideAngularModule, FileText } from 'lucide-angular';
-import { CreditBonDeCommande, CreditFacture, CreditFiche, CreditFicheDemandeDetail } from '../../../../interfaces/credit.interface';
-import { CreditService } from '../../../../services/credit/credit.service';
+import { CreditFiche, CreditFicheDemandeDetail } from '../../../../interfaces/credit.interface';
 import { CreditInfoFormComponent } from './_components/credit-info-form.component';
 import { ClientPpCardComponent } from './_components/client-pp-card.component';
 import { ClientPmCardComponent } from './_components/client-pm-card.component';
@@ -10,6 +9,10 @@ import { MagasinFormComponent } from './_components/magasin-form.component';
 import { FactureFormComponent } from './_components/facture-form.component';
 import { BonCommandeFormComponent } from './_components/bon-commande-form.component';
 import { VehiculesFormComponent } from './_components/vehicules-form.component';
+import { PreEvaluationAcjReadonlyComponent } from './_components/pre-evaluation-acj-readonly.component';
+import { PreEvaluationCeReadonlyComponent } from './_components/pre-evaluation-ce-readonly.component';
+import { EmployeurDemandeReadonlyComponent } from './_components/employeur-demande-readonly.component';
+import { DecisionFinaleDemandeReadonlyComponent } from './_components/decision-finale-demande-readonly.component';
 
 interface SubSection {
   id: string;
@@ -30,48 +33,30 @@ interface SubSection {
     FactureFormComponent,
     BonCommandeFormComponent,
     VehiculesFormComponent,
+    PreEvaluationAcjReadonlyComponent,
+    PreEvaluationCeReadonlyComponent,
+    EmployeurDemandeReadonlyComponent,
+    DecisionFinaleDemandeReadonlyComponent,
   ],
 })
 export class DemandeSectionComponent {
   readonly FileTextIcon = FileText;
 
-  private readonly creditService = inject(CreditService);
-
-  readonly ficheHeader    = input<CreditFicheDemandeDetail | null>(null);
-  readonly analyseDemande = input<CreditFicheDemandeDetail | null>(null);
-  readonly fiche          = input<CreditFiche | null>(null);
-  readonly readOnly       = input<boolean>(false);
-  readonly dataChanged    = output<void>();
-
-  readonly bonDeCommande = signal<CreditBonDeCommande | null>(null);
-  readonly crFacture     = signal<CreditFacture | null>(null);
-
-  /**
-   * Données pour le formulaire : ficheHeader comme base (typeCredit, client…)
-   * + description depuis l'analyse si disponible.
-   */
-  readonly formDemande = computed(() => {
-    const header  = this.ficheHeader();
-    const analyse = this.analyseDemande();
-    if (!header) return null;
-    return { ...header, description: analyse?.description ?? header.description };
-  });
+  readonly ficheHeader = input<CreditFicheDemandeDetail | null>(null);
+  /** Fourni par la page analyse (resolver + refresh) — un seul `getDetailsDemande`. */
+  readonly demandeDetails = input<CreditFicheDemandeDetail | null>(null);
+  readonly fiche = input<CreditFiche | null>(null);
+  readonly readOnly = input<boolean>(false);
+  readonly dataChanged = output<void>();
 
   readonly activeSubSection = signal<string>('credit');
 
-  ngOnInit() {
-    const ref = this.ficheHeader()?.refDemande;
-    if (ref) {
-      this.creditService.getDetailsDemande(ref).subscribe({
-        next: (demande) => {
-          this.bonDeCommande.set(demande?.bonDeCommande ?? null);
-          this.crFacture.set(demande?.crFacture ?? null);
-        },
-      });
-    }
-  }
-
   readonly isPersonneMorale = computed(() => this.ficheHeader()?.client?.typeAgent !== 'PP');
+
+  /** Décision finale : fiche analyse ou détail demande (selon API) */
+  readonly decisionAffiche = computed(
+    () => this.fiche()?.decision ?? this.demandeDetails()?.decision ?? null,
+  );
 
   readonly sidebarItems = computed<SubSection[]>(() => {
     const d = this.ficheHeader();
@@ -79,6 +64,8 @@ export class DemandeSectionComponent {
 
     const code = d.typeCredit?.code;
     const isPM = d.client?.typeAgent !== 'PP';
+    const detail = this.demandeDetails();
+    const pre = detail?.preEvaluationAcjCe;
 
     const items: SubSection[] = [
       { id: 'credit', label: 'Demande de crédit' },
@@ -99,6 +86,19 @@ export class DemandeSectionComponent {
     }
     if (code === '035' || code === '036') {
       items.push({ id: 'magasin', label: 'Info magasin' });
+    }
+
+    if (code === '002' && pre) {
+      items.push({ id: 'avis-acj', label: 'Avis ACJ' });
+    }
+    if (code === '002' && pre?.ce) {
+      items.push({ id: 'avis-ce', label: 'Pré-évaluation CE' });
+    }
+    if (code === '008' || code === '001') {
+      items.push({ id: 'employeur', label: 'Employeur' });
+    }
+    if ((code === '008' || code === '001' || code === '014') && this.decisionAffiche()) {
+      items.push({ id: 'decision-finale', label: 'Décision finale' });
     }
 
     return items;

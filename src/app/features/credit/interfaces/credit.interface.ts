@@ -14,6 +14,20 @@ export interface CreditCommune {
   libelle?: string;
 }
 
+export interface CreditZone {
+  id: number;
+  libelle: string;
+  code?: string;
+}
+
+export interface CreditAnalysteRisque {
+  id: number;
+  codeAr: string;
+  nom: string;
+  prenom: string;
+  libelle?: string; // nom + prenom
+}
+
 export interface CreditSignataire {
   id?: number;
   nom?: string;
@@ -328,7 +342,7 @@ export interface Employeur {
   formuleJuridique?: number;
   dateCreation?: string;
   associes?: number;
-  banque?: string | string[];
+  banque?: string | string[] | { libelle?: string }[];
   clients?: string[];
   fournisseurs?: string[];
   masseSalariale?: number;
@@ -461,7 +475,11 @@ export interface CreditSaveBonCommande {
 
 // ── Fiche crédit ─────────────────────────────────────────────────────────────
 export interface CreditDecisionFinale {
-  montant?: number;
+  id?: number;
+  dateDemande?: string | Date;
+  dateDecision?: string | Date;
+  refDemande?: string;
+  montant?: number; // alias
   montantPropose?: number;
   fraisDossier?: number;
   commissionDeboursement?: number;
@@ -470,16 +488,26 @@ export interface CreditDecisionFinale {
   duree?: number;
   mensualite?: number;
   montantCaution?: number;
+  dateEcheanceSouhaite?: string | Date;
   periodeGrace?: number; // 1 = oui, 2 = non
   nbreMoisGrace?: number;
-  acteNotarie?: number;
-  authGage?: number;
-  assurMultiRisk?: number;
-  deposit?: number;
-  tauxCouverture?: number;
+  commentaire?: string;
+  motivation?: string;
   hypotheque?: number; // 1 = oui, 2 = non
   montantActeNotarie?: number;
-  commentaire?: string;
+  acteNotarie?: number;
+  authGage?: number;
+  deposit?: number;
+  tauxCouverture?: number;
+  assurMultiRisk?: number;
+  signature?: any;
+  checkliste?: any;
+  comiteClt?: string;
+  statut?: number;
+  argumentaire?: any;
+  user?: { id?: string; nomPrenom?: string; nom?: string; prenom?: string; agence?: { libelle?: string }; profil?: { libelle?: string } };
+  decideur?: { id?: string; nomPrenom?: string; nom?: string; prenom?: string; agence?: { libelle?: string }; profil?: { libelle?: string } };
+  perfectsaver?: any;
 }
 
 export interface CreditObservationUser {
@@ -513,15 +541,41 @@ export interface CreditDocumentAnnexe {
   user?: { nomPrenom?: string };
 }
 
+/** Pré-évaluation ACJ / CE (crédit type 002 — aligné legacy `preEvaluationAcjCe`) */
+export interface CreditPreEvaluationAcjCe {
+  /** Présent / truthy lorsque la pré-évaluation CE est saisie (legacy `ce`) */
+  ce?: unknown;
+  relationClt?: string;
+  relationEmploye?: string;
+  relationVosinage?: string;
+  affluenceActivite?: string;
+  quantiteStock?: string;
+  qualiteStock?: string;
+  relationCommercial?: string;
+  evolutionMtCollect?: string;
+  frequenceMtCollect?: string;
+  avisAcjDmde?: string;
+  avisCeDmde?: string;
+  lastMonthCollect?: number;
+  montRecurrent?: number;
+  enquetteVoisinage?: string;
+  recommandationCe?: string;
+}
+
 export interface CreditFicheDemandeDetail extends CreditDemande {
   description?: string;
   objetCredit?: string | number;
   nbreEcheDiffere?: number;
-  ar?: { nomPrenom?: string };
+  ar?: { nom?: string; prenom?: string; nomPrenom?: string };
   typeActivite?: { libelle: string };
   numTransaction?: string; // N° demande Perfect
   acteNotarie?: number;    // 0 = non signé, 1 = signé (sur la demande)
   derogation?: number;     // 0 = normal, 1 = en dérogation, 2 = dérogation validée
+  preEvaluationAcjCe?: CreditPreEvaluationAcjCe;
+  /** Employeur lié (types 001 / 008 — `getDetailsDemande`) */
+  employeur?: Employeur;
+  /** Parfois renvoyé au niveau demande (sinon utiliser `CreditFiche.decision`) */
+  decision?: CreditDecisionFinale;
 }
 
 export interface CreditUserGarantie {
@@ -569,57 +623,156 @@ export interface CreditFiche {
 }
 
 // ── Résumé analyse ────────────────────────────────────────────────────────────
-export interface CreditSWOT {
+/** Un élément SWOT renvoyé par l'API (flat) */
+export interface CreditSWOTItem {
   id?: number;
-  forces?: string[];
-  faiblesses?: string[];
-  opportunites?: string[];
-  menaces?: string[];
+  refDemande?: string;
+  typeAnalyse?: number; // 1=Force, 2=Faiblesse, 3=Opportunité, 4=Menace
+  description?: string;
+}
+
+/** SWOT regroupé par catégorie (utilisé côté affichage) */
+export interface CreditSWOT {
+  forces: string[];
+  faiblesses: string[];
+  opportunites: string[];
+  menaces: string[];
 }
 
 export interface CreditComiteDecision {
   id?: number;
-  dateDemande?: string;
+  dateDemande?: string | Date;
+  refDemande?: string;
+  user?: { id?: number | string; nomPrenom?: string; nom?: string; prenom?: string; agence?: { libelle?: string }; profil?: { name?: string; libelle?: string } };
   montantPropose?: number;
+  fraisDossier?: number;
   montantEmprunte?: number;
   duree?: number;
   mensualite?: number;
-  fraisDossier?: number;
-  commissionDeboursement?: number;
-  assurDecesInvalidite?: number;
-  assurMultiRisk?: number;
-  acteNotarie?: number;
-  montantActeNotarie?: number;
-  authGage?: number;
-  tauxCouverture?: number;
-  deposit?: number;
+  dateEcheanceSouhaite?: string | Date;
   periodeGrace?: number;
   nbreMoisGrace?: number;
-  montantCaution?: number;
-  motivation?: string;
   commentaire?: string;
-  statut?: number;
-  user?: { id?: number; nomPrenom?: string; profil?: { name: string; libelle: string } };
+  motivation?: string;
+  hypotheque?: number;
+  acteNotarie?: number;
+  assurMultiRisk?: number;
+  authGage?: number;
+  montantActeNotarie?: number;
+  deposit?: number;
+  tauxCouverture?: number;
+  commissionDeboursement?: number;
+  assurDecesInvalidite?: number;
+  argumentaire?: any;
+  signature?: any;
+  checkliste?: any;
+  comiteClt?: string;
+  montantCaution?: number;
+  statut?: number; // 1=Approuvée
 }
 
 export interface CreditPropositionAR {
+  id?: number;
+  refDemande?: string;
+  user_id?: string;
+  user?: { id?: string; nomPrenom?: string; nom?: string; prenom?: string; agence?: { libelle?: string }; profil?: { libelle?: string } };
   montantPropose?: number;
+  fraisDossier?: number;
+  montantEmprunte?: number;
   duree?: number;
   mensualite?: number;
+  dateEcheanceSouhaite?: string | Date;
+  periodeGrace?: number; // 1=Oui, 2=Non
+  nbreMoisGrace?: number;
+  hypotheque?: number; // 1=Oui, 2=Non
+  acteNotarie?: number; // 1=Oui, 0/2=Non
+  assurMultiRisk?: number; // 1=Oui, 0/2=Non
+  authGage?: number;
+  montantActeNotarie?: number;
+  deposit?: number; // %
+  tauxCouverture?: number; // %
+  commissionDeboursement?: number;
+  assurDecesInvalidite?: number;
+  argumentaire?: string;
   motivation?: string;
   commentaire?: string;
+  signature?: string;
+  image?: string;
+  checkliste?: any;
+  typeVehicule?: any;
+  nbVehiculeDme?: any;
   statut?: number;
-  user?: { nomPrenom?: string };
 }
 
 export interface CreditContreEvaluation {
+  // Identifiants
+  id?: number;
+  refDemande?: string;
+  user?: { id?: string; nomPrenom?: string; nom?: string; prenom?: string; agence?: { libelle?: string }; profil?: { libelle?: string } };
+  
+  // Paramètres financiers (identiques à PropositionAR)
   montantPropose?: number;
+  fraisDossier?: number;
+  montantEmprunte?: number;
   duree?: number;
   mensualite?: number;
+  dateEcheanceSouhaite?: string | Date;
+  periodeGrace?: number;
+  nbreMoisGrace?: number;
+  hypotheque?: number;
+  acteNotarie?: number;
+  assurMultiRisk?: number;
+  montantActeNotarie?: number;
+  deposit?: number;
+  tauxCouverture?: number;
+  commissionDeboursement?: number;
+  assurDecesInvalidite?: number;
+  argumentaire?: string;
   motivation?: string;
   commentaire?: string;
+  signature?: string;
+  image?: string;
+  checkliste?: any;
   statut?: number;
-  user?: { nomPrenom?: string };
+  
+  // Champs d'analyse bilan (spécifiques à contre-évaluation par Superviseur Risque)
+  libelleActPrincipal?: string;
+  libelleActPrincipalCom?: string;
+  caJour?: string;
+  caJourCom?: string;
+  venteJour?: string;
+  venteJourCom?: string;
+  dernierAchatInfo?: string;
+  dernierAchatCommentaire?: string;
+  appreciationMargeVenteInfo?: string;
+  appreciationMargeVenteCommentaire?: string;
+  tresorerieInfo?: string;
+  tresorerieCommentaire?: string;
+  creanceClient?: string;
+  creanceClientCom?: string;
+  marchandiseTransit?: string;
+  marchandiseTransitCom?: string;
+  stockInfo?: string;
+  stockCommentaire?: string;
+  equipementInfo?: string;
+  equipementCommentaire?: string;
+  detteFournisseurInfo?: string;
+  detteFournisseurCommentaire?: string;
+  detteBanqueInfo?: string;
+  detteBanqueCommentaire?: string;
+  avanceClt?: string;
+  avanceCltCom?: string;
+  autreActiviteInfo?: string;
+  autreActiviteRevenu?: string;
+  risqueEntreprise?: string;
+  caution?: string;
+  qualiteEvaluationAC?: string;
+  recommandationCA?: string;
+  montantEcheance?: string;
+  potentielEpargne?: string;
+  autreProduit?: string;
+  ca?: any;
+  dateSignature?: any;
 }
 
 export interface CreditGarantieProposes {
@@ -630,7 +783,7 @@ export interface CreditGarantieProposes {
 
 export interface CreditResume {
   demande: CreditFicheDemandeDetail;
-  aSwots?: CreditSWOT[];
+  aSwots?: CreditSWOTItem[];
   garantieProposes?: CreditGarantieProposes;
   proposition?: CreditPropositionAR;
   contreEvaluation?: CreditContreEvaluation;
@@ -706,11 +859,26 @@ export interface CreanceClient {
   refDemande?: string;
 }
 
+// Stock pour section Achats (article + quantite + montantTotal)
 export interface StockItem {
   id?: number;
-  libelle?: string;
-  montant?: number;
-  statut?: string | number;
+  activite?: number;
+  article?: string;
+  quantite?: number;
+  montantTotal?: number;
+  refDemande?: string;
+}
+
+// Stock pour section Trésorerie (description + quantite + prix unitaire + assurances)
+export interface TresorerieStockItem {
+  id?: number;
+  description?: string;
+  libelle?: string; // Alias pour compatibilité API
+  quantite?: number;
+  prix?: number;
+  montant?: number; // Calculé (quantite * prix)
+  assurStock?: number; // 1=OUI, 2=NON
+  garantie?: number; // 1=OUI, 2=NON
   refDemande?: string;
 }
 
@@ -766,24 +934,67 @@ export interface ActifGarantie {
   echeance?: string;
   statut?: string;
   refDemande?: string;
-  // Biens mobiliers famille
+  // Commun à plusieurs types
+  proprietaire?: string;
+  garantie?: number;
   quantite?: number;
   valeurAchat?: number;
   dateAcquisition?: string;
   evaluation?: string;
+  // Immobilier
+  typePropriete?: string;
+  adressDescr?: string;
+  titreFoncier?: string;
+  lot?: string;
+  ilot?: string;
+  justifs?: string;
+  // DAT
+  dureeDat?: number;
+  dateEffetDat?: string;
+  dateEcheanceDat?: string;
+  numeroPerfectDat?: string;
+  // Véhicule
+  immatriculation?: string;
+  couleur?: string;
+  typeVehicule?: string;
+  dateMiseEnCirculation?: string;
+  nbrePlace?: number;
+  typeCommercial?: string;
+  typeTechnique?: string;
+  vehiculeVu?: string;
+  typeProPerso?: string;
+  // Équipement
+  designation?: string;
 }
 
 export interface CautionSolidaire {
   id?: number;
   nom?: string;
   prenom?: string;
+  dateNaissance?: string;
+  lieuNaissance?: string;
+  genre?: string;
+  situationMatri?: string | number;
+  contact?: string;
   telephone?: string;
+  typePiece?: string | number;
+  numPiece?: string;
+  revenu?: number;
+  justif?: string;
+  nationalite?: CreditNationalite | number;
   profession?: string;
+  ville?: CreditCommune | number;
+  commune?: CreditCommune | number;
+  quartier?: string;
+  rue?: string;
   adresse?: string;
   montantCaution?: number;
   refDemande?: string;
   latitude?: string | number | null;
   longitude?: string | number | null;
+  photoProfil?: string;
+  images?: GarantieMedia[];
+  documents?: GarantieMedia[];
 }
 
 export interface DocumentAnalyse {
@@ -988,7 +1199,7 @@ export interface CreditActifCirculantStock {
 
 export interface GarantiesData {
   typeGaranties: GarantieType[];
-  crCaution: GarantiesCautionSolidaire[];
+  crCaution: CautionSolidaire[];
   actifCirculantStock?: CreditActifCirculantStock[];
 }
 

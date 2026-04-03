@@ -42,6 +42,15 @@
     </div>
   }
 
+  <!-- Alerte AR : document manquant -->
+  @if (arAlert()) {
+    <div class="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3">
+      <lucide-icon [img]="AlertCircleIcon" [size]="16" class="text-primary shrink-0" />
+      <p class="text-sm text-primary flex-1">{{ arAlert() }}</p>
+      <button type="button" class="text-primary/60 hover:text-primary text-lg leading-none" (click)="arAlert.set(null)">&times;</button>
+    </div>
+  }
+
   <!-- ── Carte résumé client + demande (style old frontend) ───────────── -->
   @if (!isLoading()) {
     <app-analyse-header-card
@@ -49,76 +58,119 @@
       [requiredDocs]="requiredDocs()"
       [uploadedDocLibelles]="uploadedDocLibelles()"
       [canSendDossier]="canSendDossier()"
+      [canFaireResume]="canFaireResume()"
       [isRCCC]="isRCCC()"
       [isCACaa]="isCACaa()"
+      [isAR]="isAR()"
+      [isPaused]="isPaused()"
       [confirmationFrais]="confirmationFrais()"
       (chargerDocuments)="onChargerDocuments($event)"
       (envoyerDossier)="openEnvoiDialog()"
       (ajournerDossier)="openAjournerDialog()"
       (ajouterPerfect)="openPerfectDialog()"
       (affecterAR)="openAffecterARDialog()"
+      (faireResume)="goResume()"
+      (avisDefavorable)="openAvisDefavorableDialog()"
       (confirmationFraisChange)="confirmationFrais.set($event)" />
   } @else {
     <div class="h-40 rounded-xl border border-border bg-card animate-pulse"></div>
   }
 
-  <!-- Tabs -->
-  <div class="overflow-x-auto">
-    <div class="flex gap-1 border-b border-border min-w-max">
-      @for (tab of tabs(); track tab.id) {
-        <button
-          type="button"
-          (click)="switchTab(tab.id)"
-          class="px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px"
-          [class.border-primary]="activeTab() === tab.id"
-          [class.text-primary]="activeTab() === tab.id"
-          [class.border-transparent]="activeTab() !== tab.id"
-          [class.text-muted-foreground]="activeTab() !== tab.id"
-          [class.hover:text-foreground]="activeTab() !== tab.id">
-          {{ tab.label }}
-        </button>
+  <!-- Navigation + Contenu -->
+  <div class="flex flex-col lg:flex-row gap-4 items-start">
+
+    <!-- ── Sidebar nav (desktop) / Select (mobile) ── -->
+    <aside class="w-full lg:w-52 shrink-0">
+
+      <!-- Mobile : select -->
+      <div class="lg:hidden">
+        <select
+          [value]="activeTab()"
+          (change)="switchTab($any($event.target).value)"
+          class="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50">
+          @for (tab of tabs(); track tab.id) {
+            <option [value]="tab.id">{{ tab.label }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Desktop : liste verticale sticky -->
+      <nav class="hidden lg:flex flex-col gap-0.5 rounded-xl border border-border bg-card p-2 sticky top-4">
+        @for (tab of tabs(); track tab.id) {
+          <button
+            type="button"
+            (click)="switchTab(tab.id)"
+            class="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-sm font-medium text-left transition-colors cursor-pointer"
+            [class.bg-primary]="activeTab() === tab.id"
+            [class.text-primary-foreground]="activeTab() === tab.id"
+            [class.text-muted-foreground]="activeTab() !== tab.id"
+            [class.hover:bg-muted]="activeTab() !== tab.id"
+            [class.hover:text-foreground]="activeTab() !== tab.id">
+            {{ tab.label }}
+          </button>
+        }
+      </nav>
+    </aside>
+
+    <!-- ── Contenu selon l'onglet actif ── -->
+    <div class="flex-1 min-w-0">
+      @switch (activeTab()) {
+        @case ('demande') {
+          <app-demande-section
+            [ficheHeader]="ficheHeader()"
+            [demandeDetails]="effectiveDemandeDetails()"
+            [fiche]="fiche()"
+            [readOnly]="isRCCC() || isCACaa() || isAR()"
+            (dataChanged)="loadHeader()" />
+        }
+        @case ('activite') {
+          @if (isAR()) {
+            <div class="flex flex-col gap-4 mb-4">
+              <app-doc-analyse-upload
+                [ref]="ref()"
+                libelle="Analyse financière"
+                label="Analyse financière"
+                articleLabel="votre analyse financière" />
+              <app-doc-analyse-upload
+                [ref]="ref()"
+                libelle="Actifs garanties"
+                label="Actifs & Garanties"
+                articleLabel="votre document d'actifs et garanties" />
+            </div>
+          }
+          <app-activite-section [ref]="ref()" />
+        }
+        @case ('achats') {
+          <app-achats-section [ref]="ref()" />
+        }
+        @case ('tresorerie') {
+          <app-tresorerie-section [ref]="ref()" />
+        }
+        @case ('familial') {
+          <app-familial-section [ref]="ref()" />
+        }
+        @case ('garanties') {
+          <app-garanties-section [ref]="ref()" />
+        }
+        @case ('cautions') {
+          <app-cautions-section [ref]="ref()" [isGP]="isGP() || isRCCC() || isCACaa()" [view]="'cautions'" [prefilledDoc]="pendingDocLibelle()" (docsChanged)="onDocsChanged()" />
+        }
+        @case ('documents') {
+          <app-cautions-section [ref]="ref()" [isGP]="isGP() || isRCCC() || isCACaa()" [view]="'documents'" [prefilledDoc]="pendingDocLibelle()" (docsChanged)="onDocsChanged()" />
+        }
+        @case ('swot') {
+          <app-swot-section [ref]="ref()" />
+        }
+        @case ('geolocalisation') {
+          <app-geolocalisation-section [ref]="ref()" />
+        }
+        @case ('envoi') {
+          <app-envoi-section [ref]="ref()" />
+        }
       }
     </div>
-  </div>
 
-  <!-- Contenu selon l'onglet actif -->
-  @switch (activeTab()) {
-    @case ('demande') {
-      <app-demande-section
-        [ficheHeader]="ficheHeader()"
-        [analyseDemande]="demande()"
-        [fiche]="fiche()"
-        [readOnly]="isRCCC() || isCACaa()"
-        (dataChanged)="loadHeader()" />
-    }
-    @case ('activite') {
-      <app-activite-section [ref]="ref()" />
-    }
-    @case ('achats') {
-      <app-achats-section [ref]="ref()" />
-    }
-    @case ('tresorerie') {
-      <app-tresorerie-section [ref]="ref()" />
-    }
-    @case ('familial') {
-      <app-familial-section [ref]="ref()" />
-    }
-    @case ('garanties') {
-      <app-garanties-section [ref]="ref()" />
-    }
-    @case ('cautions') {
-      <app-cautions-section [ref]="ref()" [isGP]="isGP() || isRCCC() || isCACaa()" [prefilledDoc]="pendingDocLibelle()" (docsChanged)="onDocsChanged()" />
-    }
-    @case ('swot') {
-      <app-swot-section [ref]="ref()" />
-    }
-    @case ('geolocalisation') {
-      <app-geolocalisation-section [ref]="ref()" />
-    }
-    @case ('envoi') {
-      <app-envoi-section [ref]="ref()" />
-    }
-  }
+  </div>
 
   <!-- ── Dialog N° demande Perfect (RC/CC) ────────────────────────────── -->
   <app-dialog [(open)]="perfectDialogOpen">
@@ -196,6 +248,90 @@
       <button type="button" appButton size="sm"
         (click)="confirmEnvoi()" [disabled]="envoiLoading()">
         {{ envoiLoading() ? 'Vérification…' : 'Confirmer' }}
+      </button>
+    </app-dialog-footer>
+  </app-dialog>
+
+  <!-- ── Dialog Affecter à un AR (CA/CAA) ───────────────────────────────── -->
+  <app-dialog [(open)]="affecterARDialogOpen">
+    <app-dialog-header>
+      <app-dialog-title>Affecter le dossier à un AR</app-dialog-title>
+      <app-dialog-description>
+        Sélectionnez une zone puis un analyste risque pour affecter ce dossier.
+      </app-dialog-description>
+    </app-dialog-header>
+
+    <form [formGroup]="affecterARForm" class="flex flex-col gap-4 py-2">
+      <app-form-select 
+        name="zone" 
+        label="Zone" 
+        [required]="true"
+        [options]="zones()"
+        [loading]="zonesLoading()"
+        bindLabel="libelle"
+        bindValue="id"
+        placeholder="Sélectionnez une zone"
+        (change)="onZoneChange($event)"
+      />
+
+      @if (affecterARForm.get('zone')?.value) {
+        <app-form-select 
+          name="ar" 
+          label="Analyste Risque" 
+          [required]="true"
+          [options]="ars()"
+          [loading]="arsLoading()"
+          bindLabel="libelle"
+          bindValue="codeAr"
+          placeholder="Sélectionnez un analyste risque"
+        />
+      }
+
+      @if (affecterARForm.get('ar')?.value) {
+        <app-form-input name="password" type="password" label="Mot de passe" [required]="true" />
+        <app-form-textarea name="observation" label="Observation" placeholder="Ajouter une observation… (facultatif)" [rows]="2" />
+      }
+
+      @if (affecterARError()) {
+        <p class="text-sm text-destructive">{{ affecterARError() }}</p>
+      }
+    </form>
+
+    <app-dialog-footer>
+      <button type="button" appButton variant="outline" size="sm"
+        (click)="affecterARDialogOpen = false" [disabled]="affecterARLoading()">
+        Annuler
+      </button>
+      <button type="button" appButton size="sm"
+        (click)="confirmAffecterAR()" [disabled]="affecterARLoading() || !affecterARForm.get('ar')?.value">
+        {{ affecterARLoading() ? 'Affectation…' : 'Confirmer l\'affectation' }}
+      </button>
+    </app-dialog-footer>
+  </app-dialog>
+
+  <!-- ── Dialog Avis défavorable (AR) ─────────────────────────────────── -->
+  <app-dialog [(open)]="avisDefavorableDialogOpen">
+    <app-dialog-header>
+      <app-dialog-title>Avis défavorable</app-dialog-title>
+      <app-dialog-description>
+        Vous êtes sur le point de donner un avis défavorable à ce dossier de crédit.
+      </app-dialog-description>
+    </app-dialog-header>
+    <form [formGroup]="avisDefavorableForm" class="flex flex-col gap-4 py-2">
+      <app-form-input name="password" type="password" label="Mot de passe" [required]="true" />
+      <app-form-textarea name="observation" label="Motif" placeholder="Saisissez le motif de l'avis défavorable…" [rows]="3" />
+      @if (avisDefavorableError()) {
+        <p class="text-sm text-destructive">{{ avisDefavorableError() }}</p>
+      }
+    </form>
+    <app-dialog-footer>
+      <button type="button" appButton variant="outline" size="sm"
+        (click)="avisDefavorableDialogOpen = false" [disabled]="avisDefavorableLoading()">
+        Annuler
+      </button>
+      <button type="button" appButton variant="destructive" size="sm"
+        (click)="confirmAvisDefavorable()" [disabled]="avisDefavorableLoading()">
+        {{ avisDefavorableLoading() ? 'Vérification…' : 'Confirmer l\'avis défavorable' }}
       </button>
     </app-dialog-footer>
   </app-dialog>

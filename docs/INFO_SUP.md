@@ -138,7 +138,7 @@ on j'ai corriger le reste moi meme ,
   demander .
   - Le button "Envoyer" s'affiche si le N
   demande perfect existe
-  - Pour certain type de  credit , il faut
+  - Pour certain type de credit , il faut
   cocher un checkbox "Avez-vous prelever
   les frais de demande"
 
@@ -147,3 +147,36 @@ on j'ai corriger le reste moi meme ,
   trouve ajouter les , tout sa tu doit te
   referer au old frontend
   dateDemandedateDemande
+
+
+L'utilisateur me demande de continuer. Je dois analyser ce qui
+   manque dans la page résumé et l'enrichir avec tous les 
+  détails manquants identifiés dans l'analyse. 
+
+  Les éléments les plus critiques à ajouter sont:
+
+  1. Dans le tableau récapitulatif: ajouter la colonne 
+  "Mensualité/Échéance"
+  2. Dans les onglets Proposition AR, Contre-évaluation, 
+  Comités, Décision finale: ajouter TOUS les paramètres 
+  financiers détaillés:
+     - Montant emprunté
+     - Mensualité
+     - Frais de dossier
+     - Commission déboursement
+     - Assurance décès invalidité
+     - Hypothèque
+     - Déposit (pourcentage et montant)
+     - Taux de couverture
+     - Différé (grace period)
+     - Acte notarié
+     - Assurance multi-risques
+     - Document checklist
+     - Commentaire/Argumentaire
+
+  Je vais commencer par enrichir ces sections une par une.
+
+● Continuons ! Je vais enrichir les onglets avec tous les
+  paramètres financiers manquants identifiés. Commençons par
+  voir ce qui est actuellement affiché dans l'onglet
+  Proposition AR :

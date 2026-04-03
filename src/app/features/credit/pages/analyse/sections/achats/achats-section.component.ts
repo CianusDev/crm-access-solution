@@ -8,6 +8,7 @@ import {
   AlertCircle,
   ShoppingCart,
   Banknote,
+  Package,
 } from 'lucide-angular';
 import {
   CardComponent,
@@ -38,6 +39,7 @@ import {
   ActiviteCredit,
   AchatMensuel,
   ChargeExploitation,
+  StockItem,
 } from '../../../../interfaces/credit.interface';
 
 const MOIS: SelectOption[] = [
@@ -105,6 +107,7 @@ export class AchatsSectionComponent implements OnInit {
   readonly AlertCircleIcon = AlertCircle;
   readonly ShoppingCartIcon = ShoppingCart;
   readonly BanknoteIcon = Banknote;
+  readonly PackageIcon = Package;
 
   private readonly fb = inject(FormBuilder);
   private readonly creditService = inject(CreditService);
@@ -120,6 +123,7 @@ export class AchatsSectionComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly activites = signal<ActiviteCredit[]>([]);
   readonly chargesExploitation = signal<ChargeExploitation[]>([]);
+  readonly stocks = signal<StockItem[]>([]);
 
   readonly activiteOptions = computed<SelectOption[]>(() =>
     this.activites().map((a) => ({ value: a.id!, label: a.libelle ?? `Activité #${a.id}` })),
@@ -139,6 +143,10 @@ export class AchatsSectionComponent implements OnInit {
     this.chargesExploitation().reduce((s, c) => s + (c.montant ?? 0), 0),
   );
 
+  readonly totalStocks = computed(() =>
+    this.stocks().reduce((s, item) => s + (item.montantTotal ?? 0), 0),
+  );
+
   // Drawer — Achats
   achatDrawerOpen = false;
   readonly isSavingAchat = signal(false);
@@ -147,9 +155,13 @@ export class AchatsSectionComponent implements OnInit {
   chargeDrawerOpen = false;
   readonly isSavingCharge = signal(false);
 
+  // Drawer — Stocks
+  stockDrawerOpen = false;
+  readonly isSavingStock = signal(false);
+
   // Delete dialog
   deleteDialogOpen = false;
-  deleteTarget: { type: 'achat' | 'charge'; id: number; label: string } | null = null;
+  deleteTarget: { type: 'achat' | 'charge' | 'stock'; id: number; label: string } | null = null;
   readonly isDeleting = signal(false);
 
   // ── Forms ──────────────────────────────────────────────────────────────
@@ -167,6 +179,13 @@ export class AchatsSectionComponent implements OnInit {
     statut: ['', Validators.required],
   });
 
+  readonly stockForm = this.fb.group({
+    activite: [null as number | null, Validators.required],
+    article: ['', Validators.required],
+    quantite: [null as number | null],
+    montantTotal: [null as number | null, Validators.required],
+  });
+
   // ── Lifecycle ──────────────────────────────────────────────────────────
   ngOnInit() {
     this.loadData();
@@ -178,7 +197,6 @@ export class AchatsSectionComponent implements OnInit {
     this.error.set(null);
     this.creditService.getAnalyseFinanciere(this.ref()).subscribe({
       next: (data) => {
-        console.log('Données du dossier : ', data);
         if (!data?.demande) {
           this.error.set('Données du dossier introuvables.');
           this.isLoading.set(false);
@@ -186,6 +204,7 @@ export class AchatsSectionComponent implements OnInit {
         }
         this.activites.set(data.demande.activites ?? []);
         this.chargesExploitation.set(data.demande.chargesExploitation ?? []);
+        this.stocks.set(data.demande.stocks ?? []);
         this.isLoading.set(false);
       },
       error: () => {
@@ -272,10 +291,44 @@ export class AchatsSectionComponent implements OnInit {
           this.isSavingCharge.set(false);
           this.loadData();
         },
-        error: (err) => {
-          console.error(err);
-          this.toast.error(err.message ?? "Erreur lors de l'enregistrement.");
+        error: () => {
+          this.toast.error("Erreur lors de l'enregistrement.");
           this.isSavingCharge.set(false);
+        },
+      });
+  }
+
+  // ── Stock CRUD ─────────────────────────────────────────────────────────
+  openAddStock() {
+    this.stockForm.reset({ activite: null, article: '', quantite: null, montantTotal: null });
+    this.stockDrawerOpen = true;
+  }
+
+  saveStock() {
+    if (this.stockForm.invalid) {
+      this.stockForm.markAllAsTouched();
+      return;
+    }
+    const val = this.stockForm.value;
+    this.isSavingStock.set(true);
+    this.creditService
+      .saveStock({
+        activite: val.activite,
+        article: val.article,
+        quantite: val.quantite,
+        montanTotal: val.montantTotal,
+        refDemande: this.ref(),
+      })
+      .subscribe({
+        next: () => {
+          this.toast.success('Stock enregistré.');
+          this.stockDrawerOpen = false;
+          this.isSavingStock.set(false);
+          this.loadData();
+        },
+        error: () => {
+          this.toast.error("Erreur lors de l'enregistrement.");
+          this.isSavingStock.set(false);
         },
       });
   }
@@ -291,6 +344,11 @@ export class AchatsSectionComponent implements OnInit {
     this.deleteDialogOpen = true;
   }
 
+  openDeleteStock(stock: StockItem) {
+    this.deleteTarget = { type: 'stock', id: stock.id!, label: stock.article ?? '' };
+    this.deleteDialogOpen = true;
+  }
+
   confirmDelete() {
     if (!this.deleteTarget) return;
     const { type, id } = this.deleteTarget;
@@ -299,7 +357,9 @@ export class AchatsSectionComponent implements OnInit {
     const obs$ =
       type === 'achat'
         ? this.creditService.deleteAchatMensuel(id)
-        : this.creditService.deleteChargeExploitation(id);
+        : type === 'stock'
+          ? this.creditService.deleteStock(id)
+          : this.creditService.deleteChargeExploitation(id);
 
     obs$.subscribe({
       next: () => {
@@ -313,5 +373,10 @@ export class AchatsSectionComponent implements OnInit {
         this.isDeleting.set(false);
       },
     });
+  }
+
+  activiteLabel(activiteId: number | undefined): string {
+    if (activiteId == null) return '—';
+    return this.activites().find((a) => a.id === activiteId)?.libelle ?? `#${activiteId}`;
   }
 }

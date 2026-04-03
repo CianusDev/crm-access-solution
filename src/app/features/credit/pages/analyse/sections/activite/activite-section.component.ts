@@ -42,6 +42,7 @@ import {
   ActiviteVenteMensuelle,
   ActiviteVenteJournaliere,
   CreditTypeActivite,
+  CreditCommune,
 } from '../../../../interfaces/credit.interface';
 
 const MOIS: SelectOption[] = [
@@ -70,8 +71,8 @@ const JOURS: SelectOption[] = [
 ].map((j) => ({ value: j, label: j }));
 
 const TYPE_ANALYSE: SelectOption[] = [
-  { value: 'PRINCIPALE', label: 'Principale' },
-  { value: 'SECONDAIRE', label: 'Secondaire' },
+  { value: 'Jour', label: 'Jour' },
+  { value: 'Semaine', label: 'Semaine' },
 ];
 
 const SAISONS: SelectOption[] = [
@@ -133,6 +134,7 @@ export class ActiviteSectionComponent implements OnInit {
   readonly activites = signal<ActiviteCredit[]>([]);
   readonly error = signal<string | null>(null);
   readonly typesActivite = signal<CreditTypeActivite[]>([]);
+  readonly communes = signal<CreditCommune[]>([]);
 
   readonly typeActiviteOptions = computed<SelectOption[]>(() =>
     this.typesActivite().map((ta) => ({ value: ta.id, label: ta.libelle })),
@@ -140,6 +142,10 @@ export class ActiviteSectionComponent implements OnInit {
 
   readonly activiteOptions = computed<SelectOption[]>(() =>
     this.activites().map((a) => ({ value: a.id!, label: a.libelle ?? `Activité #${a.id}` })),
+  );
+
+  readonly communeOptions = computed<SelectOption[]>(() =>
+    this.communes().map((c) => ({ value: c.id!, label: c.libelle ?? '' })),
   );
 
   // Drawer states
@@ -162,7 +168,7 @@ export class ActiviteSectionComponent implements OnInit {
     activite: [null as number | null],
     libelle: ['', Validators.required],
     typeAnalyse: ['', Validators.required],
-    commune: ['', Validators.required],
+    commune: [null as number | null, Validators.required],
     quartier: ['', Validators.required],
     rue: [''],
     boitePostale: [''],
@@ -192,6 +198,9 @@ export class ActiviteSectionComponent implements OnInit {
   ngOnInit() {
     this.loadData();
     this.creditService.getTypesActivite().subscribe((types) => this.typesActivite.set(types));
+    this.creditService
+      .getPaysCommuneData()
+      .subscribe((data) => this.communes.set(data.communes ?? []));
   }
 
   // ── Data loading ───────────────────────────────────────────────────────
@@ -220,10 +229,21 @@ export class ActiviteSectionComponent implements OnInit {
     return new Intl.NumberFormat('fr-FR').format(n);
   }
 
-  communeLabel(commune: string | { libelle?: string } | undefined): string {
+  communeLabel(commune: string | { id?: number; libelle?: string } | undefined): string {
     if (!commune) return '';
     if (typeof commune === 'string') return commune;
     return commune.libelle ?? '';
+  }
+
+  resolveCommune(commune: string | { id?: number; libelle?: string } | undefined): number | null {
+    if (!commune) return null;
+    if (typeof commune === 'object' && commune.id != null) return commune.id;
+    // Try to match by libelle in the loaded list
+    const label = typeof commune === 'string' ? commune : (commune.libelle ?? '');
+    const match = this.communes().find(
+      (c) => c.libelle?.toLowerCase() === label.toLowerCase(),
+    );
+    return match?.id ?? null;
   }
 
   // ── Activité CRUD ──────────────────────────────────────────────────────
@@ -233,7 +253,7 @@ export class ActiviteSectionComponent implements OnInit {
       activite: null,
       libelle: '',
       typeAnalyse: '',
-      commune: '',
+      commune: null,
       quartier: '',
       rue: '',
       boitePostale: '',
@@ -247,11 +267,12 @@ export class ActiviteSectionComponent implements OnInit {
 
   openEditActivite(a: ActiviteCredit) {
     this.activiteDrawerMode = 'edit';
+    const communeId = this.resolveCommune(a.commune);
     this.activiteForm.reset({
       activite: a.id ?? null,
       libelle: a.libelle ?? '',
       typeAnalyse: a.typeAnalyse ?? '',
-      commune: this.communeLabel(a.commune),
+      commune: communeId,
       quartier: a.quartier ?? '',
       rue: a.rue ?? '',
       boitePostale: a.boitePostale ?? '',
@@ -270,10 +291,13 @@ export class ActiviteSectionComponent implements OnInit {
     }
     const val = this.activiteForm.value;
     const typeActiviteObj = this.typesActivite().find((ta) => ta.id === val.typeActivite);
+    const communeObj = val.commune != null
+      ? this.communes().find((c) => c.id === val.commune) ?? { id: val.commune }
+      : null;
     const payload: Record<string, unknown> = {
       libelle: val.libelle,
       typeAnalyse: val.typeAnalyse,
-      commune: val.commune,
+      commune: communeObj,
       quartier: val.quartier,
       rue: val.rue,
       boitePostale: val.boitePostale,

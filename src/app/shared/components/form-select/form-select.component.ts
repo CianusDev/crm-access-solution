@@ -6,6 +6,7 @@ import {
   computed,
   inject,
   input,
+  output,
   signal,
   ElementRef,
   HostListener,
@@ -53,9 +54,15 @@ export class FormSelect implements OnInit {
   label = input<string | null>(null);
   name = input<string>('');
   placeholder = input<string>('Sélectionner…');
-  options = input<SelectOption[]>([]);
+  options = input<any[]>([]);
   searchPlaceholder = input<string>('Rechercher…');
   required = input(false, { transform: booleanAttribute });
+  loading = input(false, { transform: booleanAttribute });
+  bindLabel = input<string>('label');
+  bindValue = input<string>('value');
+
+  // ── Outputs ───────────────────────────────────────────────────────────────
+  change = output<any>();
 
   // ── State ─────────────────────────────────────────────────────────────────
   isOpen = signal(false);
@@ -82,17 +89,36 @@ export class FormSelect implements OnInit {
   }
 
   // ── Computed ──────────────────────────────────────────────────────────────
+  /** Convertit les options en SelectOption si bindLabel/bindValue sont fournis */
+  normalizedOptions = computed(() => {
+    const opts = this.options();
+    const labelKey = this.bindLabel();
+    const valueKey = this.bindValue();
+    
+    // Si déjà au bon format
+    if (opts.length === 0 || (opts[0]?.label !== undefined && opts[0]?.value !== undefined)) {
+      return opts as SelectOption[];
+    }
+    
+    // Convertir en utilisant bindLabel et bindValue
+    return opts.map(opt => ({
+      value: opt[valueKey],
+      label: opt[labelKey],
+      disabled: opt.disabled ?? false
+    }));
+  });
+
   filteredOptions = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
-    if (!q) return this.options();
-    return this.options().filter((o) => o.label.toLowerCase().includes(q));
+    if (!q) return this.normalizedOptions();
+    return this.normalizedOptions().filter((o) => o.label.toLowerCase().includes(q));
   });
 
   /** Label affiché dans le trigger — réactif grâce au signal selectedValue */
   selectedLabel = computed(() => {
     const v = this.selectedValue();
     if (v === null || v === '' || v === undefined) return null;
-    return this.options().find((o) => o.value === v)?.label ?? null;
+    return this.normalizedOptions().find((o) => o.value === v)?.label ?? null;
   });
 
   // ── Form helpers ──────────────────────────────────────────────────────────
@@ -137,6 +163,7 @@ export class FormSelect implements OnInit {
     this.control?.markAsDirty();
     this.isOpen.set(false);
     this.searchQuery.set('');
+    this.change.emit(option.value);
   }
 
   clear(event: Event) {

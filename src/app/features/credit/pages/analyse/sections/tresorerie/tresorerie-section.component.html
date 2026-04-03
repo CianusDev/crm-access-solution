@@ -129,18 +129,42 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-border bg-muted/10">
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Libellé</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Description</th>
+                <th class="px-4 py-2 text-center font-medium text-muted-foreground">Quantité</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Prix unit.</th>
                 <th class="px-4 py-2 text-right font-medium text-muted-foreground">Valeur (FCFA)</th>
+                <th class="px-4 py-2 text-center font-medium text-muted-foreground">Assurance</th>
+                <th class="px-4 py-2 text-center font-medium text-muted-foreground">Garantie</th>
                 <th class="px-4 py-2 w-10"></th>
               </tr>
             </thead>
             <tbody>
               @for (stock of stocks(); track stock.id) {
                 <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
-                  <td class="px-4 py-2.5 font-medium">{{ stock.libelle }}</td>
+                  <td class="px-4 py-2.5 font-medium">{{ stock.description || stock.libelle }}</td>
+                  <td class="px-4 py-2.5 text-center tabular-nums">{{ stock.quantite || '-' }}</td>
+                  <td class="px-4 py-2.5 text-right tabular-nums">{{ stock.prix ? (stock.prix | number:'1.0-0') : '-' }}</td>
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(stock.montant) }}</td>
+                  <td class="px-4 py-2.5 text-center">
+                    @if (stock.assurStock === 1) {
+                      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-500/10 text-green-600">OUI</span>
+                    } @else if (stock.assurStock === 2) {
+                      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground">NON</span>
+                    } @else {
+                      <span class="text-muted-foreground">-</span>
+                    }
+                  </td>
+                  <td class="px-4 py-2.5 text-center">
+                    @if (stock.garantie === 1) {
+                      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-blue-500/10 text-blue-600">OUI</span>
+                    } @else if (stock.garantie === 2) {
+                      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground">NON</span>
+                    } @else {
+                      <span class="text-muted-foreground">-</span>
+                    }
+                  </td>
                   <td class="px-4 py-2.5">
-                    <button type="button" (click)="openDelete('stock', stock.id!, stock.libelle ?? '')"
+                    <button type="button" (click)="openDelete('stock', stock.id!, stock.description ?? stock.libelle ?? '')"
                       class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
                       <lucide-icon [img]="Trash2Icon" [size]="13" />
                     </button>
@@ -240,8 +264,39 @@
   </app-drawer-header>
   <app-drawer-content>
     <form [formGroup]="stockForm" class="flex flex-col gap-4">
-      <app-form-input name="libelle" label="Libellé" placeholder="Ex: Marchandises en rayon" required />
-      <app-form-input name="montant" label="Valeur estimée (FCFA)" type="number" placeholder="Ex: 800000" required />
+      <app-form-input name="description" label="Description" placeholder="Ex: Produits divers" required />
+      
+      <app-form-input name="quantite" label="Quantité" type="number" placeholder="Ex: 100" required />
+      
+      <app-form-input name="prix" label="Prix unitaire d'achat (FCFA)" type="number" placeholder="Ex: 5000" required />
+      
+      <div class="space-y-2">
+        <label class="text-sm font-medium">Assurance Stock ? <span class="text-destructive">*</span></label>
+        <div class="flex gap-4">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" formControlName="assurStock" [value]="1" class="w-4 h-4" />
+            <span class="text-sm">OUI</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" formControlName="assurStock" [value]="2" class="w-4 h-4" />
+            <span class="text-sm">NON</span>
+          </label>
+        </div>
+      </div>
+      
+      <div class="space-y-2">
+        <label class="text-sm font-medium">Garantie ? <span class="text-destructive">*</span></label>
+        <div class="flex gap-4">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" formControlName="garantie" [value]="1" class="w-4 h-4" />
+            <span class="text-sm">OUI</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" formControlName="garantie" [value]="2" class="w-4 h-4" />
+            <span class="text-sm">NON</span>
+          </label>
+        </div>
+      </div>
     </form>
   </app-drawer-content>
   <app-drawer-footer>

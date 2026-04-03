@@ -85,6 +85,78 @@ const GP_RELAIS_MAGASIN: RequiredDoc[] = [
   { libelle: "Preuves existance d'activités sur 12 mois", obligation: true },
 ];
 
+// Documents d'analyse communs à tous les types AR
+const AR_COMMON: RequiredDoc[] = [
+  { libelle: 'Analyse financière', obligation: true },
+  { libelle: 'Actifs garanties', obligation: true },
+];
+
+// ── AR — Relais Business / One Shot / Crédit Auto / Découvert ────────────
+const AR_RELAIS_ONESHOT: RequiredDoc[] = [
+  ...AR_COMMON,
+  { libelle: 'Facture', obligation: true },
+  { libelle: 'Relève de compte', obligation: true },
+  { libelle: "Reçu d'achat", obligation: true },
+  { libelle: "Compte d'exploitation", obligation: true },
+  { libelle: 'Fiche de renouvellement', obligation: true },
+  { libelle: 'Fiche de présentataion', obligation: true },
+  { libelle: 'DFE', obligation: true },
+  { libelle: 'Les statuts', obligation: true },
+  { libelle: 'Contrat de bails', obligation: true },
+];
+
+// ── AR — Crédit de Campagne ─────────────────────────────────────────────
+const AR_CREDIT_CAMPAGNE: RequiredDoc[] = [
+  ...AR_COMMON,
+  { libelle: "Formulaire d'évaluation", obligation: true },
+  { libelle: 'Fiche de renouvellement', obligation: true },
+  { libelle: 'Bordereaux de livraison', obligation: true },
+  { libelle: 'SYDORE', obligation: true },
+  { libelle: 'Attestation de certification de la coopérative', obligation: true },
+  { libelle: 'Relevé de compte', obligation: true },
+  { libelle: "Compte d'exploitation", obligation: true },
+];
+
+// ── AR — Relais ─────────────────────────────────────────────────────────
+const AR_RELAIS: RequiredDoc[] = [
+  ...AR_COMMON,
+  { libelle: "Fiche de production (s'il fabrique)", obligation: false },
+  { libelle: 'Références', obligation: true },
+  { libelle: 'Preuve activité / domicile (facture, patente )', obligation: true },
+];
+
+/**
+ * Retourne la liste des documents requis pour un AR
+ * en fonction du code type de crédit.
+ * Retourne [] pour les types 032 (bon de commande) et 033 (facture) → pas de dropdown.
+ */
+export function getRequiredDocsForAR(typeCreditCode: string | undefined): RequiredDoc[] {
+  if (!typeCreditCode) return [];
+
+  switch (typeCreditCode) {
+    case '011': // Relais Business
+    case '004': // One Shot
+    case '019': // Crédit Auto
+    case '015': // Découvert
+    case '035': // Relais Business Magasin
+      return AR_RELAIS_ONESHOT;
+
+    case '021': // Crédit de Campagne
+      return AR_CREDIT_CAMPAGNE;
+
+    case '002': // Relais
+      return AR_RELAIS;
+
+    // Pas de dropdown pour Avance sur Bon de Commande / Facture
+    case '032':
+    case '033':
+      return [];
+
+    default:
+      return AR_RELAIS_ONESHOT;
+  }
+}
+
 /**
  * Retourne la liste des documents requis pour un GP
  * en fonction du code type de crédit et du statut juridique du client.

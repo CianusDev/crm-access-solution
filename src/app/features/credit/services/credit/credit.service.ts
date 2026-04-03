@@ -37,6 +37,8 @@ import {
   CreditTbProduit,
   CreditTypeActivite,
   CreditTypeCredit,
+  CreditZone,
+  CreditAnalysteRisque,
 } from '../../interfaces/credit.interface';
 
 @Injectable({ providedIn: 'root' })
@@ -446,6 +448,77 @@ export class CreditService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
+  // ── Upload photo profil caution ─────────────────────────────────────────
+  updatePhotoProfilCaution(cautionId: number, file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('id', cautionId.toString());
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/updateProfilImgCaution', formData)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  // ── Upload image caution ────────────────────────────────────────────────
+  saveImageCaution(cautionId: number, libelle: string, file: File) {
+    const formData = new FormData();
+    formData.append('type', 'CAUTION');
+    formData.append('libelle', libelle);
+    formData.append('description', libelle);
+    formData.append('photo', file);
+    formData.append('element', cautionId.toString());
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveImageGarantie', formData)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  // ── Upload document caution ─────────────────────────────────────────────
+  saveDocumentCaution(cautionId: number, libelle: string, file: File) {
+    const formData = new FormData();
+    formData.append('type', 'CAUTION');
+    formData.append('libelle', libelle);
+    formData.append('description', libelle);
+    formData.append('file', file);
+    formData.append('element', cautionId.toString());
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveDocumentGarantie', formData)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  // ── Suppression image caution ───────────────────────────────────────────
+  deleteImageCaution(imageId: number) {
+    return this.api
+      .post<{ status: number }>(this.endpoint + '/delete_image_garantie', { id: imageId })
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  // ── Suppression document caution ────────────────────────────────────────
+  deleteDocumentCaution(docId: number) {
+    return this.api
+      .post<{ status: number }>(this.endpoint + '/delete_doc_garantie', { id: docId })
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  /** Upload photo profil caution — FormData: refDemande, crCaution, photoProfil */
+  uploadPhotoCaution(formData: FormData) {
+    return this.api
+      .postFormData<{ status: number }>(this.endpoint + '/updateProfilImgCaution', formData)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  /** Upload image (photo) liée à une caution — FormData: type=CAUTION, element=id, libelle, description, photo */
+  uploadImageGarantie(formData: FormData) {
+    return this.api
+      .postFormData<{ status: number }>(this.endpoint + '/saveImageGarantie', formData)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  /** Upload document lié à une caution — FormData: type=CAUTION, element=id, libelle, description, file */
+  uploadDocumentGarantie(formData: FormData) {
+    return this.api
+      .postFormData<{ status: number }>(this.endpoint + '/saveDocGarantie', formData)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
   uploadDocumentAnalyse(formData: FormData) {
     return this.api
       .postFormData<{ status: number; message?: string }>(this.endpoint + '/saveDocAnalyse', formData)
@@ -668,8 +741,41 @@ export class CreditService {
     return this.api
       .get<{
         pays: { id: number; nationalite: string }[];
+        villes: { id: number; libelle: string }[];
         communes: { id: number; libelle: string }[];
       }>('/pays_commune')
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  // ── Zones et ARs ──────────────────────────────────────────────────────────
+  getZones() {
+    return this.api
+      .get<{ zones: CreditZone[] }>('/zones')
+      .pipe(
+        map(response => response.zones || []),
+        catchError((err) => throwError(() => err))
+      );
+  }
+
+  getARsByZone(zoneId: number) {
+    return this.api
+      .get<{ ars: CreditAnalysteRisque[] }>(`/get_ars_by_zone/${zoneId}`)
+      .pipe(
+        map(response => response.ars || []),
+        catchError((err) => throwError(() => err))
+      );
+  }
+
+  affecterDemandeAR(data: {
+    refDemande: string;
+    decision: number;
+    zone: number;
+    codeAr: string;
+    password: string;
+    observation?: string;
+  }) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveCrdObservation', data)
       .pipe(catchError((err) => throwError(() => err)));
   }
 }

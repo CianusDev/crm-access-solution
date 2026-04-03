@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
 import { LucideAngularModule, Store, Plus, Pencil, X, Save } from 'lucide-angular';
 import {
@@ -18,7 +17,6 @@ import { CreditMagasin } from '../../../../../interfaces/credit.interface';
   selector: 'app-magasin-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    DecimalPipe,
     ReactiveFormsModule,
     LucideAngularModule,
     CardComponent,

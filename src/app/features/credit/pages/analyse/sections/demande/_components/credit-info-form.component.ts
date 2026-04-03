@@ -3,6 +3,7 @@ import {
   Component,
   OnInit,
   computed,
+  effect,
   inject,
   input,
   output,
@@ -298,11 +299,16 @@ export class CreditInfoFormComponent implements OnInit {
   private readonly toast = inject(ToastService);
 
   readonly ref = input.required<string>();
+  /**
+   * Données `getDetailsDemande` fournies par la page analyse (évite un second appel HTTP).
+   */
+  readonly detailFromParent = input<CreditFicheDemandeDetail | null>(null);
   readonly readOnly = input<boolean>(false);
   readonly updated = output<void>();
 
   readonly demande = signal<CreditFicheDemandeDetail | null>(null);
-  readonly isLoading = signal(false);
+  /** Affiche le squelette jusqu'à la première synchro avec le parent. */
+  readonly isLoading = signal(true);
   readonly error = signal<string | null>(null);
   readonly editing = signal(false);
   readonly saving = signal(false);
@@ -338,9 +344,19 @@ export class CreditInfoFormComponent implements OnInit {
     description: new FormControl<string>('', Validators.required),
   });
 
+  constructor() {
+    effect(() => {
+      const d = this.detailFromParent();
+      const r = this.ref();
+      if (!d || d.refDemande !== r) return;
+      this.demande.set(d);
+      this.isLoading.set(false);
+      this.error.set(null);
+    });
+  }
+
   ngOnInit() {
     this.loadOptions();
-    this.loadDetails();
   }
 
   loadDetails() {
@@ -416,13 +432,10 @@ export class CreditInfoFormComponent implements OnInit {
       })
       .subscribe({
         next: (res) => {
-          console.log();
           this.saving.set(false);
-          console.log('Update response:', res);
           if (res.status === 1 || res.message?.toLowerCase() === 'success') {
             this.toast.success('Demande mise à jour avec succès.');
             this.editing.set(false);
-            this.loadDetails();
             this.updated.emit();
           } else {
             this.toast.error(res.message ?? 'Échec de la mise à jour.');

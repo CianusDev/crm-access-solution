@@ -11,6 +11,8 @@ import {
   RotateCcw,
   Plus,
   Pencil,
+  FileSearch,
+  X,
 } from 'lucide-angular';
 import { BadgeComponent } from '@/shared/components/badge/badge.component';
 import { ButtonDirective } from '@/shared/directives/ui/button/button';
@@ -97,6 +99,90 @@ const PREDEFINED_DOC_TYPES = [
                 Affecter le dossier à un AR
               </button>
             }
+          } @else if (isAR()) {
+            <!-- AR : actions selon statut / pause -->
+            @if (fiche()?.statut === 5) {
+              <!-- Statut 5 : Avis défavorable + Ajourner + Charger docs + Faire le résumé -->
+              <button
+                type="button"
+                appButton
+                variant="outline"
+                size="sm"
+                class="flex items-center gap-1.5 border-destructive text-destructive hover:bg-destructive/10"
+                (click)="avisDefavorable.emit()"
+              >
+                <lucide-icon [img]="XIcon" [size]="14" />
+                Avis défavorable
+              </button>
+              <button
+                type="button"
+                appButton
+                variant="outline"
+                size="sm"
+                class="flex items-center gap-1.5 border-amber-500 text-amber-600 hover:bg-amber-50"
+                (click)="ajournerDossier.emit()"
+              >
+                <lucide-icon [img]="RotateCcwIcon" [size]="14" />
+                Ajourner
+              </button>
+              @if (docTypeItems().length > 0) {
+                <app-dropdown class="min-w-96!" [items]="docTypeItems()" align="start">
+                  <button
+                    type="button"
+                    appButton
+                    variant="outline"
+                    size="sm"
+                    class="flex items-center min-w-96! gap-1.5"
+                    dropdownTrigger
+                  >
+                    <lucide-icon [img]="UploadIcon" [size]="14" />
+                    Charger les documents
+                    <lucide-icon [img]="ChevronDownIcon" [size]="12" />
+                  </button>
+                </app-dropdown>
+              }
+              <button
+                type="button"
+                appButton
+                size="sm"
+                class="flex items-center gap-1.5"
+                [disabled]="!canFaireResume()"
+                (click)="faireResume.emit()"
+              >
+                <lucide-icon [img]="FileSearchIcon" [size]="14" />
+                Faire le résumé
+              </button>
+            }
+            @if (isPaused() && fiche()?.statut !== 5) {
+              <!-- pause=1 (hors statut 5) : Charger docs + Faire le résumé -->
+              @if (docTypeItems().length > 0) {
+                <app-dropdown class="min-w-96!" [items]="docTypeItems()" align="start">
+                  <button
+                    type="button"
+                    appButton
+                    variant="outline"
+                    size="sm"
+                    class="flex items-center min-w-96! gap-1.5"
+                    dropdownTrigger
+                  >
+                    <lucide-icon [img]="UploadIcon" [size]="14" />
+                    Charger les documents
+                    <lucide-icon [img]="ChevronDownIcon" [size]="12" />
+                  </button>
+                </app-dropdown>
+              }
+              <button
+                type="button"
+                appButton
+                size="sm"
+                class="flex items-center gap-1.5"
+                [disabled]="!canFaireResume()"
+                (click)="faireResume.emit()"
+              >
+                <lucide-icon [img]="FileSearchIcon" [size]="14" />
+                Faire le résumé
+              </button>
+            }
           } @else if (isRCCC()) {
             <!-- RC/CC: Ajourner -->
             <button
@@ -139,7 +225,7 @@ const PREDEFINED_DOC_TYPES = [
             }
 
             <!-- RC/CC: Checkbox frais (non-DECOUVERT + numTransaction) -->
-            @if (d.numTransaction && d.typeCredit?.code !== '015') {
+            @if (d.numTransaction && d.typeCredit.code !== '015') {
               <label class="flex items-center gap-2 text-sm cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -383,13 +469,18 @@ export class AnalyseHeaderCardComponent {
   readonly RotateCcwIcon = RotateCcw;
   readonly PlusIcon = Plus;
   readonly PencilIcon = Pencil;
+  readonly FileSearchIcon = FileSearch;
+  readonly XIcon = X;
 
   readonly fiche = input<CreditFicheDemandeDetail | null>(null);
   readonly requiredDocs = input<RequiredDoc[]>([]);
   readonly uploadedDocLibelles = input<string[]>([]);
   readonly canSendDossier = input<boolean>(true);
+  readonly canFaireResume = input<boolean>(true);
   readonly isRCCC = input<boolean>(false);
   readonly isCACaa = input<boolean>(false);
+  readonly isAR = input<boolean>(false);
+  readonly isPaused = input<boolean>(false);
   readonly confirmationFrais = input<boolean>(false);
 
   readonly chargerDocuments = output<string | null>();
@@ -397,6 +488,8 @@ export class AnalyseHeaderCardComponent {
   readonly ajournerDossier = output<void>();
   readonly ajouterPerfect = output<void>();
   readonly affecterAR = output<void>();
+  readonly faireResume = output<void>();
+  readonly avisDefavorable = output<void>();
   readonly confirmationFraisChange = output<boolean>();
 
   readonly isPersonneMorale = computed(() => this.fiche()?.client?.typeAgent !== 'PP');

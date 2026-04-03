@@ -11,6 +11,8 @@ import {
   TrendingUp,
   Shield,
   Users,
+  User,
+  Building2,
   FileText,
   Clock,
   BarChart3,
@@ -33,6 +35,7 @@ import {
   CREDIT_STATUTS,
   CreditResume,
   CreditComiteDecision,
+  CreditSWOT,
 } from '../../interfaces/credit.interface';
 
 type TabId =
@@ -85,6 +88,8 @@ export class ResumeCreditComponent implements OnInit {
   readonly TrendingUpIcon = TrendingUp;
   readonly ShieldIcon = Shield;
   readonly UsersIcon = Users;
+  readonly UserIcon = User;
+  readonly Building2Icon = Building2;
   readonly FileTextIcon = FileText;
   readonly ClockIcon = Clock;
   readonly BarChart3Icon = BarChart3;
@@ -124,6 +129,17 @@ export class ResumeCreditComponent implements OnInit {
   readonly demande = computed(() => this.resume()?.demande ?? null);
   readonly statut = computed(() => this.demande()?.statut ?? 0);
   readonly statuts = CREDIT_STATUTS;
+
+  /** Regroupe les items SWOT plats (typeAnalyse 1-4) en un objet catégorisé */
+  readonly swot = computed<CreditSWOT>(() => {
+    const items = this.resume()?.aSwots ?? [];
+    return {
+      forces: items.filter(i => i.typeAnalyse === 1).map(i => i.description ?? '').filter(Boolean),
+      faiblesses: items.filter(i => i.typeAnalyse === 2).map(i => i.description ?? '').filter(Boolean),
+      opportunites: items.filter(i => i.typeAnalyse === 3).map(i => i.description ?? '').filter(Boolean),
+      menaces: items.filter(i => i.typeAnalyse === 4).map(i => i.description ?? '').filter(Boolean),
+    };
+  });
 
   /** L'utilisateur connecté peut agir sur ce dossier */
   readonly canAct = computed(() => {
@@ -202,5 +218,37 @@ export class ResumeCreditComponent implements OnInit {
     const user = decision.user?.nomPrenom ?? 'Inconnu';
     const profil = decision.user?.profil?.libelle ?? '';
     return profil ? `${user} — ${profil}` : user;
+  }
+
+  getStatutJuridiqueLabel(statut: string | number | undefined): string {
+    if (!statut) return '—';
+    const numStatut = typeof statut === 'string' ? parseInt(statut, 10) : statut;
+    const labels: Record<number, string> = {
+      1: 'ENTREPRISE INDIVIDUELLE',
+      2: 'SARL',
+      3: 'SA',
+      4: 'SASU',
+      5: 'ASSOCIATION',
+      6: 'COOPERATIVE',
+      7: 'SAS',
+      8: 'INFORMEL',
+      9: 'SARLU',
+      10: 'SCOOPS',
+      11: 'COOP-CA',
+    };
+    return labels[numStatut] ?? '—';
+  }
+
+  getObjetCreditLabel(objetCredit: string | number | undefined): string {
+    if (!objetCredit) return '—';
+    const numObjet = typeof objetCredit === 'string' ? parseInt(objetCredit, 10) : objetCredit;
+    const labels: Record<number, string> = {
+      1: 'Fonds de roulement',
+      2: 'Investissement',
+      3: 'Fonds de roulement et Investissement',
+      4: 'Financement du pas-de-porte',
+      5: 'Avance sur trésorerie',
+    };
+    return labels[numObjet] ?? '—';
   }
 }

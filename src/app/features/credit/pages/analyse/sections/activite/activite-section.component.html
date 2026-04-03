@@ -183,10 +183,10 @@
     <form [formGroup]="activiteForm" (ngSubmit)="saveActivite()">
       <div class="flex flex-col gap-4">
         <app-form-input name="libelle" label="Libellé de l'activité" placeholder="Ex: Commerce de détail" required />
-        <app-form-select name="typeAnalyse" label="Type d'activité" [options]="typeAnalyseOptions" required />
+        <app-form-select name="typeAnalyse" label="Type d'analyse" [options]="typeAnalyseOptions" required />
         <app-form-select name="typeActivite" label="Secteur d'activité" [options]="typeActiviteOptions()" required />
         <div class="grid grid-cols-2 gap-3">
-          <app-form-input name="commune" label="Commune / Ville" placeholder="Ex: Cocody" required />
+          <app-form-select name="commune" label="Commune" [options]="communeOptions()" required />
           <app-form-input name="quartier" label="Quartier" placeholder="Ex: Angré" required />
         </div>
         <div class="grid grid-cols-2 gap-3">

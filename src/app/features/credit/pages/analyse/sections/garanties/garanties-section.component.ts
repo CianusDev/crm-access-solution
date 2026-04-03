@@ -48,6 +48,28 @@ const TYPES_ACTIF: SelectOption[] = [
   { value: 'AUTRE', label: 'Autre actif' },
 ];
 
+const TYPES_PROPRIETE: SelectOption[] = [
+  { value: '1', label: 'LOCAL' },
+  { value: '2', label: 'TERRAIN' },
+];
+
+const TYPES_VEHICULE: SelectOption[] = [
+  { value: 'Voiture', label: 'Voiture' },
+  { value: 'Motocyclette', label: 'Motocyclette' },
+  { value: 'Véhicule tout-terrain', label: 'Véhicule tout-terrain' },
+  { value: 'Camion', label: 'Camion' },
+];
+
+const TYPES_PRO_PERSO: SelectOption[] = [
+  { value: 'Professionel', label: 'Professionnel' },
+  { value: 'Personnel', label: 'Personnel' },
+];
+
+const OUI_NON: SelectOption[] = [
+  { value: '1', label: 'OUI' },
+  { value: '2', label: 'NON' },
+];
+
 @Component({
   selector: 'app-garanties-section',
   templateUrl: './garanties-section.component.html',
@@ -91,6 +113,10 @@ export class GarantiesSectionComponent implements OnInit {
   private readonly toast = inject(ToastService);
 
   readonly typesActifOptions = TYPES_ACTIF;
+  readonly typesProprieteOptions = TYPES_PROPRIETE;
+  readonly typesVehiculeOptions = TYPES_VEHICULE;
+  readonly typesProPersoOptions = TYPES_PRO_PERSO;
+  readonly ouiNonOptions = OUI_NON;
 
   // ── State ──────────────────────────────────────────────────────────────
   readonly isLoading = signal(false);
@@ -123,20 +149,44 @@ export class GarantiesSectionComponent implements OnInit {
     type: ['' as TypeActif | '', Validators.required],
     libelle: ['', Validators.required],
     valeurEstimee: [null as number | null, Validators.required],
+    // Commun à plusieurs types
+    proprietaire: [''],
+    garantie: [null as number | null],
     // Immobilier
     localisation: [''],
     superficie: [null as number | null],
+    typePropriete: [''],
+    adressDescr: [''],
+    titreFoncier: [''],
+    lot: [''],
+    ilot: [''],
+    justifs: [''],
     // Véhicule
     marque: [''],
     annee: [null as number | null],
+    immatriculation: [''],
+    couleur: [''],
+    typeVehicule: [''],
+    dateMiseEnCirculation: [''],
+    nbrePlace: [null as number | null],
+    typeCommercial: [''],
+    typeTechnique: [''],
+    evaluation: [''],
+    vehiculeVu: [''],
+    typeProPerso: [''],
     // DAT
     banque: [''],
     echeance: [''],
+    dureeDat: [null as number | null],
+    dateEffetDat: [''],
+    dateEcheanceDat: [''],
+    numeroPerfectDat: [''],
+    // Équipement
+    designation: [''],
     // Biens mobiliers famille
     quantite: [null as number | null],
     valeurAchat: [null as number | null],
     dateAcquisition: [''],
-    evaluation: [''],
   });
 
   // ── Lifecycle ──────────────────────────────────────────────────────────
@@ -183,16 +233,44 @@ export class GarantiesSectionComponent implements OnInit {
       type: preselect ?? '',
       libelle: '',
       valeurEstimee: null,
+      // Commun
+      proprietaire: '',
+      garantie: null,
+      // Immobilier
       localisation: '',
       superficie: null,
+      typePropriete: '',
+      adressDescr: '',
+      titreFoncier: '',
+      lot: '',
+      ilot: '',
+      justifs: '',
+      // Véhicule
       marque: '',
       annee: null,
+      immatriculation: '',
+      couleur: '',
+      typeVehicule: '',
+      dateMiseEnCirculation: '',
+      nbrePlace: null,
+      typeCommercial: '',
+      typeTechnique: '',
+      evaluation: '',
+      vehiculeVu: '',
+      typeProPerso: '',
+      // DAT
       banque: '',
       echeance: '',
+      dureeDat: null,
+      dateEffetDat: '',
+      dateEcheanceDat: '',
+      numeroPerfectDat: '',
+      // Équipement
+      designation: '',
+      // Biens mobiliers
       quantite: null,
       valeurAchat: null,
       dateAcquisition: '',
-      evaluation: '',
     });
     this.selectedType.set(preselect ?? null);
     this.actifDrawerOpen = true;
@@ -210,16 +288,44 @@ export class GarantiesSectionComponent implements OnInit {
         type: val.type,
         libelle: val.libelle,
         valeurEstimee: val.valeurEstimee,
+        // Commun
+        proprietaire: val.proprietaire || null,
+        garantie: val.garantie,
+        // Immobilier
         localisation: val.localisation || null,
         superficie: val.superficie,
+        typePropriete: val.typePropriete || null,
+        adressDescr: val.adressDescr || null,
+        titreFoncier: val.titreFoncier || null,
+        lot: val.lot || null,
+        ilot: val.ilot || null,
+        justifs: val.justifs || null,
+        // Véhicule
         marque: val.marque || null,
         annee: val.annee,
+        immatriculation: val.immatriculation || null,
+        couleur: val.couleur || null,
+        typeVehicule: val.typeVehicule || null,
+        dateMiseEnCirculation: val.dateMiseEnCirculation || null,
+        nbrePlace: val.nbrePlace,
+        typeCommercial: val.typeCommercial || null,
+        typeTechnique: val.typeTechnique || null,
+        evaluation: val.evaluation || null,
+        vehiculeVu: val.vehiculeVu || null,
+        typeProPerso: val.typeProPerso || null,
+        // DAT
         banque: val.banque || null,
         echeance: val.echeance || null,
+        dureeDat: val.dureeDat,
+        dateEffetDat: val.dateEffetDat || null,
+        dateEcheanceDat: val.dateEcheanceDat || null,
+        numeroPerfectDat: val.numeroPerfectDat || null,
+        // Équipement
+        designation: val.designation || null,
+        // Biens mobiliers
         quantite: val.quantite,
         valeurAchat: val.valeurAchat,
         dateAcquisition: val.dateAcquisition || null,
-        evaluation: val.evaluation || null,
         refDemande: this.ref(),
       })
       .subscribe({

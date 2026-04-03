@@ -346,20 +346,60 @@
 
       <!-- Champs conditionnels — Immobilier -->
       @if (selectedType() === 'IMMOBILIER') {
-        <app-form-input name="localisation" label="Localisation" placeholder="Ex: Cocody, Abidjan" />
+        <app-form-select name="typePropriete" label="Type de bien immobilier" placeholder="Sélectionner" [options]="typesProprieteOptions" />
+        <app-form-input name="proprietaire" label="Propriétaire" placeholder="Ex: Jean Kouassi" />
+        <app-form-input name="localisation" label="Localisation / Adresse" placeholder="Ex: Cocody, Abidjan" />
+        <app-form-input name="adressDescr" label="Description de l'adresse" placeholder="Ex: Rue des Jardins, Lot 12" />
         <app-form-input name="superficie" label="Superficie (m²)" type="number" placeholder="Ex: 200" />
+        <app-form-input name="titreFoncier" label="Titre foncier" placeholder="Ex: TF 12345/CI" />
+        <app-form-input name="lot" label="Lot" placeholder="Ex: 25" />
+        <app-form-input name="ilot" label="Îlot" placeholder="Ex: 3" />
+        <app-form-input name="valeurAchat" label="Valeur d'achat (FCFA)" type="number" placeholder="Ex: 3000000" />
+        <app-form-input name="dateAcquisition" label="Date d'acquisition" type="date" />
+        <app-form-input name="garantie" label="Garantie (%)" type="number" placeholder="Ex: 80" />
+        <app-form-input name="justifs" label="Justifications" placeholder="Ex: Titre foncier fourni" />
       }
 
       <!-- Champs conditionnels — Véhicule -->
       @if (selectedType() === 'VEHICULE') {
+        <app-form-select name="typeProPerso" label="Usage du véhicule" placeholder="Sélectionner" [options]="typesProPersoOptions" />
+        <app-form-select name="typeVehicule" label="Type de véhicule" placeholder="Sélectionner" [options]="typesVehiculeOptions" />
+        <app-form-input name="proprietaire" label="Propriétaire" placeholder="Ex: Jean Kouassi" />
         <app-form-input name="marque" label="Marque / Modèle" placeholder="Ex: Toyota Corolla" />
+        <app-form-input name="couleur" label="Couleur" placeholder="Ex: Blanc" />
+        <app-form-input name="immatriculation" label="N° d'immatriculation" placeholder="Ex: 1234 AB 01" />
         <app-form-input name="annee" label="Année" type="number" placeholder="Ex: 2019" />
+        <app-form-input name="dateMiseEnCirculation" label="Date de 1ère mise en circulation" type="date" />
+        <app-form-input name="nbrePlace" label="Nombre de places" type="number" placeholder="Ex: 5" />
+        <app-form-input name="typeCommercial" label="Type commercial" placeholder="Ex: Berline" />
+        <app-form-input name="typeTechnique" label="Type technique" placeholder="Ex: VP 4x4" />
+        <app-form-input name="valeurAchat" label="Valeur d'achat (FCFA)" type="number" placeholder="Ex: 4000000" />
+        <app-form-input name="evaluation" label="Évaluation / État" placeholder="Ex: Bon état" />
+        <app-form-select name="vehiculeVu" label="Véhicule vu ?" placeholder="Sélectionner" [options]="ouiNonOptions" />
+        <app-form-input name="garantie" label="Garantie (%)" type="number" placeholder="Ex: 80" />
+      }
+
+      <!-- Champs conditionnels — Équipement / Matériel -->
+      @if (selectedType() === 'EQUIPEMENT') {
+        <app-form-input name="designation" label="Désignation" placeholder="Ex: Groupe électrogène" />
+        <app-form-input name="proprietaire" label="Propriétaire" placeholder="Ex: Jean Kouassi" />
+        <app-form-input name="quantite" label="Quantité" type="number" placeholder="Ex: 2" />
+        <app-form-input name="valeurAchat" label="Valeur d'achat (FCFA)" type="number" placeholder="Ex: 1500000" />
+        <app-form-input name="dateAcquisition" label="Date d'acquisition" type="date" />
+        <app-form-input name="evaluation" label="Évaluation / État" placeholder="Ex: Bon état" />
+        <app-form-input name="garantie" label="Garantie (%)" type="number" placeholder="Ex: 80" />
       }
 
       <!-- Champs conditionnels — DAT -->
       @if (selectedType() === 'DAT') {
         <app-form-input name="banque" label="Banque / Institution" placeholder="Ex: SGBCI" />
+        <app-form-input name="proprietaire" label="Propriétaire" placeholder="Ex: Jean Kouassi" />
+        <app-form-input name="dureeDat" label="Durée du DAT (mois)" type="number" placeholder="Ex: 12" />
+        <app-form-input name="dateEffetDat" label="Date d'effet" type="date" />
         <app-form-input name="echeance" label="Date d'échéance" type="date" />
+        <app-form-input name="dateEcheanceDat" label="Date d'échéance DAT" type="date" />
+        <app-form-input name="numeroPerfectDat" label="N° Perfect (référence système)" placeholder="Ex: PERF-2024-001" />
+        <app-form-input name="garantie" label="Garantie (%)" type="number" placeholder="Ex: 100" />
       }
 
       <!-- Champs conditionnels — Biens mobiliers famille -->

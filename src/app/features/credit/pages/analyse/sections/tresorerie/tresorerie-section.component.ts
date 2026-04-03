@@ -38,7 +38,7 @@ import { ToastService } from '@/core/services/toast/toast.service';
 import { CreditService } from '../../../../services/credit/credit.service';
 import {
   CreanceClient,
-  StockItem,
+  TresorerieStockItem,
   DetteFournisseur,
   TresorerieDisponible,
 } from '../../../../interfaces/credit.interface';
@@ -89,7 +89,7 @@ export class TresorerieSectionComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly tresorerie = signal<TresorerieDisponible | null>(null);
   readonly creances = signal<CreanceClient[]>([]);
-  readonly stocks = signal<StockItem[]>([]);
+  readonly stocks = signal<TresorerieStockItem[]>([]);
   readonly dettes = signal<DetteFournisseur[]>([]);
 
   readonly totalCreances = computed(() => this.creances().reduce((s, c) => s + (c.montant ?? 0), 0));
@@ -129,8 +129,11 @@ export class TresorerieSectionComponent implements OnInit {
   });
 
   readonly stockForm = this.fb.group({
-    libelle: ['', Validators.required],
-    montant: [null as number | null, Validators.required],
+    description: ['', Validators.required],
+    quantite: [null as number | null, Validators.required],
+    prix: [null as number | null, Validators.required],
+    assurStock: [null as number | null, Validators.required],
+    garantie: [null as number | null, Validators.required],
   });
 
   readonly detteForm = this.fb.group({
@@ -234,17 +237,23 @@ export class TresorerieSectionComponent implements OnInit {
 
   // ── Stocks ─────────────────────────────────────────────────────────────
   openAddStock() {
-    this.stockForm.reset({ libelle: '', montant: null });
+    this.stockForm.reset({ description: '', quantite: null, prix: null, assurStock: null, garantie: null });
     this.stockDrawerOpen = true;
   }
 
   saveStock() {
     if (this.stockForm.invalid) { this.stockForm.markAllAsTouched(); return; }
     const val = this.stockForm.value;
+    const montantCalcule = (val.quantite ?? 0) * (val.prix ?? 0);
     this.isSavingStock.set(true);
     this.creditService.saveStock({
-      libelle: val.libelle,
-      montant: val.montant,
+      description: val.description,
+      libelle: val.description, // Alias pour API
+      quantite: val.quantite,
+      prix: val.prix,
+      montant: montantCalcule,
+      assurStock: val.assurStock,
+      garantie: val.garantie,
       refDemande: this.ref(),
     }).subscribe({
       next: () => {

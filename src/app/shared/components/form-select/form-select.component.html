@@ -17,12 +17,15 @@
       [attr.aria-expanded]="isOpen()"
       [attr.aria-haspopup]="'listbox'"
       [attr.aria-invalid]="shouldShowError"
+      [disabled]="loading()"
       (click)="toggle()"
       class="flex h-9 w-full items-center justify-between rounded-lg border bg-input/20 px-3 py-1 text-sm transition-colors focus-visible:outline-none focus-visible:border-primary focus-visible:ring-primary/50 focus-visible:ring-[2px] disabled:cursor-not-allowed disabled:opacity-50"
       [class.border-border]="!shouldShowError"
       [class.border-destructive]="shouldShowError"
     >
-      @if (selectedLabel()) {
+      @if (loading()) {
+        <span class="truncate text-muted-foreground">Chargement…</span>
+      } @else if (selectedLabel()) {
         <span class="truncate text-foreground">{{ selectedLabel() }}</span>
       } @else {
         <span class="truncate text-muted-foreground">{{ placeholder() }}</span>

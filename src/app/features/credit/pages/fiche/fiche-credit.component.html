@@ -1503,7 +1503,7 @@
                                 @if (caution.lieuNaissance) {
                                   <div><p class="text-xs text-muted-foreground">Lieu de naissance</p><p class="text-sm font-medium">{{ caution.lieuNaissance }}</p></div>
                                 }
-                                @if (caution.nationalite) {
+                                @if (caution.nationalite && typeof caution.nationalite === 'object') {
                                   <div><p class="text-xs text-muted-foreground">Nationalité</p><p class="text-sm font-medium">{{ caution.nationalite.nationalite }}</p></div>
                                 }
                                 @if (caution.quartier) {

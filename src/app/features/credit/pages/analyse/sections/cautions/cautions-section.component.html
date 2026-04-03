@@ -16,13 +16,18 @@
     </div>
   } @else {
 
-    <!-- ══ CAUTIONS SOLIDAIRES (masqué pour GP) ══════════════════════════ -->
-    @if (!isGP()) {
+    <!-- ══ CAUTIONS SOLIDAIRES ════════════════════════════════════════════ -->
+    @if (!isGP() && (view() === 'cautions' || view() === 'both')) {
+      @if (view() === 'both') {
+        <div class="flex items-center gap-3 mb-1">
+          <h2 class="text-base font-semibold text-foreground">Cautions solidaires</h2>
+          <div class="flex-1 h-px bg-border"></div>
+        </div>
+      }
       <app-card>
         <app-card-header>
           <div class="flex items-center justify-between w-full">
             <div class="flex items-center gap-2">
-              <app-card-title>Cautions solidaires</app-card-title>
               @if (cautions().length > 0) {
                 <span class="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
                   {{ cautions().length }} caution{{ cautions().length > 1 ? 's' : '' }}
@@ -31,14 +36,14 @@
             </div>
             <button type="button" (click)="openAddCaution()" appButton size="sm">
               <lucide-icon [img]="PlusIcon" [size]="14" />
-              Ajouter
+              Ajouter une caution
             </button>
           </div>
         </app-card-header>
         <app-card-content>
           @if (cautions().length === 0) {
             <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
-              <lucide-icon [img]="UserCheckIcon" [size]="32" class="text-muted-foreground/40" />
+              <lucide-icon [img]="UserIcon" [size]="32" class="text-muted-foreground/40" />
               <p class="text-sm text-muted-foreground">Aucune caution solidaire enregistrée</p>
               <button type="button" (click)="openAddCaution()" appButton size="sm">
                 <lucide-icon [img]="PlusIcon" [size]="14" />
@@ -47,30 +52,276 @@
             </div>
           } @else {
             <div class="flex flex-col gap-3">
-              @for (caution of cautions(); track caution.id) {
-                <div class="flex items-start justify-between rounded-xl border border-border bg-card px-4 py-3">
-                  <div class="flex flex-col gap-0.5 min-w-0">
-                    <p class="font-semibold text-foreground">{{ caution.prenom }} {{ caution.nom }}</p>
-                    <div class="flex items-center gap-3 text-xs text-muted-foreground flex-wrap mt-0.5">
-                      @if (caution.profession) {
-                        <span>{{ caution.profession }}</span>
-                      }
-                      @if (caution.telephone) {
-                        <span>{{ caution.telephone }}</span>
-                      }
-                      @if (caution.adresse) {
-                        <span>{{ caution.adresse }}</span>
-                      }
+              @for (caution of cautions(); track caution.id; let i = $index) {
+                <div class="rounded-xl border border-border bg-card overflow-hidden">
+                  <!-- Header avec actions -->
+                  <div class="flex items-start justify-between px-4 py-3 border-b border-border bg-muted/30">
+                    <div class="min-w-0">
+                      <p class="font-semibold text-foreground">{{ caution.nom }} {{ caution.prenom }}</p>
+                      <span class="text-xs text-muted-foreground">Caution solidaire {{ i + 1 }}</span>
                     </div>
-                    @if (caution.montantCaution) {
-                      <p class="text-sm font-semibold text-primary mt-1">{{ formatMontant(caution.montantCaution) }}</p>
+                    <div class="flex items-center gap-2 shrink-0 ml-3">
+                      <!-- Supprimer -->
+                      <button type="button"
+                        (click)="openDelete('caution', caution.id!, (caution.prenom ?? '') + ' ' + (caution.nom ?? ''))"
+                        appButton variant="outline" size="icon"
+                        class="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        title="Supprimer la caution">
+                        <lucide-icon [img]="Trash2Icon" [size]="14" />
+                      </button>
+
+                      <!-- Modifier -->
+                      <button type="button"
+                        (click)="openEditCaution(caution)"
+                        appButton variant="outline" size="icon"
+                        class="text-warning hover:bg-warning hover:text-warning-foreground"
+                        title="Modifier la caution">
+                        <lucide-icon [img]="EditIcon" [size]="14" />
+                      </button>
+
+                      <!-- Ajouter une image (avec dropdown) -->
+                      <app-dropdown
+                        [items]="imageTypes.map(t => ({ label: t.libelle, required: t.obligation }))"
+                        (itemSelected)="triggerImageUpload(caution.id!, $event.label, imageInput)">
+                        <button dropdownTrigger type="button"
+                          appButton variant="outline" size="sm"
+                          [disabled]="isUploadingMedia()"
+                          title="Ajouter une image">
+                          <lucide-icon [img]="ImageIcon" [size]="14" />
+                          <span class="ml-1 hidden sm:inline">Image</span>
+                          <lucide-icon [img]="ChevronDownIcon" [size]="12" class="ml-1 opacity-60" />
+                        </button>
+                      </app-dropdown>
+
+                      <!-- Ajouter un document (avec dropdown) -->
+                      <app-dropdown
+                        [items]="documentTypes.map(t => ({ label: t.libelle, required: t.obligation }))"
+                        (itemSelected)="triggerDocUpload(caution.id!, $event.label, docInput)">
+                        <button dropdownTrigger type="button"
+                          appButton variant="outline" size="sm"
+                          [disabled]="isUploadingMedia()"
+                          title="Ajouter un document">
+                          <lucide-icon [img]="FilePlusIcon" [size]="14" />
+                          <span class="ml-1 hidden sm:inline">Document</span>
+                          <lucide-icon [img]="ChevronDownIcon" [size]="12" class="ml-1 opacity-60" />
+                        </button>
+                      </app-dropdown>
+
+                      <!-- Inputs fichiers cachés (partagés par caution) -->
+                      <input #imageInput type="file" hidden accept="image/*"
+                        (change)="onMediaFileSelected($event)" />
+                      <input #docInput type="file" hidden accept="application/pdf,image/*"
+                        (change)="onMediaFileSelected($event)" />
+                    </div>
+                  </div>
+
+                  <!-- Corps avec photo + infos -->
+                  <div class="p-4">
+                    <div class="flex flex-col md:flex-row gap-4">
+                      <!-- Photo de profil -->
+                      <div class="flex flex-col items-center gap-2 shrink-0">
+                        <div class="relative">
+                          <div class="w-24 h-24 rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center">
+                            @if (caution.photoProfil) {
+                              <img [src]="getPhotoUrl(caution.photoProfil)" alt="Photo {{ caution.nom }}" class="w-full h-full object-cover" />
+                            } @else {
+                              <lucide-icon [img]="UserIcon" [size]="40" class="text-muted-foreground/40" />
+                            }
+                          </div>
+                          <!-- Bouton caméra pour changer la photo -->
+                          <button type="button"
+                            (click)="photoInput.click()"
+                            class="absolute bottom-0 right-0 flex items-center justify-center w-8 h-8 rounded-full bg-background text-warning-foreground shadow-md hover:bg-warning/90 transition-colors">
+                            <lucide-icon [img]="CameraIcon" [size]="14" />
+                            <input #photoInput type="file" hidden accept="image/*" (change)="onPhotoChange($event, caution.id!)" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Informations -->
+                      <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+                        @if (caution.dateNaissance) {
+                          <div class="flex flex-col py-1">
+                            <span class="text-xs text-muted-foreground">Date de naissance</span>
+                            <span class="text-sm font-medium text-foreground">{{ caution.dateNaissance | date:'dd/MM/yyyy' }}</span>
+                          </div>
+                        }
+                        @if (caution.lieuNaissance) {
+                          <div class="flex flex-col py-1">
+                            <span class="text-xs text-muted-foreground">Lieu de naissance</span>
+                            <span class="text-sm font-medium text-foreground">{{ caution.lieuNaissance }}</span>
+                          </div>
+                        }
+                        @if (caution.genre) {
+                          <div class="flex flex-col py-1">
+                            <span class="text-xs text-muted-foreground">Sexe</span>
+                            <span class="text-sm font-medium text-foreground">{{ caution.genre }}</span>
+                          </div>
+                        }
+                        @if (caution.situationMatri) {
+                          <div class="flex flex-col py-1">
+                            <span class="text-xs text-muted-foreground">Situation matrimoniale</span>
+                            <span class="text-sm font-medium text-foreground">{{ situationMatriLabel(caution.situationMatri) }}</span>
+                          </div>
+                        }
+                        @if (typeof caution.nationalite !== "number") {
+                          <div class="flex flex-col py-1">
+                            <span class="text-xs text-muted-foreground">Nationalite</span>
+                            <span class="text-sm font-medium text-foreground">{{ caution.nationalite!.nationalite! }}</span>
+                          </div>
+                        }
+                        @if (caution.contact || caution.telephone) {
+                          <div class="flex flex-col py-1">
+                            <span class="text-xs text-muted-foreground">Contact</span>
+                            <span class="text-sm font-medium text-foreground">{{ caution.contact || caution.telephone }}</span>
+                          </div>
+                        }
+                        @if (caution.profession) {
+                          <div class="flex flex-col py-1">
+                            <span class="text-xs text-muted-foreground">Profession</span>
+                            <span class="text-sm font-medium text-foreground">{{ caution.profession }}</span>
+                          </div>
+                        }
+                        @if (caution.typePiece) {
+                          <div class="flex flex-col py-1">
+                            <span class="text-xs text-muted-foreground">Nature de la pièce</span>
+                            <span class="text-sm font-medium text-foreground">{{ typePieceLabel(caution.typePiece) }}</span>
+                          </div>
+                        }
+                        @if (caution.numPiece) {
+                          <div class="flex flex-col py-1">
+                            <span class="text-xs text-muted-foreground">Numero de piece</span>
+                            <span class="text-sm font-medium text-foreground">{{caution.numPiece}}</span>
+                          </div>
+                        }
+                        @if (caution.justif != null) {
+                          <div class="flex flex-col py-1">
+                            <span class="text-xs text-muted-foreground">Justificatif</span>
+                            <span class="text-sm font-medium">{{ caution.justif }}</span>
+                          </div>
+                        }
+                        @if (caution.revenu != null) {
+                          <div class="flex flex-col py-1">
+                            <span class="text-xs text-muted-foreground">Montant revenus</span>
+                            <span class="text-sm font-medium text-primary">{{ formatMontant(caution.revenu) }}</span>
+                          </div>
+                        }
+                        @if (typeof caution.ville !== "number") {
+                          <div class="flex flex-col py-1">
+                            <span class="text-xs text-muted-foreground">Ville</span>
+                            <span class="text-sm font-medium text-foreground">{{ caution.ville?.libelle }}</span>
+                          </div>
+                        }
+                        @if (typeof caution.commune !== "number") {
+                          <div class="flex flex-col py-1">
+                            <span class="text-xs text-muted-foreground">Commune</span>
+                            <span class="text-sm font-medium text-foreground">{{ caution.commune!.libelle }}</span>
+                          </div>
+                        }
+                        @if (caution.quartier) {
+                          <div class="flex flex-col py-1">
+                            <span class="text-xs text-muted-foreground">Quartier</span>
+                            <span class="text-sm font-medium text-foreground">{{ caution.quartier }}</span>
+                          </div>
+                        }
+                        @if (caution.rue) {
+                          <div class="flex flex-col py-1">
+                            <span class="text-xs text-muted-foreground">Rue</span>
+                            <span class="text-sm font-medium text-foreground">{{ caution.rue }}</span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+
+                    <!-- Boutons Voir images/documents -->
+                    <div class="flex items-center gap-2 mt-4 pt-4 border-t border-border">
+                      <button type="button"
+                        (click)="toggleImages(i)"
+                        appButton variant="outline" size="sm">
+                        <lucide-icon [img]="EyeIcon" [size]="14" />
+                        <span class="ml-1.5">Voir les images</span>
+                        @if (caution.images && caution.images.length > 0) {
+                          <span class="ml-1.5 px-1.5 py-0.5 rounded-full bg-muted text-xs">{{ caution.images.length }}</span>
+                        }
+                      </button>
+
+                      <button type="button"
+                        (click)="toggleDocuments(i)"
+                        appButton variant="outline" size="sm">
+                        <lucide-icon [img]="EyeIcon" [size]="14" />
+                        <span class="ml-1.5">Voir les documents</span>
+                        @if (caution.documents && caution.documents.length > 0) {
+                          <span class="ml-1.5 px-1.5 py-0.5 rounded-full bg-muted text-xs">{{ caution.documents.length }}</span>
+                        }
+                      </button>
+                    </div>
+
+                    <!-- Section images (collapsible) -->
+                    @if (expandedImages().includes(i)) {
+                      <div class="mt-4 pt-4 border-t border-border">
+                        <h5 class="text-sm font-semibold mb-3">Images</h5>
+                        @if (!caution.images || caution.images.length === 0) {
+                          <p class="text-sm text-muted-foreground">Aucune image chargée.</p>
+                        } @else {
+                          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                            @for (image of caution.images; track image.id) {
+                              <div class="relative group rounded-lg border border-border overflow-hidden bg-muted/30">
+                                <img [src]="getMediaUrl(image.url!)" alt="{{ image.libelle }}" class="w-full h-32 object-cover" />
+                                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <button type="button"
+                                    (click)="openDelete('caution', image.id!, image.libelle ?? 'Image')"
+                                    class="text-white hover:text-destructive">
+                                    <lucide-icon [img]="Trash2Icon" [size]="18" />
+                                  </button>
+                                </div>
+                                <div class="absolute bottom-0 left-0 right-0 bg-black/70 p-2">
+                                  <p class="text-xs text-white truncate">{{ image.libelle }}</p>
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+
+                    <!-- Section documents (collapsible) -->
+                    @if (expandedDocuments().includes(i)) {
+                      <div class="mt-4 pt-4 border-t border-border">
+                        <h5 class="text-sm font-semibold mb-3">Documents</h5>
+                        @if (!caution.documents || caution.documents.length === 0) {
+                          <p class="text-sm text-muted-foreground">Aucun document chargé.</p>
+                        } @else {
+                          <div class="space-y-2">
+                            @for (doc of caution.documents; track doc.id) {
+                              <div class="flex items-center justify-between p-3 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors">
+                                <div class="flex items-center gap-3 min-w-0">
+                                  <lucide-icon [img]="FileTextIcon" [size]="20" class="text-primary shrink-0" />
+                                  <div class="min-w-0">
+                                    <p class="text-sm font-medium truncate">{{ doc.libelle }}</p>
+                                  </div>
+                                </div>
+                                <div class="flex items-center gap-1 shrink-0">
+                                  <button type="button"
+                                    (click)="downloadDocument(doc.url!, doc.libelle!)"
+                                    appButton variant="ghost" size="icon"
+                                    title="Télécharger">
+                                    <lucide-icon [img]="DownloadIcon" [size]="14" />
+                                  </button>
+                                  <button type="button"
+                                    (click)="openDelete('doc', doc.id!, doc.libelle ?? 'Document')"
+                                    appButton variant="ghost" size="icon"
+                                    class="text-destructive hover:text-destructive"
+                                    title="Supprimer">
+                                    <lucide-icon [img]="Trash2Icon" [size]="14" />
+                                  </button>
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
                     }
                   </div>
-                  <button type="button"
-                    (click)="openDelete('caution', caution.id!, (caution.prenom ?? '') + ' ' + (caution.nom ?? ''))"
-                    class="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0 ml-3 cursor-pointer">
-                    <lucide-icon [img]="Trash2Icon" [size]="14" />
-                  </button>
                 </div>
               }
             </div>
@@ -80,11 +331,17 @@
     }
 
     <!-- ══ DOCUMENTS ANNEXES ═════════════════════════════════════════════ -->
+    @if (view() === 'documents' || view() === 'both') {
+    @if (view() === 'both') {
+    <div class="flex items-center gap-3 mb-1 mt-2">
+      <h2 class="text-base font-semibold text-foreground">Documents annexes</h2>
+      <div class="flex-1 h-px bg-border"></div>
+    </div>
+    }
     <app-card>
       <app-card-header>
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-3">
           <div class="flex items-center gap-2">
-            <app-card-title>Documents annexes</app-card-title>
             @if (documents().length > 0) {
               <span class="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
                 {{ documents().length }} document{{ documents().length > 1 ? 's' : '' }}
@@ -153,6 +410,7 @@
         }
       </app-card-content>
     </app-card>
+    }
 
   }
 
@@ -165,14 +423,91 @@
   </app-drawer-header>
   <app-drawer-content>
     <form [formGroup]="cautionForm" class="flex flex-col gap-4">
+      <!-- Nom / Prénom -->
       <div class="grid grid-cols-2 gap-4">
-        <app-form-input name="prenom" label="Prénom" placeholder="Ex: Konan" required />
         <app-form-input name="nom" label="Nom" placeholder="Ex: Yao" required />
+        <app-form-input name="prenom" label="Prénoms" placeholder="Ex: Konan" required />
       </div>
-      <app-form-input name="telephone" label="Téléphone" placeholder="Ex: 07 00 00 00 00" />
-      <app-form-input name="profession" label="Profession" placeholder="Ex: Commerçant(e)" />
-      <app-form-input name="adresse" label="Adresse" placeholder="Ex: Cocody, Abidjan" />
-      <app-form-input name="montantCaution" label="Montant de caution (FCFA)" type="number" placeholder="Ex: 500000" />
+
+      <!-- Date/Lieu naissance + Sexe + Situation matrimoniale -->
+      <div class="grid grid-cols-2 gap-4">
+        <app-form-input name="dateNaissance" label="Date de naissance" type="date" required />
+        <app-form-input name="lieuNaissance" label="Lieu de naissance" placeholder="Ex: Abidjan" required />
+        <app-form-select
+          name="genre"
+          label="Sexe"
+          [options]="genreOptions"
+          placeholder="Choisir"
+          required
+        />
+        <app-form-select
+          name="situationMatri"
+          label="Situation matrimoniale"
+          [options]="situationMatriOptions"
+          placeholder="—"
+        />
+      </div>
+
+      <!-- Contact + Nature pièce + N° pièce -->
+      <div class="grid grid-cols-2 gap-4">
+        <app-form-input name="contact" label="Contacts" placeholder="Ex: 07 00 00 00 00" required />
+        <app-form-select
+          name="typePiece"
+          label="Nature de la pièce"
+          [options]="typePieceOptions"
+          placeholder="Choisir"
+          required
+        />
+        <app-form-input name="numPiece" label="Numéro de la pièce" placeholder="Ex: CI-1234567" required class="col-span-2"/>
+      </div>
+
+      <!-- Revenus + Justificatif -->
+      <div class="grid grid-cols-2 gap-4">
+        <app-form-input name="revenu" label="Montant revenus (FCFA)" type="number" placeholder="Ex: 500000" required />
+        <app-form-input name="justif" label="Justificatif" placeholder="Ex: Bulletin de salaire" required />
+      </div>
+
+      <!-- Nationalité + Profession -->
+      <div class="grid grid-cols-2 gap-4">
+        <app-form-select
+          name="nationalite"
+          label="Nationalité"
+          [options]="paysListe()"
+          bindLabel="nationalite"
+          bindValue="id"
+          placeholder="Choisir"
+          required
+        />
+        <app-form-input name="profession" label="Profession" placeholder="Ex: Commerçant(e)" required />
+      </div>
+
+      <!-- Ville + Commune -->
+      <div class="grid grid-cols-2 gap-4">
+        <app-form-select
+          name="ville"
+          label="Ville"
+          [options]="villesListe()"
+          bindLabel="libelle"
+          bindValue="id"
+          placeholder="Choisir"
+          required
+        />
+        <app-form-select
+          name="commune"
+          label="Commune"
+          [options]="communesListe()"
+          bindLabel="libelle"
+          bindValue="id"
+          placeholder="Choisir"
+          required
+        />
+      </div>
+
+      <!-- Quartier + Rue -->
+      <div class="grid grid-cols-2 gap-4">
+        <app-form-input name="quartier" label="Quartier" placeholder="Ex: Cocody" required />
+        <app-form-input name="rue" label="Rue" placeholder="Ex: Rue des jardins" />
+      </div>
     </form>
   </app-drawer-content>
   <app-drawer-footer>

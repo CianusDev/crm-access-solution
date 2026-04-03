@@ -1,6 +1,5 @@
 import { Component, OnInit, inject, input, output, signal, effect } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DatePipe } from '@angular/common';
 import {
   LucideAngularModule,
   Plus,
@@ -10,6 +9,14 @@ import {
   FileText,
   Upload,
   Search,
+  Edit,
+  Image,
+  FilePlus,
+  Camera,
+  Eye,
+  Download,
+  UserIcon,
+  ChevronDown,
 } from 'lucide-angular';
 import {
   CardComponent,
@@ -32,10 +39,14 @@ import {
   DialogDescriptionComponent,
   DialogFooterComponent,
 } from '@/shared/components/dialog/dialog.component';
+import { Dropdown } from '@/shared/components/dropdown/dropdown.component';
 import { FormInput } from '@/shared/components/form-input/form-input.component';
+import { FormSelect } from '@/shared/components/form-select/form-select.component';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { CreditService } from '../../../../services/credit/credit.service';
 import { CautionSolidaire } from '../../../../interfaces/credit.interface';
+import { DatePipe } from '@angular/common';
+import { CAUTION_IMAGE_TYPES, CAUTION_DOCUMENT_TYPES } from '../../../../constants/caution-documents';
 
 const DOC_BASE_URL = 'https://crm-fichiers.creditaccess.ci/crm/credit-ca/';
 
@@ -52,7 +63,6 @@ type DocRow = {
   templateUrl: './cautions-section.component.html',
   imports: [
     ReactiveFormsModule,
-    DatePipe,
     LucideAngularModule,
     CardComponent,
     CardContentComponent,
@@ -69,38 +79,57 @@ type DocRow = {
     DialogTitleComponent,
     DialogDescriptionComponent,
     DialogFooterComponent,
+    Dropdown,
     FormInput,
+    FormSelect,
+    DatePipe,
   ],
 })
 export class CautionsSectionComponent implements OnInit {
-  ref       = input<string>('');
-  isGP      = input<boolean>(false);
+  ref          = input<string>('');
+  isGP         = input<boolean>(false);
+  view         = input<'cautions' | 'documents' | 'both'>('both');
   prefilledDoc = input<{ libelle: string; version: number } | null>(null);
   readonly docsChanged = output<void>();
 
-  readonly PlusIcon        = Plus;
-  readonly Trash2Icon      = Trash2;
+  readonly PlusIcon = Plus;
+  readonly Trash2Icon = Trash2;
   readonly AlertCircleIcon = AlertCircle;
-  readonly UserCheckIcon   = UserCheck;
-  readonly FileTextIcon    = FileText;
-  readonly UploadIcon      = Upload;
-  readonly SearchIcon      = Search;
+  readonly UserIcon = UserIcon;
+  readonly FileTextIcon = FileText;
+  readonly UploadIcon = Upload;
+  readonly SearchIcon = Search;
+  readonly EditIcon = Edit;
+  readonly ImageIcon = Image;
+  readonly FilePlusIcon = FilePlus;
+  readonly CameraIcon = Camera;
+  readonly EyeIcon = Eye;
+  readonly DownloadIcon = Download;
+  readonly UserCheckIcon = UserCheck;
+  readonly ChevronDownIcon = ChevronDown;
 
-  private readonly fb            = inject(FormBuilder);
+  // Types de documents
+  readonly imageTypes = CAUTION_IMAGE_TYPES;
+  readonly documentTypes = CAUTION_DOCUMENT_TYPES;
+
+  private readonly fb = inject(FormBuilder);
   private readonly creditService = inject(CreditService);
-  private readonly toast         = inject(ToastService);
+  private readonly toast = inject(ToastService);
 
   // ── State ──────────────────────────────────────────────────────────────
   readonly isLoading = signal(false);
-  readonly error     = signal<string | null>(null);
-  readonly cautions  = signal<CautionSolidaire[]>([]);
+  readonly error = signal<string | null>(null);
+  readonly cautions = signal<CautionSolidaire[]>([]);
   readonly documents = signal<DocRow[]>([]);
   readonly documentsFiltered = signal<DocRow[]>([]);
   readonly searchQuery = signal('');
+  readonly expandedImages = signal<number[]>([]); // Indices des cautions avec images visibles
+  readonly expandedDocuments = signal<number[]>([]); // Indices des cautions avec documents visibles
 
   // Caution drawer
   cautionDrawerOpen = false;
   readonly isSavingCaution = signal(false);
+  editingCautionId: number | null = null; // Pour différencier ajout vs modification
 
   // Document upload drawer
   docDrawerOpen = false;
@@ -110,17 +139,71 @@ export class CautionsSectionComponent implements OnInit {
 
   // Delete
   deleteDialogOpen = false;
-  deleteTarget: { type: 'caution' | 'doc'; id: number; label: string } | null = null;
+  deleteTarget: {
+    type: 'caution' | 'doc' | 'image' | 'document';
+    id: number;
+    label: string;
+  } | null = null;
   readonly isDeleting = signal(false);
+
+  // ── Référentiels ────────────────────────────────────────────────────────
+  readonly paysListe = signal<{ id: number; nationalite: string }[]>([]);
+  readonly villesListe = signal<{ id: number; libelle: string }[]>([]);
+  readonly communesListe = signal<{ id: number; libelle: string }[]>([]);
+
+  // ── Options statiques ──────────────────────────────────────────────────
+  readonly SITUATION_MATRI: Record<string | number, string> = {
+    1: 'Célibataire', 2: 'Concubinage', 3: 'Marié(e)', 4: 'Divorcé', 5: 'Veuf / Veuve',
+  };
+
+  readonly TYPE_PIECE: Record<string | number, string> = {
+    1: 'CNI', 2: 'PASSEPORT', 3: 'CARTE CONSULAIRE',
+    4: 'PERMIS DE CONDUIRE', 5: "ATTESTATION D'IDENTITÉ", 6: 'CARTE DE RÉSIDENT',
+  };
+
+  readonly genreOptions = [
+    { value: 'Feminin', label: 'Féminin' },
+    { value: 'Masculin', label: 'Masculin' },
+  ];
+
+  readonly situationMatriOptions = Object.entries(this.SITUATION_MATRI).map(([value, label]) => ({ value, label }));
+
+  readonly typePieceOptions = Object.entries(this.TYPE_PIECE).map(([value, label]) => ({ value, label }));
+
+  situationMatriLabel(val: string | number | undefined): string {
+    if (val == null) return '—';
+    return this.SITUATION_MATRI[val] ?? String(val);
+  }
+
+  typePieceLabel(val: string | number | undefined): string {
+    if (val == null) return '—';
+    return this.TYPE_PIECE[val] ?? String(val);
+  }
+
+  // ── Upload media caution (image/document) ─────────────────────────────
+  /** Caution dont on est en train d'uploader un média */
+  mediaCautionTarget: { id: number; type: 'image' | 'doc'; libelle?: string } | null = null;
+  readonly isUploadingMedia = signal(false);
 
   // ── Forms ──────────────────────────────────────────────────────────────
   readonly cautionForm = this.fb.group({
-    nom:            ['', Validators.required],
-    prenom:         ['', Validators.required],
-    telephone:      [''],
-    profession:     [''],
-    adresse:        [''],
-    montantCaution: [null as number | null],
+    nom: ['', Validators.required],
+    prenom: ['', Validators.required],
+    dateNaissance: ['', Validators.required],
+    lieuNaissance: ['', Validators.required],
+    genre: [null as string | null, Validators.required],
+    situationMatri: [null as string | null],
+    contact: ['', Validators.required],
+    typePiece: [null as string | null, Validators.required],
+    numPiece: ['', Validators.required],
+    revenu: [null as number | null, Validators.required],
+    justif: ['', Validators.required],
+    nationalite: [null as number | null, Validators.required],
+    profession: ['', Validators.required],
+    ville: [null as number | null, Validators.required],
+    commune: [null as number | null, Validators.required],
+    quartier: ['', Validators.required],
+    rue: [''],
   });
 
   // ── Constructor ────────────────────────────────────────────────────────
@@ -134,6 +217,17 @@ export class CautionsSectionComponent implements OnInit {
   // ── Lifecycle ──────────────────────────────────────────────────────────
   ngOnInit() {
     this.loadData();
+    this.loadReferentiels();
+  }
+
+  private loadReferentiels() {
+    this.creditService.getPaysCommuneData().subscribe({
+      next: (data) => {
+        this.paysListe.set(data.pays ?? []);
+        this.villesListe.set(data.villes ?? []);
+        this.communesListe.set(data.communes ?? []);
+      },
+    });
   }
 
   loadData() {
@@ -141,6 +235,7 @@ export class CautionsSectionComponent implements OnInit {
     this.error.set(null);
 
     if (this.isGP()) {
+      // GP : Charger seulement les documents
       this.creditService.getDocuments(this.ref()).subscribe({
         next: (docs) => {
           this.documents.set(docs);
@@ -153,19 +248,31 @@ export class CautionsSectionComponent implements OnInit {
         },
       });
     } else {
-      this.creditService.getAnalyseFinanciere(this.ref()).subscribe({
+      // Non-GP : Charger cautions + documents depuis getGarantiesDemande
+      this.creditService.getGarantiesDemande(this.ref()).subscribe({
         next: (data) => {
-          if (!data?.demande) {
+          if (!data) {
             this.error.set('Données du dossier introuvables.');
             this.isLoading.set(false);
             return;
           }
-          this.cautions.set(data.demande.cautionsSolidaires ?? []);
-          this.documents.set(data.demande.documentsAnalyse ?? []);
-          this.documentsFiltered.set(data.demande.documentsAnalyse ?? []);
-          this.isLoading.set(false);
+          this.cautions.set(data.crCaution ?? []);
+
+          // Pour les documents, utiliser getAnalyseFinanciere séparément
+          this.creditService.getAnalyseFinanciere(this.ref()).subscribe({
+            next: (analyseData) => {
+              this.documents.set(analyseData.demande?.documentsAnalyse ?? []);
+              this.documentsFiltered.set(analyseData.demande?.documentsAnalyse ?? []);
+              this.isLoading.set(false);
+            },
+            error: () => {
+              // Pas grave si les documents ne chargent pas, on a au moins les cautions
+              this.isLoading.set(false);
+            },
+          });
         },
-        error: () => {
+        error: (err) => {
+          console.error('❌ Erreur chargement garanties:', err);
           this.error.set('Impossible de charger les données du dossier.');
           this.isLoading.set(false);
         },
@@ -180,7 +287,7 @@ export class CautionsSectionComponent implements OnInit {
       this.documentsFiltered.set(this.documents());
     } else {
       this.documentsFiltered.set(
-        this.documents().filter(doc => doc.libelle?.toLowerCase().includes(q))
+        this.documents().filter((doc) => doc.libelle?.toLowerCase().includes(q)),
       );
     }
   }
@@ -192,34 +299,157 @@ export class CautionsSectionComponent implements OnInit {
 
   // ── Cautions ───────────────────────────────────────────────────────────
   openAddCaution() {
-    this.cautionForm.reset({ nom: '', prenom: '', telephone: '', profession: '', adresse: '', montantCaution: null });
+    this.editingCautionId = null;
+    this.cautionForm.reset();
     this.cautionDrawerOpen = true;
   }
 
+  openEditCaution(caution: CautionSolidaire) {
+    this.editingCautionId = caution.id!;
+    this.cautionForm.patchValue({
+      nom: caution.nom,
+      prenom: caution.prenom,
+      dateNaissance: caution.dateNaissance,
+      lieuNaissance: caution.lieuNaissance,
+      genre: caution.genre,
+      situationMatri: caution.situationMatri?.toString(),
+      contact: caution.contact || caution.telephone,
+      typePiece: caution.typePiece?.toString(),
+      numPiece: caution.numPiece,
+      revenu: caution.revenu,
+      justif: caution.justif,
+      nationalite:
+        typeof caution.nationalite === 'object' ? caution.nationalite?.id : caution.nationalite,
+      profession: caution.profession,
+      ville: typeof caution.ville === 'object' ? caution.ville?.id : caution.ville,
+      commune: typeof caution.commune === 'object' ? caution.commune?.id : caution.commune,
+      quartier: caution.quartier,
+      rue: caution.rue,
+    });
+    this.cautionDrawerOpen = true;
+  }
+
+  getPhotoUrl(photoProfil: string): string {
+    return DOC_BASE_URL + photoProfil;
+  }
+
+  getMediaUrl(path: string): string {
+    return DOC_BASE_URL + path;
+  }
+
+  toggleImages(index: number) {
+    const current = this.expandedImages();
+    if (current.includes(index)) {
+      this.expandedImages.set(current.filter((i) => i !== index));
+    } else {
+      this.expandedImages.set([...current, index]);
+    }
+  }
+
+  toggleDocuments(index: number) {
+    const current = this.expandedDocuments();
+    if (current.includes(index)) {
+      this.expandedDocuments.set(current.filter((i) => i !== index));
+    } else {
+      this.expandedDocuments.set([...current, index]);
+    }
+  }
+
+  onPhotoChange(event: Event, cautionId: number) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('refDemande', this.ref());
+    fd.append('crCaution', String(cautionId));
+    fd.append('photoProfil', file);
+    this.creditService.uploadPhotoCaution(fd).subscribe({
+      next: () => { this.toast.success('Photo mise à jour.'); this.loadData(); },
+      error: () => this.toast.error('Erreur lors de la mise à jour de la photo.'),
+    });
+  }
+
+  triggerImageUpload(cautionId: number, libelle: string, inputEl: HTMLInputElement) {
+    this.mediaCautionTarget = { id: cautionId, type: 'image', libelle };
+    inputEl.click();
+  }
+
+  triggerDocUpload(cautionId: number, libelle: string, inputEl: HTMLInputElement) {
+    this.mediaCautionTarget = { id: cautionId, type: 'doc', libelle };
+    inputEl.click();
+  }
+
+  onMediaFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || !this.mediaCautionTarget) return;
+    const { id, type, libelle } = this.mediaCautionTarget;
+    const fd = new FormData();
+    fd.append('type', 'CAUTION');
+    fd.append('element', String(id));
+    fd.append('libelle', libelle || file.name.replace(/\.[^/.]+$/, ''));
+    fd.append('description', '');
+    if (type === 'image') {
+      fd.append('photo', file);
+      this.isUploadingMedia.set(true);
+      this.creditService.uploadImageGarantie(fd).subscribe({
+        next: () => { this.toast.success('Image ajoutée.'); this.isUploadingMedia.set(false); this.loadData(); },
+        error: () => { this.toast.error("Erreur lors de l'upload."); this.isUploadingMedia.set(false); },
+      });
+    } else {
+      fd.append('file', file);
+      this.isUploadingMedia.set(true);
+      this.creditService.uploadDocumentGarantie(fd).subscribe({
+        next: () => { this.toast.success('Document ajouté.'); this.isUploadingMedia.set(false); this.loadData(); },
+        error: () => { this.toast.error("Erreur lors de l'upload."); this.isUploadingMedia.set(false); },
+      });
+    }
+    input.value = '';
+    this.mediaCautionTarget = null;
+  }
+
   saveCaution() {
-    if (this.cautionForm.invalid) { this.cautionForm.markAllAsTouched(); return; }
+    if (this.cautionForm.invalid) {
+      this.cautionForm.markAllAsTouched();
+      this.toast.error('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+
     const val = this.cautionForm.value;
     this.isSavingCaution.set(true);
-    this.creditService.saveCautionSolidaire({
-      nom:            val.nom,
-      prenom:         val.prenom,
-      telephone:      val.telephone || null,
-      profession:     val.profession || null,
-      adresse:        val.adresse || null,
-      montantCaution: val.montantCaution,
-      refDemande:     this.ref(),
-    }).subscribe({
-      next: () => {
-        this.toast.success('Caution enregistrée.');
-        this.cautionDrawerOpen = false;
-        this.isSavingCaution.set(false);
-        this.loadData();
-      },
-      error: () => {
-        this.toast.error("Erreur lors de l'enregistrement.");
-        this.isSavingCaution.set(false);
-      },
-    });
+    this.creditService
+      .saveCautionSolidaire({
+        refDemande: this.ref(),
+        nom: val.nom,
+        prenom: val.prenom,
+        dateNaissance: val.dateNaissance,
+        lieuNaissance: val.lieuNaissance,
+        genre: val.genre,
+        situationMatri: val.situationMatri || null,
+        contact: val.contact,
+        typePiece: val.typePiece,
+        numPiece: val.numPiece,
+        revenu: val.revenu,
+        justif: val.justif,
+        nationalite: val.nationalite,
+        profession: val.profession,
+        ville: val.ville,
+        commune: val.commune,
+        quartier: val.quartier,
+        rue: val.rue || null,
+      })
+      .subscribe({
+        next: () => {
+          this.toast.success('Caution enregistrée.');
+          this.cautionDrawerOpen = false;
+          this.isSavingCaution.set(false);
+          this.loadData();
+        },
+        error: () => {
+          this.toast.error("Erreur lors de l'enregistrement.");
+          this.isSavingCaution.set(false);
+        },
+      });
   }
 
   // ── Documents ──────────────────────────────────────────────────────────
@@ -283,11 +513,12 @@ export class CautionsSectionComponent implements OnInit {
     this.deleteDialogOpen = false;
     this.isDeleting.set(true);
 
-    const obs$ = type === 'caution'
-      ? this.creditService.deleteCautionSolidaire(id)
-      : this.isGP()
-        ? this.creditService.deleteDocument(id)
-        : this.creditService.deleteDocumentAnalyse(id);
+    const obs$ =
+      type === 'caution'
+        ? this.creditService.deleteCautionSolidaire(id)
+        : this.isGP()
+          ? this.creditService.deleteDocument(id)
+          : this.creditService.deleteDocumentAnalyse(id);
 
     obs$.subscribe({
       next: () => {
