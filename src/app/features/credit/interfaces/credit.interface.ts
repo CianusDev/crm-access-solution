@@ -781,6 +781,47 @@ export interface CreditGarantieProposes {
   garanties?: Array<{ libelle: string; montant: number }>;
 }
 
+export interface CreditGarantieDecisionItem {
+  libelle?: string;
+  montant?: number;
+  pourcentage?: number;
+  montantDecision?: number;
+  refTypeGarantie?: string;
+  elements?: Array<{
+    marque?: string;
+    immatriculation?: string;
+    typeVehicule?: string;
+    valeurEstime?: number;
+  }>;
+}
+
+export interface CreditGarantieDecision {
+  total?: number;
+  rapportCredit?: number;
+  garanties?: CreditGarantieDecisionItem[];
+}
+
+export interface AuditLog {
+  nom?: string;
+  prenom?: string;
+  action?: string;
+  libelle?: string;
+  subject_type?: string;
+  subject_id?: number;
+  before: Record<string, unknown>;
+  after: Record<string, unknown>;
+}
+
+export interface DocumentAnalyse {
+  id?: number;
+  libelle?: string;
+  typeDocument?: string;
+  document?: string;
+  refDemande?: string;
+  createdAt?: string;
+  user?: { nomPrenom?: string };
+}
+
 export interface CreditResume {
   demande: CreditFicheDemandeDetail;
   aSwots?: CreditSWOTItem[];
@@ -790,8 +831,10 @@ export interface CreditResume {
   precomites?: CreditComiteDecision[];
   comites?: CreditComiteDecision[];
   decision?: CreditDecisionFinale;
-  garantieDecision?: unknown;
+  garantieDecision?: CreditGarantieDecision;
+  nombreDemandes?: number;
   observations?: CreditObservation[];
+  documentsAnalyse?: DocumentAnalyse[];
 }
 
 // ── Analyse financière ────────────────────────────────────────────────────────
@@ -995,16 +1038,6 @@ export interface CautionSolidaire {
   photoProfil?: string;
   images?: GarantieMedia[];
   documents?: GarantieMedia[];
-}
-
-export interface DocumentAnalyse {
-  id?: number;
-  libelle?: string;
-  typeDocument?: string;
-  document?: string;
-  refDemande?: string;
-  createdAt?: string;
-  user?: { nomPrenom?: string };
 }
 
 export interface CreditAnalyseDemandeDetail extends CreditFicheDemandeDetail {

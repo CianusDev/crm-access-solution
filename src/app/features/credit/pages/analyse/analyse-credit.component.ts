@@ -23,7 +23,10 @@ import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { FormTextarea } from '@/shared/components/form-textarea/form-textarea.component';
 import { FormSelect } from '@/shared/components/form-select/form-select.component';
 import { CreditService } from '../../services/credit/credit.service';
-import { AuthService } from '@/core/services/auth/auth.service';
+import {
+  AnalyseCreditFlowService,
+  AnalyseFlowPasswordException,
+} from './analyse-credit-flow.service';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { CREDIT_STATUTS, CreditFicheDemandeDetail } from '../../interfaces/credit.interface';
 import { AnalyseCreditResolvedData } from './analyse-credit.resolver';
@@ -45,13 +48,21 @@ import {
   RequiredDoc,
   getRequiredDocsForGP,
   getRequiredDocsForAR,
-  allRequiredDocsUploaded,
+  REQUIRED_DOCS_SPME_VISITE,
 } from '../../constants/required-documents';
 import {
-  cacaaRapportVisiteComplete,
-  gpClientProfileCompleteForSend,
-  gpTypeAttachmentCompleteForSend,
-} from '../../validation/send-dossier.validation';
+  canSendDossierFromState,
+  canFaireResumeFromState,
+  resumeAccessBlockedMessage,
+} from '../../validation/analyse-send-eligibility';
+import {
+  filterAnalyseTabsByRole,
+  filterAnalyseTabsByWorkflowStatut,
+  GP_ROLES,
+  RC_CC_ROLES,
+  CA_CAA_ROLES,
+  type AnalyseTabId,
+} from './analyse-credit.tabs';
 import { Avatar } from '@/shared/components/avatar/avatar.component';
 import {
   DrawerComponent,
@@ -61,51 +72,6 @@ import {
 } from '@/shared/components/drawer/drawer.component';
 import { DatePipe } from '@angular/common';
 import { StripHtmlPipe } from '@/shared/pipes/strip-html/strip-html.pipe';
-
-type TabId =
-  | 'demande'
-  | 'activite'
-  | 'achats'
-  | 'tresorerie'
-  | 'familial'
-  | 'garanties'
-  | 'cautions'
-  | 'documents'
-  | 'swot'
-  | 'geolocalisation'
-  | 'envoi';
-
-interface Tab {
-  id: TabId;
-  label: string;
-  /** Rôles autorisés. Vide = tous les rôles. */
-  roles?: UserRole[];
-}
-
-const GP_ROLES: UserRole[] = [
-  UserRole.GestionnairePortefeuilles,
-  UserRole.GestionnairePortefeuillesJunior,
-];
-const RC_CC_ROLES: UserRole[] = [UserRole.responsableClient, UserRole.conseilClientele];
-const CA_CAA_ROLES: UserRole[] = [UserRole.ChefAgence, UserRole.ChefAgenceAdjoint];
-
-const ALL_TABS: Tab[] = [
-  { id: 'demande',       label: 'Demande de crédit' },
-  { id: 'activite',      label: 'Profil Activité',    roles: [] },
-  { id: 'achats',        label: 'Achats & Charges',   roles: [] },
-  { id: 'tresorerie',    label: 'Trésorerie',          roles: [] },
-  { id: 'familial',      label: 'Profil Familial',     roles: [] },
-  { id: 'garanties',     label: 'Actifs & Garanties',  roles: [] },
-  { id: 'cautions',      label: 'Cautions solidaires', roles: [] },
-  { id: 'documents',     label: 'Documents annexes',   roles: [] },
-  { id: 'swot',          label: 'SWOT & Comités',      roles: [] },
-  { id: 'geolocalisation', label: 'Géolocalisation' },
-  { id: 'envoi',         label: 'Envoi & Validation' },
-];
-
-const GP_TAB_IDS: TabId[]     = ['demande', 'documents', 'geolocalisation'];
-const RC_CC_TAB_IDS: TabId[]  = ['demande', 'documents', 'geolocalisation'];
-const CA_CAA_TAB_IDS: TabId[] = ['demande', 'documents', 'geolocalisation'];
 
 @Component({
   selector: 'app-analyse-credit',
@@ -155,7 +121,7 @@ export class AnalyseCreditComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly creditService = inject(CreditService);
-  private readonly authService = inject(AuthService);
+  private readonly analyseFlow = inject(AnalyseCreditFlowService);
   private readonly toast = inject(ToastService);
   private readonly permissionService = inject(PermissionService);
 
@@ -180,7 +146,14 @@ export class AnalyseCreditComponent implements OnInit {
       }
 
       // Charger les documents pour vérifier la complétude (GP / RC/CC / CA/CAA)
-      if (this.isGP() || this.isRCCC() || this.isCACaa() || this.isAR()) {
+      if (
+        this.isGP() ||
+        this.isRCCC() ||
+        this.isCACaa() ||
+        this.isAR() ||
+        this.isSuperviseurPME() ||
+        this.enforceAnalysteResumeDocs()
+      ) {
         this.loadUploadedDocs();
       }
     });
@@ -193,19 +166,52 @@ export class AnalyseCreditComponent implements OnInit {
   readonly isRCCC = computed(() => this.permissionService.hasRole(...RC_CC_ROLES));
   readonly isCACaa = computed(() => this.permissionService.hasRole(...CA_CAA_ROLES));
   readonly isAR = computed(() => this.permissionService.hasRole(UserRole.AnalysteRisque));
+  readonly isSuperviseurPME = computed(() => this.permissionService.hasRole(UserRole.SuperviseurPME));
+  readonly isSuperviseurRisqueZone = computed(() =>
+    this.permissionService.hasRole(UserRole.SuperviseurRisqueZone),
+  );
+  /** Legacy : CA / CAA / Admin sur le bandeau « Affecter à un AR » (statut 4). */
+  readonly isChefAgenceWorkflow = computed(() =>
+    this.permissionService.hasRole(
+      UserRole.ChefAgence,
+      UserRole.ChefAgenceAdjoint,
+      UserRole.Admin,
+    ),
+  );
+  /** AR ou Admin sur dossier en analyse financière (statut 5) — mêmes actions bandeau que legacy. */
+  readonly showAnalysteBandeau = computed(() => {
+    const h = this.ficheHeader();
+    if (!h || h.statut !== 5) return false;
+    return this.isAR() || this.permissionService.hasRole(UserRole.Admin);
+  });
+  readonly enforceAnalysteResumeDocs = computed(() => {
+    const h = this.ficheHeader();
+    if (this.isAR()) return true;
+    return !!(h && this.permissionService.hasRole(UserRole.Admin) && h.statut === 5);
+  });
   readonly isPaused = computed(() => this.ficheHeader()?.pause === 1);
 
-  readonly tabs = computed<Tab[]>(() => {
-    if (this.isGP()) {
-      return ALL_TABS.filter((t) => GP_TAB_IDS.includes(t.id));
+  /** Legacy : « Voir le résumé » hors phases 1–5 et 19, dossier non en pause. */
+  readonly showVoirResume = computed(() => {
+    const h = this.ficheHeader();
+    if (!h || this.isPaused()) return false;
+    const s = h.statut;
+    return ![1, 2, 3, 4, 5, 19].includes(s);
+  });
+
+  readonly tabs = computed(() => {
+    const byRole = filterAnalyseTabsByRole(this.isGP(), this.isRCCC(), this.isCACaa());
+    return filterAnalyseTabsByWorkflowStatut(byRole, this.ficheHeader()?.statut);
+  });
+
+  /** Onglet affiché : si la liste d’onglets change (ex. statut), évite un @switch sur un id absent. */
+  readonly safeActiveTab = computed(() => {
+    const ids = this.tabs().map((t) => t.id);
+    const cur = this.activeTab();
+    if (ids.includes(cur)) {
+      return cur;
     }
-    if (this.isRCCC()) {
-      return ALL_TABS.filter((t) => RC_CC_TAB_IDS.includes(t.id));
-    }
-    if (this.isCACaa()) {
-      return ALL_TABS.filter((t) => CA_CAA_TAB_IDS.includes(t.id));
-    }
-    return ALL_TABS;
+    return (ids[0] as AnalyseTabId) ?? 'demande';
   });
 
   // ── State ──────────────────────────────────────────────────────────────
@@ -218,7 +224,7 @@ export class AnalyseCreditComponent implements OnInit {
     [],
   );
   readonly error = signal<string | null>(null);
-  readonly activeTab = signal<TabId>('demande');
+  readonly activeTab = signal<AnalyseTabId>('demande');
   readonly pendingDocLibelle = signal<{ libelle: string; version: number } | null>(null);
   private pendingDocVersion = 0;
 
@@ -239,73 +245,45 @@ export class AnalyseCreditComponent implements OnInit {
     const h = this.ficheHeader();
     if (!h) return [];
     const code = h.typeCredit?.code;
+    if (this.isSuperviseurPME() && h.statut === 19) {
+      return REQUIRED_DOCS_SPME_VISITE;
+    }
+    const bandeauAnalyste =
+      this.isAR() ||
+      (this.permissionService.hasRole(UserRole.Admin) && h.statut === 5);
+    if (bandeauAnalyste) {
+      return getRequiredDocsForAR(code);
+    }
     if (this.isGP()) {
       return getRequiredDocsForGP(code, h.client?.entreprise?.statutJuridique);
-    }
-    if (this.isAR()) {
-      return getRequiredDocsForAR(code);
     }
     return [];
   });
 
-  readonly canSendDossier = computed(() => {
-    const h = this.ficheHeader();
-    const f = this.fiche();
-    const detail = this.effectiveDemandeDetails();
-    if (!h) return false;
+  readonly canSendDossier = computed(() =>
+    canSendDossierFromState({
+      ficheHeader: this.ficheHeader(),
+      fiche: this.fiche(),
+      demandeDetail: this.effectiveDemandeDetails(),
+      uploadedDocLibelles: this.uploadedDocLibelles(),
+      confirmationFrais: this.confirmationFrais(),
+      isGP: this.isGP(),
+      isAR: this.isAR(),
+      isRCCC: this.isRCCC(),
+      isCACaa: this.isCACaa(),
+      isSuperviseurPME: this.isSuperviseurPME(),
+      requiredDocs: this.requiredDocs(),
+    }),
+  );
 
-    if (this.isGP()) {
-      const required = this.requiredDocs();
-      const docsOk =
-        required.length === 0 || allRequiredDocsUploaded(required, this.uploadedDocLibelles());
-      if (!docsOk) return false;
-      if (!gpClientProfileCompleteForSend(h.client)) return false;
-      const isPM = h.client?.typeAgent !== 'PP';
-      if (!gpTypeAttachmentCompleteForSend(h.typeCredit?.code, isPM, f, detail)) return false;
-      return true;
-    }
-
-    if (this.isAR()) {
-      const required = getRequiredDocsForAR(h.typeCredit?.code);
-      if (required.length === 0) return true;
-      return allRequiredDocsUploaded(required, this.uploadedDocLibelles());
-    }
-
-    if (this.isRCCC()) {
-      if (!h.numTransaction) return false;
-      if (h.typeCredit?.code === '015') return true;
-      return this.confirmationFrais();
-    }
-
-    if (this.isCACaa()) {
-      if (!cacaaRapportVisiteComplete(h.statut, h.typeCredit?.code, this.uploadedDocLibelles())) {
-        return false;
-      }
-      return true;
-    }
-
-    return true;
-  });
-
-  /** AR : mêmes contrôles docs que pour « Faire le résumé » (legacy `existenceDocumentACharger`). */
-  readonly canFaireResume = computed(() => {
-    if (!this.isAR()) return true;
-    const h = this.ficheHeader();
-    if (!h) return false;
-    const required = getRequiredDocsForAR(h.typeCredit?.code);
-    if (required.length > 0) {
-      return allRequiredDocsUploaded(required, this.uploadedDocLibelles());
-    }
-    if (h.statut === 5) {
-      const uploaded = this.uploadedDocLibelles().map((l) => l.trim().toLowerCase());
-      const hasAnalyse = uploaded.some(
-        (u) => u.includes('analyse financière') || u.includes('analyse financiere'),
-      );
-      const hasActifs = uploaded.some((u) => u.includes('actif') && u.includes('garantie'));
-      return hasAnalyse && hasActifs;
-    }
-    return true;
-  });
+  /** AR / Admin (statut 5) : mêmes contrôles docs que pour « Faire le résumé » (legacy `existenceDocumentACharger`). */
+  readonly canFaireResume = computed(() =>
+    canFaireResumeFromState({
+      enforceAnalysteDocRules: this.enforceAnalysteResumeDocs(),
+      ficheHeader: this.ficheHeader(),
+      uploadedDocLibelles: this.uploadedDocLibelles(),
+    }),
+  );
 
   // ── RC/CC specific state ──────────────────────────────────────────────
   readonly confirmationFrais = signal(false);
@@ -384,7 +362,14 @@ export class AnalyseCreditComponent implements OnInit {
           this.demande.set(analyse.demande as CreditFicheDemandeDetail);
         }
         this.isLoading.set(false);
-        if (this.isGP() || this.isRCCC() || this.isCACaa() || this.isAR()) {
+        if (
+          this.isGP() ||
+          this.isRCCC() ||
+          this.isCACaa() ||
+          this.isAR() ||
+          this.isSuperviseurPME() ||
+          this.enforceAnalysteResumeDocs()
+        ) {
           this.loadUploadedDocs();
         }
       },
@@ -411,7 +396,7 @@ export class AnalyseCreditComponent implements OnInit {
     });
   }
 
-  switchTab(id: TabId) {
+  switchTab(id: AnalyseTabId) {
     this.pendingDocLibelle.set(null);
     this.activeTab.set(id);
   }
@@ -442,42 +427,28 @@ export class AnalyseCreditComponent implements OnInit {
     this.envoiLoading.set(true);
     this.envoiError.set(null);
 
-    this.authService.verifyPassword(password!).subscribe({
-      next: (res) => {
-        if (res.statut === 500) {
-          this.envoiError.set(res.message || 'Mot de passe incorrect.');
+    this.analyseFlow
+      .envoyerDossierChefAgence(this.ref(), password!, observation || '')
+      .subscribe({
+        next: (data) => {
           this.envoiLoading.set(false);
-          return;
-        }
-        this.creditService
-          .saveCrdObservation({
-            refDemande: this.ref(),
-            decision: 1,
-            observation: observation || '',
-            password: password ?? '',
-          })
-          .subscribe({
-            next: (data) => {
-              this.envoiLoading.set(false);
-              this.envoiDialogOpen = false;
-              if (data.status === 200) {
-                this.toast.success('Le dossier a été envoyé avec succès.');
-                this.router.navigate(['/app/credit/list']);
-              } else {
-                this.toast.error(data.message ?? "Échec de l'envoi du dossier.");
-              }
-            },
-            error: () => {
-              this.envoiLoading.set(false);
-              this.toast.error("Erreur lors de l'envoi du dossier.");
-            },
-          });
-      },
-      error: () => {
-        this.envoiError.set('Mot de passe incorrect.');
-        this.envoiLoading.set(false);
-      },
-    });
+          this.envoiDialogOpen = false;
+          if (data.status === 200) {
+            this.toast.success('Le dossier a été envoyé avec succès.');
+            this.router.navigate(['/app/credit/list']);
+          } else {
+            this.toast.error(data.message ?? "Échec de l'envoi du dossier.");
+          }
+        },
+        error: (err: unknown) => {
+          this.envoiLoading.set(false);
+          if (err instanceof AnalyseFlowPasswordException) {
+            this.envoiError.set(err.message);
+            return;
+          }
+          this.toast.error("Erreur lors de l'envoi du dossier.");
+        },
+      });
   }
 
   // ── N° Perfect ─────────────────────────────────────────────────────────
@@ -493,11 +464,8 @@ export class AnalyseCreditComponent implements OnInit {
       return;
     }
     this.perfectLoading.set(true);
-    this.creditService
-      .updateDemandeCredit({
-        refDemande: this.ref(),
-        numTransaction: this.perfectForm.value.numTransaction!,
-      } as never)
+    this.analyseFlow
+      .saveNumeroPerfect(this.ref(), this.perfectForm.value.numTransaction!)
       .subscribe({
         next: () => {
           this.perfectLoading.set(false);
@@ -528,40 +496,24 @@ export class AnalyseCreditComponent implements OnInit {
     this.ajournerLoading.set(true);
     this.ajournerError.set(null);
 
-    this.authService.verifyPassword(password!).subscribe({
-      next: (res) => {
-        if (res.statut === 500) {
-          this.ajournerError.set(res.message || 'Mot de passe incorrect.');
-          this.ajournerLoading.set(false);
+    this.analyseFlow.ajournerDossier(this.ref(), password!, observation || '').subscribe({
+      next: (data) => {
+        this.ajournerLoading.set(false);
+        this.ajournerDialogOpen = false;
+        if (data.status === 200) {
+          this.toast.success('Le dossier a été ajourné.');
+          this.router.navigate(['/app/credit/list']);
+        } else {
+          this.toast.error(data.message ?? "Échec de l'ajournement.");
+        }
+      },
+      error: (err: unknown) => {
+        this.ajournerLoading.set(false);
+        if (err instanceof AnalyseFlowPasswordException) {
+          this.ajournerError.set(err.message);
           return;
         }
-        this.creditService
-          .saveCrdObservation({
-            refDemande: this.ref(),
-            decision: 2,
-            observation: observation || '',
-            password: password ?? '',
-          })
-          .subscribe({
-            next: (data) => {
-              this.ajournerLoading.set(false);
-              this.ajournerDialogOpen = false;
-              if (data.status === 200) {
-                this.toast.success('Le dossier a été ajourné.');
-                this.router.navigate(['/app/credit/list']);
-              } else {
-                this.toast.error(data.message ?? "Échec de l'ajournement.");
-              }
-            },
-            error: () => {
-              this.ajournerLoading.set(false);
-              this.toast.error("Erreur lors de l'ajournement.");
-            },
-          });
-      },
-      error: () => {
-        this.ajournerError.set('Mot de passe incorrect.');
-        this.ajournerLoading.set(false);
+        this.toast.error("Erreur lors de l'ajournement.");
       },
     });
   }
@@ -573,9 +525,8 @@ export class AnalyseCreditComponent implements OnInit {
     this.ars.set([]);
     this.affecterARDialogOpen = true;
     
-    // Charger les zones
     this.zonesLoading.set(true);
-    this.creditService.getZones().subscribe({
+    this.analyseFlow.loadZones().subscribe({
       next: (zones) => {
         this.zones.set(zones);
         this.zonesLoading.set(false);
@@ -599,14 +550,9 @@ export class AnalyseCreditComponent implements OnInit {
     this.ars.set([]);
     this.affecterARForm.patchValue({ ar: '' });
 
-    this.creditService.getARsByZone(zoneId).subscribe({
+    this.analyseFlow.loadAnalystesRisqueForZone(zoneId).subscribe({
       next: (ars) => {
-        // Construire le libellé "nom prenom" pour l'affichage
-        const arsWithLabel = ars.map(ar => ({
-          ...ar,
-          libelle: `${ar.nom} ${ar.prenom}`
-        }));
-        this.ars.set(arsWithLabel);
+        this.ars.set(ars);
         this.arsLoading.set(false);
       },
       error: () => {
@@ -626,46 +572,34 @@ export class AnalyseCreditComponent implements OnInit {
     this.affecterARLoading.set(true);
     this.affecterARError.set(null);
 
-    // Vérifier le mot de passe
-    this.authService.verifyPassword(password!).subscribe({
-      next: (res) => {
-        if (res.statut === 500) {
-          this.affecterARError.set(res.message || 'Mot de passe incorrect.');
+    this.analyseFlow
+      .affecterAnalysteRisque(
+        this.ref(),
+        Number(zone),
+        ar!,
+        password!,
+        observation || '',
+      )
+      .subscribe({
+        next: (data) => {
           this.affecterARLoading.set(false);
-          return;
-        }
-        // Mot de passe correct, envoyer l'affectation
-        const payload = {
-          refDemande: this.ref(),
-          decision: 1,
-          zone: Number(zone),
-          codeAr: ar!,
-          password: password!,
-          observation: observation || '',
-        };
-
-        this.creditService.affecterDemandeAR(payload).subscribe({
-          next: (data) => {
-            this.affecterARLoading.set(false);
-            if (data.status === 200) {
-              this.toast.success('Dossier affecté avec succès à l\'AR.');
-              this.affecterARDialogOpen = false;
-              this.router.navigate(['/app/credit/list']);
-            } else {
-              this.toast.error(data.message ?? "Échec de l'affectation.");
-            }
-          },
-          error: () => {
-            this.affecterARLoading.set(false);
-            this.toast.error("Erreur lors de l'affectation.");
-          },
-        });
-      },
-      error: () => {
-        this.affecterARError.set('Mot de passe incorrect.');
-        this.affecterARLoading.set(false);
-      },
-    });
+          if (data.status === 200) {
+            this.toast.success("Dossier affecté avec succès à l'AR.");
+            this.affecterARDialogOpen = false;
+            this.router.navigate(['/app/credit/list']);
+          } else {
+            this.toast.error(data.message ?? "Échec de l'affectation.");
+          }
+        },
+        error: (err: unknown) => {
+          this.affecterARLoading.set(false);
+          if (err instanceof AnalyseFlowPasswordException) {
+            this.affecterARError.set(err.message);
+            return;
+          }
+          this.toast.error("Erreur lors de l'affectation.");
+        },
+      });
   }
 
   // ── AR : Avis défavorable ──────────────────────────────────────────
@@ -693,40 +627,70 @@ export class AnalyseCreditComponent implements OnInit {
     this.avisDefavorableLoading.set(true);
     this.avisDefavorableError.set(null);
 
-    this.authService.verifyPassword(password!).subscribe({
-      next: (res) => {
-        if (res.statut === 500) {
-          this.avisDefavorableError.set(res.message || 'Mot de passe incorrect.');
-          this.avisDefavorableLoading.set(false);
+    this.analyseFlow.avisDefavorable(this.ref(), password!, observation || '').subscribe({
+      next: (data) => {
+        this.avisDefavorableLoading.set(false);
+        this.avisDefavorableDialogOpen = false;
+        if (data.status === 200) {
+          this.toast.success('Avis défavorable enregistré.');
+          this.router.navigate(['/app/credit/list']);
+        } else {
+          this.toast.error(data.message ?? "Échec de l'enregistrement.");
+        }
+      },
+      error: (err: unknown) => {
+        this.avisDefavorableLoading.set(false);
+        if (err instanceof AnalyseFlowPasswordException) {
+          this.avisDefavorableError.set(err.message);
           return;
         }
-        this.creditService
-          .saveCrdObservation({
-            refDemande: this.ref(),
-            decision: 4, // 4 = Avis défavorable
-            observation: observation || '',
-            password: password ?? '',
-          })
-          .subscribe({
-            next: (data) => {
-              this.avisDefavorableLoading.set(false);
-              this.avisDefavorableDialogOpen = false;
-              if (data.status === 200) {
-                this.toast.success('Avis défavorable enregistré.');
-                this.router.navigate(['/app/credit/list']);
-              } else {
-                this.toast.error(data.message ?? "Échec de l'enregistrement.");
-              }
-            },
-            error: () => {
-              this.avisDefavorableLoading.set(false);
-              this.toast.error("Erreur lors de l'enregistrement.");
-            },
-          });
+        this.toast.error("Erreur lors de l'enregistrement.");
       },
-      error: () => {
-        this.avisDefavorableError.set('Mot de passe incorrect.');
-        this.avisDefavorableLoading.set(false);
+    });
+  }
+
+  // ── Superviseur risque zone : confirmation du rejet ─────────────────
+  confirmRejetDialogOpen = false;
+  readonly confirmRejetLoading = signal(false);
+  readonly confirmRejetError = signal<string | null>(null);
+  readonly confirmRejetForm = this.fb.group({
+    password: ['', Validators.required],
+    observation: [''],
+  });
+
+  openConfirmRejetDialog() {
+    this.confirmRejetForm.reset();
+    this.confirmRejetError.set(null);
+    this.confirmRejetDialogOpen = true;
+  }
+
+  confirmRejetSuperviseur() {
+    if (this.confirmRejetForm.invalid) {
+      this.confirmRejetForm.markAllAsTouched();
+      return;
+    }
+    const { password, observation } = this.confirmRejetForm.value;
+    this.confirmRejetLoading.set(true);
+    this.confirmRejetError.set(null);
+
+    this.analyseFlow.confirmerRejetDossier(this.ref(), password!, observation || '').subscribe({
+      next: (data) => {
+        this.confirmRejetLoading.set(false);
+        this.confirmRejetDialogOpen = false;
+        if (data.status === 200) {
+          this.toast.success('Dossier rejeté.');
+          this.router.navigate(['/app/credit/list']);
+        } else {
+          this.toast.error(data.message ?? 'Échec du rejet.');
+        }
+      },
+      error: (err: unknown) => {
+        this.confirmRejetLoading.set(false);
+        if (err instanceof AnalyseFlowPasswordException) {
+          this.confirmRejetError.set(err.message);
+          return;
+        }
+        this.toast.error('Erreur lors du rejet du dossier.');
       },
     });
   }
@@ -736,23 +700,16 @@ export class AnalyseCreditComponent implements OnInit {
 
   goResume() {
     if (!this.canFaireResume()) {
-      const h = this.ficheHeader();
-      const required = getRequiredDocsForAR(h?.typeCredit?.code);
-      if (required.length > 0) {
-        this.arAlert.set(
-          "Merci de charger tous les documents obligatoires (liste dans l'en-tête) avant d'accéder au résumé.",
-        );
-      } else if (h?.statut === 5) {
-        this.arAlert.set(
-          "Merci de charger l'analyse financière et le document actifs et garanties avant le résumé.",
-        );
-      } else {
-        this.arAlert.set("Documents manquants pour accéder au résumé.");
-      }
+      this.arAlert.set(resumeAccessBlockedMessage(this.ficheHeader()));
       return;
     }
 
     this.arAlert.set(null);
+    this.router.navigate(['/app/credit/resume', this.ref()]);
+  }
+
+  /** Legacy « Voir le résumé » — navigation sans contrôle doc (étapes post-analyse). */
+  goVoirResume() {
     this.router.navigate(['/app/credit/resume', this.ref()]);
   }
 

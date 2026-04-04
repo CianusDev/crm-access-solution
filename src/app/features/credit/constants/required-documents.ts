@@ -3,6 +3,11 @@ export interface RequiredDoc {
   obligation: boolean;
 }
 
+/** Superviseur PME — statut 19 (visite commanditaire), aligné legacy `existenceDocumentACharger`. */
+export const REQUIRED_DOCS_SPME_VISITE: RequiredDoc[] = [
+  { libelle: 'Rapport de visite commanditaire', obligation: true },
+];
+
 // ── GP — Relais Business / One Shot / Crédit Auto / Crédit Campagne ──────
 const GP_RELAIS_ONESHOT: RequiredDoc[] = [
   { libelle: 'Courrier de demande de prêt', obligation: true },

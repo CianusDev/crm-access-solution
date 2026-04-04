@@ -13,6 +13,7 @@ import {
   Pencil,
   FileSearch,
   X,
+  Eye,
 } from 'lucide-angular';
 import { BadgeComponent } from '@/shared/components/badge/badge.component';
 import { ButtonDirective } from '@/shared/directives/ui/button/button';
@@ -73,116 +74,168 @@ const PREDEFINED_DOC_TYPES = [
         <div
           class="flex items-center justify-end gap-2 px-4 py-2.5 border-b border-border bg-muted/30 flex-wrap"
         >
-          @if (isCACaa()) {
-            <!-- CA/CAA: Affecter à un AR (statut 4 ou 5) -->
-            @if (d.statut === 4 || d.statut === 5) {
-              <button
-                type="button"
-                appButton
-                variant="outline"
-                size="sm"
-                class="flex items-center gap-1.5 border-amber-500 text-amber-600 hover:bg-amber-50"
-                (click)="ajournerDossier.emit()"
-              >
-                <lucide-icon [img]="RotateCcwIcon" [size]="14" />
-                Ajourner
-              </button>
-              
-              <button
-                type="button"
-                appButton
-                size="sm"
-                class="flex items-center gap-1.5"
-                (click)="affecterAR.emit()"
-              >
-                <lucide-icon [img]="SendIcon" [size]="14" />
-                Affecter le dossier à un AR
-              </button>
+          @if (isSuperviseurRisqueZone() && d.statut === 24) {
+            <button
+              type="button"
+              appButton
+              variant="outline"
+              size="sm"
+              class="flex items-center gap-1.5 border-amber-500 text-amber-600 hover:bg-amber-50"
+              (click)="ajournerDossier.emit()"
+            >
+              <lucide-icon [img]="RotateCcwIcon" [size]="14" />
+              Ajourner
+            </button>
+            <button
+              type="button"
+              appButton
+              variant="outline"
+              size="sm"
+              class="flex items-center gap-1.5"
+              (click)="confirmationRejet.emit()"
+            >
+              <lucide-icon [img]="XIcon" [size]="14" />
+              Confirmation du rejet
+            </button>
+          } @else if (isSuperviseurPME() && d.statut === 19) {
+            <button
+              type="button"
+              appButton
+              variant="outline"
+              size="sm"
+              class="flex items-center gap-1.5 border-amber-500 text-amber-600 hover:bg-amber-50"
+              (click)="ajournerDossier.emit()"
+            >
+              <lucide-icon [img]="RotateCcwIcon" [size]="14" />
+              Ajourner
+            </button>
+            @if (docTypeItems().length > 0) {
+              <app-dropdown class="min-w-96!" [items]="docTypeItems()" align="start">
+                <button
+                  type="button"
+                  appButton
+                  variant="outline"
+                  size="sm"
+                  class="flex items-center min-w-96! gap-1.5"
+                  dropdownTrigger
+                >
+                  <lucide-icon [img]="UploadIcon" [size]="14" />
+                  Charger les documents
+                  <lucide-icon [img]="ChevronDownIcon" [size]="12" />
+                </button>
+              </app-dropdown>
             }
-          } @else if (isAR()) {
-            <!-- AR : actions selon statut / pause -->
-            @if (fiche()?.statut === 5) {
-              <!-- Statut 5 : Avis défavorable + Ajourner + Charger docs + Faire le résumé -->
-              <button
-                type="button"
-                appButton
-                variant="outline"
-                size="sm"
-                class="flex items-center gap-1.5 border-destructive text-destructive hover:bg-destructive/10"
-                (click)="avisDefavorable.emit()"
-              >
-                <lucide-icon [img]="XIcon" [size]="14" />
-                Avis défavorable
-              </button>
-              <button
-                type="button"
-                appButton
-                variant="outline"
-                size="sm"
-                class="flex items-center gap-1.5 border-amber-500 text-amber-600 hover:bg-amber-50"
-                (click)="ajournerDossier.emit()"
-              >
-                <lucide-icon [img]="RotateCcwIcon" [size]="14" />
-                Ajourner
-              </button>
-              @if (docTypeItems().length > 0) {
-                <app-dropdown class="min-w-96!" [items]="docTypeItems()" align="start">
-                  <button
-                    type="button"
-                    appButton
-                    variant="outline"
-                    size="sm"
-                    class="flex items-center min-w-96! gap-1.5"
-                    dropdownTrigger
-                  >
-                    <lucide-icon [img]="UploadIcon" [size]="14" />
-                    Charger les documents
-                    <lucide-icon [img]="ChevronDownIcon" [size]="12" />
-                  </button>
-                </app-dropdown>
-              }
-              <button
-                type="button"
-                appButton
-                size="sm"
-                class="flex items-center gap-1.5"
-                [disabled]="!canFaireResume()"
-                (click)="faireResume.emit()"
-              >
-                <lucide-icon [img]="FileSearchIcon" [size]="14" />
-                Faire le résumé
-              </button>
+            <button
+              type="button"
+              appButton
+              size="sm"
+              class="flex items-center gap-1.5"
+              [disabled]="!canSendDossier()"
+              (click)="envoyerDossier.emit()"
+            >
+              <lucide-icon [img]="SendIcon" [size]="14" />
+              Envoyer le rapport
+            </button>
+          } @else if (showAnalysteBandeau() && fiche()?.statut === 5) {
+            <button
+              type="button"
+              appButton
+              variant="outline"
+              size="sm"
+              class="flex items-center gap-1.5 border-destructive text-destructive hover:bg-destructive/10"
+              (click)="avisDefavorable.emit()"
+            >
+              <lucide-icon [img]="XIcon" [size]="14" />
+              Avis défavorable
+            </button>
+            <button
+              type="button"
+              appButton
+              variant="outline"
+              size="sm"
+              class="flex items-center gap-1.5 border-amber-500 text-amber-600 hover:bg-amber-50"
+              (click)="ajournerDossier.emit()"
+            >
+              <lucide-icon [img]="RotateCcwIcon" [size]="14" />
+              Ajourner
+            </button>
+            @if (docTypeItems().length > 0) {
+              <app-dropdown class="min-w-96!" [items]="docTypeItems()" align="start">
+                <button
+                  type="button"
+                  appButton
+                  variant="outline"
+                  size="sm"
+                  class="flex items-center min-w-96! gap-1.5"
+                  dropdownTrigger
+                >
+                  <lucide-icon [img]="UploadIcon" [size]="14" />
+                  Charger les documents
+                  <lucide-icon [img]="ChevronDownIcon" [size]="12" />
+                </button>
+              </app-dropdown>
             }
-            @if (isPaused() && fiche()?.statut !== 5) {
-              <!-- pause=1 (hors statut 5) : Charger docs + Faire le résumé -->
-              @if (docTypeItems().length > 0) {
-                <app-dropdown class="min-w-96!" [items]="docTypeItems()" align="start">
-                  <button
-                    type="button"
-                    appButton
-                    variant="outline"
-                    size="sm"
-                    class="flex items-center min-w-96! gap-1.5"
-                    dropdownTrigger
-                  >
-                    <lucide-icon [img]="UploadIcon" [size]="14" />
-                    Charger les documents
-                    <lucide-icon [img]="ChevronDownIcon" [size]="12" />
-                  </button>
-                </app-dropdown>
-              }
-              <button
-                type="button"
-                appButton
-                size="sm"
-                class="flex items-center gap-1.5"
-                [disabled]="!canFaireResume()"
-                (click)="faireResume.emit()"
-              >
-                <lucide-icon [img]="FileSearchIcon" [size]="14" />
-                Faire le résumé
-              </button>
+            <button
+              type="button"
+              appButton
+              size="sm"
+              class="flex items-center gap-1.5"
+              [disabled]="!canFaireResume()"
+              (click)="faireResume.emit()"
+            >
+              <lucide-icon [img]="FileSearchIcon" [size]="14" />
+              Faire le résumé
+            </button>
+          } @else if (isAR() && isPaused() && fiche()?.statut !== 5) {
+            @if (docTypeItems().length > 0) {
+              <app-dropdown class="min-w-96!" [items]="docTypeItems()" align="start">
+                <button
+                  type="button"
+                  appButton
+                  variant="outline"
+                  size="sm"
+                  class="flex items-center min-w-96! gap-1.5"
+                  dropdownTrigger
+                >
+                  <lucide-icon [img]="UploadIcon" [size]="14" />
+                  Charger les documents
+                  <lucide-icon [img]="ChevronDownIcon" [size]="12" />
+                </button>
+              </app-dropdown>
             }
+            <button
+              type="button"
+              appButton
+              size="sm"
+              class="flex items-center gap-1.5"
+              [disabled]="!canFaireResume()"
+              (click)="faireResume.emit()"
+            >
+              <lucide-icon [img]="FileSearchIcon" [size]="14" />
+              Faire le résumé
+            </button>
+          } @else if (isChefAgenceWorkflow() && d.statut === 4) {
+            <button
+              type="button"
+              appButton
+              variant="outline"
+              size="sm"
+              class="flex items-center gap-1.5 border-amber-500 text-amber-600 hover:bg-amber-50"
+              (click)="ajournerDossier.emit()"
+            >
+              <lucide-icon [img]="RotateCcwIcon" [size]="14" />
+              Ajourner
+            </button>
+            <button
+              type="button"
+              appButton
+              size="sm"
+              class="flex items-center gap-1.5"
+              (click)="affecterAR.emit()"
+            >
+              <lucide-icon [img]="SendIcon" [size]="14" />
+              Affecter le dossier à un AR
+            </button>
           } @else if (isRCCC()) {
             <!-- RC/CC: Ajourner -->
             <button
@@ -279,6 +332,19 @@ const PREDEFINED_DOC_TYPES = [
             >
               <lucide-icon [img]="SendIcon" [size]="14" />
               Envoyer le dossier
+            </button>
+          }
+          @if (showVoirResume()) {
+            <button
+              type="button"
+              appButton
+              variant="outline"
+              size="sm"
+              class="flex items-center gap-1.5"
+              (click)="voirResume.emit()"
+            >
+              <lucide-icon [img]="EyeIcon" [size]="14" />
+              Voir le résumé
             </button>
           }
         </div>
@@ -471,6 +537,7 @@ export class AnalyseHeaderCardComponent {
   readonly PencilIcon = Pencil;
   readonly FileSearchIcon = FileSearch;
   readonly XIcon = X;
+  readonly EyeIcon = Eye;
 
   readonly fiche = input<CreditFicheDemandeDetail | null>(null);
   readonly requiredDocs = input<RequiredDoc[]>([]);
@@ -478,10 +545,14 @@ export class AnalyseHeaderCardComponent {
   readonly canSendDossier = input<boolean>(true);
   readonly canFaireResume = input<boolean>(true);
   readonly isRCCC = input<boolean>(false);
-  readonly isCACaa = input<boolean>(false);
+  readonly isChefAgenceWorkflow = input<boolean>(false);
   readonly isAR = input<boolean>(false);
+  readonly showAnalysteBandeau = input<boolean>(false);
+  readonly isSuperviseurPME = input<boolean>(false);
+  readonly isSuperviseurRisqueZone = input<boolean>(false);
   readonly isPaused = input<boolean>(false);
   readonly confirmationFrais = input<boolean>(false);
+  readonly showVoirResume = input<boolean>(false);
 
   readonly chargerDocuments = output<string | null>();
   readonly envoyerDossier = output<void>();
@@ -490,6 +561,8 @@ export class AnalyseHeaderCardComponent {
   readonly affecterAR = output<void>();
   readonly faireResume = output<void>();
   readonly avisDefavorable = output<void>();
+  readonly confirmationRejet = output<void>();
+  readonly voirResume = output<void>();
   readonly confirmationFraisChange = output<boolean>();
 
   readonly isPersonneMorale = computed(() => this.fiche()?.client?.typeAgent !== 'PP');
@@ -509,6 +582,12 @@ export class AnalyseHeaderCardComponent {
 
   /** Dropdown items : docs requis selon le type de crédit, ou fallback générique */
   readonly docTypeItems = computed<DropdownItem[]>(() => {
+    const code = this.fiche()?.typeCredit?.code;
+    /** Legacy : pas de menu « Charger les documents » pour AR sur avance BC / facture (032, 033). */
+    if (this.showAnalysteBandeau() && (code === '032' || code === '033')) {
+      return [];
+    }
+
     const required = this.requiredDocs();
     const uploaded = this.uploadedDocLibelles().map((l) => l.trim().toLowerCase());
 

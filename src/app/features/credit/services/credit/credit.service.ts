@@ -39,6 +39,7 @@ import {
   CreditTypeCredit,
   CreditZone,
   CreditAnalysteRisque,
+  AuditLog,
 } from '../../interfaces/credit.interface';
 
 @Injectable({ providedIn: 'root' })
@@ -776,6 +777,19 @@ export class CreditService {
   }) {
     return this.api
       .post<{ status: number; message?: string }>(this.endpoint + '/saveCrdObservation', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  // ── Audit logs ───────────────────────────────────────────────────────────
+  getLogs(ref: string, type: 'documents' | 'modifications' | 'ajouts') {
+    const action = type === 'ajouts' ? 'created' : 'updated';
+    const params = new HttpParams()
+      .set('module', 'credit')
+      .set('reference', ref)
+      .set('action', action)
+      .set('type', type);
+    return this.api
+      .get<{ statut: boolean; data: AuditLog[] }>(this.endpoint + '/getLogs', params)
       .pipe(catchError((err) => throwError(() => err)));
   }
 }

@@ -60,10 +60,14 @@
       [canSendDossier]="canSendDossier()"
       [canFaireResume]="canFaireResume()"
       [isRCCC]="isRCCC()"
-      [isCACaa]="isCACaa()"
+      [isChefAgenceWorkflow]="isChefAgenceWorkflow()"
       [isAR]="isAR()"
+      [showAnalysteBandeau]="showAnalysteBandeau()"
+      [isSuperviseurPME]="isSuperviseurPME()"
+      [isSuperviseurRisqueZone]="isSuperviseurRisqueZone()"
       [isPaused]="isPaused()"
       [confirmationFrais]="confirmationFrais()"
+      [showVoirResume]="showVoirResume()"
       (chargerDocuments)="onChargerDocuments($event)"
       (envoyerDossier)="openEnvoiDialog()"
       (ajournerDossier)="openAjournerDialog()"
@@ -71,6 +75,8 @@
       (affecterAR)="openAffecterARDialog()"
       (faireResume)="goResume()"
       (avisDefavorable)="openAvisDefavorableDialog()"
+      (confirmationRejet)="openConfirmRejetDialog()"
+      (voirResume)="goVoirResume()"
       (confirmationFraisChange)="confirmationFrais.set($event)" />
   } @else {
     <div class="h-40 rounded-xl border border-border bg-card animate-pulse"></div>
@@ -85,7 +91,7 @@
       <!-- Mobile : select -->
       <div class="lg:hidden">
         <select
-          [value]="activeTab()"
+          [value]="safeActiveTab()"
           (change)="switchTab($any($event.target).value)"
           class="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50">
           @for (tab of tabs(); track tab.id) {
@@ -101,11 +107,11 @@
             type="button"
             (click)="switchTab(tab.id)"
             class="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-sm font-medium text-left transition-colors cursor-pointer"
-            [class.bg-primary]="activeTab() === tab.id"
-            [class.text-primary-foreground]="activeTab() === tab.id"
-            [class.text-muted-foreground]="activeTab() !== tab.id"
-            [class.hover:bg-muted]="activeTab() !== tab.id"
-            [class.hover:text-foreground]="activeTab() !== tab.id">
+            [class.bg-primary]="safeActiveTab() === tab.id"
+            [class.text-primary-foreground]="safeActiveTab() === tab.id"
+            [class.text-muted-foreground]="safeActiveTab() !== tab.id"
+            [class.hover:bg-muted]="safeActiveTab() !== tab.id"
+            [class.hover:text-foreground]="safeActiveTab() !== tab.id">
             {{ tab.label }}
           </button>
         }
@@ -114,7 +120,7 @@
 
     <!-- ── Contenu selon l'onglet actif ── -->
     <div class="flex-1 min-w-0">
-      @switch (activeTab()) {
+      @switch (safeActiveTab()) {
         @case ('demande') {
           <app-demande-section
             [ficheHeader]="ficheHeader()"
@@ -124,7 +130,7 @@
             (dataChanged)="loadHeader()" />
         }
         @case ('activite') {
-          @if (isAR()) {
+          @if (showAnalysteBandeau()) {
             <div class="flex flex-col gap-4 mb-4">
               <app-doc-analyse-upload
                 [ref]="ref()"
@@ -332,6 +338,33 @@
       <button type="button" appButton variant="destructive" size="sm"
         (click)="confirmAvisDefavorable()" [disabled]="avisDefavorableLoading()">
         {{ avisDefavorableLoading() ? 'Vérification…' : 'Confirmer l\'avis défavorable' }}
+      </button>
+    </app-dialog-footer>
+  </app-dialog>
+
+  <!-- ── Dialog confirmation du rejet (Superviseur risque zone) ─────────── -->
+  <app-dialog [(open)]="confirmRejetDialogOpen">
+    <app-dialog-header>
+      <app-dialog-title>Confirmation du rejet</app-dialog-title>
+      <app-dialog-description>
+        Vous êtes sur le point de confirmer le rejet de ce dossier de crédit.
+      </app-dialog-description>
+    </app-dialog-header>
+    <form [formGroup]="confirmRejetForm" class="flex flex-col gap-4 py-2">
+      <app-form-input name="password" type="password" label="Mot de passe" [required]="true" />
+      <app-form-textarea name="observation" label="Observation" placeholder="Motif…" [rows]="3" />
+      @if (confirmRejetError()) {
+        <p class="text-sm text-destructive">{{ confirmRejetError() }}</p>
+      }
+    </form>
+    <app-dialog-footer>
+      <button type="button" appButton variant="outline" size="sm"
+        (click)="confirmRejetDialogOpen = false" [disabled]="confirmRejetLoading()">
+        Annuler
+      </button>
+      <button type="button" appButton variant="destructive" size="sm"
+        (click)="confirmRejetSuperviseur()" [disabled]="confirmRejetLoading()">
+        {{ confirmRejetLoading() ? 'Vérification…' : 'Confirmer le rejet' }}
       </button>
     </app-dialog-footer>
   </app-dialog>

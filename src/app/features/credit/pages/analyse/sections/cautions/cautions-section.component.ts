@@ -22,7 +22,6 @@ import {
   CardComponent,
   CardContentComponent,
   CardHeaderComponent,
-  CardTitleComponent,
 } from '@/shared/components/card/card.component';
 import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import {
@@ -67,7 +66,6 @@ type DocRow = {
     CardComponent,
     CardContentComponent,
     CardHeaderComponent,
-    CardTitleComponent,
     ButtonDirective,
     DrawerComponent,
     DrawerHeaderComponent,
