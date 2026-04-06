@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LucideAngularModule, Briefcase } from 'lucide-angular';
 import {
@@ -8,7 +16,6 @@ import {
   CardTitleComponent,
 } from '@/shared/components/card/card.component';
 import { ButtonDirective } from '@/shared/directives/ui/button/button';
-import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { FormSelect, SelectOption } from '@/shared/components/form-select/form-select.component';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { CreditService } from '../../../../../services/credit/credit.service';
@@ -33,7 +40,6 @@ const NIVEAUX_EDUCATION: SelectOption[] = [
     CardHeaderComponent,
     CardTitleComponent,
     ButtonDirective,
-    FormInput,
     FormSelect,
   ],
   template: `
@@ -45,12 +51,14 @@ const NIVEAUX_EDUCATION: SelectOption[] = [
         </div>
       </app-card-header>
       <app-card-content>
+        <!-- Utilisation du form-textarea -->
         <form [formGroup]="form" (ngSubmit)="save()" class="flex flex-col gap-4">
           <app-form-select
             name="niveauEducation"
             label="Niveau d'éducation"
             [options]="niveauxOptions"
-            required />
+            required
+          />
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium text-foreground">
               Parcours professionnel <span class="text-destructive">*</span>
@@ -60,7 +68,10 @@ const NIVEAUX_EDUCATION: SelectOption[] = [
               rows="5"
               placeholder="Décrivez le parcours professionnel du client…"
               class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-              [class.border-destructive]="form.get('parcoursPro')?.invalid && form.get('parcoursPro')?.touched">
+              [class.border-destructive]="
+                form.get('parcoursPro')?.invalid && form.get('parcoursPro')?.touched
+              "
+            >
             </textarea>
             @if (form.get('parcoursPro')?.invalid && form.get('parcoursPro')?.touched) {
               <p class="text-xs text-destructive">Ce champ est requis.</p>
@@ -70,7 +81,11 @@ const NIVEAUX_EDUCATION: SelectOption[] = [
           @if (!readOnly()) {
             <div class="flex justify-end pt-2">
               <button type="submit" [disabled]="isSaving()" appButton>
-                @if (isSaving()) { Enregistrement… } @else { Enregistrer }
+                @if (isSaving()) {
+                  Enregistrement…
+                } @else {
+                  Enregistrer
+                }
               </button>
             </div>
           }
@@ -119,20 +134,22 @@ export class ProfilEntrepreneurCardComponent implements OnInit {
     }
     const val = this.form.value;
     this.isSaving.set(true);
-    this.creditService.saveProfilEntrepreneur({
-      refDemande: this.ref(),
-      parcoursPro: val.parcoursPro,
-      niveauEducation: val.niveauEducation,
-    }).subscribe({
-      next: () => {
-        this.toast.success('Profil entrepreneur enregistré.');
-        this.isSaving.set(false);
-        this.saved.emit();
-      },
-      error: (err) => {
-        this.toast.error(err.message ?? "Erreur lors de l'enregistrement.");
-        this.isSaving.set(false);
-      },
-    });
+    this.creditService
+      .saveProfilEntrepreneur({
+        refDemande: this.ref(),
+        parcoursPro: val.parcoursPro,
+        niveauEducation: val.niveauEducation,
+      })
+      .subscribe({
+        next: () => {
+          this.toast.success('Profil entrepreneur enregistré.');
+          this.isSaving.set(false);
+          this.saved.emit();
+        },
+        error: (err) => {
+          this.toast.error(err.message ?? "Erreur lors de l'enregistrement.");
+          this.isSaving.set(false);
+        },
+      });
   }
 }

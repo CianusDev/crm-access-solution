@@ -37,12 +37,14 @@
             <app-form-input name="banque" label="Banque (FCFA)" type="number" placeholder="Ex: 1500000" />
             <app-form-input name="mobileMoney" label="Mobile Money (FCFA)" type="number" placeholder="Ex: 50000" />
           </div>
-          <div class="flex justify-end">
-            <button type="button" (click)="saveTresorerie()" appButton size="sm" [disabled]="isSavingTresorerie()">
-              <lucide-icon [img]="SaveIcon" [size]="14" />
-              @if (isSavingTresorerie()) { Enregistrement… } @else { Enregistrer }
-            </button>
-          </div>
+          @if (canEdit()) {
+            <div class="flex justify-end">
+              <button type="button" (click)="saveTresorerie()" appButton size="sm" [disabled]="isSavingTresorerie()">
+                <lucide-icon [img]="SaveIcon" [size]="14" />
+                @if (isSavingTresorerie()) { Enregistrement… } @else { Enregistrer }
+              </button>
+            </div>
+          }
         </form>
       </app-card-content>
     </app-card>
@@ -59,10 +61,12 @@
               </span>
             }
           </div>
-          <button type="button" (click)="openAddCreance()" appButton size="sm">
-            <lucide-icon [img]="PlusIcon" [size]="14" />
-            Ajouter
-          </button>
+          @if (canEdit()) {
+            <button type="button" (click)="openAddCreance()" appButton size="sm">
+              <lucide-icon [img]="PlusIcon" [size]="14" />
+              Ajouter
+            </button>
+          }
         </div>
       </app-card-header>
       <app-card-content>
@@ -84,11 +88,11 @@
             <tbody>
               @for (creance of creances(); track creance.id) {
                 <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
-                  <td class="px-4 py-2.5 font-medium">{{ creance.libelle }}</td>
+                  <td class="px-4 py-2.5 font-medium">{{ creance.objet }}</td>
                   <td class="px-4 py-2.5 text-muted-foreground">{{ creance.echeance ?? '—' }}</td>
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(creance.montant) }}</td>
                   <td class="px-4 py-2.5">
-                    <button type="button" (click)="openDelete('creance', creance.id!, creance.libelle ?? '')"
+                    <button type="button" (click)="openDelete('creance', creance.id!, creance.objet ?? '')"
                       class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
                       <lucide-icon [img]="Trash2Icon" [size]="13" />
                     </button>
@@ -183,20 +187,22 @@
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
             <app-card-title>Dettes fournisseurs</app-card-title>
-            @if (totalDettes() > 0) {
+            @if (totalDettesFournisseurs() > 0) {
               <span class="rounded-full bg-orange-500/10 px-2.5 py-0.5 text-xs font-semibold text-orange-600 dark:text-orange-400">
-                Total : {{ totalDettes() | number:'1.0-0' }} FCFA
+                Total : {{ totalDettesFournisseurs() | number:'1.0-0' }} FCFA
               </span>
             }
           </div>
-          <button type="button" (click)="openAddDette()" appButton size="sm">
-            <lucide-icon [img]="PlusIcon" [size]="14" />
-            Ajouter
-          </button>
+          @if (canEdit()) {
+            <button type="button" (click)="openAddDetteFournisseur()" appButton size="sm">
+              <lucide-icon [img]="PlusIcon" [size]="14" />
+              Ajouter
+            </button>
+          }
         </div>
       </app-card-header>
       <app-card-content>
-        @if (dettes().length === 0) {
+        @if (dettesFournisseurs().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-8 text-center">
             <lucide-icon [img]="LandmarkIcon" [size]="28" class="text-muted-foreground/40" />
             <p class="text-sm text-muted-foreground">Aucune dette fournisseur enregistrée</p>
@@ -205,20 +211,76 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-border bg-muted/10">
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Libellé</th>
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Échéance</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Objet</th>
                 <th class="px-4 py-2 text-right font-medium text-muted-foreground">Montant (FCFA)</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Solde</th>
                 <th class="px-4 py-2 w-10"></th>
               </tr>
             </thead>
             <tbody>
-              @for (dette of dettes(); track dette.id) {
+              @for (dette of dettesFournisseurs(); track dette.id) {
                 <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
-                  <td class="px-4 py-2.5 font-medium">{{ dette.libelle }}</td>
-                  <td class="px-4 py-2.5 text-muted-foreground">{{ dette.echeance ?? '—' }}</td>
+                  <td class="px-4 py-2.5 font-medium">{{ dette.objet }}</td>
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(dette.montant) }}</td>
+                  <td class="px-4 py-2.5 text-right tabular-nums">{{ formatMontant(dette.solde) }}</td>
                   <td class="px-4 py-2.5">
-                    <button type="button" (click)="openDelete('dette', dette.id!, dette.libelle ?? '')"
+                    <button type="button" (click)="openDelete('detteFournisseur', dette.id!, dette.objet ?? '')"
+                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                      <lucide-icon [img]="Trash2Icon" [size]="13" />
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </app-card-content>
+    </app-card>
+
+    <!-- ══ HISTORIQUE DETTES ENTREPRISE ══════════════════════════════════ -->
+    <app-card>
+      <app-card-header>
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <app-card-title>Historique des dettes</app-card-title>
+            @if (totalDettesEntreprise() > 0) {
+              <span class="rounded-full bg-red-500/10 px-2.5 py-0.5 text-xs font-semibold text-red-600 dark:text-red-400">
+                Total : {{ totalDettesEntreprise() | number:'1.0-0' }} FCFA
+              </span>
+            }
+          </div>
+          @if (canEdit()) {
+            <button type="button" (click)="openAddDetteEntreprise()" appButton size="sm">
+              <lucide-icon [img]="PlusIcon" [size]="14" />
+              Ajouter
+            </button>
+          }
+        </div>
+      </app-card-header>
+      <app-card-content>
+        @if (dettesEntreprise().length === 0) {
+          <div class="flex flex-col items-center justify-center gap-3 py-8 text-center">
+            <lucide-icon [img]="LandmarkIcon" [size]="28" class="text-muted-foreground/40" />
+            <p class="text-sm text-muted-foreground">Aucun historique de dette enregistré</p>
+          </div>
+        } @else {
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border bg-muted/10">
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Prêteur</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Montant emprunté</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Restant dû</th>
+                <th class="px-4 py-2 w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (dette of dettesEntreprise(); track dette.id) {
+                <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
+                  <td class="px-4 py-2.5 font-medium">{{ dette.preteur }}</td>
+                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(dette.montantEmprun) }}</td>
+                  <td class="px-4 py-2.5 text-right tabular-nums">{{ formatMontant(dette.restantDu) }}</td>
+                  <td class="px-4 py-2.5">
+                    <button type="button" (click)="openDelete('detteEntreprise', dette.id!, dette.preteur ?? '')"
                       class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
                       <lucide-icon [img]="Trash2Icon" [size]="13" />
                     </button>
@@ -242,9 +304,29 @@
   </app-drawer-header>
   <app-drawer-content>
     <form [formGroup]="creanceForm" class="flex flex-col gap-4">
-      <app-form-input name="libelle" label="Libellé" placeholder="Ex: Client Konan Yao" required />
-      <app-form-input name="montant" label="Montant (FCFA)" type="number" placeholder="Ex: 300000" required />
-      <app-form-input name="echeance" label="Échéance" type="date" />
+      <div>
+        <label class="text-sm font-medium mb-1.5 block">Activité <span class="text-destructive">*</span></label>
+        <app-form-select name="activite" [options]="activitesList()" bindLabel="libelle" bindValue="id" placeholder="Sélectionner une activité" required />
+      </div>
+      <app-form-input name="objet" label="Objet" placeholder="Ex: Vente marchandise client Konan" required />
+      <div class="grid grid-cols-2 gap-4">
+        <app-form-input name="duree" label="Durée (jours)" type="number" placeholder="Ex: 30" />
+        <app-form-input name="montant" label="Montant initial (FCFA)" type="number" placeholder="Ex: 300000" required />
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <app-form-input name="solde" label="Solde (FCFA)" type="number" placeholder="Ex: 150000" />
+        <div>
+          <label class="text-sm font-medium mb-1.5 block">Recouvrement (max 80%)</label>
+          <app-form-select 
+            name="recouvrMax" 
+            [options]="[{label: '10%', value: 10}, {label: '20%', value: 20}, {label: '30%', value: 30}, {label: '40%', value: 40}, {label: '50%', value: 50}, {label: '60%', value: 60}, {label: '70%', value: 70}, {label: '80%', value: 80}]" 
+            bindLabel="label" 
+            bindValue="value" 
+            placeholder="Sélectionner un %" 
+          />
+        </div>
+      </div>
+      <app-form-input name="montArecevoir" label="Montant à recevoir (FCFA)" type="number" placeholder="Ex: 120000" />
     </form>
   </app-drawer-content>
   <app-drawer-footer>
@@ -252,6 +334,36 @@
       <button type="button" (click)="creanceDrawerOpen = false" appButton variant="outline">Annuler</button>
       <button type="button" (click)="saveCreance()" appButton [disabled]="isSavingCreance()">
         @if (isSavingCreance()) { Enregistrement… } @else { Enregistrer }
+      </button>
+    </div>
+  </app-drawer-footer>
+</app-drawer>
+
+<!-- ══ DRAWER — Avance fournisseur ═════════════════════════════════════════ -->
+<app-drawer [(open)]="avanceDrawerOpen">
+  <app-drawer-header>
+    <app-drawer-title>Ajouter une avance fournisseur</app-drawer-title>
+  </app-drawer-header>
+  <app-drawer-content>
+    <form [formGroup]="avanceForm" class="flex flex-col gap-4">
+      <div>
+        <label class="text-sm font-medium mb-1.5 block">Activité <span class="text-destructive">*</span></label>
+        <app-form-select name="activite" [options]="activitesList()" bindLabel="libelle" bindValue="id" placeholder="Sélectionner une activité" required />
+      </div>
+      <app-form-input name="objet" label="Objet" placeholder="Ex: Avance pour achat de marchandises" required />
+      <app-form-input name="montant" label="Montant (FCFA)" type="number" placeholder="Ex: 500000" required />
+      <div class="grid grid-cols-2 gap-4">
+        <app-form-input name="dateVersAvc" label="Date versement avance" type="date" />
+        <app-form-input name="dateRecepMarch" label="Date réception marchandises" type="date" />
+      </div>
+      <app-form-input name="resteApay" label="Reste à payer (FCFA)" type="number" placeholder="Ex: 200000" />
+    </form>
+  </app-drawer-content>
+  <app-drawer-footer>
+    <div class="flex gap-2 justify-end">
+      <button type="button" (click)="avanceDrawerOpen = false" appButton variant="outline">Annuler</button>
+      <button type="button" (click)="saveAvance()" appButton [disabled]="isSavingAvance()">
+        @if (isSavingAvance()) { Enregistrement… } @else { Enregistrer }
       </button>
     </div>
   </app-drawer-footer>
@@ -309,23 +421,62 @@
   </app-drawer-footer>
 </app-drawer>
 
-<!-- ══ DRAWER — Dette ══════════════════════════════════════════════════════ -->
-<app-drawer [(open)]="detteDrawerOpen">
+<!-- ══ DRAWER — Dette fournisseur ══════════════════════════════════════════ -->
+<app-drawer [(open)]="detteFournisseurDrawerOpen">
   <app-drawer-header>
     <app-drawer-title>Ajouter une dette fournisseur</app-drawer-title>
   </app-drawer-header>
   <app-drawer-content>
-    <form [formGroup]="detteForm" class="flex flex-col gap-4">
-      <app-form-input name="libelle" label="Libellé" placeholder="Ex: Fournisseur Diallo" required />
+    <form [formGroup]="detteFournisseurForm" class="flex flex-col gap-4">
+      <div>
+        <label class="text-sm font-medium mb-1.5 block">Activité <span class="text-destructive">*</span></label>
+        <app-form-select name="activite" [options]="activitesList()" bindLabel="libelle" bindValue="id" placeholder="Sélectionner une activité" required />
+      </div>
+      <app-form-input name="objet" label="Objet" placeholder="Ex: Fournitures Diallo" required />
       <app-form-input name="montant" label="Montant (FCFA)" type="number" placeholder="Ex: 450000" required />
-      <app-form-input name="echeance" label="Échéance" type="date" />
+      <div class="grid grid-cols-2 gap-4">
+        <app-form-input name="datePaie" label="Date de paiement" type="date" />
+        <app-form-input name="dateRecepMarch" label="Date réception marchandises" type="date" />
+      </div>
+      <app-form-input name="solde" label="Solde (FCFA)" type="number" placeholder="Ex: 200000" />
     </form>
   </app-drawer-content>
   <app-drawer-footer>
     <div class="flex gap-2 justify-end">
-      <button type="button" (click)="detteDrawerOpen = false" appButton variant="outline">Annuler</button>
-      <button type="button" (click)="saveDette()" appButton [disabled]="isSavingDette()">
-        @if (isSavingDette()) { Enregistrement… } @else { Enregistrer }
+      <button type="button" (click)="detteFournisseurDrawerOpen = false" appButton variant="outline">Annuler</button>
+      <button type="button" (click)="saveDetteFournisseur()" appButton [disabled]="isSavingDetteFournisseur()">
+        @if (isSavingDetteFournisseur()) { Enregistrement… } @else { Enregistrer }
+      </button>
+    </div>
+  </app-drawer-footer>
+</app-drawer>
+
+<!-- ══ DRAWER — Dette entreprise (historique) ══════════════════════════════ -->
+<app-drawer [(open)]="detteEntrepriseDrawerOpen">
+  <app-drawer-header>
+    <app-drawer-title>Ajouter un historique de dette</app-drawer-title>
+  </app-drawer-header>
+  <app-drawer-content>
+    <form [formGroup]="detteEntrepriseForm" class="flex flex-col gap-4">
+      <div>
+        <label class="text-sm font-medium mb-1.5 block">Activité <span class="text-destructive">*</span></label>
+        <app-form-select name="activite" [options]="activitesList()" bindLabel="libelle" bindValue="id" placeholder="Sélectionner une activité" required />
+      </div>
+      <app-form-input name="preteur" label="Prêteur" placeholder="Ex: Banque Atlantique" required />
+      <app-form-input name="montantEmprun" label="Montant emprunté (FCFA)" type="number" placeholder="Ex: 2000000" required />
+      <div class="grid grid-cols-2 gap-4">
+        <app-form-input name="dateDebut" label="Date début" type="date" />
+        <app-form-input name="finEcheance" label="Fin échéance" type="date" />
+      </div>
+      <app-form-input name="restantDu" label="Restant dû (FCFA)" type="number" placeholder="Ex: 800000" />
+      <app-form-input name="typeObjDette" label="Type et objet des dettes" placeholder="Ex: Prêt équipement" />
+    </form>
+  </app-drawer-content>
+  <app-drawer-footer>
+    <div class="flex gap-2 justify-end">
+      <button type="button" (click)="detteEntrepriseDrawerOpen = false" appButton variant="outline">Annuler</button>
+      <button type="button" (click)="saveDetteEntreprise()" appButton [disabled]="isSavingDetteEntreprise()">
+        @if (isSavingDetteEntreprise()) { Enregistrement… } @else { Enregistrer }
       </button>
     </div>
   </app-drawer-footer>

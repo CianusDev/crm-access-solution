@@ -916,11 +916,17 @@ export interface ChargeExploitation {
 
 export interface CreanceClient {
   id?: number;
-  libelle?: string;
+  activite?: number;
+  objet?: string; // Était libelle - changé pour correspondre au legacy
   montant?: number;
+  duree?: number; // Nombre de jours
+  solde?: number;
+  recouvrMax?: number; // Pourcentage de recouvrement (max 80%)
+  montArecevoir?: number; // Montant à recevoir
   echeance?: string;
   statut?: string | number;
   refDemande?: string;
+  creanceClient?: number; // ID pour modification
 }
 
 // Stock pour section Achats (article + quantite + montantTotal)
@@ -946,13 +952,48 @@ export interface TresorerieStockItem {
   refDemande?: string;
 }
 
+// Avances fournisseurs (nouveau)
+export interface AvanceFournisseur {
+  id?: number;
+  activite?: number;
+  objet?: string;
+  montant?: number;
+  dateVersAvc?: string; // Date de versement avance
+  dateRecepMarch?: string; // Date de réception des marchandises
+  resteApay?: number; // Reste à payer
+  refDemande?: string;
+  statut?: string | number;
+  avancesFournisseur?: number; // ID pour modification
+}
+
+// Dettes fournisseurs (nouveau - séparé des dettes entreprise)
 export interface DetteFournisseur {
   id?: number;
-  libelle?: string;
+  activite?: number;
+  objet?: string;
   montant?: number;
-  echeance?: string;
-  statut?: string | number;
+  datePaie?: string; // Date de paiement
+  dateRecepMarch?: string; // Date de réception des marchandises
+  solde?: number;
+  echeance?: string; // Temporaire - pour compatibilité avec l'UI actuelle
   refDemande?: string;
+  statut?: string | number;
+  detteFournisseur?: number; // ID pour modification
+}
+
+// Historique des dettes entreprise (renommé - était DetteFournisseur)
+export interface DetteEntreprise {
+  id?: number;
+  activite?: number;
+  preteur?: string;
+  montantEmprun?: number; // Montant emprunté
+  dateDebut?: string;
+  finEcheance?: string; // Fin échéance
+  restantDu?: number; // Restant dû
+  typeObjDette?: string; // Type et objet des dettes
+  refDemande?: string;
+  statut?: string | number;
+  dette?: number; // ID pour modification
 }
 
 export interface TresorerieDisponible {
@@ -1068,8 +1109,11 @@ export interface CreditAnalyseDemandeDetail extends CreditFicheDemandeDetail {
   activites?: ActiviteCredit[];
   chargesExploitation?: ChargeExploitation[];
   creances?: CreanceClient[];
+  avancesFournisseurs?: AvanceFournisseur[];
   stocks?: StockItem[];
-  dettes?: DetteFournisseur[];
+  dettes?: DetteFournisseur[]; // Alias temporaire pour dettesFournisseurs (compatibilité)
+  dettesFournisseurs?: DetteFournisseur[];
+  dettesEntreprise?: DetteEntreprise[];
   tresorerie?: TresorerieDisponible;
   profilFamilial?: ProfilFamilial;
   membresMenage?: MembreMenage[];

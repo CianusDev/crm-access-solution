@@ -40,8 +40,12 @@ import {
   CreanceClient,
   TresorerieStockItem,
   DetteFournisseur,
+  DetteEntreprise,
+  AvanceFournisseur,
   TresorerieDisponible,
+  ActiviteCredit,
 } from '../../../../interfaces/credit.interface';
+import { FormSelect } from '@/shared/components/form-select/form-select.component';
 
 @Component({
   selector: 'app-tresorerie-section',
@@ -66,10 +70,12 @@ import {
     DialogDescriptionComponent,
     DialogFooterComponent,
     FormInput,
+    FormSelect,
   ],
 })
 export class TresorerieSectionComponent implements OnInit {
   ref = input<string>('');
+  canEdit = input<boolean>(false); // AR ou Admin sur dossier statut 5
 
   readonly PlusIcon = Plus;
   readonly Trash2Icon = Trash2;
@@ -89,12 +95,19 @@ export class TresorerieSectionComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly tresorerie = signal<TresorerieDisponible | null>(null);
   readonly creances = signal<CreanceClient[]>([]);
+  readonly avancesFournisseurs = signal<AvanceFournisseur[]>([]);
   readonly stocks = signal<TresorerieStockItem[]>([]);
-  readonly dettes = signal<DetteFournisseur[]>([]);
+  readonly dettesFournisseurs = signal<DetteFournisseur[]>([]);
+  readonly dettesEntreprise = signal<DetteEntreprise[]>([]);
+  readonly activitesList = signal<ActiviteCredit[]>([]);
 
   readonly totalCreances = computed(() => this.creances().reduce((s, c) => s + (c.montant ?? 0), 0));
+  readonly totalAvances = computed(() => this.avancesFournisseurs().reduce((s, c) => s + (c.montant ?? 0), 0));
   readonly totalStocks = computed(() => this.stocks().reduce((s, c) => s + (c.montant ?? 0), 0));
-  readonly totalDettes = computed(() => this.dettes().reduce((s, c) => s + (c.montant ?? 0), 0));
+  readonly totalDettesFournisseurs = computed(() => this.dettesFournisseurs().reduce((s, c) => s + (c.montant ?? 0), 0));
+  readonly totalDettesEntreprise = computed(() => this.dettesEntreprise().reduce((s, c) => s + (c.montantEmprun ?? 0), 0));
+  readonly dettes = signal<DetteFournisseur[]>([]); // Legacy alias
+  readonly totalDettes = computed(() => this.dettes().reduce((s, c) => s + (c.montant ?? 0), 0)); // Legacy
   readonly totalTresorerie = computed(() => {
     const t = this.tresorerie();
     return (t?.caisse ?? 0) + (t?.banque ?? 0) + (t?.mobileMoney ?? 0);
@@ -102,17 +115,21 @@ export class TresorerieSectionComponent implements OnInit {
 
   // Drawer states
   creanceDrawerOpen = false;
+  avanceDrawerOpen = false;
   stockDrawerOpen = false;
-  detteDrawerOpen = false;
+  detteFournisseurDrawerOpen = false;
+  detteEntrepriseDrawerOpen = false;
 
   readonly isSavingTresorerie = signal(false);
   readonly isSavingCreance = signal(false);
+  readonly isSavingAvance = signal(false);
   readonly isSavingStock = signal(false);
-  readonly isSavingDette = signal(false);
+  readonly isSavingDetteFournisseur = signal(false);
+  readonly isSavingDetteEntreprise = signal(false);
 
   // Delete
   deleteDialogOpen = false;
-  deleteTarget: { type: 'creance' | 'stock' | 'dette'; id: number; label: string } | null = null;
+  deleteTarget: { type: 'creance' | 'avance' | 'stock' | 'detteFournisseur' | 'detteEntreprise'; id: number; label: string } | null = null;
   readonly isDeleting = signal(false);
 
   // ── Forms ──────────────────────────────────────────────────────────────
@@ -123,9 +140,22 @@ export class TresorerieSectionComponent implements OnInit {
   });
 
   readonly creanceForm = this.fb.group({
-    libelle: ['', Validators.required],
+    activite: [null as number | null, Validators.required],
+    objet: ['', Validators.required],
+    duree: [null as number | null],
     montant: [null as number | null, Validators.required],
-    echeance: [''],
+    solde: [null as number | null],
+    recouvrMax: [null as number | null],
+    montArecevoir: [null as number | null],
+  });
+
+  readonly avanceForm = this.fb.group({
+    activite: [null as number | null, Validators.required],
+    objet: ['', Validators.required],
+    montant: [null as number | null, Validators.required],
+    dateVersAvc: [''],
+    dateRecepMarch: [''],
+    resteApay: [null as number | null],
   });
 
   readonly stockForm = this.fb.group({
@@ -136,10 +166,23 @@ export class TresorerieSectionComponent implements OnInit {
     garantie: [null as number | null, Validators.required],
   });
 
-  readonly detteForm = this.fb.group({
-    libelle: ['', Validators.required],
+  readonly detteFournisseurForm = this.fb.group({
+    activite: [null as number | null, Validators.required],
+    objet: ['', Validators.required],
     montant: [null as number | null, Validators.required],
-    echeance: [''],
+    datePaie: [''],
+    dateRecepMarch: [''],
+    solde: [null as number | null],
+  });
+
+  readonly detteEntrepriseForm = this.fb.group({
+    activite: [null as number | null, Validators.required],
+    preteur: ['', Validators.required],
+    montantEmprun: [null as number | null, Validators.required],
+    dateDebut: [''],
+    finEcheance: [''],
+    restantDu: [null as number | null],
+    typeObjDette: [''],
   });
 
   // ── Lifecycle ──────────────────────────────────────────────────────────
@@ -159,8 +202,15 @@ export class TresorerieSectionComponent implements OnInit {
         }
         this.tresorerie.set(data.demande.tresorerie ?? null);
         this.creances.set(data.demande.creances ?? []);
+        this.avancesFournisseurs.set(data.demande.avancesFournisseurs ?? []);
         this.stocks.set(data.demande.stocks ?? []);
-        this.dettes.set(data.demande.dettes ?? []);
+        this.dettesFournisseurs.set(data.demande.dettesFournisseurs ?? []);
+        this.dettesEntreprise.set(data.demande.dettesEntreprise ?? []);
+        this.activitesList.set(data.demande.activites ?? []);
+        
+        // Legacy compatibility: combine all dettes
+        this.dettes.set([...(data.demande.dettesFournisseurs ?? []), ...(data.demande.dettes ?? [])]);
+        
         // Pré-remplir le formulaire trésorerie
         const t = data.demande.tresorerie;
         if (t) {
@@ -208,7 +258,15 @@ export class TresorerieSectionComponent implements OnInit {
 
   // ── Créances ───────────────────────────────────────────────────────────
   openAddCreance() {
-    this.creanceForm.reset({ libelle: '', montant: null, echeance: '' });
+    this.creanceForm.reset({ 
+      activite: null, 
+      objet: '', 
+      duree: null, 
+      montant: null, 
+      solde: null, 
+      recouvrMax: null, 
+      montArecevoir: null 
+    });
     this.creanceDrawerOpen = true;
   }
 
@@ -216,10 +274,14 @@ export class TresorerieSectionComponent implements OnInit {
     if (this.creanceForm.invalid) { this.creanceForm.markAllAsTouched(); return; }
     const val = this.creanceForm.value;
     this.isSavingCreance.set(true);
-    this.creditService.saveCreance({
-      libelle: val.libelle,
+    this.creditService.saveCreanceClient({
+      activite: val.activite,
+      objet: val.objet,
+      duree: val.duree,
       montant: val.montant,
-      echeance: val.echeance || null,
+      solde: val.solde,
+      recouvrMax: val.recouvrMax,
+      montArecevoir: val.montArecevoir,
       refDemande: this.ref(),
     }).subscribe({
       next: () => {
@@ -231,6 +293,45 @@ export class TresorerieSectionComponent implements OnInit {
       error: () => {
         this.toast.error("Erreur lors de l'enregistrement.");
         this.isSavingCreance.set(false);
+      },
+    });
+  }
+
+  // ── Avances fournisseurs ───────────────────────────────────────────────
+  openAddAvance() {
+    this.avanceForm.reset({ 
+      activite: null, 
+      objet: '', 
+      montant: null, 
+      dateVersAvc: '', 
+      dateRecepMarch: '', 
+      resteApay: null 
+    });
+    this.avanceDrawerOpen = true;
+  }
+
+  saveAvance() {
+    if (this.avanceForm.invalid) { this.avanceForm.markAllAsTouched(); return; }
+    const val = this.avanceForm.value;
+    this.isSavingAvance.set(true);
+    this.creditService.saveAvanceFournisseur({
+      activite: val.activite,
+      objet: val.objet,
+      montant: val.montant,
+      dateVersAvc: val.dateVersAvc || null,
+      dateRecepMarch: val.dateRecepMarch || null,
+      resteApay: val.resteApay,
+      refDemande: this.ref(),
+    }).subscribe({
+      next: () => {
+        this.toast.success('Avance fournisseur enregistrée.');
+        this.avanceDrawerOpen = false;
+        this.isSavingAvance.set(false);
+        this.loadData();
+      },
+      error: () => {
+        this.toast.error("Erreur lors de l'enregistrement.");
+        this.isSavingAvance.set(false);
       },
     });
   }
@@ -269,37 +370,88 @@ export class TresorerieSectionComponent implements OnInit {
     });
   }
 
-  // ── Dettes ─────────────────────────────────────────────────────────────
-  openAddDette() {
-    this.detteForm.reset({ libelle: '', montant: null, echeance: '' });
-    this.detteDrawerOpen = true;
+  // ── Dettes fournisseurs ────────────────────────────────────────────────
+  openAddDetteFournisseur() {
+    this.detteFournisseurForm.reset({ 
+      activite: null, 
+      objet: '', 
+      montant: null, 
+      datePaie: '', 
+      dateRecepMarch: '', 
+      solde: null 
+    });
+    this.detteFournisseurDrawerOpen = true;
   }
 
-  saveDette() {
-    if (this.detteForm.invalid) { this.detteForm.markAllAsTouched(); return; }
-    const val = this.detteForm.value;
-    this.isSavingDette.set(true);
-    this.creditService.saveDette({
-      libelle: val.libelle,
+  saveDetteFournisseur() {
+    if (this.detteFournisseurForm.invalid) { this.detteFournisseurForm.markAllAsTouched(); return; }
+    const val = this.detteFournisseurForm.value;
+    this.isSavingDetteFournisseur.set(true);
+    this.creditService.saveDetteFournisseur({
+      activite: val.activite,
+      objet: val.objet,
       montant: val.montant,
-      echeance: val.echeance || null,
+      datePaie: val.datePaie || null,
+      dateRecepMarch: val.dateRecepMarch || null,
+      solde: val.solde,
       refDemande: this.ref(),
     }).subscribe({
       next: () => {
-        this.toast.success('Dette enregistrée.');
-        this.detteDrawerOpen = false;
-        this.isSavingDette.set(false);
+        this.toast.success('Dette fournisseur enregistrée.');
+        this.detteFournisseurDrawerOpen = false;
+        this.isSavingDetteFournisseur.set(false);
         this.loadData();
       },
       error: () => {
         this.toast.error("Erreur lors de l'enregistrement.");
-        this.isSavingDette.set(false);
+        this.isSavingDetteFournisseur.set(false);
+      },
+    });
+  }
+
+  // ── Dettes entreprise (historique) ─────────────────────────────────────
+  openAddDetteEntreprise() {
+    this.detteEntrepriseForm.reset({ 
+      activite: null, 
+      preteur: '', 
+      montantEmprun: null, 
+      dateDebut: '', 
+      finEcheance: '', 
+      restantDu: null, 
+      typeObjDette: '' 
+    });
+    this.detteEntrepriseDrawerOpen = true;
+  }
+
+  saveDetteEntreprise() {
+    if (this.detteEntrepriseForm.invalid) { this.detteEntrepriseForm.markAllAsTouched(); return; }
+    const val = this.detteEntrepriseForm.value;
+    this.isSavingDetteEntreprise.set(true);
+    this.creditService.saveDetteEntreprise({
+      activite: val.activite,
+      preteur: val.preteur,
+      montantEmprun: val.montantEmprun,
+      dateDebut: val.dateDebut || null,
+      finEcheance: val.finEcheance || null,
+      restantDu: val.restantDu,
+      typeObjDette: val.typeObjDette,
+      refDemande: this.ref(),
+    }).subscribe({
+      next: () => {
+        this.toast.success('Historique dette enregistré.');
+        this.detteEntrepriseDrawerOpen = false;
+        this.isSavingDetteEntreprise.set(false);
+        this.loadData();
+      },
+      error: () => {
+        this.toast.error("Erreur lors de l'enregistrement.");
+        this.isSavingDetteEntreprise.set(false);
       },
     });
   }
 
   // ── Delete ─────────────────────────────────────────────────────────────
-  openDelete(type: 'creance' | 'stock' | 'dette', id: number, label: string) {
+  openDelete(type: 'creance' | 'avance' | 'stock' | 'detteFournisseur' | 'detteEntreprise', id: number, label: string) {
     this.deleteTarget = { type, id, label };
     this.deleteDialogOpen = true;
   }
@@ -310,9 +462,11 @@ export class TresorerieSectionComponent implements OnInit {
     this.deleteDialogOpen = false;
     this.isDeleting.set(true);
     const obs$ =
-      type === 'creance' ? this.creditService.deleteCreance(id)
+      type === 'creance' ? this.creditService.deleteCreanceClient(id)
+      : type === 'avance' ? this.creditService.deleteAvanceFournisseur(id)
       : type === 'stock' ? this.creditService.deleteStock(id)
-      : this.creditService.deleteDette(id);
+      : type === 'detteFournisseur' ? this.creditService.deleteDetteFournisseur(id)
+      : this.creditService.deleteDetteEntreprise(id);
 
     obs$.subscribe({
       next: () => {

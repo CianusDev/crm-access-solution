@@ -389,13 +389,32 @@ export class CreditService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
+  // ── Créances clients ──────────────────────────────────────────────────
   saveCreance(data: Record<string, unknown>) {
     return this.api
       .post<{ status: number; message?: string }>(this.endpoint + '/saveCreanceClient', data)
       .pipe(catchError((err) => throwError(() => err)));
   }
 
+  saveCreanceClient(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveCreanceClient', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  updateCreanceClient(id: number, data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/updateCreanceClient/' + id, data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
   deleteCreance(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteCreance/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteCreanceClient(id: number) {
     return this.api
       .delete<{ status: number }>(this.endpoint + '/deleteCreance/' + id)
       .pipe(catchError((err) => throwError(() => err)));
@@ -413,15 +432,72 @@ export class CreditService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
+  // ── Avances fournisseurs ──────────────────────────────────────────────
+  saveAvanceFournisseur(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveAvanceFournisseur', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  updateAvanceFournisseur(id: number, data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/updateAvanceFournisseur/' + id, data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteAvanceFournisseur(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteAvanceFournisseur/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  // ── Dettes fournisseurs ───────────────────────────────────────────────
   saveDette(data: Record<string, unknown>) {
     return this.api
       .post<{ status: number; message?: string }>(this.endpoint + '/saveDette', data)
       .pipe(catchError((err) => throwError(() => err)));
   }
 
+  saveDetteFournisseur(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveDetteFournisseur', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  updateDetteFournisseur(id: number, data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/updateDetteFournisseur/' + id, data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
   deleteDette(id: number) {
     return this.api
       .delete<{ status: number }>(this.endpoint + '/deleteDette/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteDetteFournisseur(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteDette/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  // ── Dettes entreprise (historique) ────────────────────────────────────
+  saveDetteEntreprise(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveDetteEntreprise', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  updateDetteEntreprise(id: number, data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/updateDetteEntreprise/' + id, data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteDetteEntreprise(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteDetteEntreprise/' + id)
       .pipe(catchError((err) => throwError(() => err)));
   }
 
