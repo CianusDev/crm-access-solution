@@ -1008,6 +1008,9 @@ export interface ActifGarantie {
   typeProPerso?: string;
   // Équipement
   designation?: string;
+  // Médias
+  images?: GarantieMedia[];
+  documents?: GarantieMedia[];
 }
 
 export interface CautionSolidaire {
@@ -1123,7 +1126,7 @@ export interface CreditActionPayload {
 
 export interface GarantieMedia {
   id?: number;
-  url?: string;
+  lien?: string;
   libelle?: string;
 }
 

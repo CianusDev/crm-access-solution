@@ -11,6 +11,11 @@ import {
   PiggyBank,
   Box,
   Users,
+  Image,
+  FileText,
+  Eye,
+  Upload,
+  ChevronDown,
 } from 'lucide-angular';
 import {
   CardComponent,
@@ -38,6 +43,11 @@ import { FormSelect, SelectOption } from '@/shared/components/form-select/form-s
 import { ToastService } from '@/core/services/toast/toast.service';
 import { CreditService } from '../../../../services/credit/credit.service';
 import { ActifGarantie, TypeActif } from '../../../../interfaces/credit.interface';
+import { LightboxComponent, LightboxImage } from '@/shared/components/lightbox/lightbox.component';
+import { DocumentType } from '../../../../constants/caution-documents';
+import { getGarantieImageTypes, getGarantieDocumentTypes } from '../../../../constants/garantie-documents';
+
+const DOC_BASE_URL = 'https://crm-fichiers.creditaccess.ci/crm/credit-ca/';
 
 const TYPES_ACTIF: SelectOption[] = [
   { value: 'IMMOBILIER', label: 'Bien immobilier' },
@@ -93,6 +103,7 @@ const OUI_NON: SelectOption[] = [
     DialogFooterComponent,
     FormInput,
     FormSelect,
+    LightboxComponent,
   ],
 })
 export class GarantiesSectionComponent implements OnInit {
@@ -107,6 +118,11 @@ export class GarantiesSectionComponent implements OnInit {
   readonly PiggyBankIcon = PiggyBank;
   readonly BoxIcon = Box;
   readonly UsersIcon = Users;
+  readonly ImageIcon = Image;
+  readonly FileTextIcon = FileText;
+  readonly EyeIcon = Eye;
+  readonly UploadIcon = Upload;
+  readonly ChevronDownIcon = ChevronDown;
 
   private readonly fb = inject(FormBuilder);
   private readonly creditService = inject(CreditService);
@@ -143,6 +159,24 @@ export class GarantiesSectionComponent implements OnInit {
   deleteDialogOpen = false;
   actifToDelete: ActifGarantie | null = null;
   readonly isDeleting = signal(false);
+
+  // Médias (images/documents par actif)
+  readonly expandedImages = signal<number[]>([]);
+  readonly expandedDocuments = signal<number[]>([]);
+  readonly isUploadingMedia = signal(false);
+  mediaTarget: { actifId: number; type: 'image' | 'doc'; libelle: string } | null = null;
+  mediaDeleteTarget: { type: 'image' | 'doc'; id: number; label: string } | null = null;
+  mediaDeleteDialogOpen = false;
+  readonly isDeletingMedia = signal(false);
+
+  // Lightbox
+  lightboxOpen = false;
+  lightboxImages: LightboxImage[] = [];
+  lightboxIndex = 0;
+
+  // Types de docs/images par actif (calculés à la volée)
+  getImageTypes(type: string): DocumentType[] { return getGarantieImageTypes(type); }
+  getDocumentTypes(type: string): DocumentType[] { return getGarantieDocumentTypes(type); }
 
   // ── Form ───────────────────────────────────────────────────────────────
   readonly actifForm = this.fb.group({
@@ -364,5 +398,93 @@ export class GarantiesSectionComponent implements OnInit {
         this.isDeleting.set(false);
       },
     });
+  }
+
+  // ── Médias (images / documents par actif) ────────────────────────────────
+  toggleImages(actifId: number) {
+    const cur = this.expandedImages();
+    this.expandedImages.set(cur.includes(actifId) ? cur.filter(i => i !== actifId) : [...cur, actifId]);
+  }
+
+  toggleDocuments(actifId: number) {
+    const cur = this.expandedDocuments();
+    this.expandedDocuments.set(cur.includes(actifId) ? cur.filter(i => i !== actifId) : [...cur, actifId]);
+  }
+
+  triggerMediaUpload(actifId: number, type: 'image' | 'doc', libelle: string, input: HTMLInputElement) {
+    this.mediaTarget = { actifId, type, libelle };
+    input.click();
+  }
+
+  onMediaFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || !this.mediaTarget) return;
+    const { actifId, type, libelle } = this.mediaTarget;
+
+    const fd = new FormData();
+    fd.append('type', 'GARANTIE');
+    fd.append('element', String(actifId));
+    fd.append('libelle', libelle);
+    fd.append('description', '');
+
+    this.isUploadingMedia.set(true);
+    if (type === 'image') {
+      fd.append('photo', file);
+      this.creditService.uploadImageGarantie(fd).subscribe({
+        next: () => { this.toast.success('Image ajoutée.'); this.isUploadingMedia.set(false); this.loadData(); },
+        error: () => { this.toast.error("Erreur lors de l'upload."); this.isUploadingMedia.set(false); },
+      });
+    } else {
+      fd.append('file', file);
+      this.creditService.uploadDocumentGarantie(fd).subscribe({
+        next: () => { this.toast.success('Document ajouté.'); this.isUploadingMedia.set(false); this.loadData(); },
+        error: () => { this.toast.error("Erreur lors de l'upload."); this.isUploadingMedia.set(false); },
+      });
+    }
+    input.value = '';
+    this.mediaTarget = null;
+  }
+
+  openMediaDelete(type: 'image' | 'doc', id: number, label: string) {
+    this.mediaDeleteTarget = { type, id, label };
+    this.mediaDeleteDialogOpen = true;
+  }
+
+  confirmMediaDelete() {
+    if (!this.mediaDeleteTarget) return;
+    const { type, id } = this.mediaDeleteTarget;
+    this.mediaDeleteDialogOpen = false;
+    this.isDeletingMedia.set(true);
+
+    const obs$ = type === 'image'
+      ? this.creditService.deleteImageCaution(id)
+      : this.creditService.deleteDocumentCaution(id);
+
+    obs$.subscribe({
+      next: () => {
+        this.toast.success('Supprimé avec succès.');
+        this.isDeletingMedia.set(false);
+        this.mediaDeleteTarget = null;
+        this.loadData();
+      },
+      error: () => {
+        this.toast.error('Erreur lors de la suppression.');
+        this.isDeletingMedia.set(false);
+      },
+    });
+  }
+
+  openLightbox(images: { lien?: string; libelle?: string }[], index: number) {
+    this.lightboxImages = images.map(img => ({
+      url: DOC_BASE_URL + (img.lien ?? ''),
+      label: img.libelle,
+    }));
+    this.lightboxIndex = index;
+    this.lightboxOpen = true;
+  }
+
+  mediaUrl(lien: string): string {
+    return DOC_BASE_URL + lien;
   }
 }

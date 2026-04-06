@@ -488,14 +488,14 @@ export class CreditService {
   // ── Suppression image caution ───────────────────────────────────────────
   deleteImageCaution(imageId: number) {
     return this.api
-      .post<{ status: number }>(this.endpoint + '/delete_image_garantie', { id: imageId })
+      .post<{ status: number }>(this.endpoint + '/delete_image_garantie', { image: imageId })
       .pipe(catchError((err) => throwError(() => err)));
   }
 
   // ── Suppression document caution ────────────────────────────────────────
   deleteDocumentCaution(docId: number) {
     return this.api
-      .post<{ status: number }>(this.endpoint + '/delete_doc_garantie', { id: docId })
+      .post<{ status: number }>(this.endpoint + '/delete_doc_garantie', { document: docId })
       .pipe(catchError((err) => throwError(() => err)));
   }
 

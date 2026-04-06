@@ -379,16 +379,18 @@ export class ResumeCreditComponent implements OnInit {
     return [];
   }
 
-  downloadDocument(url: string, libelle: string): void {
+  private readonly DOC_BASE_URL = 'https://crm-fichiers.creditaccess.ci/crm/credit-ca/';
+
+  downloadDocument(filename: string, libelle: string): void {
     const a = document.createElement('a');
-    a.href = url;
+    a.href = this.DOC_BASE_URL + filename;
     a.download = libelle;
     a.target = '_blank';
     a.click();
   }
 
   safeUrl(url: string) {
-    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    return this.sanitizer.bypassSecurityTrustResourceUrl(this.DOC_BASE_URL + url);
   }
 
   getObjetCreditLabel(objetCredit: string | number | undefined): string {

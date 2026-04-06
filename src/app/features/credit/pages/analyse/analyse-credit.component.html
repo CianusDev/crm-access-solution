@@ -137,11 +137,6 @@
                 libelle="Analyse financière"
                 label="Analyse financière"
                 articleLabel="votre analyse financière" />
-              <app-doc-analyse-upload
-                [ref]="ref()"
-                libelle="Actifs garanties"
-                label="Actifs & Garanties"
-                articleLabel="votre document d'actifs et garanties" />
             </div>
           }
           <app-activite-section [ref]="ref()" />
@@ -157,6 +152,15 @@
         }
         @case ('garanties') {
           <app-garanties-section [ref]="ref()" />
+          @if (showAnalysteBandeau()) {
+            <div class="flex flex-col gap-4 mt-6">
+              <app-doc-analyse-upload
+                [ref]="ref()"
+                libelle="Actifs garanties"
+                label="Actifs & Garanties"
+                articleLabel="votre document d'actifs et garanties" />
+            </div>
+          }
         }
         @case ('cautions') {
           <app-cautions-section [ref]="ref()" [isGP]="isGP() || isRCCC() || isCACaa()" [view]="'cautions'" [prefilledDoc]="pendingDocLibelle()" (docsChanged)="onDocsChanged()" />
@@ -268,9 +272,9 @@
     </app-dialog-header>
 
     <form [formGroup]="affecterARForm" class="flex flex-col gap-4 py-2">
-      <app-form-select 
-        name="zone" 
-        label="Zone" 
+      <app-form-select
+        name="zone"
+        label="Zone"
         [required]="true"
         [options]="zones()"
         [loading]="zonesLoading()"
@@ -281,9 +285,9 @@
       />
 
       @if (affecterARForm.get('zone')?.value) {
-        <app-form-select 
-          name="ar" 
-          label="Analyste Risque" 
+        <app-form-select
+          name="ar"
+          label="Analyste Risque"
           [required]="true"
           [options]="ars()"
           [loading]="arsLoading()"

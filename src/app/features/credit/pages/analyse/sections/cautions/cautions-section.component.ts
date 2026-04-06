@@ -46,6 +46,7 @@ import { CreditService } from '../../../../services/credit/credit.service';
 import { CautionSolidaire } from '../../../../interfaces/credit.interface';
 import { DatePipe } from '@angular/common';
 import { CAUTION_IMAGE_TYPES, CAUTION_DOCUMENT_TYPES } from '../../../../constants/caution-documents';
+import { LightboxComponent, LightboxImage } from '@/shared/components/lightbox/lightbox.component';
 
 const DOC_BASE_URL = 'https://crm-fichiers.creditaccess.ci/crm/credit-ca/';
 
@@ -81,6 +82,7 @@ type DocRow = {
     FormInput,
     FormSelect,
     DatePipe,
+    LightboxComponent,
   ],
 })
 export class CautionsSectionComponent implements OnInit {
@@ -138,7 +140,7 @@ export class CautionsSectionComponent implements OnInit {
   // Delete
   deleteDialogOpen = false;
   deleteTarget: {
-    type: 'caution' | 'doc' | 'image' | 'document';
+    type: 'caution' | 'image' | 'doc';
     id: number;
     label: string;
   } | null = null;
@@ -176,6 +178,20 @@ export class CautionsSectionComponent implements OnInit {
   typePieceLabel(val: string | number | undefined): string {
     if (val == null) return '—';
     return this.TYPE_PIECE[val] ?? String(val);
+  }
+
+  // ── Lightbox ────────────────────────────────────────────────────────────
+  lightboxOpen = false;
+  lightboxImages: LightboxImage[] = [];
+  lightboxIndex = 0;
+
+  openLightbox(images: { lien?: string; libelle?: string }[], index: number) {
+    this.lightboxImages = images.map(img => ({
+      url: this.getMediaUrl(img.lien ?? ''),
+      label: img.libelle,
+    }));
+    this.lightboxIndex = index;
+    this.lightboxOpen = true;
   }
 
   // ── Upload media caution (image/document) ─────────────────────────────
@@ -500,7 +516,7 @@ export class CautionsSectionComponent implements OnInit {
   }
 
   // ── Delete ─────────────────────────────────────────────────────────────
-  openDelete(type: 'caution' | 'doc', id: number, label: string) {
+  openDelete(type: 'caution' | 'image' | 'doc', id: number, label: string) {
     this.deleteTarget = { type, id, label };
     this.deleteDialogOpen = true;
   }
@@ -511,12 +527,15 @@ export class CautionsSectionComponent implements OnInit {
     this.deleteDialogOpen = false;
     this.isDeleting.set(true);
 
-    const obs$ =
-      type === 'caution'
-        ? this.creditService.deleteCautionSolidaire(id)
-        : this.isGP()
-          ? this.creditService.deleteDocument(id)
-          : this.creditService.deleteDocumentAnalyse(id);
+    let obs$;
+    if (type === 'caution') {
+      obs$ = this.creditService.deleteCautionSolidaire(id);
+    } else if (type === 'image') {
+      obs$ = this.creditService.deleteImageCaution(id);
+    } else {
+      // 'doc' → document lié à une caution
+      obs$ = this.creditService.deleteDocumentCaution(id);
+    }
 
     obs$.subscribe({
       next: () => {

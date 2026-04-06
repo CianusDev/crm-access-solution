@@ -1,3 +1,46 @@
-TS2305: Module '"@/shared/components/dropdown/dropdown.component"' has no exported member 'DropdownComponent'.
+Voici ce qui a été mis en place pour rapprocher l’analyse financière du legacy, et ce qui reste éventuellement à traiter.
 
-src/app/features/credit/pages/analyse/sections/cautions/cautions-section.component.ts:43:2
+Implémenté
+Superviseur risque zone (statut 24)
+
+Boutons Ajourner et Confirmation du rejet.
+Dialog avec mot de passe + observation, appel saveCrdObservation avec decision: 0 (comme l’ancien envoieDossierAR / même endpoint).
+Superviseur PME (statut 19)
+
+Ajourner, Charger les documents (liste basée sur REQUIRED_DOCS_SPME_VISITE → rapport de visite commanditaire), Envoyer le rapport (même flux « envoi dossier » que le GP, decision: 1).
+canSendDossier : pièce obligatoire pour le statut 19 ; pas d’envoi générique pour un SPME sur un autre statut.
+Administrateur au statut 5
+
+Même bandeau que l’AR (avis défavorable, ajourner, docs, faire le résumé).
+Documents requis AR + règles « Faire le résumé » alignées sur l’AR (via enforceAnalysteDocRules).
+Onglet Activité : blocs upload analyse / actifs-garanties aussi pour Admin + statut 5 (showAnalysteBandeau()).
+Chef d’agence
+
+Bandeau Ajourner + Affecter à un AR pour CA, CAA et Admin (isChefAgenceWorkflow), statut 4 uniquement (comme le legacy).
+« Voir le résumé »
+
+Affiché si pas en pause et statut hors 1, 2, 3, 4, 5, 19 — navigation directe vers /app/credit/resume/:ref sans les contrôles « Faire le résumé ».
+Fichiers touchés (principaux)
+
+analyse-credit-flow.service.ts — confirmerRejetDossier
+required-documents.ts — REQUIRED_DOCS_SPME_VISITE
+analyse-send-eligibility.ts — isSuperviseurPME, règles SPME, enforceAnalysteDocRules pour le résumé
+analyse-header-card.component.ts — ordre des bandeaux + Eye / voirResume
+analyse-credit.component.ts / .html — computeds, dialog rejet, goVoirResume
+Le build passe.
+
+Encore non couvert (legacy plus lourd)
+Crédit 002 / 036 : flux ACJ / Chef d’équipe / pré-évaluation CE (modales + API dédiées dans l’ancien écran).
+Affectation superviseur PME, variantes Abidjan / hors Abidjan, 008 / 001 / 014 (valider / rejeter / proposition chef d’agence), PME RC (RESPO_CLT_PME, etc.).
+verificationAgenceUser() et autres règles géographiques.
+
+__________________________________________________________
+
+
+
+❯ okay voici le plan d'action sur lequel on va travailler
+  aujourd'hui, sa concerner la module analyse financier :
+  @PLAN_ACTIONS_ANALYSE_CREDIT_V2.md
+
+  on va aller etape par etape , toujour cocher un tacher quand
+  elle est faite

@@ -91,20 +91,24 @@ export class DocAnalyseUploadComponent {
 
   readonly docUrl = signal<SafeResourceUrl | null>(null);
   readonly uploading = signal(false);
+  private docId: number | null = null;
 
   ngOnInit() {
     this.loadDoc();
   }
 
   private loadDoc() {
-    // Chercher le document existant parmi les documents annexes
     this.creditService.getDocuments(this.ref()).subscribe({
       next: (docs) => {
         const doc = docs.find(
           (d) => d.libelle?.trim().toLowerCase() === this.libelle().trim().toLowerCase(),
         );
         if (doc?.document) {
+          this.docId = doc.id ?? null;
           this.docUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(DOC_BASE_URL + doc.document));
+        } else {
+          this.docId = null;
+          this.docUrl.set(null);
         }
       },
     });
@@ -115,27 +119,40 @@ export class DocAnalyseUploadComponent {
     const file = input.files?.[0];
     if (!file) return;
 
+    input.value = '';
     this.uploading.set(true);
 
-    const formData = new FormData();
-    formData.append('refDemande', this.ref());
-    formData.append('libelle', this.libelle());
-    formData.append('description', this.libelle());
-    formData.append('document', file);
+    const upload = () => {
+      const formData = new FormData();
+      formData.append('refDemande', this.ref());
+      formData.append('libelle', this.libelle());
+      formData.append('description', this.libelle());
+      formData.append('document', file);
 
-    this.creditService.uploadDocument(formData).subscribe({
-      next: () => {
-        this.uploading.set(false);
-        this.toast.success(`${this.label()} chargé avec succès.`);
-        this.loadDoc();
-      },
-      error: () => {
-        this.uploading.set(false);
-        this.toast.error(`Erreur lors du chargement.`);
-      },
-    });
+      this.creditService.uploadDocument(formData).subscribe({
+        next: () => {
+          this.uploading.set(false);
+          this.toast.success(`${this.label()} chargé avec succès.`);
+          this.loadDoc();
+        },
+        error: () => {
+          this.uploading.set(false);
+          this.toast.error(`Erreur lors du chargement.`);
+        },
+      });
+    };
 
-    // Reset input pour pouvoir re-sélectionner le même fichier
-    input.value = '';
+    // Si un document existe déjà, le supprimer avant d'uploader le nouveau
+    if (this.docId != null) {
+      this.creditService.deleteDocument(this.docId).subscribe({
+        next: () => upload(),
+        error: () => {
+          this.uploading.set(false);
+          this.toast.error(`Erreur lors de la suppression de l'ancien document.`);
+        },
+      });
+    } else {
+      upload();
+    }
   }
 }
