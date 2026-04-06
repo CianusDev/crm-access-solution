@@ -10,6 +10,7 @@ import {
   TrendingUp,
   Calendar,
   MapPin,
+  BarChart2,
 } from 'lucide-angular';
 import {
   CardComponent,
@@ -41,6 +42,7 @@ import {
   ActiviteCredit,
   ActiviteVenteMensuelle,
   ActiviteVenteJournaliere,
+  MargeCommerciale,
   CreditTypeActivite,
   CreditCommune,
 } from '../../../../interfaces/credit.interface';
@@ -118,6 +120,7 @@ export class ActiviteSectionComponent implements OnInit {
   readonly TrendingUpIcon = TrendingUp;
   readonly CalendarIcon = Calendar;
   readonly MapPinIcon = MapPin;
+  readonly BarChart2Icon = BarChart2;
 
   private readonly fb = inject(FormBuilder);
   private readonly creditService = inject(CreditService);
@@ -153,14 +156,18 @@ export class ActiviteSectionComponent implements OnInit {
   activiteDrawerMode: 'create' | 'edit' = 'create';
   ventesMDrawerOpen = false;
   ventesJDrawerOpen = false;
+  margeDrawerOpen = false;
+  margeDrawerMode: 'create' | 'edit' = 'create';
+  private currentMargeId: number | null = null;
 
   // Delete dialog
   deleteDialogOpen = false;
-  deleteTarget: { type: 'activite' | 'venteM' | 'venteJ'; id: number; label: string } | null = null;
+  deleteTarget: { type: 'activite' | 'venteM' | 'venteJ' | 'marge'; id: number; label: string } | null = null;
 
   readonly isSavingActivite = signal(false);
   readonly isSavingVenteM = signal(false);
   readonly isSavingVenteJ = signal(false);
+  readonly isSavingMarge = signal(false);
   readonly isDeleting = signal(false);
 
   // ── Forms ──────────────────────────────────────────────────────────────
@@ -192,6 +199,14 @@ export class ActiviteSectionComponent implements OnInit {
     jour: ['', Validators.required],
     montant: [null as number | null, Validators.required],
     statut: ['', Validators.required],
+  });
+
+  readonly margeForm = this.fb.group({
+    activite: [null as number | null, Validators.required],
+    article: ['', Validators.required],
+    quantite: [null as number | null, Validators.required],
+    prixVente: [null as number | null, Validators.required],
+    prixAchat: [null as number | null, Validators.required],
   });
 
   // ── Lifecycle ──────────────────────────────────────────────────────────
@@ -411,6 +426,60 @@ export class ActiviteSectionComponent implements OnInit {
       });
   }
 
+  // ── Marge Commerciale ──────────────────────────────────────────────────
+  openAddMarge(activiteId: number) {
+    this.margeDrawerMode = 'create';
+    this.currentMargeId = null;
+    this.margeForm.reset({ activite: activiteId, article: '', quantite: null, prixVente: null, prixAchat: null });
+    this.margeDrawerOpen = true;
+  }
+
+  openEditMarge(marge: MargeCommerciale, activiteId: number) {
+    this.margeDrawerMode = 'edit';
+    this.currentMargeId = marge.id ?? null;
+    this.margeForm.reset({
+      activite: activiteId,
+      article: marge.article ?? '',
+      quantite: marge.quantite ?? null,
+      prixVente: marge.prixVente ?? null,
+      prixAchat: marge.prixAchat ?? null,
+    });
+    this.margeDrawerOpen = true;
+  }
+
+  saveMarge() {
+    if (this.margeForm.invalid) {
+      this.margeForm.markAllAsTouched();
+      return;
+    }
+    const val = this.margeForm.value;
+    const payload: Record<string, unknown> = {
+      refDemande: this.ref(),
+      activite: val.activite,
+      article: val.article,
+      quantite: val.quantite,
+      prixVente: val.prixVente,
+      prixAchat: val.prixAchat,
+    };
+    this.isSavingMarge.set(true);
+    const obs$ = this.margeDrawerMode === 'edit' && this.currentMargeId != null
+      ? this.creditService.updateMargeCommerciale(this.currentMargeId, payload)
+      : this.creditService.saveMargeCommerciale(payload);
+    obs$.subscribe({
+      next: () => {
+        this.toast.success(this.margeDrawerMode === 'create' ? 'Marge ajoutée.' : 'Marge modifiée.');
+        this.margeDrawerOpen = false;
+        this.isSavingMarge.set(false);
+        this.loadData();
+      },
+      error: (err) => {
+        console.error(err);
+        this.toast.error(err.message ?? "Erreur lors de l'enregistrement.");
+        this.isSavingMarge.set(false);
+      },
+    });
+  }
+
   // ── Delete ─────────────────────────────────────────────────────────────
   openDeleteActivite(a: ActiviteCredit) {
     this.deleteTarget = { type: 'activite', id: a.id!, label: a.libelle ?? '' };
@@ -427,6 +496,11 @@ export class ActiviteSectionComponent implements OnInit {
     this.deleteDialogOpen = true;
   }
 
+  openDeleteMarge(marge: MargeCommerciale) {
+    this.deleteTarget = { type: 'marge', id: marge.id!, label: marge.article ?? '' };
+    this.deleteDialogOpen = true;
+  }
+
   confirmDelete() {
     if (!this.deleteTarget) return;
     const { type, id } = this.deleteTarget;
@@ -437,7 +511,9 @@ export class ActiviteSectionComponent implements OnInit {
         ? this.creditService.deleteActivite(id)
         : type === 'venteM'
           ? this.creditService.deleteVenteMensuelle(id)
-          : this.creditService.deleteVenteJournaliere(id);
+          : type === 'venteJ'
+            ? this.creditService.deleteVenteJournaliere(id)
+            : this.creditService.deleteMargeCommerciale(id);
 
     obs$.subscribe({
       next: () => {

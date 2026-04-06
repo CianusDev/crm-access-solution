@@ -353,6 +353,24 @@ export class CreditService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
+  saveMargeCommerciale(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveMargeCommerciale', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  updateMargeCommerciale(id: number, data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/updateMargeCom/' + id, data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteMargeCommerciale(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteMargeCom/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
   saveChargeExploitation(data: Record<string, unknown>) {
     return this.api
       .post<{ status: number; message?: string }>(this.endpoint + '/saveChargeExploitation', data)

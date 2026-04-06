@@ -110,7 +110,7 @@
 | 3.1 | **Marge pondérée — édition inline** | Legacy : `enregistrementModifMargePonderee()` permet de modifier `margePondere` directement sur la ligne activité | Ajouter un champ éditable inline pour `margePondere` sur chaque activité |
 | 3.2 | **Valeur derniers achats — édition inline** | Legacy : `enregistrementModifValeursDerniersAchats()` | Ajouter un champ éditable inline pour `valDernierAchat` |
 | 3.3 | **Date derniers achats — édition inline** | Legacy : `enregistrementModifDateDernierAchat()` | Ajouter un champ éditable inline pour `dateDernierAchat` |
-| 3.4 | **Marges commerciales et stock** | Legacy : CRUD complet `margeCommercialeEtStockForm` avec `article`, `quantite`, `prixVente`, `prixAchat` → `POST /saveMargeCommerciale` et `PUT /modifMargeCommerciale/{id}` et `DELETE /deleteMargeCommerciale/{id}` | **Complètement absent**. Ajouter un sous-composant pour les marges commerciales |
+| ~~3.4~~ | ✅ **Marges commerciales et stock** | Legacy : CRUD complet `margeCommercialeEtStockForm` avec `article`, `quantite`, `prixVente`, `prixAchat` → `POST /saveMargeCommerciale` et `PUT /modifMargeCommerciale/{id}` et `DELETE /deleteMargeCommerciale/{id}` | ✅ FAIT — CRUD complet dans `activite-section` : interface `MargeCommerciale`, service `saveMargeCommerciale`/`updateMargeCommerciale`/`deleteMargeCommerciale`, drawer avec calcul marge live, tableau par activité |
 | 3.5 | **Endpoint activité — champs manquants** | Legacy envoie aussi `margePondere`, `valDernierAchat`, `dateDernierAchat` dans `POST /saveActiviteDmde` | Vérifier que le form activité envoie ces champs |
 | 3.6 | **Niveau activité** | Legacy : `niveauActivite` (1 = principale, 2 = secondaire) affiché avec badge | Afficher le badge niveau activité dans la liste |
 
@@ -393,7 +393,7 @@
 
 ### 🔴 Priorité Haute (bloquant pour la parité fonctionnelle)
 
-1. **Marges commerciales et stock** — CRUD complet absent (§3.4)
+1. ✅ ~~**Marges commerciales et stock**~~ — FAIT (§3.4)
 2. **Avances fournisseurs** — CRUD complet absent (§5.3)
 3. **Dettes fournisseurs séparées** — Mélangées avec dettes entreprise (§5.5)
 4. **Trésorerie famille** — Absent (§6.5)

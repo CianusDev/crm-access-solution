@@ -873,6 +873,7 @@ export interface ActiviteCredit {
   venteJournalieres?: ActiviteVenteJournaliere[];
   venteMensuelles?: ActiviteVenteMensuelle[];
   achatsMensuels?: AchatMensuel[];
+  margesCommerciales?: MargeCommerciale[];
 }
 
 export interface AchatMensuel {
@@ -882,6 +883,18 @@ export interface AchatMensuel {
   statut?: string | number;
   refDemande?: string;
   activite?: number;
+}
+
+export interface MargeCommerciale {
+  id?: number;
+  refDemande?: string;
+  article?: string;
+  quantite?: number;
+  prixVente?: number;
+  prixAchat?: number;
+  marge?: number;
+  sousTotal?: number;
+  activite?: number | { id?: number };
 }
 
 export interface ChargeExploitation {
