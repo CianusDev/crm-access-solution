@@ -13,6 +13,7 @@ import { PreEvaluationAcjReadonlyComponent } from './_components/pre-evaluation-
 import { PreEvaluationCeReadonlyComponent } from './_components/pre-evaluation-ce-readonly.component';
 import { EmployeurDemandeReadonlyComponent } from './_components/employeur-demande-readonly.component';
 import { DecisionFinaleDemandeReadonlyComponent } from './_components/decision-finale-demande-readonly.component';
+import { ProfilEntrepreneurCardComponent } from './_components/profil-entrepreneur-card.component';
 
 interface SubSection {
   id: string;
@@ -37,6 +38,7 @@ interface SubSection {
     PreEvaluationCeReadonlyComponent,
     EmployeurDemandeReadonlyComponent,
     DecisionFinaleDemandeReadonlyComponent,
+    ProfilEntrepreneurCardComponent,
   ],
 })
 export class DemandeSectionComponent {
@@ -70,6 +72,7 @@ export class DemandeSectionComponent {
     const items: SubSection[] = [
       { id: 'credit', label: 'Demande de crédit' },
       { id: 'client', label: isPM ? 'Personne morale' : 'Personne physique' },
+      { id: 'profil-entrepreneur', label: 'Profil entrepreneur' },
     ];
 
     if (isPM) {

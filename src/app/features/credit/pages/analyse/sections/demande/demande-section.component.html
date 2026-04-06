@@ -48,6 +48,14 @@
           <app-signataires-card [signataires]="d.client.signataires ?? []" [readOnly]="readOnly()" (signatairesUpdated)="dataChanged.emit()" />
         }
 
+        @case ('profil-entrepreneur') {
+          <app-profil-entrepreneur-card
+            [ref]="d.refDemande"
+            [profilEnt]="demandeDetails()?.profilEnt ?? null"
+            [readOnly]="readOnly()"
+            (saved)="dataChanged.emit()" />
+        }
+
         @case ('bon-commande') {
           <app-bon-commande-form
             [ref]="d.refDemande"

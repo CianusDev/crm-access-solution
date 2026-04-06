@@ -562,6 +562,13 @@ export interface CreditPreEvaluationAcjCe {
   recommandationCe?: string;
 }
 
+export interface ProfilEntrepreneur {
+  id?: number;
+  refDemande?: string;
+  parcoursPro?: string;
+  niveauEducation?: string;
+}
+
 export interface CreditFicheDemandeDetail extends CreditDemande {
   description?: string;
   objetCredit?: string | number;
@@ -572,6 +579,7 @@ export interface CreditFicheDemandeDetail extends CreditDemande {
   acteNotarie?: number;    // 0 = non signé, 1 = signé (sur la demande)
   derogation?: number;     // 0 = normal, 1 = en dérogation, 2 = dérogation validée
   preEvaluationAcjCe?: CreditPreEvaluationAcjCe;
+  profilEnt?: ProfilEntrepreneur;
   /** Employeur lié (types 001 / 008 — `getDetailsDemande`) */
   employeur?: Employeur;
   /** Parfois renvoyé au niveau demande (sinon utiliser `CreditFiche.decision`) */

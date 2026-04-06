@@ -86,7 +86,7 @@
 | 2.3 | **Modification signataire — endpoint** | Legacy : `modificationSignataire()` → `POST /updtateSignataire` avec champs : `signataire` (id), `nom`, `prenom`, `dateNaiss`, `typePiece`, `numPiece`, `sexe`, `situationMatri`, `telephone`, `commune`, `quartier`, `rue`, `dateStatut`, `nationalite`, `dateDelivrancePiece`, `dateExpirationPiece`, `lieuDelivrance` | Vérifier que `signataires-card` envoie les bons champs |
 | 2.4 | **Modification photo signataire** | Legacy : `modificationPhotoSignataire()` → `POST /updateProfilImgCaution` avec FormData | Vérifier si implémenté dans `signataires-card` |
 | 2.5 | **Récupération signataire depuis PERFECT** | Legacy : `recuperationSignataire()` → `POST /recuperationSignataire/{codeClient}` | Ajouter ce bouton si absent |
-| 2.6 | **Profil Entrepreneur** | Legacy : `profilEntrepreneurForm` avec `parcoursPro`, `niveauEducation` → `POST /saveProfilEntrepreneur` | **Complètement absent** de la nouvelle version. Ajouter un sous-composant |
+| ~~2.6~~ | ✅ **Profil Entrepreneur** | Legacy : `profilEntrepreneurForm` avec `parcoursPro`, `niveauEducation` → `POST /saveProfilEnt` | ✅ FAIT — composant `profil-entrepreneur-card`, interface `ProfilEntrepreneur`, service `saveProfilEntrepreneur`, ajouté dans sidebar demande |
 | 2.7 | **Pré-évaluation ACJ — mode édition** | Legacy : ACJ et CE peuvent **créer/modifier** la pré-évaluation, pas seulement la lire | Les composants actuels sont `readonly`. Ajouter le mode édition pour ACJ (profil ACJ) et CE (profil CE). Endpoints : `POST /savePreEvaluationACJCE` |
 | 2.8 | **Pré-évaluation ACJ — champs complets** | Legacy envoie : `acj`, `refDemande`, `preEvaluation`, `avisAcjDmde`, `relationClt`, `relationEmploye`, `relationVosinage`, `affluenceActivite`, `quantiteStock`, `qualiteStock`, `relationCommercial`, `evolutionMtCollect`, `frequenceMtCollect` | Vérifier que le composant readonly affiche **tous** ces champs |
 | 2.9 | **Pré-évaluation CE — champs complets** | Legacy envoie : `ce`, `acj`, `refDemande`, `preEvaluation`, `lastMonthCollect`, `montRecurrent`, `avisCeDmde`, `enquetteVoisinage`, `recommandationCe` | Vérifier que le composant readonly affiche **tous** ces champs |
@@ -398,7 +398,7 @@
 3. **Dettes fournisseurs séparées** — Mélangées avec dettes entreprise (§5.5)
 4. **Trésorerie famille** — Absent (§6.5)
 5. **Charges familiales dynamiques** — Structure incompatible (§6.3)
-6. **Profil entrepreneur** — Absent (§2.6)
+6. ✅ ~~**Profil entrepreneur**~~ — FAIT (§2.6)
 7. **Images/documents par garantie** — Absent (§7.8)
 8. **Champs formulaires incomplets** — Achats (§4.1), Créances (§5.2), Dettes (§5.4), Garanties (§7.5-7.6)
 9. **Propriétaire garantie (D/C)** — Lien caution absent (§7.7)

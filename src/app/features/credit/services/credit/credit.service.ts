@@ -425,6 +425,12 @@ export class CreditService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
+  saveProfilEntrepreneur(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveProfilEnt', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
   saveProfilFamilial(data: Record<string, unknown>) {
     return this.api
       .post<{ status: number; message?: string }>(this.endpoint + '/saveProfilFamilial', data)
