@@ -82,43 +82,27 @@
     <div class="h-40 rounded-xl border border-border bg-card animate-pulse"></div>
   }
 
-  <!-- Navigation + Contenu -->
-  <div class="flex flex-col lg:flex-row gap-4 items-start">
+  <!-- Navigation horizontale -->
+  <div class="overflow-x-auto">
+    <nav class="flex gap-1 border-b border-border min-w-max">
+      @for (tab of tabs(); track tab.id) {
+        <button
+          type="button"
+          (click)="switchTab(tab.id)"
+          class="px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer -mb-px"
+          [class.border-primary]="safeActiveTab() === tab.id"
+          [class.text-primary]="safeActiveTab() === tab.id"
+          [class.border-transparent]="safeActiveTab() !== tab.id"
+          [class.text-muted-foreground]="safeActiveTab() !== tab.id"
+          [class.hover:text-foreground]="safeActiveTab() !== tab.id">
+          {{ tab.label }}
+        </button>
+      }
+    </nav>
+  </div>
 
-    <!-- ── Sidebar nav (desktop) / Select (mobile) ── -->
-    <aside class="w-full lg:w-52 shrink-0">
-
-      <!-- Mobile : select -->
-      <div class="lg:hidden">
-        <select
-          [value]="safeActiveTab()"
-          (change)="switchTab($any($event.target).value)"
-          class="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50">
-          @for (tab of tabs(); track tab.id) {
-            <option [value]="tab.id">{{ tab.label }}</option>
-          }
-        </select>
-      </div>
-
-      <!-- Desktop : liste verticale sticky -->
-      <nav class="hidden lg:flex flex-col gap-0.5 rounded-xl border border-border bg-card p-2 sticky top-4">
-        @for (tab of tabs(); track tab.id) {
-          <button
-            type="button"
-            (click)="switchTab(tab.id)"
-            class="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-sm font-medium text-left transition-colors cursor-pointer"
-            [class.bg-primary]="safeActiveTab() === tab.id"
-            [class.text-primary-foreground]="safeActiveTab() === tab.id"
-            [class.text-muted-foreground]="safeActiveTab() !== tab.id"
-            [class.hover:bg-muted]="safeActiveTab() !== tab.id"
-            [class.hover:text-foreground]="safeActiveTab() !== tab.id">
-            {{ tab.label }}
-          </button>
-        }
-      </nav>
-    </aside>
-
-    <!-- ── Contenu selon l'onglet actif ── -->
+  <!-- Contenu -->
+  <div class="flex flex-col gap-4">
     <div class="flex-1 min-w-0">
       @switch (safeActiveTab()) {
         @case ('demande') {
@@ -237,7 +221,6 @@
         }
       }
     </div>
-
   </div>
 
   <!-- ── Dialog N° demande Perfect (RC/CC) ────────────────────────────── -->

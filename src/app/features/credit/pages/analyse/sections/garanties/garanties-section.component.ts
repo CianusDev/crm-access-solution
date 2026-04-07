@@ -190,9 +190,6 @@ export class GarantiesSectionComponent implements OnInit {
     this.actifs().reduce((s, a) => s + (a.valeurEstimee ?? 0), 0),
   );
 
-  // Dropdown véhicule
-  vehiculeMenuOpen = false;
-
   // Drawer
   actifDrawerOpen = false;
   selectedType = signal<TypeActif | null>(null);

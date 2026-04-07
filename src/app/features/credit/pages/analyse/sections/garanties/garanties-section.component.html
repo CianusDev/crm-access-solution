@@ -1,4 +1,4 @@
-<div class="flex flex-col gap-6">
+<div class="flex flex-col justify-start gap-6">
 
   <!-- Erreur -->
   @if (error()) {
@@ -26,10 +26,10 @@
       } @else {
         <span></span>
       }
-      <button type="button" (click)="openAdd()" appButton>
+      <!-- <button type="button" (click)="openAdd()" appButton>
         <lucide-icon [img]="PlusIcon" [size]="14" />
         Ajouter un actif
-      </button>
+      </button> -->
     </div>
 
     <!-- ══ BIENS IMMOBILIERS ══════════════════════════════════════════════ -->
@@ -175,25 +175,10 @@
               <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{{ vehicules().length }}</span>
             }
           </div>
-          <div class="relative" #vehiculeDropdown>
-            <button type="button" (click)="vehiculeMenuOpen = !vehiculeMenuOpen" appButton size="sm" variant="outline">
-              <lucide-icon [img]="PlusIcon" [size]="12" />
-              Ajouter un véhicule
-              <lucide-icon [img]="ChevronDownIcon" [size]="12" />
-            </button>
-            @if (vehiculeMenuOpen) {
-              <div class="absolute right-0 top-full mt-1 z-50 min-w-[200px] rounded-md border border-border bg-background shadow-lg py-1">
-                <button type="button" (click)="openAdd('VEHICULE', 1); vehiculeMenuOpen = false"
-                  class="w-full px-4 py-2 text-left text-sm hover:bg-muted transition-colors cursor-pointer">
-                  Nouvelle acquisition
-                </button>
-                <button type="button" (click)="openAdd('VEHICULE', 0); vehiculeMenuOpen = false"
-                  class="w-full px-4 py-2 text-left text-sm hover:bg-muted transition-colors cursor-pointer">
-                  Autre véhicule à gager
-                </button>
-              </div>
-            }
-          </div>
+          <button type="button" (click)="openAdd('VEHICULE', 0)" appButton size="sm" variant="outline">
+            <lucide-icon [img]="PlusIcon" [size]="12" />
+            Ajouter
+          </button>
         </div>
       </app-card-header>
       <app-card-content>
@@ -665,13 +650,7 @@
 <!-- ══ DRAWER — Actif ══════════════════════════════════════════════════════ -->
 <app-drawer [(open)]="actifDrawerOpen">
   <app-drawer-header>
-    @if (selectedType() === 'VEHICULE' && nouvelleAcquisition() === 1) {
-      <app-drawer-title>Ajouter un véhicule — Nouvelle acquisition</app-drawer-title>
-    } @else if (selectedType() === 'VEHICULE' && nouvelleAcquisition() === 0) {
-      <app-drawer-title>Ajouter un véhicule existant</app-drawer-title>
-    } @else {
-      <app-drawer-title>Ajouter un actif / garantie</app-drawer-title>
-    }
+    <app-drawer-title>Ajouter un actif / garantie</app-drawer-title>
   </app-drawer-header>
   <app-drawer-content>
     <form [formGroup]="actifForm" class="flex flex-col gap-4">
