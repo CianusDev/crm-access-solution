@@ -61,7 +61,7 @@ export interface CreditClient {
   agence?: { id?: number; code?: string; libelle: string };
   // Contact commun
   indicatifCel?: string;
-  numCel?: string;      // alias legacy
+  numCel?: string; // alias legacy
   telPortable?: string; // champ réel API
   telFixe?: string;
   telConjoint?: string;
@@ -73,8 +73,8 @@ export interface CreditClient {
   rue?: string;
   lot?: string;
   villa?: string;
-  facture?: string;     // Adresse CIE / SODECI
-  adresse?: string;     // Adresse postale
+  facture?: string; // Adresse CIE / SODECI
+  adresse?: string; // Adresse postale
   batimentProche?: string;
   domicille?: string;
   // PP spécifique
@@ -387,7 +387,7 @@ export interface CreditClientDetail {
   dataNaiss?: string;
   dateInscription?: string;
   adresse?: string;
-  latittude?: string | number | null;  // typo conservé pour compatibilité API
+  latittude?: string | number | null; // typo conservé pour compatibilité API
   longitude?: string | number | null;
   entreprise?: CreditClientEntreprise;
 }
@@ -505,8 +505,22 @@ export interface CreditDecisionFinale {
   comiteClt?: string;
   statut?: number;
   argumentaire?: any;
-  user?: { id?: string; nomPrenom?: string; nom?: string; prenom?: string; agence?: { libelle?: string }; profil?: { libelle?: string } };
-  decideur?: { id?: string; nomPrenom?: string; nom?: string; prenom?: string; agence?: { libelle?: string }; profil?: { libelle?: string } };
+  user?: {
+    id?: string;
+    nomPrenom?: string;
+    nom?: string;
+    prenom?: string;
+    agence?: { libelle?: string };
+    profil?: { libelle?: string };
+  };
+  decideur?: {
+    id?: string;
+    nomPrenom?: string;
+    nom?: string;
+    prenom?: string;
+    agence?: { libelle?: string };
+    profil?: { libelle?: string };
+  };
   perfectsaver?: any;
 }
 
@@ -576,8 +590,8 @@ export interface CreditFicheDemandeDetail extends CreditDemande {
   ar?: { nom?: string; prenom?: string; nomPrenom?: string };
   typeActivite?: { libelle: string };
   numTransaction?: string; // N° demande Perfect
-  acteNotarie?: number;    // 0 = non signé, 1 = signé (sur la demande)
-  derogation?: number;     // 0 = normal, 1 = en dérogation, 2 = dérogation validée
+  acteNotarie?: number; // 0 = non signé, 1 = signé (sur la demande)
+  derogation?: number; // 0 = normal, 1 = en dérogation, 2 = dérogation validée
   preEvaluationAcjCe?: CreditPreEvaluationAcjCe;
   profilEnt?: ProfilEntrepreneur;
   /** Employeur lié (types 001 / 008 — `getDetailsDemande`) */
@@ -651,7 +665,14 @@ export interface CreditComiteDecision {
   id?: number;
   dateDemande?: string | Date;
   refDemande?: string;
-  user?: { id?: number | string; nomPrenom?: string; nom?: string; prenom?: string; agence?: { libelle?: string }; profil?: { name?: string; libelle?: string } };
+  user?: {
+    id?: number | string;
+    nomPrenom?: string;
+    nom?: string;
+    prenom?: string;
+    agence?: { libelle?: string };
+    profil?: { name?: string; libelle?: string };
+  };
   montantPropose?: number;
   fraisDossier?: number;
   montantEmprunte?: number;
@@ -683,7 +704,14 @@ export interface CreditPropositionAR {
   id?: number;
   refDemande?: string;
   user_id?: string;
-  user?: { id?: string; nomPrenom?: string; nom?: string; prenom?: string; agence?: { libelle?: string }; profil?: { libelle?: string } };
+  user?: {
+    id?: string;
+    nomPrenom?: string;
+    nom?: string;
+    prenom?: string;
+    agence?: { libelle?: string };
+    profil?: { libelle?: string };
+  };
   montantPropose?: number;
   fraisDossier?: number;
   montantEmprunte?: number;
@@ -716,8 +744,15 @@ export interface CreditContreEvaluation {
   // Identifiants
   id?: number;
   refDemande?: string;
-  user?: { id?: string; nomPrenom?: string; nom?: string; prenom?: string; agence?: { libelle?: string }; profil?: { libelle?: string } };
-  
+  user?: {
+    id?: string;
+    nomPrenom?: string;
+    nom?: string;
+    prenom?: string;
+    agence?: { libelle?: string };
+    profil?: { libelle?: string };
+  };
+
   // Paramètres financiers (identiques à PropositionAR)
   montantPropose?: number;
   fraisDossier?: number;
@@ -742,7 +777,7 @@ export interface CreditContreEvaluation {
   image?: string;
   checkliste?: any;
   statut?: number;
-  
+
   // Champs d'analyse bilan (spécifiques à contre-évaluation par Superviseur Risque)
   libelleActPrincipal?: string;
   libelleActPrincipalCom?: string;
@@ -1024,7 +1059,13 @@ export interface MembreMenage {
   refDemande?: string;
 }
 
-export type TypeActif = 'IMMOBILIER' | 'VEHICULE' | 'EQUIPEMENT' | 'DAT' | 'BIEN_MOBILIER' | 'AUTRE';
+export type TypeActif =
+  | 'IMMOBILIER'
+  | 'VEHICULE'
+  | 'EQUIPEMENT'
+  | 'DAT'
+  | 'BIEN_MOBILIER'
+  | 'AUTRE';
 
 export interface ActifGarantie {
   id?: number;
@@ -1129,11 +1170,11 @@ export interface CreditAnalyseDemandeDetail extends CreditFicheDemandeDetail {
 // ── Payloads comité / décision finale ────────────────────────────────────────
 export interface CreditSaveComite {
   refDemande: string;
-  decision: number;          // toujours 1
+  decision: number; // toujours 1
   montantPropose: number;
-  montantEmprunte: number;   // = montantPropose
-  mensualite: number;        // = montantPropose
-  duree: number;             // = 1 (1 mois fixe pour tirage)
+  montantEmprunte: number; // = montantPropose
+  mensualite: number; // = montantPropose
+  duree: number; // = 1 (1 mois fixe pour tirage)
   fraisDossier: number;
   commissionDeboursement: number;
   assurDecesInvalidite: number;
@@ -1141,9 +1182,9 @@ export interface CreditSaveComite {
   acteNotarie: number;
   montantActeNotarie: number;
   authGage: number;
-  hypotheque: number;        // = 2
+  hypotheque: number; // = 2
   tauxCouverture: number;
-  periodeGrace: number;      // = 2
+  periodeGrace: number; // = 2
   nbreMoisGrace: number;
   deposit: number;
   dateEcheanceSouhaite?: string;
@@ -1198,7 +1239,7 @@ export interface GarantieMedia {
 export interface GarantieVehicule {
   id?: number;
   marque?: string;
-  typeProPerso?: string;        // Professionnel / Particulier
+  typeProPerso?: string; // Professionnel / Particulier
   immatriculation?: string;
   couleur?: string;
   typeCommercial?: string;
@@ -1209,9 +1250,9 @@ export interface GarantieVehicule {
   dateMiseEnCirculation?: string;
   valeurAchat?: number;
   valeurEstime?: number;
-  miniComm?: number;            // 1=Oui, 2=Non
-  vehiculeVu?: number;          // 1=Oui, 2=Non
-  garantie?: number;            // 1=Oui, 2=Non
+  miniComm?: number; // 1=Oui, 2=Non
+  vehiculeVu?: number; // 1=Oui, 2=Non
+  garantie?: number; // 1=Oui, 2=Non
   proprietaire?: 'D' | 'C' | string;
   images?: GarantieMedia[];
   documents?: GarantieMedia[];
@@ -1219,13 +1260,13 @@ export interface GarantieVehicule {
 
 export interface GarantieImmobilisation {
   id?: number;
-  typePropriete?: number;       // 1=Local, 2=Terrain
+  typePropriete?: number; // 1=Local, 2=Terrain
   dateAcquisition?: string;
   titreFoncier?: string;
   lot?: string;
   ilot?: string;
   quantite?: number;
-  garantie?: number;            // 1=Oui, 2=Non
+  garantie?: number; // 1=Oui, 2=Non
   superficie?: number;
   adressDescr?: string;
   valeurAchat?: number;

@@ -92,10 +92,12 @@
                   <td class="px-4 py-2.5 text-muted-foreground">{{ creance.echeance ?? '—' }}</td>
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(creance.montant) }}</td>
                   <td class="px-4 py-2.5">
-                    <button type="button" (click)="openDelete('creance', creance.id!, creance.objet ?? '')"
-                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
-                      <lucide-icon [img]="Trash2Icon" [size]="13" />
-                    </button>
+                    @if (canEdit()) {
+                      <button type="button" (click)="openDelete('creance', creance.id!, creance.objet ?? '')"
+                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                        <lucide-icon [img]="Trash2Icon" [size]="13" />
+                      </button>
+                    }
                   </td>
                 </tr>
               }
@@ -117,10 +119,12 @@
               </span>
             }
           </div>
-          <button type="button" (click)="openAddStock()" appButton size="sm">
-            <lucide-icon [img]="PlusIcon" [size]="14" />
-            Ajouter
-          </button>
+          @if (canEdit()) {
+            <button type="button" (click)="openAddStock()" appButton size="sm">
+              <lucide-icon [img]="PlusIcon" [size]="14" />
+              Ajouter
+            </button>
+          }
         </div>
       </app-card-header>
       <app-card-content>
@@ -168,10 +172,12 @@
                     }
                   </td>
                   <td class="px-4 py-2.5">
-                    <button type="button" (click)="openDelete('stock', stock.id!, stock.description ?? stock.libelle ?? '')"
-                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
-                      <lucide-icon [img]="Trash2Icon" [size]="13" />
-                    </button>
+                    @if (canEdit()) {
+                      <button type="button" (click)="openDelete('stock', stock.id!, stock.description ?? stock.libelle ?? '')"
+                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                        <lucide-icon [img]="Trash2Icon" [size]="13" />
+                      </button>
+                    }
                   </td>
                 </tr>
               }
@@ -224,10 +230,12 @@
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(dette.montant) }}</td>
                   <td class="px-4 py-2.5 text-right tabular-nums">{{ formatMontant(dette.solde) }}</td>
                   <td class="px-4 py-2.5">
-                    <button type="button" (click)="openDelete('detteFournisseur', dette.id!, dette.objet ?? '')"
-                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
-                      <lucide-icon [img]="Trash2Icon" [size]="13" />
-                    </button>
+                    @if (canEdit()) {
+                      <button type="button" (click)="openDelete('detteFournisseur', dette.id!, dette.objet ?? '')"
+                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                        <lucide-icon [img]="Trash2Icon" [size]="13" />
+                      </button>
+                    }
                   </td>
                 </tr>
               }
@@ -280,10 +288,12 @@
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(dette.montantEmprun) }}</td>
                   <td class="px-4 py-2.5 text-right tabular-nums">{{ formatMontant(dette.restantDu) }}</td>
                   <td class="px-4 py-2.5">
-                    <button type="button" (click)="openDelete('detteEntreprise', dette.id!, dette.preteur ?? '')"
-                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
-                      <lucide-icon [img]="Trash2Icon" [size]="13" />
-                    </button>
+                    @if (canEdit()) {
+                      <button type="button" (click)="openDelete('detteEntreprise', dette.id!, dette.preteur ?? '')"
+                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                        <lucide-icon [img]="Trash2Icon" [size]="13" />
+                      </button>
+                    }
                   </td>
                 </tr>
               }

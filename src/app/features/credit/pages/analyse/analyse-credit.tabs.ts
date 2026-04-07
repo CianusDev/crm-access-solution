@@ -2,22 +2,38 @@ import { UserRole } from '@/core/models/user.model';
 
 export type AnalyseTabId =
   | 'demande'
+  | 'analyse'
+  | 'garanties'
+  | 'documents'
+  | 'geolocalisation';
+
+/** Sous-sections du tab "Analyse financière" (navigation secondaire) */
+export type AnalyseSectionId =
   | 'activite'
   | 'achats'
   | 'tresorerie'
   | 'familial'
-  | 'garanties'
-  | 'cautions'
-  | 'documents'
   | 'swot'
-  | 'geolocalisation'
   | 'envoi';
+
+/** Sous-sections du tab "Actifs & Garanties" */
+export type GarantiesSectionId = 'garanties' | 'cautions';
 
 export interface AnalyseTab {
   id: AnalyseTabId;
   label: string;
   /** Rôles autorisés. Vide = tous les rôles. */
   roles?: UserRole[];
+}
+
+export interface AnalyseSection {
+  id: AnalyseSectionId;
+  label: string;
+}
+
+export interface GarantiesSection {
+  id: GarantiesSectionId;
+  label: string;
 }
 
 export const GP_ROLES: UserRole[] = [
@@ -29,23 +45,33 @@ export const CA_CAA_ROLES: UserRole[] = [UserRole.ChefAgence, UserRole.ChefAgenc
 
 const ALL_TABS: AnalyseTab[] = [
   { id: 'demande', label: 'Demande de crédit' },
-  { id: 'activite', label: 'Profil Activité', roles: [] },
-  { id: 'achats', label: 'Achats & Charges', roles: [] },
-  { id: 'tresorerie', label: 'Trésorerie', roles: [] },
-  { id: 'familial', label: 'Profil Familial', roles: [] },
+  { id: 'analyse', label: 'Analyse financière', roles: [] },
   { id: 'garanties', label: 'Actifs & Garanties', roles: [] },
-  { id: 'cautions', label: 'Cautions solidaires', roles: [] },
   { id: 'documents', label: 'Documents annexes', roles: [] },
-  { id: 'swot', label: 'SWOT & Comités', roles: [] },
   { id: 'geolocalisation', label: 'Géolocalisation' },
+];
+
+/** Sous-sections du tab "Analyse financière" */
+export const ANALYSE_SECTIONS: AnalyseSection[] = [
+  { id: 'activite', label: 'Profil Activité' },
+  { id: 'achats', label: 'Achats & Charges' },
+  { id: 'tresorerie', label: 'Trésorerie' },
+  { id: 'familial', label: 'Profil Familial' },
+  { id: 'swot', label: 'SWOT & Comités' },
   { id: 'envoi', label: 'Envoi & Validation' },
+];
+
+/** Sous-sections du tab "Actifs & Garanties" */
+export const GARANTIES_SECTIONS: GarantiesSection[] = [
+  { id: 'garanties', label: 'Actifs & Garanties' },
+  { id: 'cautions', label: 'Cautions solidaires' },
 ];
 
 const GP_TAB_IDS: AnalyseTabId[] = ['demande', 'documents', 'geolocalisation'];
 const RC_CC_TAB_IDS: AnalyseTabId[] = ['demande', 'documents', 'geolocalisation'];
 const CA_CAA_TAB_IDS: AnalyseTabId[] = ['demande', 'documents', 'geolocalisation'];
 
-/** Onglets visibles selon le profil (évite d’alourdir le composant page). */
+/** Onglets visibles selon le profil (évite d'alourdir le composant page). */
 export function filterAnalyseTabsByRole(
   isGP: boolean,
   isRCCC: boolean,
@@ -65,19 +91,9 @@ export function filterAnalyseTabsByRole(
 
 /**
  * Legacy `analyse-financiere-credit` : les onglets « ANALYSE FINANCIÈRE » et « ACTIFS ET GARANTIES »
- * n’existent pas tant que `statut` ∈ {1,2,3,4} (seulement Demande, Documents, Géoloc restent pertinents).
- * On applique la même logique aux onglets détaillés côté nouvelle app.
+ * n'existent pas tant que `statut` ∈ {1,2,3,4} (seulement Demande, Documents, Géoloc restent pertinents).
  */
-const TABS_HIDDEN_UNTIL_AFTER_STATUT_4: AnalyseTabId[] = [
-  'activite',
-  'achats',
-  'tresorerie',
-  'familial',
-  'garanties',
-  'cautions',
-  'swot',
-  'envoi',
-];
+const TABS_HIDDEN_UNTIL_AFTER_STATUT_4: AnalyseTabId[] = ['analyse', 'garanties'];
 
 export function filterAnalyseTabsByWorkflowStatut(
   tabs: AnalyseTab[],

@@ -129,53 +129,111 @@
             [readOnly]="isRCCC() || isCACaa() || isAR()"
             (dataChanged)="loadHeader()" />
         }
-        @case ('activite') {
-          @if (showAnalysteBandeau()) {
-            <div class="flex flex-col gap-4 mb-4">
-              <app-doc-analyse-upload
-                [ref]="ref()"
-                libelle="Analyse financière"
-                label="Analyse financière"
-                articleLabel="votre analyse financière" />
+        @case ('analyse') {
+          <!-- Tab Analyse financière avec sidebar -->
+          <div class="flex gap-4">
+            <!-- Sidebar navigation pour sous-sections -->
+            <aside class="w-64 flex-shrink-0">
+              <nav class="flex flex-col gap-0.5 rounded-xl border border-border bg-card p-2 sticky top-4">
+                @for (section of analyseSections(); track section.id) {
+                  <button
+                    type="button"
+                    (click)="switchAnalyseSection(section.id)"
+                    class="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-sm font-medium text-left transition-colors cursor-pointer"
+                    [class.bg-primary]="activeAnalyseSection() === section.id"
+                    [class.text-primary-foreground]="activeAnalyseSection() === section.id"
+                    [class.text-muted-foreground]="activeAnalyseSection() !== section.id"
+                    [class.hover:bg-muted]="activeAnalyseSection() !== section.id"
+                    [class.hover:text-foreground]="activeAnalyseSection() !== section.id">
+                    {{ section.label }}
+                  </button>
+                }
+              </nav>
+            </aside>
+
+            <!-- Contenu de la sous-section active -->
+            <div class="flex-1 min-w-0">
+              @switch (activeAnalyseSection()) {
+                @case ('activite') {
+                  @if (showAnalysteBandeau()) {
+                    <div class="flex flex-col gap-4 mb-4">
+                      <app-doc-analyse-upload
+                        [ref]="ref()"
+                        libelle="Analyse financière"
+                        label="Analyse financière"
+                        articleLabel="votre analyse financière" />
+                    </div>
+                  }
+                  <app-activite-section [ref]="ref()" />
+                }
+                @case ('achats') {
+                  <app-achats-section [ref]="ref()" />
+                }
+                @case ('tresorerie') {
+                  <app-tresorerie-section [ref]="ref()" [canEdit]="showAnalysteBandeau()" />
+                }
+                @case ('familial') {
+                  <app-familial-section [ref]="ref()" />
+                }
+                @case ('swot') {
+                  <app-swot-section [ref]="ref()" />
+                }
+                @case ('envoi') {
+                  <app-envoi-section [ref]="ref()" />
+                }
+              }
             </div>
-          }
-          <app-activite-section [ref]="ref()" />
-        }
-        @case ('achats') {
-          <app-achats-section [ref]="ref()" />
-        }
-        @case ('tresorerie') {
-          <app-tresorerie-section [ref]="ref()" />
-        }
-        @case ('familial') {
-          <app-familial-section [ref]="ref()" />
+          </div>
         }
         @case ('garanties') {
-          <app-garanties-section [ref]="ref()" />
-          @if (showAnalysteBandeau()) {
-            <div class="flex flex-col gap-4 mt-6">
-              <app-doc-analyse-upload
-                [ref]="ref()"
-                libelle="Actifs garanties"
-                label="Actifs & Garanties"
-                articleLabel="votre document d'actifs et garanties" />
+          <!-- Tab Actifs & Garanties avec sidebar -->
+          <div class="flex gap-4">
+            <!-- Sidebar navigation pour sous-sections -->
+            <aside class="w-64 flex-shrink-0">
+              <nav class="flex flex-col gap-0.5 rounded-xl border border-border bg-card p-2 sticky top-4">
+                @for (section of garantiesSections(); track section.id) {
+                  <button
+                    type="button"
+                    (click)="switchGarantiesSection(section.id)"
+                    class="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-sm font-medium text-left transition-colors cursor-pointer"
+                    [class.bg-primary]="activeGarantiesSection() === section.id"
+                    [class.text-primary-foreground]="activeGarantiesSection() === section.id"
+                    [class.text-muted-foreground]="activeGarantiesSection() !== section.id"
+                    [class.hover:bg-muted]="activeGarantiesSection() !== section.id"
+                    [class.hover:text-foreground]="activeGarantiesSection() !== section.id">
+                    {{ section.label }}
+                  </button>
+                }
+              </nav>
+            </aside>
+
+            <!-- Contenu de la sous-section active -->
+            <div class="flex-1 min-w-0">
+              @switch (activeGarantiesSection()) {
+                @case ('garanties') {
+                  <app-garanties-section [ref]="ref()" />
+                  @if (showAnalysteBandeau()) {
+                    <div class="flex flex-col gap-4 mt-6">
+                      <app-doc-analyse-upload
+                        [ref]="ref()"
+                        libelle="Actifs garanties"
+                        label="Actifs & Garanties"
+                        articleLabel="vos actifs et garanties" />
+                    </div>
+                  }
+                }
+                @case ('cautions') {
+                  <app-cautions-section [ref]="ref()" [view]="'cautions'" />
+                }
+              }
             </div>
-          }
-        }
-        @case ('cautions') {
-          <app-cautions-section [ref]="ref()" [isGP]="isGP() || isRCCC() || isCACaa()" [view]="'cautions'" [prefilledDoc]="pendingDocLibelle()" (docsChanged)="onDocsChanged()" />
+          </div>
         }
         @case ('documents') {
           <app-cautions-section [ref]="ref()" [isGP]="isGP() || isRCCC() || isCACaa()" [view]="'documents'" [prefilledDoc]="pendingDocLibelle()" (docsChanged)="onDocsChanged()" />
         }
-        @case ('swot') {
-          <app-swot-section [ref]="ref()" />
-        }
         @case ('geolocalisation') {
           <app-geolocalisation-section [ref]="ref()" />
-        }
-        @case ('envoi') {
-          <app-envoi-section [ref]="ref()" />
         }
       }
     </div>

@@ -61,7 +61,11 @@ import {
   GP_ROLES,
   RC_CC_ROLES,
   CA_CAA_ROLES,
+  ANALYSE_SECTIONS,
+  GARANTIES_SECTIONS,
   type AnalyseTabId,
+  type AnalyseSectionId,
+  type GarantiesSectionId,
 } from './analyse-credit.tabs';
 import { Avatar } from '@/shared/components/avatar/avatar.component';
 import {
@@ -225,8 +229,13 @@ export class AnalyseCreditComponent implements OnInit {
   );
   readonly error = signal<string | null>(null);
   readonly activeTab = signal<AnalyseTabId>('demande');
+  readonly activeAnalyseSection = signal<AnalyseSectionId>('activite'); // Section active dans "Analyse financière"
+  readonly activeGarantiesSection = signal<GarantiesSectionId>('garanties'); // Section active dans "Actifs & Garanties"
   readonly pendingDocLibelle = signal<{ libelle: string; version: number } | null>(null);
   private pendingDocVersion = 0;
+
+  readonly analyseSections = signal(ANALYSE_SECTIONS);
+  readonly garantiesSections = signal(GARANTIES_SECTIONS);
 
   /**
    * Détail `getDetailsDemande` après un refresh manuel (`loadHeader`).
@@ -399,6 +408,14 @@ export class AnalyseCreditComponent implements OnInit {
   switchTab(id: AnalyseTabId) {
     this.pendingDocLibelle.set(null);
     this.activeTab.set(id);
+  }
+
+  switchAnalyseSection(id: AnalyseSectionId) {
+    this.activeAnalyseSection.set(id);
+  }
+
+  switchGarantiesSection(id: GarantiesSectionId) {
+    this.activeGarantiesSection.set(id);
   }
 
   onChargerDocuments(libelle: string | null) {
