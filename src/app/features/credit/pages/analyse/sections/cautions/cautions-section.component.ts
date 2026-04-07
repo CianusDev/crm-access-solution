@@ -111,6 +111,16 @@ export class CautionsSectionComponent implements OnInit {
   // Types de documents
   readonly imageTypes = CAUTION_IMAGE_TYPES;
   readonly documentTypes = CAUTION_DOCUMENT_TYPES;
+  
+  // Dropdown items (pre-computed to avoid .map() in template)
+  readonly imageTypesDropdown = CAUTION_IMAGE_TYPES.map(t => ({ 
+    label: t.libelle, 
+    required: t.obligation 
+  }));
+  readonly documentTypesDropdown = CAUTION_DOCUMENT_TYPES.map(t => ({ 
+    label: t.libelle, 
+    required: t.obligation 
+  }));
 
   private readonly fb = inject(FormBuilder);
   private readonly creditService = inject(CreditService);
@@ -272,11 +282,11 @@ export class CautionsSectionComponent implements OnInit {
           }
           this.cautions.set(data.crCaution ?? []);
 
-          // Pour les documents, utiliser getAnalyseFinanciere séparément
-          this.creditService.getAnalyseFinanciere(this.ref()).subscribe({
-            next: (analyseData) => {
-              this.documents.set(analyseData.demande?.documentsAnalyse ?? []);
-              this.documentsFiltered.set(analyseData.demande?.documentsAnalyse ?? []);
+          // Charger les documents annexes séparément
+          this.creditService.getDocuments(this.ref()).subscribe({
+            next: (docs) => {
+              this.documents.set(docs);
+              this.documentsFiltered.set(docs);
               this.isLoading.set(false);
             },
             error: () => {

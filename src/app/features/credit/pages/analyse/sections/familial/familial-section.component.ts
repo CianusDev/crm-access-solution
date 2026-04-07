@@ -1,9 +1,9 @@
 import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DecimalPipe } from '@angular/common';
 import {
   LucideAngularModule,
   Plus,
+  Pencil,
   Trash2,
   AlertCircle,
   Users,
@@ -34,7 +34,7 @@ import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { FormSelect, SelectOption } from '@/shared/components/form-select/form-select.component';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { CreditService } from '../../../../services/credit/credit.service';
-import { MembreMenage, ProfilFamilial } from '../../../../interfaces/credit.interface';
+import { ChargeFamille, MembreMenage, ProfilFamilial, TresorerieFamille } from '../../../../interfaces/credit.interface';
 
 const SITUATIONS: SelectOption[] = [
   { value: 'CELIBATAIRE', label: 'Célibataire' },
@@ -50,6 +50,30 @@ const NIVEAUX_INSTRUCTION: SelectOption[] = [
   { value: 'SECONDAIRE', label: 'Secondaire' },
   { value: 'SUPERIEUR', label: 'Supérieur' },
   { value: 'TECHNIQUE', label: 'Formation technique' },
+];
+
+interface TypeChargeFamiliale {
+  id: number;
+  name: string;
+  sousCharges: string[];
+}
+
+const TYPES_TRESORERIE: SelectOption[] = [
+  { value: '1', label: 'Épargne' },
+  { value: '2', label: 'Dette' },
+];
+
+const TYPES_COMPTE: SelectOption[] = [
+  { value: '1', label: 'Espèces' },
+  { value: '2', label: 'Banque' },
+];
+
+const TYPES_CHARGE_FAM: TypeChargeFamiliale[] = [
+  { id: 1, name: 'Domicile', sousCharges: ['Loyer', 'Entretien et réparation', 'Ecolage et fournitures', 'Enfants & Bébé', 'Téléphone & Internet'] },
+  { id: 2, name: 'Transport', sousCharges: ['Transport en commun', 'Entretien et réparation', 'Carburant', 'Assurance, vignette, etc.', 'Eau, électricité, gaz', 'Charges financières', "Transfert d'argent", 'Loisirs'] },
+  { id: 3, name: 'Personnel', sousCharges: ['Employés de maison', 'Actions sociales et religieuses'] },
+  { id: 4, name: 'Familiale', sousCharges: ['Alimentation', 'Santé', 'Hygiène'] },
+  { id: 5, name: 'Autres', sousCharges: [] },
 ];
 
 const REGIMES: SelectOption[] = [
@@ -71,7 +95,6 @@ const RELATIONS: SelectOption[] = [
   templateUrl: './familial-section.component.html',
   imports: [
     ReactiveFormsModule,
-    DecimalPipe,
     LucideAngularModule,
     CardComponent,
     CardContentComponent,
@@ -96,6 +119,7 @@ export class FamilialSectionComponent implements OnInit {
   ref = input<string>('');
 
   readonly PlusIcon = Plus;
+  readonly PencilIcon = Pencil;
   readonly Trash2Icon = Trash2;
   readonly AlertCircleIcon = AlertCircle;
   readonly UsersIcon = Users;
@@ -110,11 +134,39 @@ export class FamilialSectionComponent implements OnInit {
   readonly niveauOptions = NIVEAUX_INSTRUCTION;
   readonly regimeOptions = REGIMES;
   readonly relationOptions = RELATIONS;
+  readonly typesChargeFam = TYPES_CHARGE_FAM;
+  readonly typesChargeFamOptions = TYPES_CHARGE_FAM.map(t => ({ value: t.id, label: t.name }));
+  readonly typesTresorerieOptions = TYPES_TRESORERIE;
+  readonly typesCompteOptions = TYPES_COMPTE;
 
   // ── State ──────────────────────────────────────────────────────────────
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly membresMenage = signal<MembreMenage[]>([]);
+  readonly chargesFamiliales = signal<ChargeFamille[]>([]);
+  readonly tresoreriesFamiliales = signal<TresorerieFamille[]>([]);
+
+  readonly totalEpargnes = computed(() =>
+    this.tresoreriesFamiliales().filter(t => String(t.type) === '1').reduce((s, t) => s + (t.montant ?? 0), 0),
+  );
+  readonly totalDettes = computed(() =>
+    this.tresoreriesFamiliales().filter(t => String(t.type) === '2').reduce((s, t) => s + (t.montant ?? 0), 0),
+  );
+
+  // Charge form — type sélectionné pour sous-charges
+  readonly selectedTypeChargeId = signal<number | null>(null);
+  readonly sousChargesOptions = computed<SelectOption[]>(() => {
+    const t = TYPES_CHARGE_FAM.find(tc => tc.id === this.selectedTypeChargeId());
+    return (t?.sousCharges ?? []).map(s => ({ value: s, label: s }));
+  });
+  readonly typeHasSousCharges = computed(() => {
+    const id = this.selectedTypeChargeId();
+    return id != null && id !== 5;
+  });
+
+  readonly totalChargesFamilialesDetail = computed(() =>
+    this.chargesFamiliales().reduce((s, c) => s + (c.montant ?? 0), 0),
+  );
 
   readonly totalChargesFamiliales = computed(() => {
     const f = this.profilForm.value;
@@ -127,8 +179,16 @@ export class FamilialSectionComponent implements OnInit {
 
   // Drawer
   membreDrawerOpen = false;
+  chargeDrawerOpen = false;
+  chargeDrawerMode: 'create' | 'edit' = 'create';
+  private currentChargeId: number | null = null;
+  tresorerieDrawerOpen = false;
+  tresorerieDrawerMode: 'create' | 'edit' = 'create';
+  private currentTresorerieId: number | null = null;
   readonly isSavingProfil = signal(false);
   readonly isSavingMembre = signal(false);
+  readonly isSavingCharge = signal(false);
+  readonly isSavingTresorerie = signal(false);
 
   // Delete
   deleteDialogOpen = false;
@@ -156,9 +216,28 @@ export class FamilialSectionComponent implements OnInit {
     revenu: [null as number | null],
   });
 
+  readonly chargeForm = this.fb.group({
+    typeCharge: [null as number | null, Validators.required],
+    sousCharge: [''],
+    montant: [null as number | null, Validators.required],
+  });
+
+  readonly tresorerieForm = this.fb.group({
+    libelle: ['', Validators.required],
+    type: [null as string | null, Validators.required],
+    typeCompte: [null as string | null, Validators.required],
+    montant: [null as number | null, Validators.required],
+    provenance: [''],
+  });
+
   // ── Lifecycle ──────────────────────────────────────────────────────────
   ngOnInit() {
     this.loadData();
+    // Sync typeCharge form value → signal pour les sous-charges
+    this.chargeForm.get('typeCharge')!.valueChanges.subscribe(val => {
+      this.selectedTypeChargeId.set(val);
+      this.chargeForm.get('sousCharge')!.setValue('');
+    });
   }
 
   loadData() {
@@ -186,6 +265,8 @@ export class FamilialSectionComponent implements OnInit {
           });
         }
         this.membresMenage.set(data.demande.membresMenage ?? []);
+        this.chargesFamiliales.set(data.demande.chargesFamiliales ?? []);
+        this.tresoreriesFamiliales.set(data.demande.tresoreriesFamiliales ?? []);
         this.isLoading.set(false);
       },
       error: () => {
@@ -220,6 +301,118 @@ export class FamilialSectionComponent implements OnInit {
       error: () => {
         this.toast.error("Erreur lors de l'enregistrement.");
         this.isSavingProfil.set(false);
+      },
+    });
+  }
+
+  // ── Charges familiales ─────────────────────────────────────────────────
+  typeChargeLabel(typeId: number | undefined): string {
+    return TYPES_CHARGE_FAM.find(t => t.id === typeId)?.name ?? '—';
+  }
+
+  openAddCharge() {
+    this.chargeDrawerMode = 'create';
+    this.currentChargeId = null;
+    this.selectedTypeChargeId.set(null);
+    this.chargeForm.reset({ typeCharge: null, sousCharge: '', montant: null });
+    this.chargeDrawerOpen = true;
+  }
+
+  openEditCharge(charge: ChargeFamille) {
+    this.chargeDrawerMode = 'edit';
+    this.currentChargeId = charge.id ?? null;
+    this.selectedTypeChargeId.set(charge.typeCharge ?? null);
+    this.chargeForm.reset({
+      typeCharge: charge.typeCharge ?? null,
+      sousCharge: charge.chargeMens === 'RAS' ? '' : (charge.chargeMens ?? ''),
+      montant: charge.montant ?? null,
+    });
+    this.chargeDrawerOpen = true;
+  }
+
+  saveCharge() {
+    if (this.chargeForm.invalid) { this.chargeForm.markAllAsTouched(); return; }
+    const val = this.chargeForm.value;
+    const typeId = val.typeCharge;
+    const payload: Record<string, unknown> = {
+      refDemande: this.ref(),
+      typeCharge: typeId,
+      chargeMens: (typeId !== 5 && val.sousCharge) ? val.sousCharge : 'RAS',
+      montant: val.montant,
+      commentaire: 'RAS',
+    };
+    if (this.chargeDrawerMode === 'edit' && this.currentChargeId != null) {
+      payload['chargeFamille'] = this.currentChargeId;
+    }
+    this.isSavingCharge.set(true);
+    this.creditService.saveChargeFamille(payload).subscribe({
+      next: () => {
+        this.toast.success(this.chargeDrawerMode === 'create' ? 'Charge ajoutée.' : 'Charge modifiée.');
+        this.chargeDrawerOpen = false;
+        this.isSavingCharge.set(false);
+        this.loadData();
+      },
+      error: (err) => {
+        this.toast.error(err.message ?? "Erreur lors de l'enregistrement.");
+        this.isSavingCharge.set(false);
+      },
+    });
+  }
+
+  // ── Trésorerie famille ─────────────────────────────────────────────────
+  typeLabel(type: number | string | undefined): string {
+    return TYPES_TRESORERIE.find(t => String(t.value) === String(type))?.label ?? '—';
+  }
+
+  typeCompteLabel(tc: number | string | undefined): string {
+    return TYPES_COMPTE.find(t => String(t.value) === String(tc))?.label ?? '—';
+  }
+
+  openAddTresorerie() {
+    this.tresorerieDrawerMode = 'create';
+    this.currentTresorerieId = null;
+    this.tresorerieForm.reset({ libelle: '', type: null, typeCompte: null, montant: null, provenance: '' });
+    this.tresorerieDrawerOpen = true;
+  }
+
+  openEditTresorerie(t: TresorerieFamille) {
+    this.tresorerieDrawerMode = 'edit';
+    this.currentTresorerieId = t.id ?? null;
+    this.tresorerieForm.reset({
+      libelle: t.libelle ?? '',
+      type: t.type != null ? String(t.type) : null,
+      typeCompte: t.typeCompte != null ? String(t.typeCompte) : null,
+      montant: t.montant ?? null,
+      provenance: t.provenance ?? '',
+    });
+    this.tresorerieDrawerOpen = true;
+  }
+
+  saveTresorerie() {
+    if (this.tresorerieForm.invalid) { this.tresorerieForm.markAllAsTouched(); return; }
+    const val = this.tresorerieForm.value;
+    const payload: Record<string, unknown> = {
+      refDemande: this.ref(),
+      libelle: val.libelle,
+      type: val.type,
+      typeCompte: val.typeCompte,
+      montant: val.montant,
+      provenance: val.provenance,
+    };
+    if (this.tresorerieDrawerMode === 'edit' && this.currentTresorerieId != null) {
+      payload['tresorerieFamille'] = this.currentTresorerieId;
+    }
+    this.isSavingTresorerie.set(true);
+    this.creditService.saveTresorerieFamille(payload).subscribe({
+      next: () => {
+        this.toast.success(this.tresorerieDrawerMode === 'create' ? 'Trésorerie ajoutée.' : 'Trésorerie modifiée.');
+        this.tresorerieDrawerOpen = false;
+        this.isSavingTresorerie.set(false);
+        this.loadData();
+      },
+      error: (err) => {
+        this.toast.error(err.message ?? "Erreur lors de l'enregistrement.");
+        this.isSavingTresorerie.set(false);
       },
     });
   }

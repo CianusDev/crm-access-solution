@@ -56,8 +56,7 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-border bg-muted/10">
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Libellé</th>
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Localisation</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Description</th>
                 <th class="px-4 py-2 text-left font-medium text-muted-foreground">Superficie</th>
                 <th class="px-4 py-2 text-right font-medium text-muted-foreground">Valeur (FCFA)</th>
                 <th class="px-4 py-2 w-10"></th>
@@ -66,8 +65,7 @@
             <tbody>
               @for (actif of immobiliers(); track actif.id) {
                 <tr class="border-b border-border hover:bg-muted/10 transition-colors">
-                  <td class="px-4 py-2.5 font-medium">{{ actif.libelle }}</td>
-                  <td class="px-4 py-2.5 text-muted-foreground">{{ actif.localisation ?? '—' }}</td>
+                  <td class="px-4 py-2.5 font-medium">{{ actif.adressDescr ?? '—' }}</td>
                   <td class="px-4 py-2.5 text-muted-foreground">{{ actif.superficie ? actif.superficie + ' m²' : '—' }}</td>
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(actif.valeurEstimee) }}</td>
                   <td class="px-4 py-2.5">
@@ -177,10 +175,25 @@
               <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{{ vehicules().length }}</span>
             }
           </div>
-          <button type="button" (click)="openAdd('VEHICULE')" appButton size="sm" variant="outline">
-            <lucide-icon [img]="PlusIcon" [size]="12" />
-            Ajouter
-          </button>
+          <div class="relative" #vehiculeDropdown>
+            <button type="button" (click)="vehiculeMenuOpen = !vehiculeMenuOpen" appButton size="sm" variant="outline">
+              <lucide-icon [img]="PlusIcon" [size]="12" />
+              Ajouter un véhicule
+              <lucide-icon [img]="ChevronDownIcon" [size]="12" />
+            </button>
+            @if (vehiculeMenuOpen) {
+              <div class="absolute right-0 top-full mt-1 z-50 min-w-[200px] rounded-md border border-border bg-background shadow-lg py-1">
+                <button type="button" (click)="openAdd('VEHICULE', 1); vehiculeMenuOpen = false"
+                  class="w-full px-4 py-2 text-left text-sm hover:bg-muted transition-colors cursor-pointer">
+                  Nouvelle acquisition
+                </button>
+                <button type="button" (click)="openAdd('VEHICULE', 0); vehiculeMenuOpen = false"
+                  class="w-full px-4 py-2 text-left text-sm hover:bg-muted transition-colors cursor-pointer">
+                  Autre véhicule à gager
+                </button>
+              </div>
+            }
+          </div>
         </div>
       </app-card-header>
       <app-card-content>
@@ -190,9 +203,8 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-border bg-muted/10">
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Libellé</th>
                 <th class="px-4 py-2 text-left font-medium text-muted-foreground">Marque</th>
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Année</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Immatriculation</th>
                 <th class="px-4 py-2 text-right font-medium text-muted-foreground">Valeur (FCFA)</th>
                 <th class="px-4 py-2 w-10"></th>
               </tr>
@@ -200,9 +212,8 @@
             <tbody>
               @for (actif of vehicules(); track actif.id) {
                 <tr class="border-b border-border hover:bg-muted/10 transition-colors">
-                  <td class="px-4 py-2.5 font-medium">{{ actif.libelle }}</td>
-                  <td class="px-4 py-2.5 text-muted-foreground">{{ actif.marque ?? '—' }}</td>
-                  <td class="px-4 py-2.5 text-muted-foreground">{{ actif.annee ?? '—' }}</td>
+                  <td class="px-4 py-2.5 font-medium">{{ actif.marque ?? '—' }}</td>
+                  <td class="px-4 py-2.5 text-muted-foreground">{{ actif.immatriculation ?? '—' }}</td>
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(actif.valeurEstimee) }}</td>
                   <td class="px-4 py-2.5">
                     <div class="flex items-center gap-1">
@@ -328,7 +339,7 @@
             <tbody>
               @for (actif of equipements(); track actif.id) {
                 <tr class="border-b border-border hover:bg-muted/10 transition-colors">
-                  <td class="px-4 py-2.5 font-medium">{{ actif.libelle }}</td>
+                  <td class="px-4 py-2.5 font-medium">{{ actif.designation ?? '—' }}</td>
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(actif.valeurEstimee) }}</td>
                   <td class="px-4 py-2.5"><div class="flex items-center gap-1">
                     <button type="button" (click)="toggleImages(actif.id!)" title="Photos" class="flex items-center gap-0.5 h-7 px-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer" [class.text-primary]="expandedImages().includes(actif.id!)"><lucide-icon [img]="ImageIcon" [size]="13" />@if (actif.images?.length) { <span class="text-xs">{{ actif.images!.length }}</span> }</button>
@@ -373,8 +384,8 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-border bg-muted/10">
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Libellé</th>
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Banque</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">N° Contrat / DAT</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Durée (mois)</th>
                 <th class="px-4 py-2 text-left font-medium text-muted-foreground">Échéance</th>
                 <th class="px-4 py-2 text-right font-medium text-muted-foreground">Montant (FCFA)</th>
                 <th class="px-4 py-2 w-10"></th>
@@ -383,9 +394,9 @@
             <tbody>
               @for (actif of dats(); track actif.id) {
                 <tr class="border-b border-border hover:bg-muted/10 transition-colors">
-                  <td class="px-4 py-2.5 font-medium">{{ actif.libelle }}</td>
-                  <td class="px-4 py-2.5 text-muted-foreground">{{ actif.banque ?? '—' }}</td>
-                  <td class="px-4 py-2.5 text-muted-foreground">{{ actif.echeance ?? '—' }}</td>
+                  <td class="px-4 py-2.5 font-medium">{{ actif.numeroPerfectDat ?? '—' }}</td>
+                  <td class="px-4 py-2.5 text-muted-foreground">{{ actif.dureeDat ?? '—' }}</td>
+                  <td class="px-4 py-2.5 text-muted-foreground">{{ actif.dateEcheanceDat ?? '—' }}</td>
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(actif.valeurEstimee) }}</td>
                   <td class="px-4 py-2.5"><div class="flex items-center gap-1">
                     <button type="button" (click)="toggleImages(actif.id!)" title="Photos" class="flex items-center gap-0.5 h-7 px-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer" [class.text-primary]="expandedImages().includes(actif.id!)"><lucide-icon [img]="ImageIcon" [size]="13" />@if (actif.images?.length) { <span class="text-xs">{{ actif.images!.length }}</span> }</button>
@@ -509,7 +520,7 @@
             <tbody>
               @for (actif of biensMobiliers(); track actif.id) {
                 <tr class="border-b border-border hover:bg-muted/10 transition-colors">
-                  <td class="px-4 py-2.5 font-medium">{{ actif.libelle }}</td>
+                  <td class="px-4 py-2.5 font-medium">{{ actif.designation ?? '—' }}</td>
                   <td class="px-4 py-2.5 text-muted-foreground">{{ actif.quantite ?? '—' }}</td>
                   <td class="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{{ actif.valeurAchat != null ? formatMontant(actif.valeurAchat) : '—' }}</td>
                   <td class="px-4 py-2.5 text-muted-foreground">{{ actif.dateAcquisition ?? '—' }}</td>
@@ -555,7 +566,7 @@
             <tbody>
               @for (actif of autres(); track actif.id) {
                 <tr class="border-b border-border hover:bg-muted/10 transition-colors">
-                  <td class="px-4 py-2.5 font-medium">{{ actif.libelle }}</td>
+                  <td class="px-4 py-2.5 font-medium">{{ actif.designation ?? actif.evaluation ?? '—' }}</td>
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(actif.valeurEstimee) }}</td>
                   <td class="px-4 py-2.5"><div class="flex items-center gap-1">
                     <button type="button" (click)="toggleImages(actif.id!)" title="Photos" class="flex items-center gap-0.5 h-7 px-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer" [class.text-primary]="expandedImages().includes(actif.id!)"><lucide-icon [img]="ImageIcon" [size]="13" />@if (actif.images?.length) { <span class="text-xs">{{ actif.images!.length }}</span> }</button>
@@ -576,6 +587,77 @@
       </app-card>
     }
 
+    <!-- ══ ACTIFS CIRCULANTS (Stocks) ═══════════════════════════════════════ -->
+    <app-card>
+      <app-card-header>
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <lucide-icon [img]="PackageIcon" [size]="16" class="text-muted-foreground" />
+            <app-card-title>Actifs circulants (Stocks)</app-card-title>
+            @if (stocks().length > 0) {
+              <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{{ stocks().length }}</span>
+            }
+          </div>
+          <div class="flex items-center gap-3">
+            @if (totalStocks() > 0) {
+              <span class="text-sm font-semibold tabular-nums">{{ formatMontant(totalStocks()) }} FCFA</span>
+            }
+            <button type="button" (click)="openAddStock()" appButton size="sm" variant="outline">
+              <lucide-icon [img]="PlusIcon" [size]="12" />
+              Ajouter
+            </button>
+          </div>
+        </div>
+      </app-card-header>
+      <app-card-content>
+        @if (stocks().length === 0) {
+          <p class="py-4 text-center text-sm text-muted-foreground">Aucun stock enregistré</p>
+        } @else {
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border bg-muted/10">
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Description</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Quantité</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Prix unit. (FCFA)</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Coût total (FCFA)</th>
+                <th class="px-4 py-2 text-center font-medium text-muted-foreground">Assurance</th>
+                <th class="px-4 py-2 text-center font-medium text-muted-foreground">Garantie</th>
+                <th class="px-4 py-2 w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (stock of stocks(); track stock.id) {
+                <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
+                  <td class="px-4 py-2.5 font-medium">{{ stock.description ?? '—' }}</td>
+                  <td class="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{{ stock.quantite ?? '—' }}</td>
+                  <td class="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{{ formatMontant(stock.prix) }}</td>
+                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(stock.cout) }}</td>
+                  <td class="px-4 py-2.5 text-center">
+                    <span class="rounded-full px-2 py-0.5 text-xs font-medium"
+                      [class]="stock.assurStock === 1 ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'">
+                      {{ stock.assurStock === 1 ? 'OUI' : 'NON' }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-2.5 text-center">
+                    <span class="rounded-full px-2 py-0.5 text-xs font-medium"
+                      [class]="stock.garantie === 1 ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'">
+                      {{ stock.garantie === 1 ? 'OUI' : 'NON' }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-2.5">
+                    <button type="button" (click)="openDeleteStock(stock)"
+                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                      <lucide-icon [img]="Trash2Icon" [size]="13" />
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </app-card-content>
+    </app-card>
+
   }
 
 </div>
@@ -583,79 +665,92 @@
 <!-- ══ DRAWER — Actif ══════════════════════════════════════════════════════ -->
 <app-drawer [(open)]="actifDrawerOpen">
   <app-drawer-header>
-    <app-drawer-title>Ajouter un actif / garantie</app-drawer-title>
+    @if (selectedType() === 'VEHICULE' && nouvelleAcquisition() === 1) {
+      <app-drawer-title>Ajouter un véhicule — Nouvelle acquisition</app-drawer-title>
+    } @else if (selectedType() === 'VEHICULE' && nouvelleAcquisition() === 0) {
+      <app-drawer-title>Ajouter un véhicule existant</app-drawer-title>
+    } @else {
+      <app-drawer-title>Ajouter un actif / garantie</app-drawer-title>
+    }
   </app-drawer-header>
   <app-drawer-content>
     <form [formGroup]="actifForm" class="flex flex-col gap-4">
 
-      <app-form-select name="type" label="Type d'actif" [options]="typesActifOptions" placeholder="Sélectionner un type" required />
-      <app-form-input name="libelle" label="Libellé" placeholder="Ex: Terrain Cocody, Toyota Corolla…" required />
-      <app-form-input name="valeurEstimee" label="Valeur estimée (FCFA)" type="number" placeholder="Ex: 5000000" required />
+      <app-form-select name="type" label="Type d'actif" [options]="typesActifOptions" placeholder="Sélectionner un type" required class="hidden"/>
+      <app-form-input name="valeurEstimee"
+        [label]="selectedType() === 'DAT' ? 'Montant' : 'Valeur estimée'"
+        type="number" placeholder="Ex: 5000000" required />
+
+      <!-- Propriétaire (commun à tous les types sauf AUTRE/DAT) -->
+      @if (selectedType() !== null && selectedType() !== 'AUTRE' && selectedType() !== 'DAT') {
+        <app-form-select name="proprietaire" label="Propriétaire" placeholder="Sélectionner" [options]="PROPRIETAIRE_OPTIONS" required />
+        @if (isProprietaireCaution()) {
+          <app-form-select name="idCaution" label="Caution" placeholder="Sélectionner une caution" [options]="cautionOptions()" required />
+        }
+      }
 
       <!-- Champs conditionnels — Immobilier -->
       @if (selectedType() === 'IMMOBILIER') {
-        <app-form-select name="typePropriete" label="Type de bien immobilier" placeholder="Sélectionner" [options]="typesProprieteOptions" />
-        <app-form-input name="proprietaire" label="Propriétaire" placeholder="Ex: Jean Kouassi" />
-        <app-form-input name="localisation" label="Localisation / Adresse" placeholder="Ex: Cocody, Abidjan" />
-        <app-form-input name="adressDescr" label="Description de l'adresse" placeholder="Ex: Rue des Jardins, Lot 12" />
-        <app-form-input name="superficie" label="Superficie (m²)" type="number" placeholder="Ex: 200" />
-        <app-form-input name="titreFoncier" label="Titre foncier" placeholder="Ex: TF 12345/CI" />
-        <app-form-input name="lot" label="Lot" placeholder="Ex: 25" />
-        <app-form-input name="ilot" label="Îlot" placeholder="Ex: 3" />
-        <app-form-input name="valeurAchat" label="Valeur d'achat (FCFA)" type="number" placeholder="Ex: 3000000" />
-        <app-form-input name="dateAcquisition" label="Date d'acquisition" type="date" />
-        <app-form-input name="garantie" label="Garantie (%)" type="number" placeholder="Ex: 80" />
-        <app-form-input name="justifs" label="Justifications" placeholder="Ex: Titre foncier fourni" />
+        <app-form-select name="justifs" label="Justificatifs" placeholder="Sélectionner" [options]="jutifsOptions" required />
+        <app-form-select name="typePropriete" label="Type de bien immobilier" placeholder="Sélectionner" [options]="typesProprieteOptions" required />
+        <app-form-input name="superficie" label="Superficie" type="number" placeholder="Ex: 200" required />
+        <app-form-input name="titreFoncier" label="Numéro du titre foncier" placeholder="Ex: TF 12345/CI" required />
+        <app-form-input name="lot" label="Lot" placeholder="Ex: 25" required />
+        <app-form-input name="ilot" label="Ilot" placeholder="Ex: 3" required />
+        <app-form-textarea name="adressDescr" label="Adresse & Description (type de bien immobilier)" placeholder="Ex: Rue des Jardins, Lot 12" required />
+        <app-form-input name="dateAcquisition" label="Date d'acquisition" type="date" required />
+        <app-form-select name="garantie" label="Garantie ?" placeholder="Sélectionner" [options]="ouiNonOptions" required />
       }
 
       <!-- Champs conditionnels — Véhicule -->
       @if (selectedType() === 'VEHICULE') {
-        <app-form-select name="typeProPerso" label="Usage du véhicule" placeholder="Sélectionner" [options]="typesProPersoOptions" />
-        <app-form-select name="typeVehicule" label="Type de véhicule" placeholder="Sélectionner" [options]="typesVehiculeOptions" />
-        <app-form-input name="proprietaire" label="Propriétaire" placeholder="Ex: Jean Kouassi" />
-        <app-form-input name="marque" label="Marque / Modèle" placeholder="Ex: Toyota Corolla" />
-        <app-form-input name="couleur" label="Couleur" placeholder="Ex: Blanc" />
-        <app-form-input name="immatriculation" label="N° d'immatriculation" placeholder="Ex: 1234 AB 01" />
-        <app-form-input name="annee" label="Année" type="number" placeholder="Ex: 2019" />
-        <app-form-input name="dateMiseEnCirculation" label="Date de 1ère mise en circulation" type="date" />
-        <app-form-input name="nbrePlace" label="Nombre de places" type="number" placeholder="Ex: 5" />
-        <app-form-input name="typeCommercial" label="Type commercial" placeholder="Ex: Berline" />
-        <app-form-input name="typeTechnique" label="Type technique" placeholder="Ex: VP 4x4" />
-        <app-form-input name="valeurAchat" label="Valeur d'achat (FCFA)" type="number" placeholder="Ex: 4000000" />
-        <app-form-input name="evaluation" label="Évaluation / État" placeholder="Ex: Bon état" />
-        <app-form-select name="vehiculeVu" label="Véhicule vu ?" placeholder="Sélectionner" [options]="ouiNonOptions" />
-        <app-form-input name="garantie" label="Garantie (%)" type="number" placeholder="Ex: 80" />
+        <app-form-select name="typeProPerso" label="Type de véhicule" placeholder="Sélectionner" [options]="typesProPersoOptions" required />
+        <app-form-input name="marque" label="Marque" placeholder="Ex: Toyota" required />
+        <app-form-input name="couleur" label="Couleur" placeholder="Ex: Blanc" [required]="nouvelleAcquisition() !== 1" />
+        <app-form-input name="nbrePlace" label="Nbre de place" type="number" placeholder="Ex: 5" required />
+        <app-form-select name="typeVehicule" label="Type" placeholder="Sélectionner" [options]="typesVehiculeOptions" required />
+        <app-form-input name="dateMiseEnCirculation" label="Date de 1ère mise en circulation" type="date" [required]="nouvelleAcquisition() !== 1" />
+        <app-form-input name="immatriculation" label="N° d'immatriculation" placeholder="Ex: 1234 AB 01" [required]="nouvelleAcquisition() !== 1" />
+        <app-form-input name="typeCommercial" label="Type commercial" placeholder="Ex: Berline" [required]="nouvelleAcquisition() !== 1" />
+        <app-form-input name="typeTechnique" label="Type technique" placeholder="Ex: VP 4x4" [required]="nouvelleAcquisition() !== 1" />
+        <app-form-input name="valeurAchat" label="Valeur d'achat" type="number" placeholder="Ex: 4000000" required />
+        <app-form-select name="vehiculeVu" label="Véhicule vu ?" placeholder="Sélectionner" [options]="ouiNonOptions" required />
+        <app-form-select name="miniComm" label="MINI COMM ?" placeholder="Sélectionner" [options]="ouiNonOptions" required />
+        <app-form-select name="garantie" label="Garantie ?" placeholder="Sélectionner" [options]="ouiNonOptions" required />
+        <app-form-select name="societeCr" label="Société de crédit" placeholder="Sélectionner" [options]="ouiNonOptions" required />
+        @if (isSocieteCr()) {
+          <app-form-input name="societe" label="Nom de la société" placeholder="Ex: Compagnie Transport CI" required />
+        }
+        <app-form-textarea name="evaluation" label="Critères d'évaluation" placeholder="Ex: Bon état général" required />
       }
 
       <!-- Champs conditionnels — Équipement / Matériel -->
       @if (selectedType() === 'EQUIPEMENT') {
-        <app-form-input name="designation" label="Désignation" placeholder="Ex: Groupe électrogène" />
-        <app-form-input name="proprietaire" label="Propriétaire" placeholder="Ex: Jean Kouassi" />
-        <app-form-input name="quantite" label="Quantité" type="number" placeholder="Ex: 2" />
-        <app-form-input name="valeurAchat" label="Valeur d'achat (FCFA)" type="number" placeholder="Ex: 1500000" />
-        <app-form-input name="dateAcquisition" label="Date d'acquisition" type="date" />
-        <app-form-input name="evaluation" label="Évaluation / État" placeholder="Ex: Bon état" />
-        <app-form-input name="garantie" label="Garantie (%)" type="number" placeholder="Ex: 80" />
+        <app-form-input name="designation" label="Désignation" placeholder="Ex: Groupe électrogène" required />
+        <app-form-input name="quantite" label="Quantité" type="number" placeholder="Ex: 2" required />
+        <app-form-input name="valeurAchat" label="Valeur d'achat" type="number" placeholder="Ex: 1500000" required />
+        <app-form-input name="dateAcquisition" label="Date d'acquisition" type="date" required />
+        <app-form-select name="garantie" label="Garantie ?" placeholder="Sélectionner" [options]="ouiNonOptions" required />
+        <app-form-textarea name="evaluation" label="Critères d'évaluation" placeholder="Ex: Bon état" required />
       }
 
       <!-- Champs conditionnels — DAT -->
       @if (selectedType() === 'DAT') {
-        <app-form-input name="banque" label="Banque / Institution" placeholder="Ex: SGBCI" />
-        <app-form-input name="proprietaire" label="Propriétaire" placeholder="Ex: Jean Kouassi" />
-        <app-form-input name="dureeDat" label="Durée du DAT (mois)" type="number" placeholder="Ex: 12" />
-        <app-form-input name="dateEffetDat" label="Date d'effet" type="date" />
-        <app-form-input name="echeance" label="Date d'échéance" type="date" />
-        <app-form-input name="dateEcheanceDat" label="Date d'échéance DAT" type="date" />
-        <app-form-input name="numeroPerfectDat" label="N° Perfect (référence système)" placeholder="Ex: PERF-2024-001" />
-        <app-form-input name="garantie" label="Garantie (%)" type="number" placeholder="Ex: 100" />
+        <app-form-input name="dureeDat" label="Durée" type="number" placeholder="Ex: 12" required />
+        <app-form-input name="dateEffetDat" label="Date de mise en place" type="date" required />
+        <app-form-input name="dateEcheanceDat" label="Date d'échéance" type="date" required />
+        <app-form-select name="garantie" label="Garantie ?" placeholder="Sélectionner" [options]="ouiNonOptions" required />
+        <app-form-input name="numeroPerfectDat" label="Numéro de contrat ou numéro du DAT depuis PERFECT" placeholder="Ex: PERF-2024-001" required />
       }
 
       <!-- Champs conditionnels — Biens mobiliers famille -->
       @if (selectedType() === 'BIEN_MOBILIER') {
-        <app-form-input name="quantite" label="Quantité" type="number" placeholder="Ex: 3" />
-        <app-form-input name="valeurAchat" label="Valeur d'achat (FCFA)" type="number" placeholder="Ex: 500000" />
-        <app-form-input name="dateAcquisition" label="Date d'acquisition" type="date" />
-        <app-form-input name="evaluation" label="Évaluation / Observations" placeholder="Ex: Bon état" />
+        <app-form-input name="designation" label="Désignation" placeholder="Ex: Canapé, Télévision..." required />
+        <app-form-input name="quantite" label="Quantité" type="number" placeholder="Ex: 3" required />
+        <app-form-input name="valeurAchat" label="Valeur d'achat" type="number" placeholder="Ex: 500000" required />
+        <app-form-input name="dateAcquisition" label="Date d'acquisition" type="date" required />
+        <app-form-select name="garantie" label="Garantie ?" placeholder="Sélectionner" [options]="ouiNonOptions" required />
+        <app-form-textarea name="evaluation" label="Critères d'évaluation" placeholder="Ex: Bon état" required />
       }
 
     </form>
@@ -676,7 +771,7 @@
     <app-dialog-title>Confirmer la suppression</app-dialog-title>
     <app-dialog-description>
       @if (actifToDelete) {
-        Supprimer « {{ actifToDelete.libelle }} » ? Cette action est irréversible.
+        Supprimer cet actif ({{ typeLabel(actifToDelete.type) }}) ? Cette action est irréversible.
       }
     </app-dialog-description>
   </app-dialog-header>
@@ -713,3 +808,45 @@
   [startIndex]="lightboxIndex"
   (openChange)="lightboxOpen = $event"
 />
+
+<!-- ══ DRAWER — Stock actif circulant ══════════════════════════════════════ -->
+<app-drawer [(open)]="stockDrawerOpen">
+  <app-drawer-header>
+    <app-drawer-title>Ajouter un stock</app-drawer-title>
+  </app-drawer-header>
+  <app-drawer-content>
+    <form [formGroup]="stockForm" class="flex flex-col gap-4">
+      <app-form-input name="description" label="Description" placeholder="Ex: Riz, Ciment..." required />
+      <app-form-input name="quantite" label="Quantité" type="number" placeholder="Ex: 50" required />
+      <app-form-input name="prix" label="Prix unitaire (FCFA)" type="number" placeholder="Ex: 5000" required />
+      <app-form-select name="assurStock" label="Assurance stock ?" [options]="ouiNonOptions" placeholder="Sélectionner" required />
+      <app-form-select name="garantie" label="Garantie ?" [options]="ouiNonOptions" placeholder="Sélectionner" required />
+    </form>
+  </app-drawer-content>
+  <app-drawer-footer>
+    <div class="flex gap-2 justify-end">
+      <button type="button" (click)="stockDrawerOpen = false" appButton variant="outline">Annuler</button>
+      <button type="button" (click)="saveStock()" appButton [disabled]="isSavingStock()">
+        @if (isSavingStock()) { Enregistrement… } @else { Enregistrer }
+      </button>
+    </div>
+  </app-drawer-footer>
+</app-drawer>
+
+<!-- ══ DIALOG — Suppression stock ══════════════════════════════════════════ -->
+<app-dialog [(open)]="stockDeleteDialogOpen">
+  <app-dialog-header>
+    <app-dialog-title>Confirmer la suppression</app-dialog-title>
+    <app-dialog-description>
+      @if (stockToDelete) {
+        Supprimer le stock « {{ stockToDelete.description }} » ? Cette action est irréversible.
+      }
+    </app-dialog-description>
+  </app-dialog-header>
+  <app-dialog-footer>
+    <button type="button" (click)="stockDeleteDialogOpen = false" appButton variant="outline">Annuler</button>
+    <button type="button" (click)="confirmDeleteStock()" appButton variant="destructive" [disabled]="isDeletingStock()">
+      @if (isDeletingStock()) { Suppression… } @else { Supprimer }
+    </button>
+  </app-dialog-footer>
+</app-dialog>

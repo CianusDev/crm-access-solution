@@ -81,7 +81,7 @@
 
                       <!-- Ajouter une image (avec dropdown) -->
                       <app-dropdown
-                        [items]="imageTypes.map(t => ({ label: t.libelle, required: t.obligation }))"
+                        [items]="imageTypesDropdown"
                         (itemSelected)="triggerImageUpload(caution.id!, $event.label, imageInput)">
                         <button dropdownTrigger type="button"
                           appButton variant="outline" size="sm"
@@ -95,7 +95,7 @@
 
                       <!-- Ajouter un document (avec dropdown) -->
                       <app-dropdown
-                        [items]="documentTypes.map(t => ({ label: t.libelle, required: t.obligation }))"
+                        [items]="documentTypesDropdown"
                         (itemSelected)="triggerDocUpload(caution.id!, $event.label, docInput)">
                         <button dropdownTrigger type="button"
                           appButton variant="outline" size="sm"
@@ -389,7 +389,7 @@
             <p class="text-sm text-muted-foreground">Aucun document trouvé pour "{{ searchQuery() }}"</p>
           </div>
         } @else {
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
             @for (doc of documentsFiltered(); track doc.id) {
               <div
                 class="group relative flex flex-col rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all overflow-hidden">

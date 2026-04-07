@@ -61,8 +61,10 @@
                   <table class="w-full text-sm">
                     <thead>
                       <tr class="border-b border-border bg-muted/10">
-                        <th class="px-4 py-2 text-left font-medium text-muted-foreground">Mois</th>
-                        <th class="px-4 py-2 text-left font-medium text-muted-foreground">Statut</th>
+                        <th class="px-4 py-2 text-left font-medium text-muted-foreground">Article</th>
+                        <th class="px-4 py-2 text-left font-medium text-muted-foreground">Fournisseur</th>
+                        <th class="px-4 py-2 text-right font-medium text-muted-foreground">Qté</th>
+                        <th class="px-4 py-2 text-left font-medium text-muted-foreground">Fréquence</th>
                         <th class="px-4 py-2 text-right font-medium text-muted-foreground">Montant (FCFA)</th>
                         <th class="px-4 py-2 w-10"></th>
                       </tr>
@@ -70,9 +72,11 @@
                     <tbody>
                       @for (achat of activite.achatsMensuels; track achat.id) {
                         <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
-                          <td class="px-4 py-2.5 font-medium">{{ achat.mois }}</td>
-                          <td class="px-4 py-2.5 text-muted-foreground">{{ achat.statut }}</td>
-                          <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(achat.montant) }}</td>
+                          <td class="px-4 py-2.5 font-medium">{{ achat.article }}</td>
+                          <td class="px-4 py-2.5 text-muted-foreground">{{ achat.fournisseur }}</td>
+                          <td class="px-4 py-2.5 text-right tabular-nums">{{ achat.quantite != null ? (achat.quantite | number) : '—' }}</td>
+                          <td class="px-4 py-2.5 text-muted-foreground">{{ achat.frequence }}</td>
+                          <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(achat.achatsMensuels) }}</td>
                           <td class="px-4 py-2.5">
                             <button type="button" (click)="openDeleteAchat(achat)"
                               class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
@@ -200,9 +204,8 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-border bg-muted/10">
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Type</th>
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Libellé</th>
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Statut</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Activité</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Charges</th>
                 <th class="px-4 py-2 text-right font-medium text-muted-foreground">Montant (FCFA)</th>
                 <th class="px-4 py-2 w-10"></th>
               </tr>
@@ -210,13 +213,12 @@
             <tbody>
               @for (charge of chargesExploitation(); track charge.id) {
                 <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
-                  <td class="px-4 py-2.5">
+                  <td class="px-4 py-2.5 text-muted-foreground">{{ activiteLabel(charge.activite) }}</td>
+                  <td class="px-4 py-2.5 font-medium">
                     <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
-                      {{ typeChargeLabel(charge.typeCharge) }}
+                      {{ typeChargeLabel(charge.charge) }}
                     </span>
                   </td>
-                  <td class="px-4 py-2.5 font-medium">{{ charge.libelle }}</td>
-                  <td class="px-4 py-2.5 text-muted-foreground">{{ charge.statut }}</td>
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(charge.montant) }}</td>
                   <td class="px-4 py-2.5">
                     <button type="button" (click)="openDeleteCharge(charge)"
@@ -252,25 +254,36 @@
         placeholder="Sélectionner une activité"
         required />
 
-      <app-form-select
-        name="mois"
-        label="Mois"
-        [options]="moisOptions"
-        placeholder="Sélectionner un mois"
+      <app-form-input
+        name="article"
+        label="Article / Produit acheté"
+        placeholder="Ex: Riz, Ciment..."
+        required />
+
+      <app-form-input
+        name="fournisseur"
+        label="Fournisseur / Site d'achat"
+        placeholder="Ex: Marché Adjamé"
+        required />
+
+      <app-form-input
+        name="quantite"
+        label="Quantité"
+        type="number"
+        placeholder="Ex: 50"
+        required />
+
+      <app-form-input
+        name="frequence"
+        label="Fréquence d'achat"
+        placeholder="Ex: Hebdomadaire, Mensuel..."
         required />
 
       <app-form-input
         name="montant"
-        label="Montant (FCFA)"
+        label="Achats mensuels (FCFA)"
         type="number"
         placeholder="Ex: 500000"
-        required />
-
-      <app-form-select
-        name="statut"
-        label="Saisonnalité"
-        [options]="saisonOptions"
-        placeholder="Sélectionner une saison"
         required />
 
     </form>
@@ -296,30 +309,24 @@
     <form [formGroup]="chargeForm" class="flex flex-col gap-4">
 
       <app-form-select
-        name="typeCharge"
-        label="Type de charge"
-        [options]="typesChargeOptions"
-        placeholder="Sélectionner un type"
+        name="activite"
+        label="Activités"
+        [options]="activiteOptions()"
+        placeholder="Sélectionner une activité"
         required />
 
-      <app-form-input
-        name="libelle"
-        label="Libellé"
-        placeholder="Ex: Loyer du local commercial"
+      <app-form-select
+        name="charge"
+        label="Charges"
+        [options]="typeChargeOptions()"
+        placeholder="Sélectionner un type de charge"
         required />
 
       <app-form-input
         name="montant"
-        label="Montant mensuel (FCFA)"
+        label="Montant"
         type="number"
         placeholder="Ex: 150000"
-        required />
-
-      <app-form-select
-        name="statut"
-        label="Saisonnalité"
-        [options]="saisonOptions"
-        placeholder="Sélectionner une saison"
         required />
 
     </form>
@@ -356,12 +363,6 @@
         label="Désignation"
         placeholder="Ex: Riz, Huile..."
         required />
-
-      <app-form-input
-        name="quantite"
-        label="Quantité"
-        type="number"
-        placeholder="Ex: 10" />
 
       <app-form-input
         name="montantTotal"

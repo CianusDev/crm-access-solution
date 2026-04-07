@@ -230,7 +230,7 @@
           </div>
         }
         @case ('documents') {
-          <app-cautions-section [ref]="ref()" [isGP]="isGP() || isRCCC() || isCACaa()" [view]="'documents'" [prefilledDoc]="pendingDocLibelle()" (docsChanged)="onDocsChanged()" />
+          <app-documents-section [ref]="ref()" (docsChanged)="onDocsChanged()" />
         }
         @case ('geolocalisation') {
           <app-geolocalisation-section [ref]="ref()" />

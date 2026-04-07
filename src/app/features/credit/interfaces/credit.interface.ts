@@ -921,11 +921,13 @@ export interface ActiviteCredit {
 
 export interface AchatMensuel {
   id?: number;
-  mois?: string;
-  montant?: number;
-  statut?: string | number;
   refDemande?: string;
   activite?: number;
+  article?: string;        // Principaux produits achetés
+  fournisseur?: string;    // Site / Fournisseur
+  frequence?: string;      // Fréquence d'achat
+  quantite?: number;       // Quantité
+  achatsMensuels?: number; // Montant des achats mensuels
 }
 
 export interface MargeCommerciale {
@@ -940,12 +942,17 @@ export interface MargeCommerciale {
   activite?: number | { id?: number };
 }
 
-export interface ChargeExploitation {
+export interface CrTypeCharge {
   id?: number;
   libelle?: string;
-  typeCharge?: string;
+}
+
+export interface ChargeExploitation {
+  id?: number;
+  charge?: CrTypeCharge | number; // objet retourné par l'API, id envoyé
+  activite?: number;
   montant?: number;
-  statut?: string | number;
+  commentaire?: string;
   refDemande?: string;
 }
 
@@ -1049,6 +1056,25 @@ export interface ProfilFamilial {
   autresChargesFamiliales?: number;
 }
 
+export interface TresorerieFamille {
+  id?: number;
+  refDemande?: string;
+  libelle?: string;
+  montant?: number;
+  type?: number;       // 1 = Épargne, 2 = Dette
+  typeCompte?: number; // 1 = Espèces, 2 = Banque
+  provenance?: string;
+}
+
+export interface ChargeFamille {
+  id?: number;
+  refDemande?: string;
+  typeCharge?: number;
+  chargeMens?: string;
+  montant?: number;
+  commentaire?: string;
+}
+
 export interface MembreMenage {
   id?: number;
   nom?: string;
@@ -1070,12 +1096,10 @@ export type TypeActif =
 export interface ActifGarantie {
   id?: number;
   type?: TypeActif;
-  libelle?: string;
   valeurEstimee?: number;
   localisation?: string;
   superficie?: number;
   marque?: string;
-  annee?: number;
   banque?: string;
   echeance?: string;
   statut?: string;
@@ -1109,6 +1133,12 @@ export interface ActifGarantie {
   typeTechnique?: string;
   vehiculeVu?: string;
   typeProPerso?: string;
+  nouvelleAcquisition?: number; // 1=oui, 0=non
+  miniComm?: number; // 1=Oui, 2=Non
+  societeCr?: string;
+  societe?: string;
+  // Lien caution (propriétaire)
+  idCaution?: number;
   // Équipement
   designation?: string;
   // Médias
@@ -1157,6 +1187,8 @@ export interface CreditAnalyseDemandeDetail extends CreditFicheDemandeDetail {
   dettesEntreprise?: DetteEntreprise[];
   tresorerie?: TresorerieDisponible;
   profilFamilial?: ProfilFamilial;
+  tresoreriesFamiliales?: TresorerieFamille[];
+  chargesFamiliales?: ChargeFamille[];
   membresMenage?: MembreMenage[];
   actifsGaranties?: ActifGarantie[];
   cautionsSolidaires?: CautionSolidaire[];
@@ -1335,8 +1367,10 @@ export interface CreditActifCirculantStock {
   designation?: string;
   description?: string;
   quantite?: number;
-  cout?: number;
   prix?: number;
+  cout?: number; // calculé = quantite * prix
+  assurStock?: number; // 1=OUI, 2=NON
+  garantie?: number;   // 1=OUI, 2=NON
 }
 
 export interface GarantiesData {

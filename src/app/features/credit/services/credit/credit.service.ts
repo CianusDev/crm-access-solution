@@ -371,6 +371,24 @@ export class CreditService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
+  saveActifCirculantStock(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveActifCirculantStock', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteActifCirculantStock(id: number) {
+    return this.api
+      .delete<{ status: number }>(this.endpoint + '/deleteActifCirculantStock/' + id)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  getListeTypeCharge() {
+    return this.api
+      .get<{ crTypeCharges: { id: number; libelle?: string }[] }>(this.endpoint + '/listeTypeCharge')
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
   saveChargeExploitation(data: Record<string, unknown>) {
     return this.api
       .post<{ status: number; message?: string }>(this.endpoint + '/saveChargeExploitation', data)
@@ -504,6 +522,18 @@ export class CreditService {
   saveProfilEntrepreneur(data: Record<string, unknown>) {
     return this.api
       .post<{ status: number; message?: string }>(this.endpoint + '/saveProfilEnt', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveTresorerieFamille(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveTresorerieFamille', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveChargeFamille(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveChargeFamille', data)
       .pipe(catchError((err) => throwError(() => err)));
   }
 

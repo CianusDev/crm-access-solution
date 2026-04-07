@@ -36,27 +36,7 @@
             </div>
           </div>
 
-          <hr class="border-border" />
-
-          <!-- Charges familiales -->
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Charges familiales mensuelles</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <app-form-input name="loyerMensuel" label="Loyer (FCFA)" type="number" placeholder="Ex: 80000" />
-              <app-form-input name="scolarite" label="Scolarité (FCFA)" type="number" placeholder="Ex: 30000" />
-              <app-form-input name="sante" label="Santé (FCFA)" type="number" placeholder="Ex: 15000" />
-              <app-form-input name="autresChargesFamiliales" label="Autres charges (FCFA)" type="number" placeholder="Ex: 20000" />
-            </div>
-          </div>
-
-          <div class="flex items-center justify-between">
-            @if (totalChargesFamiliales() > 0) {
-              <span class="text-sm text-muted-foreground">
-                Total charges : <strong>{{ totalChargesFamiliales() | number:'1.0-0' }} FCFA / mois</strong>
-              </span>
-            } @else {
-              <span></span>
-            }
+          <div class="flex justify-end">
             <button type="button" (click)="saveProfil()" appButton size="sm" [disabled]="isSavingProfil()">
               <lucide-icon [img]="SaveIcon" [size]="14" />
               @if (isSavingProfil()) { Enregistrement… } @else { Enregistrer }
@@ -64,6 +44,162 @@
           </div>
 
         </form>
+      </app-card-content>
+    </app-card>
+
+    <!-- ══ CHARGES FAMILIALES ═══════════════════════════════════════════ -->
+    <app-card>
+      <app-card-header>
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <app-card-title>Charges familiales</app-card-title>
+            @if (chargesFamiliales().length > 0) {
+              <span class="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
+                {{ chargesFamiliales().length }}
+              </span>
+            }
+          </div>
+          <button type="button" (click)="openAddCharge()" appButton size="sm">
+            <lucide-icon [img]="PlusIcon" [size]="14" />
+            Ajouter
+          </button>
+        </div>
+      </app-card-header>
+      <app-card-content>
+        @if (chargesFamiliales().length === 0) {
+          <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
+            <p class="text-sm text-muted-foreground">Aucune charge familiale enregistrée</p>
+            <button type="button" (click)="openAddCharge()" appButton size="sm">
+              <lucide-icon [img]="PlusIcon" [size]="14" />
+              Ajouter une charge
+            </button>
+          </div>
+        } @else {
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border bg-muted/10">
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Type</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Charge</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Montant (FCFA)</th>
+                <th class="px-4 py-2 w-16"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (charge of chargesFamiliales(); track charge.id) {
+                <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
+                  <td class="px-4 py-2.5">
+                    <span class="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">
+                      {{ typeChargeLabel(charge.typeCharge) }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-2.5 text-muted-foreground">
+                    {{ charge.chargeMens === 'RAS' ? '—' : charge.chargeMens }}
+                  </td>
+                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(charge.montant) }}</td>
+                  <td class="px-4 py-2.5">
+                    <div class="flex items-center justify-end gap-0.5">
+                      <button type="button" (click)="openEditCharge(charge)" title="Modifier"
+                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer">
+                        <lucide-icon [img]="PencilIcon" [size]="13" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr class="border-t border-border bg-muted/10">
+                <td colspan="2" class="px-4 py-2 text-sm font-semibold text-muted-foreground">Total charges familiales</td>
+                <td class="px-4 py-2 text-right font-bold tabular-nums">{{ formatMontant(totalChargesFamilialesDetail()) }}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        }
+      </app-card-content>
+    </app-card>
+
+    <!-- ══ TRÉSORERIE FAMILLE ════════════════════════════════════════════ -->
+    <app-card>
+      <app-card-header>
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <app-card-title>Trésorerie famille</app-card-title>
+            @if (tresoreriesFamiliales().length > 0) {
+              <span class="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
+                {{ tresoreriesFamiliales().length }}
+              </span>
+            }
+          </div>
+          <button type="button" (click)="openAddTresorerie()" appButton size="sm">
+            <lucide-icon [img]="PlusIcon" [size]="14" />
+            Ajouter
+          </button>
+        </div>
+      </app-card-header>
+      <app-card-content>
+        @if (tresoreriesFamiliales().length === 0) {
+          <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
+            <p class="text-sm text-muted-foreground">Aucune trésorerie enregistrée</p>
+            <button type="button" (click)="openAddTresorerie()" appButton size="sm">
+              <lucide-icon [img]="PlusIcon" [size]="14" />
+              Ajouter
+            </button>
+          </div>
+        } @else {
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border bg-muted/10">
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Libellé</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Type</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Compte</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Provenance</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Montant (FCFA)</th>
+                <th class="px-4 py-2 w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of tresoreriesFamiliales(); track t.id) {
+                <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
+                  <td class="px-4 py-2.5 font-medium">{{ t.libelle }}</td>
+                  <td class="px-4 py-2.5">
+                    <span class="rounded-full px-2 py-0.5 text-xs font-medium"
+                      [class.bg-success/10]="t.type === 1"
+                      [class.text-success]="t.type === 1"
+                      [class.bg-destructive/10]="t.type === 2"
+                      [class.text-destructive]="t.type === 2">
+                      {{ typeLabel(t.type) }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-2.5 text-muted-foreground">{{ typeCompteLabel(t.typeCompte) }}</td>
+                  <td class="px-4 py-2.5 text-muted-foreground">{{ t.provenance || '—' }}</td>
+                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(t.montant) }}</td>
+                  <td class="px-4 py-2.5">
+                    <button type="button" (click)="openEditTresorerie(t)" title="Modifier"
+                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer">
+                      <lucide-icon [img]="PencilIcon" [size]="13" />
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr class="border-t border-border bg-muted/10">
+                <td colspan="3" class="px-4 py-2 text-xs text-muted-foreground">
+                  Épargnes : <strong>{{ formatMontant(totalEpargnes()) }}</strong> —
+                  Dettes : <strong>{{ formatMontant(totalDettes()) }}</strong>
+                </td>
+                <td class="px-4 py-2 text-right text-xs font-semibold text-muted-foreground">Solde net</td>
+                <td class="px-4 py-2 text-right font-bold tabular-nums"
+                  [class.text-success]="totalEpargnes() >= totalDettes()"
+                  [class.text-destructive]="totalEpargnes() < totalDettes()">
+                  {{ formatMontant(totalEpargnes() - totalDettes()) }}
+                </td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        }
       </app-card-content>
     </app-card>
 
@@ -145,6 +281,70 @@
   }
 
 </div>
+
+<!-- ══ DRAWER — Charge familiale ══════════════════════════════════════════ -->
+<app-drawer [open]="chargeDrawerOpen" (openChange)="chargeDrawerOpen = $event" panelClass="max-w-md">
+  <app-drawer-header>
+    <app-drawer-title>
+      {{ chargeDrawerMode === 'create' ? 'Ajouter une charge familiale' : 'Modifier la charge' }}
+    </app-drawer-title>
+  </app-drawer-header>
+  <app-drawer-content>
+    <form [formGroup]="chargeForm" class="flex flex-col gap-4">
+      <app-form-select
+        name="typeCharge"
+        label="Type de charge"
+        [options]="typesChargeFamOptions"
+        placeholder="Sélectionner"
+        required />
+      @if (typeHasSousCharges()) {
+        <app-form-select
+          name="sousCharge"
+          label="Charge mensuelle"
+          [options]="sousChargesOptions()"
+          placeholder="Sélectionner"
+          required />
+      }
+      <app-form-input name="montant" label="Montant (FCFA)" type="number" placeholder="Ex: 50 000" required />
+    </form>
+  </app-drawer-content>
+  <app-drawer-footer>
+    <div class="flex gap-2 justify-end">
+      <button type="button" (click)="chargeDrawerOpen = false" appButton variant="outline">Annuler</button>
+      <button type="button" (click)="saveCharge()" appButton [disabled]="isSavingCharge()">
+        @if (isSavingCharge()) { Enregistrement… } @else { Enregistrer }
+      </button>
+    </div>
+  </app-drawer-footer>
+</app-drawer>
+
+<!-- ══ DRAWER — Trésorerie famille ════════════════════════════════════════ -->
+<app-drawer [open]="tresorerieDrawerOpen" (openChange)="tresorerieDrawerOpen = $event" panelClass="max-w-md">
+  <app-drawer-header>
+    <app-drawer-title>
+      {{ tresorerieDrawerMode === 'create' ? 'Ajouter une trésorerie' : 'Modifier la trésorerie' }}
+    </app-drawer-title>
+  </app-drawer-header>
+  <app-drawer-content>
+    <form [formGroup]="tresorerieForm" class="flex flex-col gap-4">
+      <app-form-input name="libelle" label="Libellé" placeholder="Ex: Compte épargne BNI" required />
+      <div class="grid grid-cols-2 gap-3">
+        <app-form-select name="type" label="Type trésorerie" [options]="typesTresorerieOptions" placeholder="Sélectionner" required />
+        <app-form-select name="typeCompte" label="Type de compte" [options]="typesCompteOptions" placeholder="Sélectionner" required />
+      </div>
+      <app-form-input name="montant" label="Montant (FCFA)" type="number" placeholder="Ex: 500 000" required />
+      <app-form-input name="provenance" label="Provenance" placeholder="Ex: Salaire, Héritage…" />
+    </form>
+  </app-drawer-content>
+  <app-drawer-footer>
+    <div class="flex gap-2 justify-end">
+      <button type="button" (click)="tresorerieDrawerOpen = false" appButton variant="outline">Annuler</button>
+      <button type="button" (click)="saveTresorerie()" appButton [disabled]="isSavingTresorerie()">
+        @if (isSavingTresorerie()) { Enregistrement… } @else { Enregistrer }
+      </button>
+    </div>
+  </app-drawer-footer>
+</app-drawer>
 
 <!-- ══ DRAWER — Membre du ménage ══════════════════════════════════════════ -->
 <app-drawer [(open)]="membreDrawerOpen">

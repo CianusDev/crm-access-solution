@@ -16,6 +16,7 @@ import {
   Eye,
   Upload,
   ChevronDown,
+  Package,
 } from 'lucide-angular';
 import {
   CardComponent,
@@ -42,10 +43,19 @@ import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { FormSelect, SelectOption } from '@/shared/components/form-select/form-select.component';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { CreditService } from '../../../../services/credit/credit.service';
-import { ActifGarantie, TypeActif } from '../../../../interfaces/credit.interface';
+import {
+  ActifGarantie,
+  CautionSolidaire,
+  CreditActifCirculantStock,
+  TypeActif,
+} from '../../../../interfaces/credit.interface';
 import { LightboxComponent, LightboxImage } from '@/shared/components/lightbox/lightbox.component';
 import { DocumentType } from '../../../../constants/caution-documents';
-import { getGarantieImageTypes, getGarantieDocumentTypes } from '../../../../constants/garantie-documents';
+import {
+  getGarantieImageTypes,
+  getGarantieDocumentTypes,
+} from '../../../../constants/garantie-documents';
+import { FormTextarea } from '@/shared/components/form-textarea/form-textarea.component';
 
 const DOC_BASE_URL = 'https://crm-fichiers.creditaccess.ci/crm/credit-ca/';
 
@@ -80,6 +90,12 @@ const OUI_NON: SelectOption[] = [
   { value: '2', label: 'NON' },
 ];
 
+
+const JUSTIFS_OPTIONS: SelectOption[] = [
+  { value: '1', label: 'Titre foncier' },
+  { value: '2', label: 'Titre de propriété' },
+];
+
 @Component({
   selector: 'app-garanties-section',
   templateUrl: './garanties-section.component.html',
@@ -102,6 +118,7 @@ const OUI_NON: SelectOption[] = [
     DialogDescriptionComponent,
     DialogFooterComponent,
     FormInput,
+    FormTextarea,
     FormSelect,
     LightboxComponent,
   ],
@@ -123,6 +140,7 @@ export class GarantiesSectionComponent implements OnInit {
   readonly EyeIcon = Eye;
   readonly UploadIcon = Upload;
   readonly ChevronDownIcon = ChevronDown;
+  readonly PackageIcon = Package;
 
   private readonly fb = inject(FormBuilder);
   private readonly creditService = inject(CreditService);
@@ -133,11 +151,33 @@ export class GarantiesSectionComponent implements OnInit {
   readonly typesVehiculeOptions = TYPES_VEHICULE;
   readonly typesProPersoOptions = TYPES_PRO_PERSO;
   readonly ouiNonOptions = OUI_NON;
+  readonly jutifsOptions = JUSTIFS_OPTIONS;
 
   // ── State ──────────────────────────────────────────────────────────────
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly actifs = signal<ActifGarantie[]>([]);
+  readonly cautions = signal<CautionSolidaire[]>([]);
+  readonly stocks = signal<CreditActifCirculantStock[]>([]);
+
+  readonly totalStocks = computed(() =>
+    this.stocks().reduce((s, item) => s + (item.cout ?? 0), 0),
+  );
+
+  readonly PROPRIETAIRE_OPTIONS: SelectOption[] = [
+    { value: 'D', label: 'Demandeur' },
+    { value: 'C', label: 'Caution' },
+  ];
+
+  readonly cautionOptions = computed<SelectOption[]>(() =>
+    this.cautions().map((c) => ({
+      value: String(c.id),
+      label: `${c.nom ?? ''} ${c.prenom ?? ''}`.trim() || `Caution #${c.id}`,
+    })),
+  );
+
+  readonly isProprietaireCaution = signal(false);
+  readonly isSocieteCr = signal(false);
 
   readonly immobiliers = computed(() => this.actifs().filter((a) => a.type === 'IMMOBILIER'));
   readonly vehicules = computed(() => this.actifs().filter((a) => a.type === 'VEHICULE'));
@@ -150,15 +190,34 @@ export class GarantiesSectionComponent implements OnInit {
     this.actifs().reduce((s, a) => s + (a.valeurEstimee ?? 0), 0),
   );
 
+  // Dropdown véhicule
+  vehiculeMenuOpen = false;
+
   // Drawer
   actifDrawerOpen = false;
   selectedType = signal<TypeActif | null>(null);
+  nouvelleAcquisition = signal<number | null>(null);
   readonly isSaving = signal(false);
 
-  // Delete
+  // Delete actif
   deleteDialogOpen = false;
   actifToDelete: ActifGarantie | null = null;
   readonly isDeleting = signal(false);
+
+  // Stock actif circulant
+  stockDrawerOpen = false;
+  readonly isSavingStock = signal(false);
+  stockToDelete: CreditActifCirculantStock | null = null;
+  stockDeleteDialogOpen = false;
+  readonly isDeletingStock = signal(false);
+
+  readonly stockForm = this.fb.group({
+    description: ['', Validators.required],
+    quantite: [null as number | null, Validators.required],
+    prix: [null as number | null, Validators.required],
+    assurStock: ['', Validators.required],
+    garantie: ['', Validators.required],
+  });
 
   // Médias (images/documents par actif)
   readonly expandedImages = signal<number[]>([]);
@@ -175,13 +234,16 @@ export class GarantiesSectionComponent implements OnInit {
   lightboxIndex = 0;
 
   // Types de docs/images par actif (calculés à la volée)
-  getImageTypes(type: string): DocumentType[] { return getGarantieImageTypes(type); }
-  getDocumentTypes(type: string): DocumentType[] { return getGarantieDocumentTypes(type); }
+  getImageTypes(type: string): DocumentType[] {
+    return getGarantieImageTypes(type);
+  }
+  getDocumentTypes(type: string): DocumentType[] {
+    return getGarantieDocumentTypes(type);
+  }
 
   // ── Form ───────────────────────────────────────────────────────────────
   readonly actifForm = this.fb.group({
     type: ['' as TypeActif | '', Validators.required],
-    libelle: ['', Validators.required],
     valeurEstimee: [null as number | null, Validators.required],
     // Commun à plusieurs types
     proprietaire: [''],
@@ -197,7 +259,6 @@ export class GarantiesSectionComponent implements OnInit {
     justifs: [''],
     // Véhicule
     marque: [''],
-    annee: [null as number | null],
     immatriculation: [''],
     couleur: [''],
     typeVehicule: [''],
@@ -208,6 +269,10 @@ export class GarantiesSectionComponent implements OnInit {
     evaluation: [''],
     vehiculeVu: [''],
     typeProPerso: [''],
+    nouvelleAcquisition: [null as number | null],
+    miniComm: [null as number | null],
+    societeCr: [''],
+    societe: [''],
     // DAT
     banque: [''],
     echeance: [''],
@@ -221,6 +286,8 @@ export class GarantiesSectionComponent implements OnInit {
     quantite: [null as number | null],
     valeurAchat: [null as number | null],
     dateAcquisition: [''],
+    // Propriétaire (D = Demandeur, sinon id caution)
+    idCaution: [null as number | null],
   });
 
   // ── Lifecycle ──────────────────────────────────────────────────────────
@@ -230,25 +297,41 @@ export class GarantiesSectionComponent implements OnInit {
     this.actifForm.get('type')?.valueChanges.subscribe((v) => {
       this.selectedType.set((v as TypeActif) || null);
     });
+    this.actifForm.get('proprietaire')?.valueChanges.subscribe((v) => {
+      this.isProprietaireCaution.set(v === 'C');
+      if (v !== 'C') this.actifForm.patchValue({ idCaution: null }, { emitEvent: false });
+    });
+    this.actifForm.get('societeCr')?.valueChanges.subscribe((v) => {
+      this.isSocieteCr.set(v === '1');
+      if (v !== '1') this.actifForm.patchValue({ societe: '' }, { emitEvent: false });
+    });
   }
 
   loadData() {
     this.isLoading.set(true);
     this.error.set(null);
-    this.creditService.getAnalyseFinanciere(this.ref()).subscribe({
+    this.creditService.getGarantiesDemande(this.ref()).subscribe({
       next: (data) => {
-        if (!data?.demande) {
+        if (!data) {
           this.error.set('Données du dossier introuvables.');
           this.isLoading.set(false);
           return;
         }
-        this.actifs.set(data.demande.actifsGaranties ?? []);
+        this.cautions.set(data.crCaution ?? []);
+        this.stocks.set(data.actifCirculantStock ?? []);
         this.isLoading.set(false);
       },
       error: () => {
         this.error.set('Impossible de charger les données du dossier.');
         this.isLoading.set(false);
       },
+    });
+    this.creditService.getAnalyseFinanciere(this.ref()).subscribe({
+      next: (data) => {
+        if (!data?.demande) return;
+        this.actifs.set(data.demande.actifsGaranties ?? []);
+      },
+      error: () => {},
     });
   }
 
@@ -262,10 +345,9 @@ export class GarantiesSectionComponent implements OnInit {
   }
 
   // ── CRUD ───────────────────────────────────────────────────────────────
-  openAdd(preselect?: TypeActif) {
+  openAdd(preselect?: TypeActif, nouvelleAcquisition?: number) {
     this.actifForm.reset({
       type: preselect ?? '',
-      libelle: '',
       valeurEstimee: null,
       // Commun
       proprietaire: '',
@@ -281,7 +363,6 @@ export class GarantiesSectionComponent implements OnInit {
       justifs: '',
       // Véhicule
       marque: '',
-      annee: null,
       immatriculation: '',
       couleur: '',
       typeVehicule: '',
@@ -292,6 +373,10 @@ export class GarantiesSectionComponent implements OnInit {
       evaluation: '',
       vehiculeVu: '',
       typeProPerso: '',
+      nouvelleAcquisition: nouvelleAcquisition ?? null,  // set programmatically, not via select
+      miniComm: null,
+      societeCr: '',
+      societe: '',
       // DAT
       banque: '',
       echeance: '',
@@ -305,8 +390,13 @@ export class GarantiesSectionComponent implements OnInit {
       quantite: null,
       valeurAchat: null,
       dateAcquisition: '',
+      // Propriétaire
+      idCaution: null,
     });
     this.selectedType.set(preselect ?? null);
+    this.nouvelleAcquisition.set(nouvelleAcquisition ?? null);
+    this.isProprietaireCaution.set(false);
+    this.isSocieteCr.set(false);
     this.actifDrawerOpen = true;
   }
 
@@ -320,11 +410,10 @@ export class GarantiesSectionComponent implements OnInit {
     this.creditService
       .saveActifGarantie({
         type: val.type,
-        libelle: val.libelle,
         valeurEstimee: val.valeurEstimee,
         // Commun
         proprietaire: val.proprietaire || null,
-        garantie: val.garantie,
+        garantie: val.garantie != null ? Number(val.garantie) : null,
         // Immobilier
         localisation: val.localisation || null,
         superficie: val.superficie,
@@ -336,7 +425,6 @@ export class GarantiesSectionComponent implements OnInit {
         justifs: val.justifs || null,
         // Véhicule
         marque: val.marque || null,
-        annee: val.annee,
         immatriculation: val.immatriculation || null,
         couleur: val.couleur || null,
         typeVehicule: val.typeVehicule || null,
@@ -347,6 +435,10 @@ export class GarantiesSectionComponent implements OnInit {
         evaluation: val.evaluation || null,
         vehiculeVu: val.vehiculeVu || null,
         typeProPerso: val.typeProPerso || null,
+        nouvelleAcquisition: val.nouvelleAcquisition != null ? Number(val.nouvelleAcquisition) : null,
+        miniComm: val.miniComm != null ? Number(val.miniComm) : null,
+        societeCr: val.societeCr || null,
+        societe: val.societe || null,
         // DAT
         banque: val.banque || null,
         echeance: val.echeance || null,
@@ -360,6 +452,8 @@ export class GarantiesSectionComponent implements OnInit {
         quantite: val.quantite,
         valeurAchat: val.valeurAchat,
         dateAcquisition: val.dateAcquisition || null,
+        // Propriétaire
+        idCaution: val.idCaution != null ? Number(val.idCaution) : null,
         refDemande: this.ref(),
       })
       .subscribe({
@@ -403,15 +497,24 @@ export class GarantiesSectionComponent implements OnInit {
   // ── Médias (images / documents par actif) ────────────────────────────────
   toggleImages(actifId: number) {
     const cur = this.expandedImages();
-    this.expandedImages.set(cur.includes(actifId) ? cur.filter(i => i !== actifId) : [...cur, actifId]);
+    this.expandedImages.set(
+      cur.includes(actifId) ? cur.filter((i) => i !== actifId) : [...cur, actifId],
+    );
   }
 
   toggleDocuments(actifId: number) {
     const cur = this.expandedDocuments();
-    this.expandedDocuments.set(cur.includes(actifId) ? cur.filter(i => i !== actifId) : [...cur, actifId]);
+    this.expandedDocuments.set(
+      cur.includes(actifId) ? cur.filter((i) => i !== actifId) : [...cur, actifId],
+    );
   }
 
-  triggerMediaUpload(actifId: number, type: 'image' | 'doc', libelle: string, input: HTMLInputElement) {
+  triggerMediaUpload(
+    actifId: number,
+    type: 'image' | 'doc',
+    libelle: string,
+    input: HTMLInputElement,
+  ) {
     this.mediaTarget = { actifId, type, libelle };
     input.click();
   }
@@ -432,14 +535,28 @@ export class GarantiesSectionComponent implements OnInit {
     if (type === 'image') {
       fd.append('photo', file);
       this.creditService.uploadImageGarantie(fd).subscribe({
-        next: () => { this.toast.success('Image ajoutée.'); this.isUploadingMedia.set(false); this.loadData(); },
-        error: () => { this.toast.error("Erreur lors de l'upload."); this.isUploadingMedia.set(false); },
+        next: () => {
+          this.toast.success('Image ajoutée.');
+          this.isUploadingMedia.set(false);
+          this.loadData();
+        },
+        error: () => {
+          this.toast.error("Erreur lors de l'upload.");
+          this.isUploadingMedia.set(false);
+        },
       });
     } else {
       fd.append('file', file);
       this.creditService.uploadDocumentGarantie(fd).subscribe({
-        next: () => { this.toast.success('Document ajouté.'); this.isUploadingMedia.set(false); this.loadData(); },
-        error: () => { this.toast.error("Erreur lors de l'upload."); this.isUploadingMedia.set(false); },
+        next: () => {
+          this.toast.success('Document ajouté.');
+          this.isUploadingMedia.set(false);
+          this.loadData();
+        },
+        error: () => {
+          this.toast.error("Erreur lors de l'upload.");
+          this.isUploadingMedia.set(false);
+        },
       });
     }
     input.value = '';
@@ -457,9 +574,10 @@ export class GarantiesSectionComponent implements OnInit {
     this.mediaDeleteDialogOpen = false;
     this.isDeletingMedia.set(true);
 
-    const obs$ = type === 'image'
-      ? this.creditService.deleteImageCaution(id)
-      : this.creditService.deleteDocumentCaution(id);
+    const obs$ =
+      type === 'image'
+        ? this.creditService.deleteImageCaution(id)
+        : this.creditService.deleteDocumentCaution(id);
 
     obs$.subscribe({
       next: () => {
@@ -476,7 +594,7 @@ export class GarantiesSectionComponent implements OnInit {
   }
 
   openLightbox(images: { lien?: string; libelle?: string }[], index: number) {
-    this.lightboxImages = images.map(img => ({
+    this.lightboxImages = images.map((img) => ({
       url: DOC_BASE_URL + (img.lien ?? ''),
       label: img.libelle,
     }));
@@ -486,5 +604,65 @@ export class GarantiesSectionComponent implements OnInit {
 
   mediaUrl(lien: string): string {
     return DOC_BASE_URL + lien;
+  }
+
+  // ── Actifs circulants (Stocks) ─────────────────────────────────────────
+  openAddStock() {
+    this.stockForm.reset({ description: '', quantite: null, prix: null, assurStock: '', garantie: '' });
+    this.stockDrawerOpen = true;
+  }
+
+  saveStock() {
+    if (this.stockForm.invalid) {
+      this.stockForm.markAllAsTouched();
+      return;
+    }
+    const val = this.stockForm.value;
+    const quantite = val.quantite ?? 0;
+    const prix = val.prix ?? 0;
+    this.isSavingStock.set(true);
+    this.creditService.saveActifCirculantStock({
+      description: val.description,
+      quantite,
+      prix,
+      cout: quantite * prix,
+      assurStock: val.assurStock != null ? Number(val.assurStock) : null,
+      garantie: val.garantie != null ? Number(val.garantie) : null,
+      refDemande: this.ref(),
+    }).subscribe({
+      next: () => {
+        this.toast.success('Stock enregistré.');
+        this.stockDrawerOpen = false;
+        this.isSavingStock.set(false);
+        this.loadData();
+      },
+      error: () => {
+        this.toast.error("Erreur lors de l'enregistrement.");
+        this.isSavingStock.set(false);
+      },
+    });
+  }
+
+  openDeleteStock(stock: CreditActifCirculantStock) {
+    this.stockToDelete = stock;
+    this.stockDeleteDialogOpen = true;
+  }
+
+  confirmDeleteStock() {
+    if (!this.stockToDelete?.id) return;
+    this.stockDeleteDialogOpen = false;
+    this.isDeletingStock.set(true);
+    this.creditService.deleteActifCirculantStock(this.stockToDelete.id).subscribe({
+      next: () => {
+        this.toast.success('Stock supprimé.');
+        this.isDeletingStock.set(false);
+        this.stockToDelete = null;
+        this.loadData();
+      },
+      error: () => {
+        this.toast.error('Erreur lors de la suppression.');
+        this.isDeletingStock.set(false);
+      },
+    });
   }
 }

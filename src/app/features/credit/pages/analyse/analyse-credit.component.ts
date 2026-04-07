@@ -36,6 +36,7 @@ import { TresorerieSectionComponent } from './sections/tresorerie/tresorerie-sec
 import { FamilialSectionComponent } from './sections/familial/familial-section.component';
 import { GarantiesSectionComponent } from './sections/garanties/garanties-section.component';
 import { CautionsSectionComponent } from './sections/cautions/cautions-section.component';
+import { DocumentsSectionComponent } from './sections/documents/documents-section.component';
 import { SwotSectionComponent } from './sections/swot/swot-section.component';
 import { EnvoiSectionComponent } from './sections/envoi/envoi-section.component';
 import { GeolocalisationSectionComponent } from './sections/geolocalisation/geolocalisation-section.component';
@@ -102,6 +103,7 @@ import { StripHtmlPipe } from '@/shared/pipes/strip-html/strip-html.pipe';
     FamilialSectionComponent,
     GarantiesSectionComponent,
     CautionsSectionComponent,
+    DocumentsSectionComponent,
     SwotSectionComponent,
     GeolocalisationSectionComponent,
     EnvoiSectionComponent,
