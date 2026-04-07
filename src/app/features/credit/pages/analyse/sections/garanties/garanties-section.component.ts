@@ -4,6 +4,7 @@ import {
   LucideAngularModule,
   Plus,
   Trash2,
+  Pencil,
   AlertCircle,
   Building2,
   Car,
@@ -17,6 +18,7 @@ import {
   Upload,
   ChevronDown,
   Package,
+  Banknote,
 } from 'lucide-angular';
 import {
   CardComponent,
@@ -65,8 +67,17 @@ const TYPES_ACTIF: SelectOption[] = [
   { value: 'EQUIPEMENT', label: 'Équipement / Matériel' },
   { value: 'DAT', label: 'Dépôt à terme (DAT)' },
   { value: 'BIEN_MOBILIER', label: 'Biens mobiliers famille' },
+  { value: 'DEPOSIT', label: 'Dépôt (Espèces en banque)' },
   { value: 'AUTRE', label: 'Autre actif' },
 ];
+
+// DEPOSIT — code mort dans le legacy (modal définie mais aucun bouton ne l'ouvre)
+// const TYPES_COMPTE_DEPOSIT: SelectOption[] = [
+//   { value: 'Compte courant', label: 'Compte courant' },
+//   { value: 'Compte épargne', label: 'Compte épargne' },
+//   { value: 'Compte à terme', label: 'Compte à terme' },
+//   { value: 'Autre', label: 'Autre' },
+// ];
 
 const TYPES_PROPRIETE: SelectOption[] = [
   { value: '1', label: 'LOCAL' },
@@ -128,6 +139,7 @@ export class GarantiesSectionComponent implements OnInit {
 
   readonly PlusIcon = Plus;
   readonly Trash2Icon = Trash2;
+  readonly PencilIcon = Pencil;
   readonly AlertCircleIcon = AlertCircle;
   readonly Building2Icon = Building2;
   readonly CarIcon = Car;
@@ -141,6 +153,7 @@ export class GarantiesSectionComponent implements OnInit {
   readonly UploadIcon = Upload;
   readonly ChevronDownIcon = ChevronDown;
   readonly PackageIcon = Package;
+  readonly BanknoteIcon = Banknote;
 
   private readonly fb = inject(FormBuilder);
   private readonly creditService = inject(CreditService);
@@ -152,6 +165,7 @@ export class GarantiesSectionComponent implements OnInit {
   readonly typesProPersoOptions = TYPES_PRO_PERSO;
   readonly ouiNonOptions = OUI_NON;
   readonly jutifsOptions = JUSTIFS_OPTIONS;
+  // readonly typesCompteDepositOptions = TYPES_COMPTE_DEPOSIT; // DEPOSIT — code mort legacy
 
   // ── State ──────────────────────────────────────────────────────────────
   readonly isLoading = signal(false);
@@ -184,10 +198,26 @@ export class GarantiesSectionComponent implements OnInit {
   readonly equipements = computed(() => this.actifs().filter((a) => a.type === 'EQUIPEMENT'));
   readonly dats = computed(() => this.actifs().filter((a) => a.type === 'DAT'));
   readonly biensMobiliers = computed(() => this.actifs().filter((a) => a.type === 'BIEN_MOBILIER'));
+  // readonly deposits = computed(() => this.actifs().filter((a) => a.type === 'DEPOSIT')); // DEPOSIT — code mort legacy
   readonly autres = computed(() => this.actifs().filter((a) => a.type === 'AUTRE'));
 
   readonly totalValeur = computed(() =>
     this.actifs().reduce((s, a) => s + (a.valeurEstimee ?? 0), 0),
+  );
+
+  // §7.11 — Garanties fixes (toutes) vs proposées (garantie === 1)
+  readonly totalGarantiesFixes = computed(() =>
+    this.actifs().reduce((s, a) => s + (a.valeurEstimee ?? 0), 0)
+    + this.stocks().reduce((s, st) => s + (st.cout ?? 0), 0),
+  );
+
+  readonly totalGarantiesProposees = computed(() =>
+    this.actifs()
+      .filter((a) => a.garantie === 1)
+      .reduce((s, a) => s + (a.valeurEstimee ?? 0), 0)
+    + this.stocks()
+      .filter((st) => st.garantie === 1)
+      .reduce((s, st) => s + (st.cout ?? 0), 0),
   );
 
   // Drawer
@@ -195,6 +225,7 @@ export class GarantiesSectionComponent implements OnInit {
   selectedType = signal<TypeActif | null>(null);
   nouvelleAcquisition = signal<number | null>(null);
   readonly isSaving = signal(false);
+  readonly editingActifId = signal<number | null>(null);
 
   // Delete actif
   deleteDialogOpen = false;
@@ -204,6 +235,7 @@ export class GarantiesSectionComponent implements OnInit {
   // Stock actif circulant
   stockDrawerOpen = false;
   readonly isSavingStock = signal(false);
+  readonly editingStockId = signal<number | null>(null);
   stockToDelete: CreditActifCirculantStock | null = null;
   stockDeleteDialogOpen = false;
   readonly isDeletingStock = signal(false);
@@ -283,6 +315,9 @@ export class GarantiesSectionComponent implements OnInit {
     quantite: [null as number | null],
     valeurAchat: [null as number | null],
     dateAcquisition: [''],
+    // DEPOSIT — code mort legacy
+    // especeBanque: [null as number | null],
+    // typeCompte: [''],
     // Propriétaire (D = Demandeur, sinon id caution)
     idCaution: [null as number | null],
   });
@@ -343,6 +378,7 @@ export class GarantiesSectionComponent implements OnInit {
 
   // ── CRUD ───────────────────────────────────────────────────────────────
   openAdd(preselect?: TypeActif, nouvelleAcquisition?: number) {
+    this.editingActifId.set(null);
     this.actifForm.reset({
       type: preselect ?? '',
       valeurEstimee: null,
@@ -387,6 +423,9 @@ export class GarantiesSectionComponent implements OnInit {
       quantite: null,
       valeurAchat: null,
       dateAcquisition: '',
+      // DEPOSIT — code mort legacy
+      // especeBanque: null,
+      // typeCompte: '',
       // Propriétaire
       idCaution: null,
     });
@@ -397,15 +436,67 @@ export class GarantiesSectionComponent implements OnInit {
     this.actifDrawerOpen = true;
   }
 
+  openEditActif(a: ActifGarantie) {
+    this.editingActifId.set(a.id ?? null);
+    const proprietaire = a.proprietaire === 'D' ? 'D' : (a.idCaution ? 'C' : '');
+    this.actifForm.patchValue({
+      type: a.type ?? '',
+      valeurEstimee: a.valeurEstimee ?? null,
+      proprietaire,
+      garantie: a.garantie ?? null,
+      localisation: a.localisation ?? '',
+      superficie: a.superficie ?? null,
+      typePropriete: a.typePropriete ?? '',
+      adressDescr: a.adressDescr ?? '',
+      titreFoncier: a.titreFoncier ?? '',
+      lot: a.lot ?? '',
+      ilot: a.ilot ?? '',
+      justifs: a.justifs ?? '',
+      marque: a.marque ?? '',
+      immatriculation: a.immatriculation ?? '',
+      couleur: a.couleur ?? '',
+      typeVehicule: a.typeVehicule ?? '',
+      dateMiseEnCirculation: a.dateMiseEnCirculation ? String(a.dateMiseEnCirculation).substring(0, 10) : '',
+      nbrePlace: a.nbrePlace ?? null,
+      typeCommercial: a.typeCommercial ?? '',
+      typeTechnique: a.typeTechnique ?? '',
+      evaluation: a.evaluation ?? '',
+      vehiculeVu: a.vehiculeVu ?? '',
+      typeProPerso: a.typeProPerso ?? '',
+      nouvelleAcquisition: a.nouvelleAcquisition ?? null,
+      miniComm: a.miniComm ?? null,
+      societeCr: a.societeCr ?? '',
+      societe: a.societe ?? '',
+      banque: a.banque ?? '',
+      echeance: a.echeance ?? '',
+      dureeDat: a.dureeDat ?? null,
+      dateEffetDat: a.dateEffetDat ? String(a.dateEffetDat).substring(0, 10) : '',
+      dateEcheanceDat: a.dateEcheanceDat ? String(a.dateEcheanceDat).substring(0, 10) : '',
+      numeroPerfectDat: a.numeroPerfectDat ?? '',
+      designation: a.designation ?? '',
+      quantite: a.quantite ?? null,
+      valeurAchat: a.valeurAchat ?? null,
+      dateAcquisition: a.dateAcquisition ? String(a.dateAcquisition).substring(0, 10) : '',
+      idCaution: a.idCaution ?? null,
+    });
+    this.selectedType.set(a.type ?? null);
+    this.isProprietaireCaution.set(proprietaire === 'C');
+    this.isSocieteCr.set(a.societeCr === '1');
+    this.nouvelleAcquisition.set(a.nouvelleAcquisition ?? null);
+    this.actifDrawerOpen = true;
+  }
+
   save() {
     if (this.actifForm.invalid) {
       this.actifForm.markAllAsTouched();
       return;
     }
     const val = this.actifForm.value;
+    const editId = this.editingActifId();
     this.isSaving.set(true);
     this.creditService
       .saveActifGarantie({
+        actifGarantie: editId ?? undefined,
         type: val.type,
         valeurEstimee: val.valeurEstimee,
         // Commun
@@ -449,13 +540,16 @@ export class GarantiesSectionComponent implements OnInit {
         quantite: val.quantite,
         valeurAchat: val.valeurAchat,
         dateAcquisition: val.dateAcquisition || null,
+        // DEPOSIT — code mort legacy
+        // especeBanque: val.especeBanque,
+        // typeCompte: val.typeCompte || null,
         // Propriétaire
         idCaution: val.idCaution != null ? Number(val.idCaution) : null,
         refDemande: this.ref(),
       })
       .subscribe({
         next: () => {
-          this.toast.success('Actif enregistré.');
+          this.toast.success(editId ? 'Actif modifié.' : 'Actif enregistré.');
           this.actifDrawerOpen = false;
           this.isSaving.set(false);
           this.loadData();
@@ -605,7 +699,20 @@ export class GarantiesSectionComponent implements OnInit {
 
   // ── Actifs circulants (Stocks) ─────────────────────────────────────────
   openAddStock() {
+    this.editingStockId.set(null);
     this.stockForm.reset({ description: '', quantite: null, prix: null, assurStock: '', garantie: '' });
+    this.stockDrawerOpen = true;
+  }
+
+  openEditStock(s: CreditActifCirculantStock) {
+    this.editingStockId.set(s.id ?? null);
+    this.stockForm.patchValue({
+      description: s.description ?? '',
+      quantite: s.quantite ?? null,
+      prix: s.prix ?? null,
+      assurStock: s.assurStock != null ? String(s.assurStock) : '',
+      garantie: s.garantie != null ? String(s.garantie) : '',
+    });
     this.stockDrawerOpen = true;
   }
 
@@ -617,8 +724,10 @@ export class GarantiesSectionComponent implements OnInit {
     const val = this.stockForm.value;
     const quantite = val.quantite ?? 0;
     const prix = val.prix ?? 0;
+    const editId = this.editingStockId();
     this.isSavingStock.set(true);
     this.creditService.saveActifCirculantStock({
+      actifCirculantStock: editId ?? undefined,
       description: val.description,
       quantite,
       prix,
@@ -628,7 +737,7 @@ export class GarantiesSectionComponent implements OnInit {
       refDemande: this.ref(),
     }).subscribe({
       next: () => {
-        this.toast.success('Stock enregistré.');
+        this.toast.success(editId ? 'Stock modifié.' : 'Stock enregistré.');
         this.stockDrawerOpen = false;
         this.isSavingStock.set(false);
         this.loadData();

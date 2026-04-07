@@ -32,6 +32,15 @@
 | `credit.interface.ts` | `CreditActifCirculantStock` : ajout `assurStock` et `garantie` |
 | `credit.service.ts` | Ajout `getListeTypeCharge()`, `saveActifCirculantStock()`, `deleteActifCirculantStock()` |
 | `familial-section.component.ts` | Trésorerie famille : `TYPES_TRESORERIE` et `TYPES_COMPTE` valeurs string ('1','2') au lieu de number ; casts `String()` dans `openEditTresorerie`, `typeLabel`, `totalEpargnes`, `totalDettes` |
+| `achats-section.component.ts/html` | Imprévus charges exploitation : carte par activité avec select 10/20/30% → `POST /saveImprevus` ; `analyseFin.chargeExploitation.imprevu` ajouté dans interface `ActiviteCredit` |
+| `swot-section.component.ts/html` | §10.3 — Proposition AR : ajout `dateEcheanceSouhaite`, `periodeGrace`, `nbreMoisGrace`, `hypotheque`, `acteNotarie`, `assurMultiRisk`, `deposit`, `argumentaire` dans form, loadData et saveProposition |
+| `garanties-section.component.ts/html` | Boutons modification (pencil) ajoutés sur tous les actifs garanties + actifs circulants stocks ; bug de duplication corrigé (`actifGarantie: editId`, `actifCirculantStock: editId`) |
+| `garanties-section.component.ts` | §7.11 — Totaux garanties fixes vs proposées : `totalGarantiesFixes` et `totalGarantiesProposees` calculés séparément (filtre `garantie === 1`) ; 2 cartes dans le header |
+| `garanties-section.component.html` | §7.3 — DAT : colonnes `Banque` et `Date effet` ajoutées dans le tableau ; colspan mis à jour |
+| `achats-section.component.ts/html` | Boutons modification ajoutés : achats mensuels (`openEditAchat`), charges exploitation (`openEditCharge`), stocks achats (`openEditStock`) ; payload corrigé (`achatMensuel: editId`, `chargeExploitation: editId`, `stock: editId`) |
+| `tresorerie-section.component.ts/html` | Boutons modification ajoutés : créances (`openEditCreance`), stocks trésorerie (`openEditStock`), dettes fournisseurs (`openEditDetteFournisseur`), dettes entreprise (`openEditDetteEntreprise`) ; endpoints dédiés pour update |
+| `credit.service.ts` | `getActivitesDemande(ref)` ajouté → `GET /getActiviteDemande/{ref}` (liste activités d'un dossier) |
+| `achats-section.component.ts` | Bug dropdown Activité vide : ajout appel `getActivitesDemande` en parallèle de `getAnalyseFinanciere` pour garantir le peuplement du dropdown |
 
 ---
 
@@ -146,8 +155,8 @@
 | ~~4.2~~ | ✅ **Achats mensuels — endpoint** | `POST /saveAchatMensuel` | ✅ OK — payload vérifié |
 | ~~4.3~~ | ✅ **Charges exploitation — champs manquants** | Legacy : `activite` + `charge` (id API) + `montant` | ✅ FAIT — form réécrit, suppression `typeCharge`/`libelle`/`statut` |
 | ~~4.4~~ | ✅ **Types de charges — récupération API** | `GET /listeTypeCharge` → `crTypeCharges[]` | ✅ FAIT — `getListeTypeCharge()` ajouté au service, chargé dans `loadData()` |
-| 4.5 | **Imprévus charges exploitation** | Legacy : `POST /saveImprevuChargeExploitation` avec `activite` et `imprevu` (10/20/30%) | **Absent**. Ajouter la gestion des imprévus par activité |
-| 4.6 | **Stocks achats — endpoint** | Legacy : `POST /saveStock` avec `stock` (id), `activite`, `article`, `quantite`, `montanTotal` | Vérifier payload complet (champ `stock` id pour modif ?) |
+| ~~4.5~~ | ✅ **Imprévus charges exploitation** | Legacy : `POST /saveImprevus` avec `activite` et `imprevu` (10/20/30%) | ✅ FAIT — carte "Imprévus charges exploitation" ajoutée, select par activité, `saveImprevuChargeExploitation()` dans le service, `analyseFin.chargeExploitation.imprevu` dans l'interface |
+| ~~4.6~~ | ✅ **Stocks achats — endpoint + modification** | Legacy : `POST /saveStock` avec `stock` (id), `activite`, `article`, `quantite`, `montanTotal` | ✅ FAIT — payload `stock: editId` corrigé, bouton modification ajouté |
 | ~~4.7~~ | ✅ **Lien activité dans charges** | Legacy : `activite` lié à chaque charge | ✅ FAIT — `activite` ajouté dans le form charges |
 
 ---
@@ -165,11 +174,11 @@
 | # | Problème | Legacy | Action requise |
 |---|----------|--------|----------------|
 | 5.1 | **Trésorerie actif circulant — structure legacy** | Legacy : `tresorerieActifCirculantForm` avec `activite`, `libelle`, `montant`, `type` (Espèces du jour / Espèces cumulées) → `POST /saveTresorerieActifCirculant` | Le new a `caisse`, `banque`, `mobileMoney`. **Structure différente**. Vérifier quel endpoint le backend attend réellement |
-| 5.2 | **Créances clients — champs manquants** | Legacy envoie : `refDemande`, `activite`, `objet`, `duree`, `solde`, `montant`, `recouvrMax` (pourcentage), `montArecevoir`, `creanceClient` (id) | Le new n'a que `libelle`, `montant`, `echeance`. **Ajouter** : `activite`, `objet`→`libelle`, `duree`, `solde`, `recouvrMax`, `montArecevoir` |
+| ~~5.2~~ | ✅ **Créances clients — champs manquants** | Legacy envoie : `refDemande`, `activite`, `objet`, `duree`, `solde`, `montant`, `recouvrMax` (pourcentage), `montArecevoir` | ✅ DÉJÀ IMPLÉMENTÉ — tous les champs présents |
 | ~~5.3~~ | ✅ **Avances fournisseurs** | Legacy : CRUD complet `avanceFournisseurForm` avec `activite`, `objet`, `montant`, `dateVersAvc`, `dateRecepMarch`, `resteApay` → `POST /saveAvanceFournisseur` | ✅ DÉJÀ IMPLÉMENTÉ dans `tresorerie-section.component.ts` |
-| 5.4 | **Historique des dettes (dettes entreprise)** | Legacy : `historiquesDettesForm` avec `activite`, `preteur`, `montantEmprun`, `dateDebut`, `finEcheance`, `restantDu`, `typeObjDette` → `POST /saveHistoriqueDette` | Le new a un CRUD dettes simplifié (`libelle`, `montant`, `echeance`). **Ajouter les champs manquants** |
+| ~~5.4~~ | ✅ **Historique des dettes (dettes entreprise)** | Legacy : `historiquesDettesForm` avec `activite`, `preteur`, `montantEmprun`, `dateDebut`, `finEcheance`, `restantDu`, `typeObjDette` | ✅ DÉJÀ IMPLÉMENTÉ — tous les champs présents |
 | ~~5.5~~ | ✅ **Dettes fournisseurs (séparées des dettes entreprise)** | Legacy : `detteFournisseurForm` avec `activite`, `objet`, `montant`, `datePaie`, `dateRecepMarch`, `solde` → `POST /saveDetteFournisseur` | ✅ DÉJÀ IMPLÉMENTÉ dans `tresorerie-section.component.ts` avec section séparée |
-| 5.6 | **Lien activité** | Legacy : chaque créance/avance/stock/dette est liée à une `activite` | Ajouter le select activité dans chaque formulaire |
+| ~~5.6~~ | ✅ **Lien activité** | Legacy : chaque créance/avance/stock/dette est liée à une `activite` | ✅ DÉJÀ IMPLÉMENTÉ — `activite` présent dans créances, avances, dettes fournisseurs, dettes entreprise |
 
 ---
 
@@ -184,10 +193,10 @@
 
 | # | Problème | Legacy | Action requise |
 |---|----------|--------|----------------|
-| 6.1 | **Commentaire profil familial** | Legacy : `profilFamilialCommentaireForm` avec `commentaire` → `POST /saveCommentaireProfilFamilial` | **Absent**. Ajouter un champ commentaire |
-| 6.2 | **Composition ménage — champs manquants** | Legacy envoie : `refDemande`, `membreFamille` (nom du type : Demandeur, Conjoint, Enfants, Parents, Famille, Domestiques, Autres), `nombre`, `age`, `activite`, `revenus`, `justifs` | Le new a `nom`, `relation`, `age`, `activite`, `revenu`. **Manque** : `nombre`, `justifs`, et le `membreFamille` devrait être un select avec les 7 options legacy |
+| ~~6.1~~ | ✅ **Commentaire profil familial** | Legacy → `POST /saveProfilFamilial` avec `commentaire` | ✅ FAIT — champ `commentaire` ajouté dans `profilForm`, textarea dans HTML, interface `ProfilFamilial` mise à jour |
+| ~~6.2~~ | ✅ **Composition ménage — champs manquants** | Legacy : `membreFamille` (select 7 types), `nombre`, `age`, `activite`, `revenus`, `justifs` | ✅ FAIT — `membreForm` réécrit, `MEMBRES_FAMILLE` constant (7 options), interface `MembreMenage` mise à jour, tableau et drawer mis à jour |
 | ~~6.3~~ | ✅ **Charges familiales — structure legacy** | Legacy : `chargeFamilialeForm` avec `typeCharge` (Domicile/Transport/Personnel/Familiale/Autres), `chargeMens` (sous-charge), `montant` → `POST /saveChargeFamille` | ✅ FAIT — CRUD dynamique implémenté dans `familial-section` : interface `ChargeFamille`, service `saveChargeFamille`, drawer 2 niveaux (type → sous-charge), tableau avec total |
-| 6.4 | **Imprévus charges familiales** | Legacy : `enregistrementModifImprevuChargeFamiliale()` → `POST /saveImprevuChargeFamilial` avec pourcentage (10-30%) | **Absent**. Ajouter |
+| ~~6.4~~ | ✅ **Imprévus charges familiales** | Legacy : `POST /saveImprevuChargeFamilial` avec `imprevu` (10/15/20/25/30%) | ✅ FAIT — select dans le pied du tableau charges familiales, autosave, `imprevuChargeFamille` dans l'interface, `saveImprevuChargeFamilial()` dans le service |
 | ~~6.5~~ | ✅ **Trésorerie famille** | Legacy : `tresorerieFamilleForm` avec `libelle`, `montant`, `typeCompte`, `type`, `provenance` → `POST /saveTresorerieFamille` | ✅ FAIT — interface `TresorerieFamille`, service `saveTresorerieFamille`, carte + drawer dans `familial-section` avec totaux épargnes/dettes et solde net |
 | 6.6 | **Endpoint profil familial** | Legacy : `POST /saveCommentaire` (commentaire), `POST /saveMenageRevenuFamille` (membres), `POST /saveChargeFamilial` (charges), `POST /saveTresorerieFamille` (trésorerie) | Vérifier que les endpoints du new correspondent |
 
@@ -210,7 +219,7 @@
 |---|----------|--------|----------------|
 | 7.1 | **Structure garanties — incohérence majeure** | Legacy : utilise `typeGaranties[]` avec des IDs fixes (1=Immobilisation, 2=Matériel Pro, 3=Bien Mobilier Famille, 4=Véhicule, 5=Deposit, 6=DAT) et `POST /saveActifGarantie` avec `typeActifGarantie` (id) | Le new utilise un champ `type` string (IMMOBILIER, VEHICULE...). **Vérifier** que le backend accepte les deux formats ou adapter |
 | 7.2 | **Deposit (espèces en banque)** | Legacy : `depositForm` avec `especeBanque`, `banque`, `typeCompte`, `valeurEstime`, `garantie`, `proprietaire` → `POST /saveActifGarantie` avec `typeActifGarantie = 5` | **Absent** du new. Ajouter le type DEPOSIT |
-| 7.3 | **DAT — champs manquants** | Legacy : `depotATermeForm` avec `valeurEstime`, `dureeDat`, `dateEffetDat`, `dateEcheanceDat`, `numeroPerfectDat`, `garantie` | Vérifier que le form new a tous ces champs |
+| ~~7.3~~ | ✅ **DAT — champs manquants** | Legacy : `depotATermeForm` avec `valeurEstime`, `dureeDat`, `dateEffetDat`, `dateEcheanceDat`, `numeroPerfectDat`, `garantie` | ✅ FAIT — form avait déjà tous les champs ; colonnes `Banque` et `Date effet` ajoutées dans le tableau |
 | ~~7.4~~ | ✅ **Véhicule — formulaire double** | Legacy : deux formulaires séparés `vehiculeForm` (existant) et `vehiculeNouvelleAcquisitionForm` (nouvelle acquisition) avec des champs obligatoires différents | ✅ FAIT — select `nouvelleAcquisition` (0/1) ajouté, champs `immatriculation`/`dateMiseEnCirculation` masqués si nouvelle acquisition, signal `isNouvelleAcquisition` |
 | ~~7.5~~ | ✅ **Véhicule — champs manquants** | Legacy envoie : `societeCr`, `societe`, `couleur`, `evaluation`, `immatriculation`, `garantie`, `typeVehicule`, `proprietaire`, `marque`, `typeProPerso`, `dateMiseEnCirculation`, `miniComm`, `vehiculeVu`, `valeurEstime`, `valeurAchat`, `nbrePlace`, `typeTechnique`, `typeCommercial`, `nouvelleAcquisition`, `idCaution`, `user` | ✅ FAIT — ajout `miniComm`, `societeCr`, `societe`, `nouvelleAcquisition` dans form + interface + payload |
 | ~~7.6~~ | ✅ **Immobilisation — champs manquants** | Legacy envoie : `typePropriete`, `proprietaire`, `adressDescr`, `dateAcquisition`, `valeurEstime`, `garantie`, `superficie`, `titreFoncier`, `lot`, `ilot`, `justifs`, `idCaution`, `quantite` | ✅ FAIT — tous les champs présents dans le form, `quantite` ajouté pour immobilier |
@@ -218,7 +227,7 @@
 | ~~7.8~~ | ~~**Images et documents par garantie**~~ | ~~Legacy : chaque garantie a des images (`POST /saveImageGarantie`) et documents (`POST /saveDocGarantie`) avec libellés obligatoires~~ | ✅ **FAIT** — Upload images/docs par actif, lightbox, suppression |
 | 7.9 | **Actifs circulants stocks (garanties)** | Legacy : `actifCirculantStocksForm` avec `description`, `quantite`, `prix`, `assurStock`, `garantie`, `cout` → `POST /saveActifCirculantStock` | Vérifier si c'est le même que le stock dans Achats ou un composant séparé |
 | 7.10 | **Vérification documents obligatoires par type garantie** | Legacy : `verificationDocumentEtImageACTIFSGARANTIES()` vérifie les docs obligatoires pour immobilisations, véhicules, matériels pro, biens mobiliers | **Absent**. Implémenter cette vérification |
-| 7.11 | **Totaux garanties fixes vs proposées** | Legacy : calcule `totauxGarantiesFixes` et `totauxGarantiesProposees` séparément (garantie=1 vs total) | Vérifier que le new fait cette distinction |
+| ~~7.11~~ | ✅ **Totaux garanties fixes vs proposées** | Legacy : calcule `totauxGarantiesFixes` et `totauxGarantiesProposees` séparément (garantie=1 vs total) | ✅ FAIT — `totalGarantiesFixes` et `totalGarantiesProposees` computed signals, affichage 2 cartes dans le header garanties |
 
 ---
 
@@ -238,8 +247,8 @@
 
 | # | Problème | Legacy | Action requise |
 |---|----------|--------|----------------|
-| 8.1 | **Photo profil caution** | Legacy : `modificationPhotoProfilCaution()` → `POST /updateProfilImgCaution` avec FormData (`refDemande`, `crCaution`, `photoProfil`) | Vérifier que le new gère l'upload de photo profil séparément des images |
-| 8.2 | **Champ `lieuNaissance`** | Legacy : champ obligatoire dans le formulaire caution | Vérifier présence dans le form new |
+| ~~8.1~~ | ✅ **Photo profil caution** | Legacy : `POST /updateProfilImgCaution` avec FormData | ✅ DÉJÀ IMPLÉMENTÉ — `onPhotoChange()` + `uploadPhotoCaution()` dans le service |
+| ~~8.2~~ | ✅ **Champ `lieuNaissance`** | Legacy : champ obligatoire dans le formulaire caution | ✅ DÉJÀ IMPLÉMENTÉ — présent et required dans `cautionForm` |
 | 8.3 | **Vérification docs obligatoires caution** | Legacy : `verificationLibelleDocChargerPourCaution()` vérifie que chaque caution a ses docs obligatoires avant envoi au résumé | Implémenter cette vérification dans `canFaireResumeFromState` |
 | 8.4 | **Latitude/Longitude caution** | Legacy : stocke `latitude`, `longitude` pour chaque caution (géoloc mobile) | Vérifier que le form new envoie ces champs |
 
@@ -276,7 +285,7 @@
 |---|----------|--------|----------------|
 | 10.1 | **Proposition Chef d'Agence** | Legacy : `propositionChefAgenceForm` avec calcul automatique frais dossier, acte notarié, assurance décès, commission déboursement, taux couverture, deposit → `POST /saveCrDecision` | **Absent** du new pour le profil CA/CAA. Ajouter le formulaire complet |
 | 10.2 | **Calcul frais dossier** | Legacy : `recuperationCalculFraisDossier()` → `POST /calculFraisDossier` avec `refDemande`, `hypotheque`, `montant`, `duree` | Ajouter l'appel API et le calcul automatique dans le formulaire proposition |
-| 10.3 | **Proposition AR — champs manquants** | Legacy envoie beaucoup plus : `montantPropose`, `fraisDossier`, `montantActeNotarie`, `montantEmprunte`, `duree`, `mensualite`, `dateEcheanceSouhaite`, `periodeGrace`, `hypotheque`, `nbreMoisGrace`, `argumentaire`, `motivation`, `tauxCouverture`, `acteNotarie`, `assurMultiRisk`, `deposit`, `authGage`, `commissionDeboursement`, `assurDecesInvalidite` | Le new n'a que `montantPropose`, `duree`, `mensualite`, `motivation`, `commentaire`. **Ajouter** tous les champs manquants |
+| ~~10.3~~ | ✅ **Proposition AR — champs manquants** | Legacy envoie beaucoup plus : `montantPropose`, `fraisDossier`, `montantActeNotarie`, `montantEmprunte`, `duree`, `mensualite`, `dateEcheanceSouhaite`, `periodeGrace`, `hypotheque`, `nbreMoisGrace`, `argumentaire`, `motivation`, `tauxCouverture`, `acteNotarie`, `assurMultiRisk`, `deposit`, `authGage`, `commissionDeboursement`, `assurDecesInvalidite` | ✅ FAIT — ajout `dateEcheanceSouhaite`, `periodeGrace`, `nbreMoisGrace`, `hypotheque`, `acteNotarie`, `assurMultiRisk`, `deposit`, `argumentaire` dans form/loadData/saveProposition |
 
 ---
 
@@ -413,21 +422,21 @@
 4. ✅ ~~**Trésorerie famille**~~ — FAIT (§6.5)
 5. ✅ ~~**Charges familiales dynamiques**~~ — FAIT (§6.3)
 6. ✅ ~~**Profil entrepreneur**~~ — FAIT (§2.6)
-7. **Images/documents par garantie** — Absent (§7.8)
-8. **Champs formulaires incomplets** — Achats (§4.1), Créances (§5.2), Dettes (§5.4), Garanties (§7.5-7.6)
-9. **Propriétaire garantie (D/C)** — Lien caution absent (§7.7)
-10. **Véhicule nouvelle acquisition** — Distinction absente (§7.4)
+7. ✅ ~~**Images/documents par garantie**~~ — FAIT (§7.8)
+8. ✅ ~~**Champs formulaires incomplets**~~ — FAIT (§4.1, §5.2, §5.4, §7.5-7.6)
+9. ✅ ~~**Propriétaire garantie (D/C)**~~ — FAIT (§7.7)
+10. ✅ ~~**Véhicule nouvelle acquisition**~~ — FAIT (§7.4)
 
 ### 🟡 Priorité Moyenne (fonctionnalités secondaires)
 
-11. Imprévus charges exploitation/familiales (§4.5, §6.4)
+11. ✅ ~~Imprévus charges exploitation/familiales~~ — FAIT (§4.5, §6.4)
 12. Proposition Chef d'Agence avec calcul frais (§10.1-10.2)
 13. Pré-évaluation ACJ/CE mode édition (§2.7)
 14. Profils manquants dans le bandeau (§1.2)
 15. Statut 21 — Remise dans circuit (§1.3)
-16. Types charges depuis API (§4.4)
+16. ✅ ~~Types charges depuis API~~ — FAIT (§4.4)
 17. Vérification géolocalisation avant résumé (§11.2)
-18. Proposition AR champs complets (§10.3)
+18. ✅ ~~Proposition AR champs complets~~ — FAIT (§10.3)
 
 ### 🟢 Priorité Basse (améliorations)
 

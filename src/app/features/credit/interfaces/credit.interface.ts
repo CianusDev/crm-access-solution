@@ -917,6 +917,12 @@ export interface ActiviteCredit {
   venteMensuelles?: ActiviteVenteMensuelle[];
   achatsMensuels?: AchatMensuel[];
   margesCommerciales?: MargeCommerciale[];
+  analyseFin?: {
+    chargeExploitation?: {
+      imprevu?: number;
+      total?: number;
+    };
+  };
 }
 
 export interface AchatMensuel {
@@ -1038,6 +1044,18 @@ export interface DetteEntreprise {
   dette?: number; // ID pour modification
 }
 
+// Trésorerie disponible - Actif Circulant (CRUD dynamique comme legacy)
+export interface TresorerieActifCirculant {
+  id?: number;
+  refDemande?: string;
+  activite?: number; // ID activité
+  libelle?: string; // Nom banque OU type espèce (Espèces du jour / Espèces cumulées)
+  montant?: number;
+  type?: number; // 1 = Espèce, 2 = Banque
+  tresorerie?: number; // ID pour modification
+}
+
+// Legacy - utilisé dans les champs de AnalyseFinanciere (caisse/banque/mobileMoney)
 export interface TresorerieDisponible {
   caisse?: number;
   banque?: number;
@@ -1054,6 +1072,7 @@ export interface ProfilFamilial {
   scolarite?: number;
   sante?: number;
   autresChargesFamiliales?: number;
+  commentaire?: string;
 }
 
 export interface TresorerieFamille {
@@ -1077,12 +1096,14 @@ export interface ChargeFamille {
 
 export interface MembreMenage {
   id?: number;
-  nom?: string;
-  relation?: string;
+  membreFamille?: string; // Type de membre (Demandeur, Conjoint, Enfants, etc.)
+  nombre?: number;        // Nombre de personnes dans cette catégorie
   age?: number;
   activite?: string;
-  revenu?: number;
+  revenus?: number;
+  justifs?: string;
   refDemande?: string;
+  menageRevenuFamille?: number; // ID pour modification
 }
 
 export type TypeActif =
@@ -1091,6 +1112,7 @@ export type TypeActif =
   | 'EQUIPEMENT'
   | 'DAT'
   | 'BIEN_MOBILIER'
+  | 'DEPOSIT'
   | 'AUTRE';
 
 export interface ActifGarantie {
@@ -1141,6 +1163,9 @@ export interface ActifGarantie {
   idCaution?: number;
   // Équipement
   designation?: string;
+  // Deposit (espèces en banque)
+  especeBanque?: number;
+  typeCompte?: string;
   // Médias
   images?: GarantieMedia[];
   documents?: GarantieMedia[];
@@ -1177,6 +1202,7 @@ export interface CautionSolidaire {
 }
 
 export interface CreditAnalyseDemandeDetail extends CreditFicheDemandeDetail {
+  imprevuChargeFamille?: number; // % imprévus charges familiales (10/15/20/25/30)
   activites?: ActiviteCredit[];
   chargesExploitation?: ChargeExploitation[];
   creances?: CreanceClient[];
@@ -1185,7 +1211,8 @@ export interface CreditAnalyseDemandeDetail extends CreditFicheDemandeDetail {
   dettes?: DetteFournisseur[]; // Alias temporaire pour dettesFournisseurs (compatibilité)
   dettesFournisseurs?: DetteFournisseur[];
   dettesEntreprise?: DetteEntreprise[];
-  tresorerie?: TresorerieDisponible;
+  tresorerie?: TresorerieDisponible; // Ancien format (simple caisse/banque/mobileMoney)
+  tresoreriesActifCirculant?: TresorerieActifCirculant[]; // Nouveau format CRUD (legacy-compatible)
   profilFamilial?: ProfilFamilial;
   tresoreriesFamiliales?: TresorerieFamille[];
   chargesFamiliales?: ChargeFamille[];

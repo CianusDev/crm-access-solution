@@ -5,10 +5,12 @@ import {
   LucideAngularModule,
   Plus,
   Trash2,
+  Pencil,
   AlertCircle,
   ShoppingCart,
   Banknote,
   Package,
+  TrendingUp,
 } from 'lucide-angular';
 import {
   CardComponent,
@@ -49,6 +51,12 @@ const SAISONS: SelectOption[] = [
   { value: 'NORMALE', label: 'Normale' },
 ];
 
+const IMPREVU_OPTIONS: SelectOption[] = [
+  { value: 10, label: '10%' },
+  { value: 20, label: '20%' },
+  { value: 30, label: '30%' },
+];
+
 
 @Component({
   selector: 'app-achats-section',
@@ -81,10 +89,12 @@ export class AchatsSectionComponent implements OnInit {
 
   readonly PlusIcon = Plus;
   readonly Trash2Icon = Trash2;
+  readonly PencilIcon = Pencil;
   readonly AlertCircleIcon = AlertCircle;
   readonly ShoppingCartIcon = ShoppingCart;
   readonly BanknoteIcon = Banknote;
   readonly PackageIcon = Package;
+  readonly TrendingUpIcon = TrendingUp;
 
   private readonly fb = inject(FormBuilder);
   private readonly creditService = inject(CreditService);
@@ -92,6 +102,7 @@ export class AchatsSectionComponent implements OnInit {
 
   // ── Constants ──────────────────────────────────────────────────────────
   readonly saisonOptions = SAISONS;
+  readonly imprevuOptions = IMPREVU_OPTIONS;
 
   // ── State ──────────────────────────────────────────────────────────────
   readonly isLoading = signal(false);
@@ -127,17 +138,39 @@ export class AchatsSectionComponent implements OnInit {
     this.stocks().reduce((s, item) => s + (item.montantTotal ?? 0), 0),
   );
 
+  // Imprévus : total charges par activité + imprevu % depuis analyseFin
+  readonly chargesParActivite = computed(() =>
+    this.activites().map((a) => {
+      const total = this.chargesExploitation()
+        .filter((c) => c.activite === a.id)
+        .reduce((s, c) => s + (c.montant ?? 0), 0);
+      const imprevu = a.analyseFin?.chargeExploitation?.imprevu ?? null;
+      const montantImprevu = imprevu != null ? Math.round(total * imprevu / 100) : 0;
+      return { activite: a, total, imprevu, montantImprevu };
+    }),
+  );
+
+  readonly totalImprevu = computed(() =>
+    this.chargesParActivite().reduce((s, r) => s + r.montantImprevu, 0),
+  );
+
   // Drawer — Achats
   achatDrawerOpen = false;
   readonly isSavingAchat = signal(false);
+  readonly editingAchatId = signal<number | null>(null);
 
   // Drawer — Charges
   chargeDrawerOpen = false;
   readonly isSavingCharge = signal(false);
+  readonly editingChargeId = signal<number | null>(null);
 
   // Drawer — Stocks
   stockDrawerOpen = false;
   readonly isSavingStock = signal(false);
+  readonly editingStockId = signal<number | null>(null);
+
+  // Imprévus
+  readonly isSavingImprevu = signal(false);
 
   // Delete dialog
   deleteDialogOpen = false;
@@ -183,6 +216,11 @@ export class AchatsSectionComponent implements OnInit {
         error: () => {},
       });
     }
+    // Charge les activités via l'endpoint dédié pour alimenter le dropdown
+    this.creditService.getActivitesDemande(this.ref()).subscribe({
+      next: (activites) => this.activites.set(activites),
+      error: () => {},
+    });
     this.creditService.getAnalyseFinanciere(this.ref()).subscribe({
       next: (data) => {
         if (!data?.demande) {
@@ -190,7 +228,13 @@ export class AchatsSectionComponent implements OnInit {
           this.isLoading.set(false);
           return;
         }
-        this.activites.set(data.demande.activites ?? []);
+        // getAnalyseFinanciere renvoie les activités avec les achats imbriqués —
+        // on l'utilise en priorité pour le tableau (qui affiche activite.achatsMensuels).
+        // Sinon on garde les activités chargées via getActivitesDemande.
+        const activitesAvecNested = data.demande.activites ?? [];
+        if (activitesAvecNested.length > 0) {
+          this.activites.set(activitesAvecNested);
+        }
         this.chargesExploitation.set(data.demande.chargesExploitation ?? []);
         this.stocks.set(data.demande.stocks ?? []);
         this.isLoading.set(false);
@@ -215,26 +259,31 @@ export class AchatsSectionComponent implements OnInit {
 
   // ── Achat Mensuel CRUD ─────────────────────────────────────────────────
   openAddAchat(activiteId?: number) {
-    this.achatForm.reset({
-      activite: activiteId ?? null,
-      article: '',
-      fournisseur: '',
-      quantite: null,
-      frequence: '',
-      montant: null,
+    this.editingAchatId.set(null);
+    this.achatForm.reset({ activite: activiteId ?? null, article: '', fournisseur: '', quantite: null, frequence: '', montant: null });
+    this.achatDrawerOpen = true;
+  }
+
+  openEditAchat(a: AchatMensuel) {
+    this.editingAchatId.set(a.id ?? null);
+    this.achatForm.patchValue({
+      activite: (a.activite as any)?.id ?? a.activite ?? null,
+      article: a.article ?? '',
+      fournisseur: a.fournisseur ?? '',
+      quantite: a.quantite ?? null,
+      frequence: a.frequence ?? '',
+      montant: a.achatsMensuels ?? null,
     });
     this.achatDrawerOpen = true;
   }
 
   saveAchat() {
-    if (this.achatForm.invalid) {
-      this.achatForm.markAllAsTouched();
-      return;
-    }
+    if (this.achatForm.invalid) { this.achatForm.markAllAsTouched(); return; }
     const val = this.achatForm.value;
+    const editId = this.editingAchatId();
     this.isSavingAchat.set(true);
-    this.creditService
-      .saveAchatMensuel({
+    this.creditService.saveAchatMensuel({
+        achatMensuel: editId ?? undefined,
         refDemande: this.ref(),
         activite: val.activite,
         article: val.article,
@@ -245,7 +294,7 @@ export class AchatsSectionComponent implements OnInit {
       })
       .subscribe({
         next: () => {
-          this.toast.success('Achat mensuel enregistré.');
+          this.toast.success(editId ? 'Achat modifié.' : 'Achat mensuel enregistré.');
           this.achatDrawerOpen = false;
           this.isSavingAchat.set(false);
           this.loadData();
@@ -259,19 +308,28 @@ export class AchatsSectionComponent implements OnInit {
 
   // ── Charge Exploitation CRUD ───────────────────────────────────────────
   openAddCharge() {
+    this.editingChargeId.set(null);
     this.chargeForm.reset({ activite: null, charge: null, montant: null });
     this.chargeDrawerOpen = true;
   }
 
+  openEditCharge(c: ChargeExploitation) {
+    this.editingChargeId.set(c.id ?? null);
+    this.chargeForm.patchValue({
+      activite: (c.activite as any)?.id ?? c.activite ?? null,
+      charge: (c.charge as any)?.id ?? c.charge ?? null,
+      montant: c.montant ?? null,
+    });
+    this.chargeDrawerOpen = true;
+  }
+
   saveCharge() {
-    if (this.chargeForm.invalid) {
-      this.chargeForm.markAllAsTouched();
-      return;
-    }
+    if (this.chargeForm.invalid) { this.chargeForm.markAllAsTouched(); return; }
     const val = this.chargeForm.value;
+    const editId = this.editingChargeId();
     this.isSavingCharge.set(true);
-    this.creditService
-      .saveChargeExploitation({
+    this.creditService.saveChargeExploitation({
+        chargeExploitation: editId ?? undefined,
         activite: val.activite,
         charge: val.charge,
         montant: val.montant,
@@ -279,7 +337,7 @@ export class AchatsSectionComponent implements OnInit {
       })
       .subscribe({
         next: () => {
-          this.toast.success('Charge enregistrée.');
+          this.toast.success(editId ? 'Charge modifiée.' : 'Charge enregistrée.');
           this.chargeDrawerOpen = false;
           this.isSavingCharge.set(false);
           this.loadData();
@@ -293,19 +351,29 @@ export class AchatsSectionComponent implements OnInit {
 
   // ── Stock CRUD ─────────────────────────────────────────────────────────
   openAddStock() {
+    this.editingStockId.set(null);
     this.stockForm.reset({ activite: null, article: '', quantite: null, montantTotal: null });
     this.stockDrawerOpen = true;
   }
 
+  openEditStock(s: StockItem) {
+    this.editingStockId.set(s.id ?? null);
+    this.stockForm.patchValue({
+      activite: (s.activite as any)?.id ?? s.activite ?? null,
+      article: s.article ?? '',
+      quantite: s.quantite ?? null,
+      montantTotal: s.montantTotal ?? null,
+    });
+    this.stockDrawerOpen = true;
+  }
+
   saveStock() {
-    if (this.stockForm.invalid) {
-      this.stockForm.markAllAsTouched();
-      return;
-    }
+    if (this.stockForm.invalid) { this.stockForm.markAllAsTouched(); return; }
     const val = this.stockForm.value;
+    const editId = this.editingStockId();
     this.isSavingStock.set(true);
-    this.creditService
-      .saveStock({
+    this.creditService.saveStock({
+        stock: editId ?? undefined,
         activite: val.activite,
         article: val.article,
         quantite: val.quantite,
@@ -314,7 +382,7 @@ export class AchatsSectionComponent implements OnInit {
       })
       .subscribe({
         next: () => {
-          this.toast.success('Stock enregistré.');
+          this.toast.success(editId ? 'Stock modifié.' : 'Stock enregistré.');
           this.stockDrawerOpen = false;
           this.isSavingStock.set(false);
           this.loadData();
@@ -364,6 +432,28 @@ export class AchatsSectionComponent implements OnInit {
       error: () => {
         this.toast.error('Erreur lors de la suppression.');
         this.isDeleting.set(false);
+      },
+    });
+  }
+
+  // ── Imprévus charges exploitation ─────────────────────────────────────
+  saveImprevu(activiteId: number, event: Event) {
+    const value = Number((event.target as HTMLSelectElement).value);
+    if (!value) return;
+    this.isSavingImprevu.set(true);
+    this.creditService.saveImprevuChargeExploitation({
+      activite: activiteId,
+      imprevu: value,
+      refDemande: this.ref(),
+    }).subscribe({
+      next: () => {
+        this.toast.success('Imprévus enregistrés.');
+        this.isSavingImprevu.set(false);
+        this.loadData();
+      },
+      error: () => {
+        this.toast.error("Erreur lors de l'enregistrement.");
+        this.isSavingImprevu.set(false);
       },
     });
   }

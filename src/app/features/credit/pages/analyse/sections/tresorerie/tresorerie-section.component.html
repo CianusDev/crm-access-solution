@@ -16,7 +16,7 @@
     </div>
   } @else {
 
-    <!-- ══ TRÉSORERIE DISPONIBLE ═════════════════════════════════════════ -->
+    <!-- ══ TRÉSORERIE DISPONIBLE (ancien format) ════════════════════════ -->
     <app-card>
       <app-card-header>
         <div class="flex items-center justify-between w-full">
@@ -46,6 +46,80 @@
             </div>
           }
         </form>
+      </app-card-content>
+    </app-card>
+
+    <!-- ══ TRÉSORERIE ACTIF CIRCULANT (format legacy CRUD) ═══════════════ -->
+    <app-card>
+      <app-card-header>
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <app-card-title>Trésorerie par activité</app-card-title>
+            @if (totalTresorerieActifCirculant() > 0) {
+              <span class="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                Total : {{ totalTresorerieActifCirculant() | number:'1.0-0' }} FCFA
+              </span>
+            }
+          </div>
+          @if (canEdit()) {
+            <button type="button" (click)="openAddTresorerie()" appButton size="sm">
+              <lucide-icon [img]="PlusIcon" [size]="14" />
+              Ajouter
+            </button>
+          }
+        </div>
+      </app-card-header>
+      <app-card-content>
+        @if (tresoreriesActifCirculant().length === 0) {
+          <div class="flex flex-col items-center justify-center gap-3 py-8 text-center">
+            <lucide-icon [img]="WalletIcon" [size]="28" class="text-muted-foreground/40" />
+            <p class="text-sm text-muted-foreground">Aucune trésorerie enregistrée</p>
+          </div>
+        } @else {
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border">
+                <th class="px-4 py-2.5 text-left font-medium text-muted-foreground">Activité</th>
+                <th class="px-4 py-2.5 text-left font-medium text-muted-foreground">Type</th>
+                <th class="px-4 py-2.5 text-left font-medium text-muted-foreground">Libellé</th>
+                <th class="px-4 py-2.5 text-right font-medium text-muted-foreground">Montant (FCFA)</th>
+                @if (canEdit()) {
+                  <th class="px-4 py-2.5 text-center font-medium text-muted-foreground w-24">Actions</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of tresoreriesActifCirculant(); track t.id) {
+                <tr class="border-b border-border hover:bg-muted/30 transition-colors">
+                  <td class="px-4 py-2.5">{{ getActiviteLibelle(t.activite) }}</td>
+                  <td class="px-4 py-2.5">{{ getTypeLabel(t.type) }}</td>
+                  <td class="px-4 py-2.5 font-medium">{{ t.libelle }}</td>
+                  <td class="px-4 py-2.5 text-right font-semibold">{{ t.montant | number:'1.0-0' }}</td>
+                  @if (canEdit()) {
+                    <td class="px-4 py-2.5">
+                      <div class="flex items-center justify-center gap-1">
+                        <button
+                          type="button"
+                          (click)="openEditTresorerie(t)"
+                          class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                          title="Modifier">
+                          <lucide-icon [img]="PencilIcon" [size]="13" />
+                        </button>
+                        <button
+                          type="button"
+                          (click)="openDeleteTresorerie(t.id!, t.libelle ?? '')"
+                          class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          title="Supprimer">
+                          <lucide-icon [img]="Trash2Icon" [size]="13" />
+                        </button>
+                      </div>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
       </app-card-content>
     </app-card>
 
@@ -82,7 +156,7 @@
                 <th class="px-4 py-2 text-left font-medium text-muted-foreground">Libellé</th>
                 <th class="px-4 py-2 text-left font-medium text-muted-foreground">Échéance</th>
                 <th class="px-4 py-2 text-right font-medium text-muted-foreground">Montant (FCFA)</th>
-                <th class="px-4 py-2 w-10"></th>
+                <th class="px-4 py-2 w-20"></th>
               </tr>
             </thead>
             <tbody>
@@ -93,10 +167,16 @@
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(creance.montant) }}</td>
                   <td class="px-4 py-2.5">
                     @if (canEdit()) {
-                      <button type="button" (click)="openDelete('creance', creance.id!, creance.objet ?? '')"
-                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
-                        <lucide-icon [img]="Trash2Icon" [size]="13" />
-                      </button>
+                      <div class="flex items-center gap-1">
+                        <button type="button" (click)="openEditCreance(creance)"
+                          class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer">
+                          <lucide-icon [img]="PencilIcon" [size]="13" />
+                        </button>
+                        <button type="button" (click)="openDelete('creance', creance.id!, creance.objet ?? '')"
+                          class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                          <lucide-icon [img]="Trash2Icon" [size]="13" />
+                        </button>
+                      </div>
                     }
                   </td>
                 </tr>
@@ -173,10 +253,16 @@
                   </td>
                   <td class="px-4 py-2.5">
                     @if (canEdit()) {
-                      <button type="button" (click)="openDelete('stock', stock.id!, stock.description ?? stock.libelle ?? '')"
-                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
-                        <lucide-icon [img]="Trash2Icon" [size]="13" />
-                      </button>
+                      <div class="flex items-center gap-1">
+                        <button type="button" (click)="openEditStock(stock)"
+                          class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer">
+                          <lucide-icon [img]="PencilIcon" [size]="13" />
+                        </button>
+                        <button type="button" (click)="openDelete('stock', stock.id!, stock.description ?? stock.libelle ?? '')"
+                          class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                          <lucide-icon [img]="Trash2Icon" [size]="13" />
+                        </button>
+                      </div>
                     }
                   </td>
                 </tr>
@@ -231,10 +317,16 @@
                   <td class="px-4 py-2.5 text-right tabular-nums">{{ formatMontant(dette.solde) }}</td>
                   <td class="px-4 py-2.5">
                     @if (canEdit()) {
-                      <button type="button" (click)="openDelete('detteFournisseur', dette.id!, dette.objet ?? '')"
-                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
-                        <lucide-icon [img]="Trash2Icon" [size]="13" />
-                      </button>
+                      <div class="flex items-center gap-1">
+                        <button type="button" (click)="openEditDetteFournisseur(dette)"
+                          class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer">
+                          <lucide-icon [img]="PencilIcon" [size]="13" />
+                        </button>
+                        <button type="button" (click)="openDelete('detteFournisseur', dette.id!, dette.objet ?? '')"
+                          class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                          <lucide-icon [img]="Trash2Icon" [size]="13" />
+                        </button>
+                      </div>
                     }
                   </td>
                 </tr>
@@ -289,10 +381,16 @@
                   <td class="px-4 py-2.5 text-right tabular-nums">{{ formatMontant(dette.restantDu) }}</td>
                   <td class="px-4 py-2.5">
                     @if (canEdit()) {
-                      <button type="button" (click)="openDelete('detteEntreprise', dette.id!, dette.preteur ?? '')"
-                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
-                        <lucide-icon [img]="Trash2Icon" [size]="13" />
-                      </button>
+                      <div class="flex items-center gap-1">
+                        <button type="button" (click)="openEditDetteEntreprise(dette)"
+                          class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer">
+                          <lucide-icon [img]="PencilIcon" [size]="13" />
+                        </button>
+                        <button type="button" (click)="openDelete('detteEntreprise', dette.id!, dette.preteur ?? '')"
+                          class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                          <lucide-icon [img]="Trash2Icon" [size]="13" />
+                        </button>
+                      </div>
                     }
                   </td>
                 </tr>
@@ -307,10 +405,88 @@
 
 </div>
 
+<!-- ══ DRAWER — Trésorerie Actif Circulant ═══════════════════════════════ -->
+<app-drawer [(open)]="tresorerieActifCirculantDrawerOpen">
+  <app-drawer-header>
+    <app-drawer-title>{{ editingTresorerieId() ? 'Modifier une trésorerie' : 'Ajouter une trésorerie' }}</app-drawer-title>
+  </app-drawer-header>
+  <app-drawer-content>
+    <form [formGroup]="tresorerieActifCirculantForm" class="flex flex-col gap-4">
+      <div>
+        <label class="text-sm font-medium mb-1.5 block">Activité <span class="text-destructive">*</span></label>
+        <app-form-select
+          name="activite"
+          [options]="activitesList()"
+          bindLabel="libelle"
+          bindValue="id"
+          placeholder="Sélectionner une activité"
+          required
+        />
+      </div>
+
+      <div>
+        <label class="text-sm font-medium mb-1.5 block">Type <span class="text-destructive">*</span></label>
+        <app-form-select
+          name="type"
+          [options]="TYPES_TRESORERIE"
+          bindLabel="label"
+          bindValue="value"
+          placeholder="Sélectionner un type"
+          required
+        />
+      </div>
+
+      @if (isTypeEspece) {
+        <div>
+          <label class="text-sm font-medium mb-1.5 block">Nature des espèces <span class="text-destructive">*</span></label>
+          <app-form-select
+            name="libelle"
+            [options]="TYPES_ESPECE"
+            bindLabel="label"
+            bindValue="value"
+            placeholder="Sélectionner le type"
+            required
+          />
+        </div>
+      }
+
+      @if (isTypeBanque) {
+        <div>
+          <label class="text-sm font-medium mb-1.5 block">Banque / Mobile Money <span class="text-destructive">*</span></label>
+          <app-form-select
+            name="libelle"
+            [options]="LISTE_BANQUES"
+            bindLabel="label"
+            bindValue="value"
+            placeholder="Sélectionner une banque"
+            required
+          />
+        </div>
+      }
+
+      <app-form-input
+        name="montant"
+        label="Montant (FCFA)"
+        type="number"
+        placeholder="Ex: 500000"
+        required
+      />
+    </form>
+  </app-drawer-content>
+  <app-drawer-footer>
+    <div class="flex gap-2 justify-end">
+      <button type="button" (click)="tresorerieActifCirculantDrawerOpen = false" appButton variant="outline">Annuler</button>
+      <button type="button" (click)="saveTresorerieActifCirculant()" appButton [disabled]="isSavingTresorerieActifCirculant()">
+        @if (isSavingTresorerieActifCirculant()) { Enregistrement… } @else { Enregistrer }
+      </button>
+    </div>
+  </app-drawer-footer>
+</app-drawer>
+
 <!-- ══ DRAWER — Créance ════════════════════════════════════════════════════ -->
 <app-drawer [(open)]="creanceDrawerOpen">
   <app-drawer-header>
-    <app-drawer-title>Ajouter une créance client</app-drawer-title>
+    <app-drawer-title>{{ editingCreanceId() ? 'Modifier la créance' : 'Ajouter une créance client' }}</app-drawer-title>
   </app-drawer-header>
   <app-drawer-content>
     <form [formGroup]="creanceForm" class="flex flex-col gap-4">
@@ -327,12 +503,12 @@
         <app-form-input name="solde" label="Solde (FCFA)" type="number" placeholder="Ex: 150000" />
         <div>
           <label class="text-sm font-medium mb-1.5 block">Recouvrement (max 80%)</label>
-          <app-form-select 
-            name="recouvrMax" 
-            [options]="[{label: '10%', value: 10}, {label: '20%', value: 20}, {label: '30%', value: 30}, {label: '40%', value: 40}, {label: '50%', value: 50}, {label: '60%', value: 60}, {label: '70%', value: 70}, {label: '80%', value: 80}]" 
-            bindLabel="label" 
-            bindValue="value" 
-            placeholder="Sélectionner un %" 
+          <app-form-select
+            name="recouvrMax"
+            [options]="[{label: '10%', value: 10}, {label: '20%', value: 20}, {label: '30%', value: 30}, {label: '40%', value: 40}, {label: '50%', value: 50}, {label: '60%', value: 60}, {label: '70%', value: 70}, {label: '80%', value: 80}]"
+            bindLabel="label"
+            bindValue="value"
+            placeholder="Sélectionner un %"
           />
         </div>
       </div>
@@ -352,7 +528,7 @@
 <!-- ══ DRAWER — Avance fournisseur ═════════════════════════════════════════ -->
 <app-drawer [(open)]="avanceDrawerOpen">
   <app-drawer-header>
-    <app-drawer-title>Ajouter une avance fournisseur</app-drawer-title>
+    <app-drawer-title>{{ editingAvanceId() ? 'Modifier l\'avance' : 'Ajouter une avance fournisseur' }}</app-drawer-title>
   </app-drawer-header>
   <app-drawer-content>
     <form [formGroup]="avanceForm" class="flex flex-col gap-4">
@@ -382,16 +558,16 @@
 <!-- ══ DRAWER — Stock ══════════════════════════════════════════════════════ -->
 <app-drawer [(open)]="stockDrawerOpen">
   <app-drawer-header>
-    <app-drawer-title>Ajouter un stock</app-drawer-title>
+    <app-drawer-title>{{ editingStockId() ? 'Modifier le stock' : 'Ajouter un stock' }}</app-drawer-title>
   </app-drawer-header>
   <app-drawer-content>
     <form [formGroup]="stockForm" class="flex flex-col gap-4">
       <app-form-input name="description" label="Description" placeholder="Ex: Produits divers" required />
-      
+
       <app-form-input name="quantite" label="Quantité" type="number" placeholder="Ex: 100" required />
-      
+
       <app-form-input name="prix" label="Prix unitaire d'achat (FCFA)" type="number" placeholder="Ex: 5000" required />
-      
+
       <div class="space-y-2">
         <label class="text-sm font-medium">Assurance Stock ? <span class="text-destructive">*</span></label>
         <div class="flex gap-4">
@@ -405,7 +581,7 @@
           </label>
         </div>
       </div>
-      
+
       <div class="space-y-2">
         <label class="text-sm font-medium">Garantie ? <span class="text-destructive">*</span></label>
         <div class="flex gap-4">
@@ -434,7 +610,7 @@
 <!-- ══ DRAWER — Dette fournisseur ══════════════════════════════════════════ -->
 <app-drawer [(open)]="detteFournisseurDrawerOpen">
   <app-drawer-header>
-    <app-drawer-title>Ajouter une dette fournisseur</app-drawer-title>
+    <app-drawer-title>{{ editingDetteFournisseurId() ? 'Modifier la dette fournisseur' : 'Ajouter une dette fournisseur' }}</app-drawer-title>
   </app-drawer-header>
   <app-drawer-content>
     <form [formGroup]="detteFournisseurForm" class="flex flex-col gap-4">
@@ -464,7 +640,7 @@
 <!-- ══ DRAWER — Dette entreprise (historique) ══════════════════════════════ -->
 <app-drawer [(open)]="detteEntrepriseDrawerOpen">
   <app-drawer-header>
-    <app-drawer-title>Ajouter un historique de dette</app-drawer-title>
+    <app-drawer-title>{{ editingDetteEntrepriseId() ? 'Modifier la dette' : 'Ajouter un historique de dette' }}</app-drawer-title>
   </app-drawer-header>
   <app-drawer-content>
     <form [formGroup]="detteEntrepriseForm" class="flex flex-col gap-4">

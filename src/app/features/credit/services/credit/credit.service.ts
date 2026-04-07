@@ -35,6 +35,7 @@ import {
   GarantiesData,
   CreditStatZone,
   CreditTbProduit,
+  ActiviteCredit,
   CreditTypeActivite,
   CreditTypeCredit,
   CreditZone,
@@ -305,6 +306,15 @@ export class CreditService {
       );
   }
 
+  getActivitesDemande(ref: string) {
+    return this.api
+      .get<{ activite?: ActiviteCredit[] }>(this.endpoint + '/getActiviteDemande/' + ref)
+      .pipe(
+        map((res) => res.activite ?? []),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
   saveActivite(data: Record<string, unknown>) {
     return this.api
       .post<{ status: number; message?: string }>(this.endpoint + '/saveActiviteDmde', data)
@@ -395,6 +405,18 @@ export class CreditService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
+  saveImprevuChargeExploitation(data: { activite?: number | null; imprevu?: number | null; refDemande?: string }) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveImprevus', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  saveImprevuChargeFamilial(data: { imprevu?: number | null; refDemande?: string }) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveImprevuChargeFamilial', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
   deleteChargeExploitation(id: number) {
     return this.api
       .delete<{ status: number }>(this.endpoint + '/deleteChargeExploitation/' + id)
@@ -404,6 +426,12 @@ export class CreditService {
   saveTresorerie(data: Record<string, unknown>) {
     return this.api
       .post<{ status: number; message?: string }>(this.endpoint + '/saveTresorerie', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  deleteTresorerie(id: number) {
+    return this.api
+      .post<{ status: number }>(this.endpoint + '/deleteTresorerie', { tresorerie: id })
       .pipe(catchError((err) => throwError(() => err)));
   }
 

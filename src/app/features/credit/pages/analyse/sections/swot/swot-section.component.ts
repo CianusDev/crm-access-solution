@@ -18,6 +18,7 @@ import {
 import { BadgeComponent } from '@/shared/components/badge/badge.component';
 import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import { FormInput } from '@/shared/components/form-input/form-input.component';
+import { FormSelect, SelectOption } from '@/shared/components/form-select/form-select.component';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { CreditService } from '../../../../services/credit/credit.service';
 import {
@@ -39,6 +40,7 @@ import {
     BadgeComponent,
     ButtonDirective,
     FormInput,
+    FormSelect,
   ],
 })
 export class SwotSectionComponent implements OnInit {
@@ -55,6 +57,21 @@ export class SwotSectionComponent implements OnInit {
   private readonly creditService = inject(CreditService);
   private readonly toast = inject(ToastService);
 
+  // ── Référentiels proposition ───────────────────────────────────────────
+  readonly ouiNonOptions: SelectOption[] = [
+    { value: 1, label: 'OUI' },
+    { value: 0, label: 'NON' },
+  ];
+
+  readonly depositOptions: SelectOption[] = [
+    { value: 5, label: '5%' },
+    { value: 10, label: '10%' },
+    { value: 15, label: '15%' },
+    { value: 20, label: '20%' },
+    { value: 25, label: '25%' },
+    { value: 30, label: '30%' },
+  ];
+
   // ── State ──────────────────────────────────────────────────────────────
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
@@ -63,6 +80,7 @@ export class SwotSectionComponent implements OnInit {
 
   readonly isSavingSwot = signal(false);
   readonly isSavingProposition = signal(false);
+  readonly hasPeriodeGrace = signal(false);
 
   // ── Forms ──────────────────────────────────────────────────────────────
   // SWOT : chaque quadrant = texte multiligne (1 item par ligne)
@@ -77,6 +95,14 @@ export class SwotSectionComponent implements OnInit {
     montantPropose: [null as number | null],
     duree: [null as number | null],
     mensualite: [null as number | null],
+    dateEcheanceSouhaite: [''],
+    periodeGrace: [null as number | null],
+    nbreMoisGrace: [null as number | null],
+    hypotheque: [null as number | null],
+    acteNotarie: [null as number | null],
+    assurMultiRisk: [null as number | null],
+    deposit: [null as number | null],
+    argumentaire: [''],
     motivation: [''],
     commentaire: [''],
   });
@@ -111,9 +137,20 @@ export class SwotSectionComponent implements OnInit {
             montantPropose: prop.montantPropose ?? null,
             duree: prop.duree ?? null,
             mensualite: prop.mensualite ?? null,
+            dateEcheanceSouhaite: prop.dateEcheanceSouhaite
+              ? String(prop.dateEcheanceSouhaite).substring(0, 10)
+              : '',
+            periodeGrace: prop.periodeGrace ?? null,
+            nbreMoisGrace: prop.nbreMoisGrace ?? null,
+            hypotheque: prop.hypotheque ?? null,
+            acteNotarie: prop.acteNotarie ?? null,
+            assurMultiRisk: prop.assurMultiRisk ?? null,
+            deposit: prop.deposit ?? null,
+            argumentaire: prop.argumentaire ?? '',
             motivation: prop.motivation ?? '',
             commentaire: prop.commentaire ?? '',
           });
+          this.hasPeriodeGrace.set(prop.periodeGrace === 1);
         }
         this.precomites.set(data.demande.precomites ?? []);
         this.comites.set(data.demande.comites ?? []);
@@ -166,6 +203,12 @@ export class SwotSectionComponent implements OnInit {
   }
 
   // ── Save Proposition AR ────────────────────────────────────────────────
+  onPeriodeGraceChange(event: Event) {
+    const v = Number((event.target as HTMLSelectElement).value);
+    this.hasPeriodeGrace.set(v === 1);
+    this.propositionForm.patchValue({ periodeGrace: v });
+  }
+
   saveProposition() {
     const val = this.propositionForm.value;
     this.isSavingProposition.set(true);
@@ -173,6 +216,14 @@ export class SwotSectionComponent implements OnInit {
       montantPropose: val.montantPropose,
       duree: val.duree,
       mensualite: val.mensualite,
+      dateEcheanceSouhaite: val.dateEcheanceSouhaite || null,
+      periodeGrace: val.periodeGrace,
+      nbreMoisGrace: this.hasPeriodeGrace() ? val.nbreMoisGrace : null,
+      hypotheque: val.hypotheque,
+      acteNotarie: val.acteNotarie,
+      assurMultiRisk: val.assurMultiRisk,
+      deposit: val.deposit,
+      argumentaire: val.argumentaire,
       motivation: val.motivation,
       commentaire: val.commentaire,
       refDemande: this.ref(),

@@ -36,6 +36,18 @@
             </div>
           </div>
 
+          <!-- Commentaire -->
+          <div>
+            <label class="text-sm font-medium mb-1.5 block text-foreground" for="commentaireProfil">Commentaire</label>
+            <textarea
+              id="commentaireProfil"
+              formControlName="commentaire"
+              rows="3"
+              placeholder="Observations sur le profil familial…"
+              class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none">
+            </textarea>
+          </div>
+
           <div class="flex justify-end">
             <button type="button" (click)="saveProfil()" appButton size="sm" [disabled]="isSavingProfil()">
               <lucide-icon [img]="SaveIcon" [size]="14" />
@@ -111,6 +123,29 @@
               <tr class="border-t border-border bg-muted/10">
                 <td colspan="2" class="px-4 py-2 text-sm font-semibold text-muted-foreground">Total charges familiales</td>
                 <td class="px-4 py-2 text-right font-bold tabular-nums">{{ formatMontant(totalChargesFamilialesDetail()) }}</td>
+                <td></td>
+              </tr>
+              <tr class="border-t border-border bg-violet-500/5">
+                <td class="px-4 py-2.5 text-sm font-medium text-muted-foreground">Imprévus</td>
+                <td class="px-4 py-2.5">
+                  <select
+                    [value]="imprevuChargeFamille() ?? ''"
+                    (change)="saveImprevuChargesFamiliales($event)"
+                    [disabled]="isSavingImprevu()"
+                    class="rounded-md border border-border bg-background px-2.5 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 cursor-pointer">
+                    <option value="" disabled>—</option>
+                    @for (opt of imprevuFamOptions; track opt.value) {
+                      <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                  </select>
+                </td>
+                <td class="px-4 py-2.5 text-right font-semibold tabular-nums text-violet-600 dark:text-violet-400">
+                  @if (imprevuChargeFamille() != null) {
+                    {{ formatMontant(montantImprevuChargesFam()) }}
+                  } @else {
+                    <span class="text-muted-foreground text-xs">Sélectionner un %</span>
+                  }
+                </td>
                 <td></td>
               </tr>
             </tfoot>
@@ -235,26 +270,22 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-border bg-muted/10">
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Nom</th>
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Relation</th>
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Âge</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Membre</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Nbre</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Âge moy.</th>
                 <th class="px-4 py-2 text-left font-medium text-muted-foreground">Activité</th>
-                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Revenu (FCFA)</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Revenus (FCFA)</th>
                 <th class="px-4 py-2 w-10"></th>
               </tr>
             </thead>
             <tbody>
               @for (membre of membresMenage(); track membre.id) {
                 <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
-                  <td class="px-4 py-2.5 font-medium">{{ membre.nom }}</td>
-                  <td class="px-4 py-2.5">
-                    <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
-                      {{ relationLabel(membre.relation) }}
-                    </span>
-                  </td>
-                  <td class="px-4 py-2.5 text-muted-foreground">{{ membre.age ?? '—' }}</td>
+                  <td class="px-4 py-2.5 font-medium">{{ membre.membreFamille ?? '—' }}</td>
+                  <td class="px-4 py-2.5 text-right tabular-nums">{{ membre.nombre ?? '—' }}</td>
+                  <td class="px-4 py-2.5 text-right text-muted-foreground">{{ membre.age ?? '—' }}</td>
                   <td class="px-4 py-2.5 text-muted-foreground">{{ membre.activite ?? '—' }}</td>
-                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(membre.revenu) }}</td>
+                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(membre.revenus) }}</td>
                   <td class="px-4 py-2.5">
                     <button type="button" (click)="openDeleteMembre(membre)"
                       class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
@@ -353,11 +384,14 @@
   </app-drawer-header>
   <app-drawer-content>
     <form [formGroup]="membreForm" class="flex flex-col gap-4">
-      <app-form-input name="nom" label="Nom complet" placeholder="Ex: Kouassi Marie" required />
-      <app-form-select name="relation" label="Relation" [options]="relationOptions" placeholder="Sélectionner" required />
-      <app-form-input name="age" label="Âge" type="number" placeholder="Ex: 35" />
-      <app-form-input name="activite" label="Activité / Profession" placeholder="Ex: Commerçante" />
-      <app-form-input name="revenu" label="Revenu mensuel (FCFA)" type="number" placeholder="Ex: 75000" />
+      <app-form-select name="membreFamille" label="Type de membre" [options]="membresFamilleOptions" placeholder="Sélectionner" required />
+      <div class="grid grid-cols-2 gap-3">
+        <app-form-input name="nombre" label="Nombre" type="number" placeholder="Ex: 2" required />
+        <app-form-input name="age" label="Âge moyen" type="number" placeholder="Ex: 12" />
+      </div>
+      <app-form-input name="activite" label="Activité / Profession" placeholder="Ex: Scolarisés" />
+      <app-form-input name="revenus" label="Revenus mensuels (FCFA)" type="number" placeholder="Ex: 75000" />
+      <app-form-input name="justifs" label="Justificatifs" placeholder="Ex: Bulletins scolaires, etc." />
     </form>
   </app-drawer-content>
   <app-drawer-footer>
@@ -376,7 +410,7 @@
     <app-dialog-title>Confirmer la suppression</app-dialog-title>
     <app-dialog-description>
       @if (membreToDelete) {
-        Supprimer « {{ membreToDelete.nom }} » du ménage ? Cette action est irréversible.
+        Supprimer « {{ membreToDelete.membreFamille ?? 'ce membre' }} » du ménage ? Cette action est irréversible.
       }
     </app-dialog-description>
   </app-dialog-header>

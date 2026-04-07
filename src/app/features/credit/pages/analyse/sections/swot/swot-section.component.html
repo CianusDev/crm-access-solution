@@ -99,10 +99,51 @@
       <app-card-content>
         <form [formGroup]="propositionForm" class="flex flex-col gap-4">
 
+          <!-- Ligne 1 : montants -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <app-form-input name="montantPropose" label="Montant proposé (FCFA)" type="number" placeholder="Ex: 2000000" />
             <app-form-input name="duree" label="Durée (mois)" type="number" placeholder="Ex: 24" />
             <app-form-input name="mensualite" label="Mensualité (FCFA)" type="number" placeholder="Ex: 95000" />
+          </div>
+
+          <!-- Ligne 2 : date échéance + période de grâce -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <app-form-input name="dateEcheanceSouhaite" label="Date échéance souhaitée" type="date" />
+
+            <!-- Période de grâce -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium">Période de grâce</label>
+              <select
+                (change)="onPeriodeGraceChange($event)"
+                class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring">
+                <option value="">— Choisir —</option>
+                @for (opt of ouiNonOptions; track opt.value) {
+                  <option [value]="opt.value" [selected]="propositionForm.value.periodeGrace === opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            </div>
+
+            @if (hasPeriodeGrace()) {
+              <app-form-input name="nbreMoisGrace" label="Nombre de mois de grâce" type="number" placeholder="Ex: 3" />
+            }
+          </div>
+
+          <!-- Ligne 3 : garanties booléennes + deposit -->
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <app-form-select name="hypotheque" label="Hypothèque" [options]="ouiNonOptions" placeholder="— Choisir —" />
+            <app-form-select name="acteNotarie" label="Acte notarié" [options]="ouiNonOptions" placeholder="— Choisir —" />
+            <app-form-select name="assurMultiRisk" label="Assur. multi-risque" [options]="ouiNonOptions" placeholder="— Choisir —" />
+            <app-form-select name="deposit" label="Deposit (%)" [options]="depositOptions" placeholder="— Choisir —" />
+          </div>
+
+          <!-- Argumentaire -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium">Argumentaire</label>
+            <textarea
+              formControlName="argumentaire"
+              rows="3"
+              class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+              placeholder="Argumentaire de la proposition…"></textarea>
           </div>
 
           <div class="flex flex-col gap-1.5">
