@@ -67,19 +67,24 @@ const GP_AVANCE_FACTURE: RequiredDoc[] = [
 
 // ── GP — Avance sur Traite ───────────────────────────────────────────────
 const GP_AVANCE_TRAITE: RequiredDoc[] = [
-  { libelle: 'La traite', obligation: true },
-  { libelle: 'Ordre irrévocable de domiciliation', obligation: true },
   { libelle: 'Facture', obligation: true },
-  { libelle: 'Bon de commande', obligation: true },
-  { libelle: 'Contrat lié à la traite', obligation: true },
-  { libelle: "Demande physique d'avance sur traite", obligation: true },
-  { libelle: 'Autorisation de prélèvement des frais', obligation: true },
+  { libelle: 'RCCM', obligation: true },
+  { libelle: 'DFE', obligation: true },
+  { libelle: 'Contrat de bail', obligation: true },
+  { libelle: 'Certificat de résidence ou quittance CIE / SODECI', obligation: true },
+  { libelle: 'CNI du client', obligation: true },
+  { libelle: "Demande physique d'avance sur facture", obligation: true },
+  { libelle: 'Fiche de prélèvement des frais', obligation: true },
 ];
 
 // ── GP — Relais Business Magasin ─────────────────────────────────────────
 const GP_RELAIS_MAGASIN: RequiredDoc[] = [
   { libelle: 'Courrier de demande de prêt signé par le mandataire', obligation: true },
-  { libelle: "Statuts / PV de l'AG donnant quitus au mandataire de contacter un prêt chez CREDIT ACCESS", obligation: true },
+  {
+    libelle:
+      "Statuts / PV de l'AG donnant quitus au mandataire de contacter un prêt chez CREDIT ACCESS",
+    obligation: true,
+  },
   { libelle: "Fiche d'autorisation de prélèvement des frais de demande", obligation: true },
   { libelle: 'RCCM', obligation: true },
   { libelle: 'Contrat de bail', obligation: true },
@@ -215,12 +220,17 @@ export function allRequiredDocsUploaded(
   requiredDocs: RequiredDoc[],
   uploadedLibelles: string[],
 ): boolean {
-  const uploaded = uploadedLibelles.map(l => l.trim().toLowerCase());
-  return requiredDocs
-    .filter(d => d.obligation)
-    .every(d => uploaded.some(u => u === d.libelle.trim().toLowerCase()));
+  const uploaded = uploadedLibelles.map((l) => l.trim().toLowerCase());
+  const result = requiredDocs
+    .filter((d) => d.obligation)
+    .every((d) => {
+      const match = uploaded.some((u) => u === d.libelle.trim().toLowerCase());
+      // if (!match) console.log('❌ NON MATCHÉ:', JSON.stringify(d.libelle), '→ uploadés:', uploaded);
+      return match;
+    });
+  // console.log('allRequiredDocsUploaded result:', result);
+  return result;
 }
-
 /**
  * Retourne la liste des documents requis pour CA/CAA au statut 4
  * pour les codes 032 (Bon de Commande) et 033 (Facture).
@@ -235,9 +245,7 @@ export function getRequiredDocsForCACaa(
   switch (typeCreditCode) {
     case '032': // Avance sur Bon de Commande
       // Statut juridique 1 = Entreprise Individuelle → pas de statut requis
-      return statutJuridique === 1 
-        ? GP_BON_COMMANDE_SANS_STATUT 
-        : GP_BON_COMMANDE_AVEC_STATUT;
+      return statutJuridique === 1 ? GP_BON_COMMANDE_SANS_STATUT : GP_BON_COMMANDE_AVEC_STATUT;
 
     case '033': // Avance sur Facture
       return GP_AVANCE_FACTURE;

@@ -34,14 +34,31 @@ export function canSendDossierFromState(i: CanSendDossierInput): boolean {
 
   if (i.isGP) {
     const docsOk =
-      i.requiredDocs.length === 0 ||
-      allRequiredDocsUploaded(i.requiredDocs, i.uploadedDocLibelles);
-    if (!docsOk) return false;
-    if (!gpClientProfileCompleteForSend(h.client)) return false;
+      i.requiredDocs.length === 0 || allRequiredDocsUploaded(i.requiredDocs, i.uploadedDocLibelles);
+    console.log('docsOk:', docsOk);
+
+    const profileOk = gpClientProfileCompleteForSend(h.client);
+    console.log('profileOk:', profileOk);
+
     const isPM = h.client?.typeAgent !== 'PP';
-    if (!gpTypeAttachmentCompleteForSend(h.typeCredit?.code, isPM, i.fiche, i.demandeDetail)) {
-      return false;
-    }
+    const attachmentOk = gpTypeAttachmentCompleteForSend(
+      h.typeCredit?.code,
+      isPM,
+      i.fiche,
+      i.demandeDetail,
+    );
+    console.log(
+      'attachmentOk:',
+      attachmentOk,
+      '| isPM:',
+      isPM,
+      '| crFacture:',
+      i.demandeDetail?.crFacture,
+    );
+
+    if (!docsOk) return false;
+    if (!profileOk) return false;
+    if (!attachmentOk) return false;
     return true;
   }
 
@@ -98,7 +115,9 @@ export function canFaireResumeFromState(i: CanFaireResumeInput): boolean {
 }
 
 /** Message utilisateur quand l’AR (ou Admin en statut 5) ne peut pas ouvrir le résumé. */
-export function resumeAccessBlockedMessage(ficheHeader: CreditFicheDemandeDetail | null | undefined): string {
+export function resumeAccessBlockedMessage(
+  ficheHeader: CreditFicheDemandeDetail | null | undefined,
+): string {
   const required = getRequiredDocsForAR(ficheHeader?.typeCredit?.code);
   if (required.length > 0) {
     return "Merci de charger tous les documents obligatoires (liste dans l'en-tête) avant d'accéder au résumé.";
@@ -106,5 +125,5 @@ export function resumeAccessBlockedMessage(ficheHeader: CreditFicheDemandeDetail
   if (ficheHeader?.statut === 5) {
     return "Merci de charger l'analyse financière et le document actifs et garanties avant le résumé.";
   }
-  return "Documents manquants pour accéder au résumé.";
+  return 'Documents manquants pour accéder au résumé.';
 }

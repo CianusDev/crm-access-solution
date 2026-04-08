@@ -23,14 +23,17 @@
         </div>
 
         <!-- Bouton Ajouter -->
-        <app-dropdown
+        <!-- <app-dropdown
           [items]="documentTypesDropdown"
           (itemSelected)="openAddDocument($event.label)">
-          <button dropdownTrigger type="button" appButton size="sm">
-            <lucide-icon [img]="PlusIcon" [size]="14" />
-            <span class="ml-1 hidden sm:inline">Ajouter</span>
-          </button>
-        </app-dropdown>
+
+        </app-dropdown> -->
+        <button
+          (click)="openAddDocument('')"
+          type="button" appButton size="sm">
+          <lucide-icon [img]="PlusIcon" [size]="14" />
+          <span class="ml-1 hidden sm:inline">Ajouter</span>
+        </button>
       </div>
     </div>
   </app-card-header>
@@ -58,53 +61,44 @@
       </div>
     } @else {
       <!-- Liste des documents -->
-      <div class="overflow-x-auto">
-        <table class="w-full text-xs">
-          <thead>
-            <tr class="border-b border-border">
-              <th class="px-4 py-2.5 text-left font-medium text-muted-foreground">Libellé</th>
-              <th class="px-4 py-2.5 text-left font-medium text-muted-foreground">Description</th>
-              <th class="px-4 py-2.5 text-left font-medium text-muted-foreground">Ajouté par</th>
-              <th class="px-4 py-2.5 text-left font-medium text-muted-foreground">Date</th>
-              <th class="px-4 py-2.5 text-center font-medium text-muted-foreground w-28">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div class="grid grid-cols-4 gap-4 ">
             @for (doc of documentsFiltered(); track doc.id) {
-              <tr class="border-b border-border hover:bg-muted/30 transition-colors">
-                <td class="px-4 py-2.5 font-medium">{{ doc.libelle }}</td>
-                <td class="px-4 py-2.5 text-muted-foreground">{{ doc.description || '—' }}</td>
-                <td class="px-4 py-2.5 text-muted-foreground">{{ doc.user?.nomPrenom || '—' }}</td>
-                <td class="px-4 py-2.5 text-muted-foreground">{{ doc.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
-                <td class="px-4 py-2.5">
-                  <div class="flex items-center justify-center gap-1">
-                    <button
-                      type="button"
-                      (click)="viewDocument(doc)"
-                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                      title="Voir le document">
-                      <lucide-icon [img]="EyeIcon" [size]="13" />
-                    </button>
-                    <button
-                      type="button"
-                      (click)="downloadDocument(doc)"
-                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-blue-600 hover:bg-blue-600/10 transition-colors"
-                      title="Télécharger">
-                      <lucide-icon [img]="DownloadIcon" [size]="13" />
-                    </button>
-                    <button
-                      type="button"
-                      (click)="openDeleteDocument(doc.id, doc.libelle)"
-                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                      title="Supprimer">
-                      <lucide-icon [img]="Trash2Icon" [size]="13" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
+              <div
+                class="group relative flex flex-col rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all overflow-hidden">
+                <!-- En-tête avec icône -->
+                <div
+
+                  class="flex flex-col items-center justify-center h-32 p-4 gap-3 bg-gradient-to-br from-primary/5 to-primary/10 border-b border-border">
+                  <lucide-icon [img]="FileTextIcon" [size]="40" class="text-primary/60" />
+                  <h4 class="font-semibold text-sm text-center text-foreground line-clamp-3 mb-2">{{ doc.libelle }}</h4>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center justify-end py-2 gap-1">
+                  <button
+                    type="button"
+                    (click)="viewDocument(doc)"
+                    class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    title="Voir le document">
+                    <lucide-icon [img]="EyeIcon" [size]="13" />
+                  </button>
+                  <button
+                    type="button"
+                    (click)="downloadDocument(doc)"
+                    class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-blue-600 hover:bg-blue-600/10 transition-colors"
+                    title="Télécharger">
+                    <lucide-icon [img]="DownloadIcon" [size]="13" />
+                  </button>
+                  <button
+                    type="button"
+                    (click)="openDeleteDocument(doc.id, doc.libelle)"
+                    class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    title="Supprimer">
+                    <lucide-icon [img]="Trash2Icon" [size]="13" />
+                  </button>
+                </div>
+              </div>
             }
-          </tbody>
-        </table>
       </div>
     }
   </app-card-content>
@@ -121,7 +115,7 @@
     <form [formGroup]="docForm" class="flex flex-col gap-4">
       <app-form-input name="libelle" label="Libellé du document" placeholder="Ex: Contrat de prêt" required />
       <app-form-textarea name="description" label="Description" placeholder="Description optionnelle du document" [rows]="3" />
-      
+
       <div class="flex flex-col gap-1.5">
         <label class="text-sm font-medium text-foreground">
           Fichier PDF <span class="text-destructive">*</span>

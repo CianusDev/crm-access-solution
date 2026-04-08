@@ -80,7 +80,9 @@
       (voirResume)="goVoirResume()"
       (confirmationFraisChange)="confirmationFrais.set($event)"
       (validerDossierRCCC)="openValiderDossierRCCCDialog()"
-      (remettreEnCircuit)="openRemettreEnCircuitDialog()" />
+      (remettreEnCircuit)="openRemettreEnCircuitDialog()"
+      [uploadingDocLibelle]="uploadingDocLibelle()"
+    />
   } @else {
     <div class="h-40 rounded-xl border border-border bg-card animate-pulse"></div>
   }
@@ -470,6 +472,30 @@
       </button>
     </app-dialog-footer>
   </app-dialog>
+
+  <!-- ── Dialog : Upload document ──────────────────────────────────────────── -->
+  <!-- <app-dialog [(open)]="uploadDocDialogOpen">
+    <app-dialog-header>
+      <app-dialog-title>Charger un document</app-dialog-title>
+      <app-dialog-description>
+        Document : {{ uploadDocLibelle() }}
+      </app-dialog-description>
+    </app-dialog-header>
+    <div class="py-4">
+      <app-doc-analyse-upload
+        [ref]="ref()"
+        [libelle]="uploadDocLibelle()"
+        [label]="uploadDocLibelle()"
+        articleLabel="le document"
+        (uploadComplete)="onUploadDocComplete()" />
+    </div>
+    <app-dialog-footer>
+      <button type="button" appButton variant="outline" size="sm"
+        (click)="uploadDocDialogOpen = false">
+        Fermer
+      </button>
+    </app-dialog-footer>
+  </app-dialog> -->
 
   <!-- ── FAB : Observations ──────────────────────────────────────────────── -->
   @if (fiche()) {

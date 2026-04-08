@@ -1,82 +1,91 @@
-import { Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import {
-  LucideAngularModule,
-  ChevronLeft,
-  RefreshCw,
-  AlertCircle,
-  FileText,
-  MessageSquare,
-} from 'lucide-angular';
+import { UserRole } from '@/core/models/user.model';
+import { PermissionService } from '@/core/services/permission/permission.service';
+import { ToastService } from '@/core/services/toast/toast.service';
+import { Avatar } from '@/shared/components/avatar/avatar.component';
 import { BadgeComponent } from '@/shared/components/badge/badge.component';
-import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import {
   DialogComponent,
-  DialogHeaderComponent,
-  DialogTitleComponent,
   DialogDescriptionComponent,
   DialogFooterComponent,
+  DialogHeaderComponent,
+  DialogTitleComponent,
 } from '@/shared/components/dialog/dialog.component';
+import {
+  DrawerComponent,
+  DrawerContentComponent,
+  DrawerHeaderComponent,
+  DrawerTitleComponent,
+} from '@/shared/components/drawer/drawer.component';
 import { FormInput } from '@/shared/components/form-input/form-input.component';
-import { FormTextarea } from '@/shared/components/form-textarea/form-textarea.component';
 import { FormSelect } from '@/shared/components/form-select/form-select.component';
+import { FormTextarea } from '@/shared/components/form-textarea/form-textarea.component';
+import { ButtonDirective } from '@/shared/directives/ui/button/button';
+import { StripHtmlPipe } from '@/shared/pipes/strip-html/strip-html.pipe';
+import { DatePipe } from '@angular/common';
+import {
+  ChangeDetectorRef,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  OnInit,
+  signal,
+} from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import {
+  AlertCircle,
+  ChevronLeft,
+  FileText,
+  LucideAngularModule,
+  MessageSquare,
+  RefreshCw,
+} from 'lucide-angular';
+import { forkJoin } from 'rxjs';
+import {
+  getRequiredDocsForAR,
+  getRequiredDocsForGP,
+  REQUIRED_DOCS_SPME_VISITE,
+  RequiredDoc,
+} from '../../constants/required-documents';
+import { CREDIT_STATUTS, CreditFicheDemandeDetail } from '../../interfaces/credit.interface';
 import { CreditService } from '../../services/credit/credit.service';
+import {
+  canFaireResumeFromState,
+  canSendDossierFromState,
+  resumeAccessBlockedMessage,
+} from '../../validation/analyse-send-eligibility';
+import { AnalyseHeaderCardComponent } from './_components/analyse-header-card.component';
+import { DocAnalyseUploadComponent } from './_components/doc-analyse-upload.component';
 import {
   AnalyseCreditFlowService,
   AnalyseFlowPasswordException,
 } from './analyse-credit-flow.service';
-import { ToastService } from '@/core/services/toast/toast.service';
-import { CREDIT_STATUTS, CreditFicheDemandeDetail } from '../../interfaces/credit.interface';
 import { AnalyseCreditResolvedData } from './analyse-credit.resolver';
-import { ActiviteSectionComponent } from './sections/activite/activite-section.component';
-import { AchatsSectionComponent } from './sections/achats/achats-section.component';
-import { TresorerieSectionComponent } from './sections/tresorerie/tresorerie-section.component';
-import { FamilialSectionComponent } from './sections/familial/familial-section.component';
-import { GarantiesSectionComponent } from './sections/garanties/garanties-section.component';
-import { CautionsSectionComponent } from './sections/cautions/cautions-section.component';
-import { DocumentsSectionComponent } from './sections/documents/documents-section.component';
-import { SwotSectionComponent } from './sections/swot/swot-section.component';
-import { EnvoiSectionComponent } from './sections/envoi/envoi-section.component';
-import { GeolocalisationSectionComponent } from './sections/geolocalisation/geolocalisation-section.component';
-import { DemandeSectionComponent } from './sections/demande/demande-section.component';
-import { AnalyseHeaderCardComponent } from './_components/analyse-header-card.component';
-import { DocAnalyseUploadComponent } from './_components/doc-analyse-upload.component';
-import { PermissionService } from '@/core/services/permission/permission.service';
-import { UserRole } from '@/core/models/user.model';
 import {
-  RequiredDoc,
-  getRequiredDocsForGP,
-  getRequiredDocsForAR,
-  REQUIRED_DOCS_SPME_VISITE,
-} from '../../constants/required-documents';
-import {
-  canSendDossierFromState,
-  canFaireResumeFromState,
-  resumeAccessBlockedMessage,
-} from '../../validation/analyse-send-eligibility';
-import {
+  ANALYSE_SECTIONS,
+  CA_CAA_ROLES,
   filterAnalyseTabsByRole,
   filterAnalyseTabsByWorkflowStatut,
+  GARANTIES_SECTIONS,
   GP_ROLES,
   RC_CC_ROLES,
-  CA_CAA_ROLES,
-  ANALYSE_SECTIONS,
-  GARANTIES_SECTIONS,
-  type AnalyseTabId,
   type AnalyseSectionId,
+  type AnalyseTabId,
   type GarantiesSectionId,
 } from './analyse-credit.tabs';
-import { Avatar } from '@/shared/components/avatar/avatar.component';
-import {
-  DrawerComponent,
-  DrawerHeaderComponent,
-  DrawerTitleComponent,
-  DrawerContentComponent,
-} from '@/shared/components/drawer/drawer.component';
-import { DatePipe } from '@angular/common';
-import { StripHtmlPipe } from '@/shared/pipes/strip-html/strip-html.pipe';
+import { AchatsSectionComponent } from './sections/achats/achats-section.component';
+import { ActiviteSectionComponent } from './sections/activite/activite-section.component';
+import { CautionsSectionComponent } from './sections/cautions/cautions-section.component';
+import { DemandeSectionComponent } from './sections/demande/demande-section.component';
+import { DocumentsSectionComponent } from './sections/documents/documents-section.component';
+import { EnvoiSectionComponent } from './sections/envoi/envoi-section.component';
+import { FamilialSectionComponent } from './sections/familial/familial-section.component';
+import { GarantiesSectionComponent } from './sections/garanties/garanties-section.component';
+import { GeolocalisationSectionComponent } from './sections/geolocalisation/geolocalisation-section.component';
+import { SwotSectionComponent } from './sections/swot/swot-section.component';
+import { TresorerieSectionComponent } from './sections/tresorerie/tresorerie-section.component';
 
 @Component({
   selector: 'app-analyse-credit',
@@ -133,6 +142,8 @@ export class AnalyseCreditComponent implements OnInit {
 
   readonly data = input<AnalyseCreditResolvedData>();
 
+  private readonly cdr = inject(ChangeDetectorRef);
+
   constructor() {
     effect(() => {
       const data = this.data();
@@ -172,18 +183,16 @@ export class AnalyseCreditComponent implements OnInit {
   readonly isRCCC = computed(() => this.permissionService.hasRole(...RC_CC_ROLES));
   readonly isCACaa = computed(() => this.permissionService.hasRole(...CA_CAA_ROLES));
   readonly isAR = computed(() => this.permissionService.hasRole(UserRole.AnalysteRisque));
-  readonly isSuperviseurPME = computed(() => this.permissionService.hasRole(UserRole.SuperviseurPME));
+  readonly isSuperviseurPME = computed(() =>
+    this.permissionService.hasRole(UserRole.SuperviseurPME),
+  );
   readonly isSuperviseurRisqueZone = computed(() =>
     this.permissionService.hasRole(UserRole.SuperviseurRisqueZone),
   );
   readonly isAdmin = computed(() => this.permissionService.hasRole(UserRole.Admin));
   /** Legacy : CA / CAA / Admin sur le bandeau « Affecter à un AR » (statut 4). */
   readonly isChefAgenceWorkflow = computed(() =>
-    this.permissionService.hasRole(
-      UserRole.ChefAgence,
-      UserRole.ChefAgenceAdjoint,
-      UserRole.Admin,
-    ),
+    this.permissionService.hasRole(UserRole.ChefAgence, UserRole.ChefAgenceAdjoint, UserRole.Admin),
   );
   /** AR ou Admin sur dossier en analyse financière (statut 5) — mêmes actions bandeau que legacy. */
   readonly showAnalysteBandeau = computed(() => {
@@ -261,8 +270,7 @@ export class AnalyseCreditComponent implements OnInit {
       return REQUIRED_DOCS_SPME_VISITE;
     }
     const bandeauAnalyste =
-      this.isAR() ||
-      (this.permissionService.hasRole(UserRole.Admin) && h.statut === 5);
+      this.isAR() || (this.permissionService.hasRole(UserRole.Admin) && h.statut === 5);
     if (bandeauAnalyste) {
       return getRequiredDocsForAR(code);
     }
@@ -338,7 +346,9 @@ export class AnalyseCreditComponent implements OnInit {
   readonly zonesLoading = signal(false);
   readonly arsLoading = signal(false);
   readonly zones = signal<{ id: number; libelle: string }[]>([]);
-  readonly ars = signal<{ id: number; codeAr: string; nom: string; prenom: string; libelle?: string }[]>([]);
+  readonly ars = signal<
+    { id: number; codeAr: string; nom: string; prenom: string; libelle?: string }[]
+  >([]);
 
   readonly affecterARForm = this.fb.group({
     zone: ['', Validators.required],
@@ -403,7 +413,26 @@ export class AnalyseCreditComponent implements OnInit {
     const r = this.ref();
     if (!r) return;
     this.creditService.getDocuments(r).subscribe({
-      next: (docs) => this.uploadedDocLibelles.set(docs.map((d) => d.libelle ?? '')),
+      next: (docs) => {
+        const libelles = docs.map((d) => d.libelle ?? '');
+        console.log('docs chargés:', libelles);
+        console.log(
+          'docs requis:',
+          this.requiredDocs().map((d) => d.libelle),
+        );
+        console.log('typeCredit code:', this.ficheHeader()?.typeCredit?.code);
+        console.log('isGP:', this.isGP());
+        console.log('requiredDocs:', this.requiredDocs());
+        console.log(
+          'raw docs API:',
+          docs.map((d) => ({
+            libelle: d.libelle,
+            chars: [...d.libelle].map((c) => c.charCodeAt(0)),
+          })),
+        );
+        this.uploadedDocLibelles.set(docs.map((d) => d.libelle ?? ''));
+        console.log('uploadedDocLibelles après set:', this.uploadedDocLibelles());
+      },
       error: () => {},
     });
   }
@@ -421,11 +450,85 @@ export class AnalyseCreditComponent implements OnInit {
     this.activeGarantiesSection.set(id);
   }
 
+  // ── Upload natif direct (sans dialog intermédiaire) ───────────────────
+  readonly uploadingDocLibelle = signal<string | null>(null);
+
   onChargerDocuments(libelle: string | null) {
-    this.switchTab('documents');
-    if (libelle) {
-      this.pendingDocLibelle.set({ libelle, version: ++this.pendingDocVersion });
+    if (!libelle) {
+      this.switchTab('documents');
+      return;
     }
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/pdf';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+
+    input.addEventListener('change', () => {
+      const file = input.files?.[0];
+      document.body.removeChild(input);
+      if (!file) return;
+      this._uploadDoc(libelle, file);
+    });
+
+    input.click();
+  }
+
+  private _uploadDoc(libelle: string, file: File) {
+    this.uploadingDocLibelle.set(libelle);
+
+    this.creditService.getDocuments(this.ref()).subscribe({
+      next: (docs) => {
+        const existing = docs.find(
+          (d) => d.libelle?.trim().toLowerCase() === libelle.trim().toLowerCase(),
+        );
+
+        const doUpload = () => {
+          const formData = new FormData();
+          formData.append('refDemande', this.ref());
+          formData.append('libelle', libelle);
+          formData.append('description', libelle);
+          formData.append('document', file);
+
+          this.creditService.uploadDocument(formData).subscribe({
+            next: () => {
+              this.uploadingDocLibelle.set(null);
+              this.toast.success(`"${libelle}" chargé avec succès.`);
+
+              const current = this.uploadedDocLibelles();
+              if (!current.some((l) => l.trim().toLowerCase() === libelle.trim().toLowerCase())) {
+                this.uploadedDocLibelles.set([...current, libelle]);
+              }
+
+              this.cdr.markForCheck(); // ← force la réévaluation
+
+              setTimeout(() => this.loadUploadedDocs(), 1000);
+            },
+            error: () => {
+              this.uploadingDocLibelle.set(null);
+              this.toast.error(`Erreur lors du chargement de "${libelle}".`);
+            },
+          });
+        };
+
+        if (existing?.id != null) {
+          this.creditService.deleteDocument(existing.id).subscribe({
+            next: () => doUpload(),
+            error: () => {
+              this.uploadingDocLibelle.set(null);
+              this.toast.error(`Erreur lors de la suppression de l'ancien document.`);
+            },
+          });
+        } else {
+          doUpload();
+        }
+      },
+      error: () => {
+        this.uploadingDocLibelle.set(null);
+        this.toast.error('Erreur lors de la vérification des documents existants.');
+      },
+    });
   }
 
   onDocsChanged() {
@@ -447,28 +550,26 @@ export class AnalyseCreditComponent implements OnInit {
     this.envoiLoading.set(true);
     this.envoiError.set(null);
 
-    this.analyseFlow
-      .envoyerDossierChefAgence(this.ref(), password!, observation || '')
-      .subscribe({
-        next: (data) => {
-          this.envoiLoading.set(false);
-          this.envoiDialogOpen = false;
-          if (data.status === 200) {
-            this.toast.success('Le dossier a été envoyé avec succès.');
-            this.router.navigate(['/app/credit/list']);
-          } else {
-            this.toast.error(data.message ?? "Échec de l'envoi du dossier.");
-          }
-        },
-        error: (err: unknown) => {
-          this.envoiLoading.set(false);
-          if (err instanceof AnalyseFlowPasswordException) {
-            this.envoiError.set(err.message);
-            return;
-          }
-          this.toast.error("Erreur lors de l'envoi du dossier.");
-        },
-      });
+    this.analyseFlow.envoyerDossierChefAgence(this.ref(), password!, observation || '').subscribe({
+      next: (data) => {
+        this.envoiLoading.set(false);
+        this.envoiDialogOpen = false;
+        if (data.status === 200) {
+          this.toast.success('Le dossier a été envoyé avec succès.');
+          this.router.navigate(['/app/credit/list']);
+        } else {
+          this.toast.error(data.message ?? "Échec de l'envoi du dossier.");
+        }
+      },
+      error: (err: unknown) => {
+        this.envoiLoading.set(false);
+        if (err instanceof AnalyseFlowPasswordException) {
+          this.envoiError.set(err.message);
+          return;
+        }
+        this.toast.error("Erreur lors de l'envoi du dossier.");
+      },
+    });
   }
 
   // ── N° Perfect ─────────────────────────────────────────────────────────
@@ -544,7 +645,7 @@ export class AnalyseCreditComponent implements OnInit {
     this.affecterARError.set(null);
     this.ars.set([]);
     this.affecterARDialogOpen = true;
-    
+
     this.zonesLoading.set(true);
     this.analyseFlow.loadZones().subscribe({
       next: (zones) => {
@@ -593,13 +694,7 @@ export class AnalyseCreditComponent implements OnInit {
     this.affecterARError.set(null);
 
     this.analyseFlow
-      .affecterAnalysteRisque(
-        this.ref(),
-        Number(zone),
-        ar!,
-        password!,
-        observation || '',
-      )
+      .affecterAnalysteRisque(this.ref(), Number(zone), ar!, password!, observation || '')
       .subscribe({
         next: (data) => {
           this.affecterARLoading.set(false);

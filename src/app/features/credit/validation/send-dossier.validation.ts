@@ -34,9 +34,11 @@ export function gpTypeAttachmentCompleteForSend(
   if (typeCreditCode === '032') {
     return demandeDetail?.bonDeCommande != null;
   }
+
   if (typeCreditCode === '033') {
     return demandeDetail?.crFacture != null;
   }
+
   if (typeCreditCode === '035' || typeCreditCode === '036') {
     return (fiche?.magasins?.length ?? 0) > 0;
   }
@@ -71,7 +73,11 @@ export function gpPmClientProfileCompleteForSend(c: CreditClient | null | undefi
   if (!ent) return false;
 
   if (!present(c.tpePme)) return false;
-  if (ent.statutJuridique === undefined || ent.statutJuridique === null || ent.statutJuridique === '') {
+  if (
+    ent.statutJuridique === undefined ||
+    ent.statutJuridique === null ||
+    ent.statutJuridique === ''
+  ) {
     return false;
   }
   if (ent.capitalSocial === undefined || ent.capitalSocial === null) return false;
@@ -90,8 +96,7 @@ export function gpPmClientProfileCompleteForSend(c: CreditClient | null | undefi
 export function gpPpClientProfileCompleteForSend(c: CreditClient | null | undefined): boolean {
   if (!c) return false;
   const nat = c.nationalite;
-  const natOk =
-    nat != null && (nat.id != null || present(nat.nationalite));
+  const natOk = nat != null && (nat.id != null || present(nat.nationalite));
   return (
     present(c.dataNaiss) &&
     present(c.sexe) &&

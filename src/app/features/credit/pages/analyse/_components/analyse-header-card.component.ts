@@ -342,10 +342,15 @@ const PREDEFINED_DOC_TYPES = [
                 size="sm"
                 class="flex items-center min-w-96! gap-1.5"
                 dropdownTrigger
+                [disabled]="uploadingDocLibelle() !== null"
               >
-                <lucide-icon [img]="UploadIcon" [size]="14" />
-                Charger les documents
-                <lucide-icon [img]="ChevronDownIcon" [size]="12" />
+                @if (uploadingDocLibelle()) {
+                  Chargement...
+                } @else {
+                  <lucide-icon [img]="UploadIcon" [size]="14" />
+                  Charger les documents
+                  <lucide-icon [img]="ChevronDownIcon" [size]="12" />
+                }
               </button>
             </app-dropdown>
             <button
@@ -625,7 +630,7 @@ export class AnalyseHeaderCardComponent {
   readonly docTypeItems = computed<DropdownItem[]>(() => {
     const f = this.fiche();
     const code = f?.typeCredit?.code;
-    
+
     /** Legacy : pas de menu « Charger les documents » pour AR sur avance BC / facture (032, 033). */
     if (this.showAnalysteBandeau() && (code === '032' || code === '033')) {
       return [];
@@ -634,10 +639,11 @@ export class AnalyseHeaderCardComponent {
     /** CA/CAA statut 4 codes 032/033 : dropdown docs spécifiques */
     if (this.isChefAgenceWorkflow() && f?.statut === 4 && (code === '032' || code === '033')) {
       const statutJuridique = f.client?.entreprise?.statutJuridique;
-      const sj = typeof statutJuridique === 'string' ? parseInt(statutJuridique, 10) : statutJuridique;
+      const sj =
+        typeof statutJuridique === 'string' ? parseInt(statutJuridique, 10) : statutJuridique;
       const caCaaDocs = getRequiredDocsForCACaa(code, sj);
       const uploaded = this.uploadedDocLibelles().map((l) => l.trim().toLowerCase());
-      
+
       return caCaaDocs.map((doc) => {
         const alreadyUploaded = uploaded.some((u) => u === doc.libelle.trim().toLowerCase());
         return {
@@ -670,4 +676,6 @@ export class AnalyseHeaderCardComponent {
       action: () => this.chargerDocuments.emit(label),
     }));
   });
+
+  readonly uploadingDocLibelle = input<string | null>(null);
 }
