@@ -176,6 +176,7 @@ export class AnalyseCreditComponent implements OnInit {
   readonly isSuperviseurRisqueZone = computed(() =>
     this.permissionService.hasRole(UserRole.SuperviseurRisqueZone),
   );
+  readonly isAdmin = computed(() => this.permissionService.hasRole(UserRole.Admin));
   /** Legacy : CA / CAA / Admin sur le bandeau « Affecter à un AR » (statut 4). */
   readonly isChefAgenceWorkflow = computed(() =>
     this.permissionService.hasRole(
@@ -710,6 +711,98 @@ export class AnalyseCreditComponent implements OnInit {
           return;
         }
         this.toast.error('Erreur lors du rejet du dossier.');
+      },
+    });
+  }
+
+  // ── RC/CC statut 3 : Validation dossiers OUF/Scolaire/Avance ────────
+  validerRCCCDialogOpen = false;
+  readonly validerRCCCLoading = signal(false);
+  readonly validerRCCCError = signal<string | null>(null);
+  readonly validerRCCCForm = this.fb.group({
+    password: ['', Validators.required],
+    observation: [''],
+  });
+
+  openValiderDossierRCCCDialog() {
+    this.validerRCCCForm.reset();
+    this.validerRCCCError.set(null);
+    this.validerRCCCDialogOpen = true;
+  }
+
+  confirmValiderRCCC() {
+    if (this.validerRCCCForm.invalid) {
+      this.validerRCCCForm.markAllAsTouched();
+      return;
+    }
+    const { password, observation } = this.validerRCCCForm.value;
+    this.validerRCCCLoading.set(true);
+    this.validerRCCCError.set(null);
+
+    this.analyseFlow.validerDossierRCCC(this.ref(), password!, observation || '').subscribe({
+      next: (data) => {
+        this.validerRCCCLoading.set(false);
+        this.validerRCCCDialogOpen = false;
+        if (data.status === 200) {
+          this.toast.success('Dossier validé avec succès.');
+          this.router.navigate(['/app/credit/list']);
+        } else {
+          this.toast.error(data.message ?? 'Échec de la validation.');
+        }
+      },
+      error: (err: unknown) => {
+        this.validerRCCCLoading.set(false);
+        if (err instanceof AnalyseFlowPasswordException) {
+          this.validerRCCCError.set(err.message);
+          return;
+        }
+        this.toast.error('Erreur lors de la validation du dossier.');
+      },
+    });
+  }
+
+  // ── Admin statut 21 : Remettre dans le circuit ───────────────────────
+  remettreCircuitDialogOpen = false;
+  readonly remettreCircuitLoading = signal(false);
+  readonly remettreCircuitError = signal<string | null>(null);
+  readonly remettreCircuitForm = this.fb.group({
+    password: ['', Validators.required],
+    observation: [''],
+  });
+
+  openRemettreEnCircuitDialog() {
+    this.remettreCircuitForm.reset();
+    this.remettreCircuitError.set(null);
+    this.remettreCircuitDialogOpen = true;
+  }
+
+  confirmRemettreEnCircuit() {
+    if (this.remettreCircuitForm.invalid) {
+      this.remettreCircuitForm.markAllAsTouched();
+      return;
+    }
+    const { password, observation } = this.remettreCircuitForm.value;
+    this.remettreCircuitLoading.set(true);
+    this.remettreCircuitError.set(null);
+
+    this.analyseFlow.remettreEnCircuit(this.ref(), password!, observation || '').subscribe({
+      next: (data) => {
+        this.remettreCircuitLoading.set(false);
+        this.remettreCircuitDialogOpen = false;
+        if (data.status === 200) {
+          this.toast.success('Dossier remis dans le circuit.');
+          this.router.navigate(['/app/credit/list']);
+        } else {
+          this.toast.error(data.message ?? 'Échec de la remise en circuit.');
+        }
+      },
+      error: (err: unknown) => {
+        this.remettreCircuitLoading.set(false);
+        if (err instanceof AnalyseFlowPasswordException) {
+          this.remettreCircuitError.set(err.message);
+          return;
+        }
+        this.toast.error('Erreur lors de la remise en circuit.');
       },
     });
   }

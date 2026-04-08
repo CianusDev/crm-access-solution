@@ -220,3 +220,29 @@ export function allRequiredDocsUploaded(
     .filter(d => d.obligation)
     .every(d => uploaded.some(u => u === d.libelle.trim().toLowerCase()));
 }
+
+/**
+ * Retourne la liste des documents requis pour CA/CAA au statut 4
+ * pour les codes 032 (Bon de Commande) et 033 (Facture).
+ * Utilise les mêmes listes que GP.
+ */
+export function getRequiredDocsForCACaa(
+  typeCreditCode: string | undefined,
+  statutJuridique?: number,
+): RequiredDoc[] {
+  if (!typeCreditCode) return [];
+
+  switch (typeCreditCode) {
+    case '032': // Avance sur Bon de Commande
+      // Statut juridique 1 = Entreprise Individuelle → pas de statut requis
+      return statutJuridique === 1 
+        ? GP_BON_COMMANDE_SANS_STATUT 
+        : GP_BON_COMMANDE_AVEC_STATUT;
+
+    case '033': // Avance sur Facture
+      return GP_AVANCE_FACTURE;
+
+    default:
+      return [];
+  }
+}

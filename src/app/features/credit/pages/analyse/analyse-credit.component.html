@@ -65,6 +65,7 @@
       [showAnalysteBandeau]="showAnalysteBandeau()"
       [isSuperviseurPME]="isSuperviseurPME()"
       [isSuperviseurRisqueZone]="isSuperviseurRisqueZone()"
+      [isAdmin]="isAdmin()"
       [isPaused]="isPaused()"
       [confirmationFrais]="confirmationFrais()"
       [showVoirResume]="showVoirResume()"
@@ -77,7 +78,9 @@
       (avisDefavorable)="openAvisDefavorableDialog()"
       (confirmationRejet)="openConfirmRejetDialog()"
       (voirResume)="goVoirResume()"
-      (confirmationFraisChange)="confirmationFrais.set($event)" />
+      (confirmationFraisChange)="confirmationFrais.set($event)"
+      (validerDossierRCCC)="openValiderDossierRCCCDialog()"
+      (remettreEnCircuit)="openRemettreEnCircuitDialog()" />
   } @else {
     <div class="h-40 rounded-xl border border-border bg-card animate-pulse"></div>
   }
@@ -410,6 +413,60 @@
       <button type="button" appButton variant="destructive" size="sm"
         (click)="confirmRejetSuperviseur()" [disabled]="confirmRejetLoading()">
         {{ confirmRejetLoading() ? 'Vérification…' : 'Confirmer le rejet' }}
+      </button>
+    </app-dialog-footer>
+  </app-dialog>
+
+  <!-- ── Dialog : RC/CC — Validation dossier statut 3 ──────────────────────── -->
+  <app-dialog [(open)]="validerRCCCDialogOpen">
+    <app-dialog-header>
+      <app-dialog-title>Valider le dossier</app-dialog-title>
+      <app-dialog-description>
+        Vous êtes sur le point de valider ce dossier de crédit (OUF/Scolaire/Avance salaire).
+      </app-dialog-description>
+    </app-dialog-header>
+    <form [formGroup]="validerRCCCForm" class="flex flex-col gap-4 py-2">
+      <app-form-input name="password" type="password" label="Mot de passe" [required]="true" />
+      <app-form-textarea name="observation" label="Observation" placeholder="Remarques éventuelles…" [rows]="3" />
+      @if (validerRCCCError()) {
+        <p class="text-sm text-destructive">{{ validerRCCCError() }}</p>
+      }
+    </form>
+    <app-dialog-footer>
+      <button type="button" appButton variant="outline" size="sm"
+        (click)="validerRCCCDialogOpen = false" [disabled]="validerRCCCLoading()">
+        Annuler
+      </button>
+      <button type="button" appButton size="sm"
+        (click)="confirmValiderRCCC()" [disabled]="validerRCCCLoading()">
+        {{ validerRCCCLoading() ? 'Validation…' : 'Valider le dossier' }}
+      </button>
+    </app-dialog-footer>
+  </app-dialog>
+
+  <!-- ── Dialog : Admin — Remettre dans le circuit ──────────────────────────── -->
+  <app-dialog [(open)]="remettreCircuitDialogOpen">
+    <app-dialog-header>
+      <app-dialog-title>Remettre dans le circuit</app-dialog-title>
+      <app-dialog-description>
+        Vous êtes sur le point de remettre ce dossier dans le circuit normal.
+      </app-dialog-description>
+    </app-dialog-header>
+    <form [formGroup]="remettreCircuitForm" class="flex flex-col gap-4 py-2">
+      <app-form-input name="password" type="password" label="Mot de passe" [required]="true" />
+      <app-form-textarea name="observation" label="Observation" placeholder="Motif de la remise en circuit…" [rows]="3" />
+      @if (remettreCircuitError()) {
+        <p class="text-sm text-destructive">{{ remettreCircuitError() }}</p>
+      }
+    </form>
+    <app-dialog-footer>
+      <button type="button" appButton variant="outline" size="sm"
+        (click)="remettreCircuitDialogOpen = false" [disabled]="remettreCircuitLoading()">
+        Annuler
+      </button>
+      <button type="button" appButton size="sm"
+        (click)="confirmRemettreEnCircuit()" [disabled]="remettreCircuitLoading()">
+        {{ remettreCircuitLoading() ? 'En cours…' : 'Remettre en circuit' }}
       </button>
     </app-dialog-footer>
   </app-dialog>

@@ -113,6 +113,47 @@ export class AnalyseCreditFlowService {
     );
   }
 
+  /**
+   * RC/CC statut 3 — Validation dossiers OUF/Scolaire/Avance salaire
+   * Legacy : decision = 1 (validation) via saveCrdObservation
+   */
+  validerDossierRCCC(
+    refDemande: string,
+    password: string,
+    observation: string,
+  ): Observable<CrdObservationResponse> {
+    return this.verifyPasswordThen(password).pipe(
+      switchMap(() =>
+        this.credit.saveCrdObservation({
+          refDemande,
+          decision: 1,
+          observation: observation || '',
+          password: password ?? '',
+        }),
+      ),
+    );
+  }
+
+  /**
+   * Admin statut 21 — Remettre le dossier dans le circuit
+   * Legacy : PUT /remettreDossierDansCircuit
+   */
+  remettreEnCircuit(
+    refDemande: string,
+    password: string,
+    observation: string,
+  ): Observable<CrdObservationResponse> {
+    return this.verifyPasswordThen(password).pipe(
+      switchMap(() =>
+        this.credit.remettreEnCircuit({
+          refDemande,
+          observation: observation || '',
+          password: password ?? '',
+        }),
+      ),
+    );
+  }
+
   affecterAnalysteRisque(
     refDemande: string,
     zone: number,

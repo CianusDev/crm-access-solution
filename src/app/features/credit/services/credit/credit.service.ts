@@ -715,6 +715,15 @@ export class CreditService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
+  remettreEnCircuit(data: { refDemande: string; observation?: string; password: string }) {
+    return this.api
+      .put<{ status: number; message?: string }>(
+        this.endpoint + '/remettreDossierDansCircuit',
+        data,
+      )
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
   clotureDemande(data: CreditActionPayload) {
     return this.api
       .post<{ status: number; message?: string }>(this.endpoint + '/clotureDemande', data)

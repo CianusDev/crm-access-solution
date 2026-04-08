@@ -20,7 +20,7 @@ import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import { Dropdown } from '@/shared/components/dropdown/dropdown.component';
 import { DropdownItem } from '@/shared/components/dropdown/dropdown.interface';
 import { CreditFicheDemandeDetail } from '../../../interfaces/credit.interface';
-import { RequiredDoc } from '../../../constants/required-documents';
+import { RequiredDoc, getRequiredDocsForCACaa } from '../../../constants/required-documents';
 
 const OBJETS_CREDIT: Record<string | number, string> = {
   1: 'Fonds de roulement',
@@ -236,6 +236,18 @@ const PREDEFINED_DOC_TYPES = [
               <lucide-icon [img]="SendIcon" [size]="14" />
               Affecter le dossier à un AR
             </button>
+          } @else if (isAdmin() && d.statut === 21) {
+            <!-- Admin statut 21: Remettre dans le circuit -->
+            <button
+              type="button"
+              appButton
+              size="sm"
+              class="flex items-center gap-1.5"
+              (click)="remettreEnCircuit.emit()"
+            >
+              <lucide-icon [img]="RotateCcwIcon" [size]="14" />
+              Remettre dans le circuit
+            </button>
           } @else if (isRCCC()) {
             <!-- RC/CC: Ajourner -->
             <button
@@ -249,6 +261,20 @@ const PREDEFINED_DOC_TYPES = [
               <lucide-icon [img]="RotateCcwIcon" [size]="14" />
               Ajourner
             </button>
+
+            <!-- RC/CC statut 3: Validation prêts OUF/Scolaire/Avance salaire -->
+            @if (isRCCCValidationStatut3()) {
+              <button
+                type="button"
+                appButton
+                size="sm"
+                class="flex items-center gap-1.5"
+                (click)="validerDossierRCCC.emit()"
+              >
+                <lucide-icon [img]="SendIcon" [size]="14" />
+                Valider le dossier
+              </button>
+            }
 
             <!-- RC/CC: N° Perfect -->
             @if (!d.numTransaction) {
@@ -550,6 +576,7 @@ export class AnalyseHeaderCardComponent {
   readonly showAnalysteBandeau = input<boolean>(false);
   readonly isSuperviseurPME = input<boolean>(false);
   readonly isSuperviseurRisqueZone = input<boolean>(false);
+  readonly isAdmin = input<boolean>(false);
   readonly isPaused = input<boolean>(false);
   readonly confirmationFrais = input<boolean>(false);
   readonly showVoirResume = input<boolean>(false);
@@ -564,8 +591,22 @@ export class AnalyseHeaderCardComponent {
   readonly confirmationRejet = output<void>();
   readonly voirResume = output<void>();
   readonly confirmationFraisChange = output<boolean>();
+  readonly validerDossierRCCC = output<void>();
+  readonly remettreEnCircuit = output<void>();
 
   readonly isPersonneMorale = computed(() => this.fiche()?.client?.typeAgent !== 'PP');
+
+  /**
+   * RC/CC statut 3 — Validation prêts spéciaux
+   * Codes: 014 (OUF), 001 (Scolaire), 008 (Avance salaire)
+   */
+  readonly isRCCCValidationStatut3 = computed(() => {
+    const f = this.fiche();
+    if (!f || !this.isRCCC()) return false;
+    if (f.statut !== 3) return false;
+    const code = f.typeCredit?.code;
+    return code === '014' || code === '001' || code === '008';
+  });
 
   readonly objetLabel = computed(() => {
     const obj = this.fiche()?.objetCredit;
@@ -582,10 +623,30 @@ export class AnalyseHeaderCardComponent {
 
   /** Dropdown items : docs requis selon le type de crédit, ou fallback générique */
   readonly docTypeItems = computed<DropdownItem[]>(() => {
-    const code = this.fiche()?.typeCredit?.code;
+    const f = this.fiche();
+    const code = f?.typeCredit?.code;
+    
     /** Legacy : pas de menu « Charger les documents » pour AR sur avance BC / facture (032, 033). */
     if (this.showAnalysteBandeau() && (code === '032' || code === '033')) {
       return [];
+    }
+
+    /** CA/CAA statut 4 codes 032/033 : dropdown docs spécifiques */
+    if (this.isChefAgenceWorkflow() && f?.statut === 4 && (code === '032' || code === '033')) {
+      const statutJuridique = f.client?.entreprise?.statutJuridique;
+      const sj = typeof statutJuridique === 'string' ? parseInt(statutJuridique, 10) : statutJuridique;
+      const caCaaDocs = getRequiredDocsForCACaa(code, sj);
+      const uploaded = this.uploadedDocLibelles().map((l) => l.trim().toLowerCase());
+      
+      return caCaaDocs.map((doc) => {
+        const alreadyUploaded = uploaded.some((u) => u === doc.libelle.trim().toLowerCase());
+        return {
+          label: doc.libelle,
+          required: doc.obligation,
+          disabled: alreadyUploaded,
+          action: () => this.chargerDocuments.emit(doc.libelle),
+        };
+      });
     }
 
     const required = this.requiredDocs();
