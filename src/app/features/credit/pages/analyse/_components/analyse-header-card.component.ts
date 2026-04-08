@@ -320,7 +320,7 @@ const PREDEFINED_DOC_TYPES = [
 
             <!-- RC/CC: Envoyer (visible si numTransaction existe) -->
             @if (d.numTransaction) {
-              <button
+              <!-- <button
                 type="button"
                 appButton
                 size="sm"
@@ -330,6 +330,17 @@ const PREDEFINED_DOC_TYPES = [
               >
                 <lucide-icon [img]="SendIcon" [size]="14" />
                 Envoyer le dossier
+              </button> -->
+              <button
+                type="button"
+                appButton
+                size="sm"
+                class="flex items-center gap-1.5"
+                (click)="affecterAR.emit()"
+                [disabled]="!canSendDossier()"
+              >
+                <lucide-icon [img]="SendIcon" [size]="14" />
+                Affecter le dossier à un AR
               </button>
             }
           } @else {

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, input, output, signal, effect } from '@angular/core';
+import { Component, OnInit, inject, input, output, signal, effect, computed } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   LucideAngularModule,
@@ -38,6 +38,7 @@ import { ToastService } from '@/core/services/toast/toast.service';
 import { CreditService } from '../../../../services/credit/credit.service';
 import { CreditDocumentAnnexe } from '../../../../interfaces/credit.interface';
 import { DatePipe } from '@angular/common';
+import { AuthService } from '@/core/services/auth/auth.service';
 
 const DOC_BASE_URL = 'https://crm-fichiers.creditaccess.ci/crm/credit-ca/';
 
@@ -90,13 +91,14 @@ export class DocumentsSectionComponent implements OnInit {
   readonly EyeIcon = Eye;
 
   readonly documentTypes = DOCUMENT_TYPES;
-  readonly documentTypesDropdown = DOCUMENT_TYPES.map(t => ({
+  readonly documentTypesDropdown = DOCUMENT_TYPES.map((t) => ({
     label: t.libelle,
     required: t.obligation,
   }));
 
   private readonly fb = inject(FormBuilder);
   private readonly creditService = inject(CreditService);
+  private readonly authService = inject(AuthService);
   private readonly toast = inject(ToastService);
 
   // ── State ──────────────────────────────────────────────────────────────
@@ -106,6 +108,10 @@ export class DocumentsSectionComponent implements OnInit {
   readonly documentsFiltered = signal<CreditDocumentAnnexe[]>([]);
   readonly searchQuery = signal('');
 
+  readonly isOwner = (userId?: number) => {
+    const user = this.authService.currentUser();
+    return user && user.id === userId;
+  };
   // Document upload drawer
   docDrawerOpen = false;
   readonly isUploadingDoc = signal(false);

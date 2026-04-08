@@ -552,6 +552,7 @@ export interface CreditDocumentAnnexe {
   document: string; // URL
   refDemande: string;
   createdAt?: string;
+  userId?: number;
   user?: { nomPrenom?: string };
 }
 
@@ -929,10 +930,10 @@ export interface AchatMensuel {
   id?: number;
   refDemande?: string;
   activite?: number;
-  article?: string;        // Principaux produits achetés
-  fournisseur?: string;    // Site / Fournisseur
-  frequence?: string;      // Fréquence d'achat
-  quantite?: number;       // Quantité
+  article?: string; // Principaux produits achetés
+  fournisseur?: string; // Site / Fournisseur
+  frequence?: string; // Fréquence d'achat
+  quantite?: number; // Quantité
   achatsMensuels?: number; // Montant des achats mensuels
 }
 
@@ -1080,7 +1081,7 @@ export interface TresorerieFamille {
   refDemande?: string;
   libelle?: string;
   montant?: number;
-  type?: number;       // 1 = Épargne, 2 = Dette
+  type?: number; // 1 = Épargne, 2 = Dette
   typeCompte?: number; // 1 = Espèces, 2 = Banque
   provenance?: string;
 }
@@ -1097,7 +1098,7 @@ export interface ChargeFamille {
 export interface MembreMenage {
   id?: number;
   membreFamille?: string; // Type de membre (Demandeur, Conjoint, Enfants, etc.)
-  nombre?: number;        // Nombre de personnes dans cette catégorie
+  nombre?: number; // Nombre de personnes dans cette catégorie
   age?: number;
   activite?: string;
   revenus?: number;
@@ -1397,7 +1398,7 @@ export interface CreditActifCirculantStock {
   prix?: number;
   cout?: number; // calculé = quantite * prix
   assurStock?: number; // 1=OUI, 2=NON
-  garantie?: number;   // 1=OUI, 2=NON
+  garantie?: number; // 1=OUI, 2=NON
 }
 
 export interface GarantiesData {

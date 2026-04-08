@@ -64,31 +64,27 @@
       <div class="grid grid-cols-4 gap-4 ">
             @for (doc of documentsFiltered(); track doc.id) {
               <div
+
                 class="group relative flex flex-col rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all overflow-hidden">
                 <!-- En-tête avec icône -->
                 <div
-
-                  class="flex flex-col items-center justify-center h-32 p-4 gap-3 bg-gradient-to-br from-primary/5 to-primary/10 border-b border-border">
+                    (click)="viewDocument(doc)"
+                  class="flex flex-col items-center justify-center h-32 p-4 gap-3 ">
                   <lucide-icon [img]="FileTextIcon" [size]="40" class="text-primary/60" />
                   <h4 class="font-semibold text-sm text-center text-foreground line-clamp-3 mb-2">{{ doc.libelle }}</h4>
                 </div>
 
                 <!-- Actions -->
-                <div class="flex items-center justify-end py-2 gap-1">
-                  <button
+               @if(isOwner(doc.userId)){
+                 <div class="flex border-t border-border items-center justify-end p-2 gap-1">
+                  <!-- <button
                     type="button"
                     (click)="viewDocument(doc)"
                     class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                     title="Voir le document">
                     <lucide-icon [img]="EyeIcon" [size]="13" />
-                  </button>
-                  <button
-                    type="button"
-                    (click)="downloadDocument(doc)"
-                    class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-blue-600 hover:bg-blue-600/10 transition-colors"
-                    title="Télécharger">
-                    <lucide-icon [img]="DownloadIcon" [size]="13" />
-                  </button>
+                  </button> -->
+
                   <button
                     type="button"
                     (click)="openDeleteDocument(doc.id, doc.libelle)"
@@ -97,6 +93,7 @@
                     <lucide-icon [img]="Trash2Icon" [size]="13" />
                   </button>
                 </div>
+               }
               </div>
             }
       </div>

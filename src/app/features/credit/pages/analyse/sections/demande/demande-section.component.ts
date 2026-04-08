@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { LucideAngularModule, FileText } from 'lucide-angular';
 import { CreditFiche, CreditFicheDemandeDetail } from '../../../../interfaces/credit.interface';
 import { CreditInfoFormComponent } from './_components/credit-info-form.component';
@@ -13,6 +21,8 @@ import { PreEvaluationAcjReadonlyComponent } from './_components/pre-evaluation-
 import { PreEvaluationCeReadonlyComponent } from './_components/pre-evaluation-ce-readonly.component';
 import { EmployeurDemandeReadonlyComponent } from './_components/employeur-demande-readonly.component';
 import { DecisionFinaleDemandeReadonlyComponent } from './_components/decision-finale-demande-readonly.component';
+import { PermissionService } from '@/core/services/permission/permission.service';
+import { RC_CC_ROLES } from '../../analyse-credit.tabs';
 // import { ProfilEntrepreneurCardComponent } from './_components/profil-entrepreneur-card.component'; // Masqué - n'existe pas dans le legacy
 
 interface SubSection {
@@ -49,6 +59,7 @@ export class DemandeSectionComponent {
   readonly demandeDetails = input<CreditFicheDemandeDetail | null>(null);
   readonly fiche = input<CreditFiche | null>(null);
   readonly readOnly = input<boolean>(false);
+
   readonly dataChanged = output<void>();
 
   readonly activeSubSection = signal<string>('credit');
@@ -59,6 +70,10 @@ export class DemandeSectionComponent {
   readonly decisionAffiche = computed(
     () => this.fiche()?.decision ?? this.demandeDetails()?.decision ?? null,
   );
+
+  readonly permissionService = inject(PermissionService);
+
+  readonly isRCCC = computed(() => this.permissionService.hasRole(...RC_CC_ROLES));
 
   readonly sidebarItems = computed<SubSection[]>(() => {
     const d = this.ficheHeader();
