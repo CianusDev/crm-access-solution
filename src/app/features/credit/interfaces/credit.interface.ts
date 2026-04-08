@@ -916,8 +916,8 @@ export interface ActiviteCredit {
   dateDernierAchat?: string;
   venteJournalieres?: ActiviteVenteJournaliere[];
   venteMensuelles?: ActiviteVenteMensuelle[];
-  achatsMensuels?: AchatMensuel[];
-  margesCommerciales?: MargeCommerciale[];
+  achatMensuel?: AchatMensuel[]; // Singulier comme dans l'API
+  margeCommerciale?: MargeCommerciale[]; // Singulier comme dans l'API
   analyseFin?: {
     chargeExploitation?: {
       imprevu?: number;

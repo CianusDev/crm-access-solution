@@ -244,7 +244,7 @@ export class AnalyseCreditComponent implements OnInit {
   readonly activeAnalyseSection = signal<AnalyseSectionId>('activite'); // Section active dans "Analyse financière"
   readonly activeGarantiesSection = signal<GarantiesSectionId>('garanties'); // Section active dans "Actifs & Garanties"
   readonly pendingDocLibelle = signal<{ libelle: string; version: number } | null>(null);
-  private pendingDocVersion = 0;
+  // private pendingDocVersion = 0;
 
   readonly analyseSections = signal(ANALYSE_SECTIONS);
   readonly garantiesSections = signal(GARANTIES_SECTIONS);

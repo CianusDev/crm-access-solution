@@ -1,44 +1,42 @@
-import { Component, OnInit, inject, input, output, signal, effect, computed } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import {
-  LucideAngularModule,
-  Plus,
-  Trash2,
-  FileText,
-  Upload,
-  Search,
-  Download,
-  Eye,
-} from 'lucide-angular';
+import { AuthService } from '@/core/services/auth/auth.service';
+import { ToastService } from '@/core/services/toast/toast.service';
 import {
   CardComponent,
   CardContentComponent,
   CardHeaderComponent,
   CardTitleComponent,
 } from '@/shared/components/card/card.component';
-import { ButtonDirective } from '@/shared/directives/ui/button/button';
-import {
-  DrawerComponent,
-  DrawerHeaderComponent,
-  DrawerTitleComponent,
-  DrawerContentComponent,
-  DrawerFooterComponent,
-} from '@/shared/components/drawer/drawer.component';
 import {
   DialogComponent,
-  DialogHeaderComponent,
-  DialogTitleComponent,
   DialogDescriptionComponent,
   DialogFooterComponent,
+  DialogHeaderComponent,
+  DialogTitleComponent,
 } from '@/shared/components/dialog/dialog.component';
-import { Dropdown } from '@/shared/components/dropdown/dropdown.component';
+import {
+  DrawerComponent,
+  DrawerContentComponent,
+  DrawerFooterComponent,
+  DrawerHeaderComponent,
+  DrawerTitleComponent,
+} from '@/shared/components/drawer/drawer.component';
 import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { FormTextarea } from '@/shared/components/form-textarea/form-textarea.component';
-import { ToastService } from '@/core/services/toast/toast.service';
-import { CreditService } from '../../../../services/credit/credit.service';
+import { ButtonDirective } from '@/shared/directives/ui/button/button';
+import { Component, OnInit, inject, input, output, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  Download,
+  Eye,
+  FileText,
+  LucideAngularModule,
+  Plus,
+  Search,
+  Trash2,
+  Upload,
+} from 'lucide-angular';
 import { CreditDocumentAnnexe } from '../../../../interfaces/credit.interface';
-import { DatePipe } from '@angular/common';
-import { AuthService } from '@/core/services/auth/auth.service';
+import { CreditService } from '../../../../services/credit/credit.service';
 
 const DOC_BASE_URL = 'https://crm-fichiers.creditaccess.ci/crm/credit-ca/';
 
@@ -72,10 +70,8 @@ const DOCUMENT_TYPES = [
     DialogTitleComponent,
     DialogDescriptionComponent,
     DialogFooterComponent,
-    Dropdown,
     FormInput,
     FormTextarea,
-    DatePipe,
   ],
 })
 export class DocumentsSectionComponent implements OnInit {

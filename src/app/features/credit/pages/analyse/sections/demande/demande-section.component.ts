@@ -23,6 +23,7 @@ import { EmployeurDemandeReadonlyComponent } from './_components/employeur-deman
 import { DecisionFinaleDemandeReadonlyComponent } from './_components/decision-finale-demande-readonly.component';
 import { PermissionService } from '@/core/services/permission/permission.service';
 import { RC_CC_ROLES } from '../../analyse-credit.tabs';
+import { ProfilEntrepreneurCardComponent } from './_components/profil-entrepreneur-card.component';
 // import { ProfilEntrepreneurCardComponent } from './_components/profil-entrepreneur-card.component'; // Masqué - n'existe pas dans le legacy
 
 interface SubSection {
@@ -48,7 +49,7 @@ interface SubSection {
     PreEvaluationCeReadonlyComponent,
     EmployeurDemandeReadonlyComponent,
     DecisionFinaleDemandeReadonlyComponent,
-    // ProfilEntrepreneurCardComponent, // Masqué - n'existe pas dans le legacy
+    ProfilEntrepreneurCardComponent, // Masqué - n'existe pas dans le legacy
   ],
 })
 export class DemandeSectionComponent {

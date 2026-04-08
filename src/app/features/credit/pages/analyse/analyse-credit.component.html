@@ -144,7 +144,7 @@
             <div class="flex-1 min-w-0">
               @switch (activeAnalyseSection()) {
                 @case ('activite') {
-                  @if (showAnalysteBandeau()) {
+                  <!-- @if (showAnalysteBandeau()) {
                     <div class="flex flex-col gap-4 mb-4">
                       <app-doc-analyse-upload
                         [ref]="ref()"
@@ -152,7 +152,7 @@
                         label="Analyse financière"
                         articleLabel="votre analyse financière" />
                     </div>
-                  }
+                  } -->
                   <app-activite-section [ref]="ref()" />
                 }
                 @case ('achats') {
@@ -169,6 +169,17 @@
                 }
                 @case ('envoi') {
                   <app-envoi-section [ref]="ref()" />
+                }
+                @case('analyse-financiere'){
+                  @if (showAnalysteBandeau()) {
+                    <div class="flex flex-col gap-4 mb-4">
+                      <app-doc-analyse-upload
+                        [ref]="ref()"
+                        libelle="Analyse financière"
+                        label="Analyse financière"
+                        articleLabel="votre analyse financière" />
+                    </div>
+                  }
                 }
               }
             </div>

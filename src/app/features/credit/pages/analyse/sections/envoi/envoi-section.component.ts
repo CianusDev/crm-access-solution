@@ -107,7 +107,7 @@ export class EnvoiSectionComponent implements OnInit {
   }
 
   private buildChecklist(d: CreditAnalyseDemandeDetail): CheckItem[] {
-    const hasAchats = (d.activites ?? []).some((a) => (a.achatsMensuels?.length ?? 0) > 0);
+    const hasAchats = (d.activites ?? []).some((a) => (a.achatMensuel?.length ?? 0) > 0);
     return [
       { label: 'Profil activité', done: (d.activites?.length ?? 0) > 0 },
       { label: 'Achats & Charges', done: hasAchats || (d.chargesExploitation?.length ?? 0) > 0 },

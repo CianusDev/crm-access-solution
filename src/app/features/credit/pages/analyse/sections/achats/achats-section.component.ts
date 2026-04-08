@@ -123,7 +123,7 @@ export class AchatsSectionComponent implements OnInit {
   readonly totalAchats = computed(() => {
     let total = 0;
     for (const a of this.activites()) {
-      for (const achat of a.achatsMensuels ?? []) {
+      for (const achat of a.achatMensuel ?? []) {
         total += achat.achatsMensuels ?? 0;
       }
     }

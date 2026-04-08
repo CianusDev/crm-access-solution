@@ -11,6 +11,7 @@ import {
   Calendar,
   MapPin,
   BarChart2,
+  ChevronDown,
 } from 'lucide-angular';
 import {
   CardComponent,
@@ -78,9 +79,8 @@ const TYPE_ANALYSE: SelectOption[] = [
 ];
 
 const SAISONS: SelectOption[] = [
-  { value: 'HAUTE SAISON', label: 'Haute saison' },
-  { value: 'BASSE SAISON', label: 'Basse saison' },
-  { value: 'NORMALE', label: 'Normale' },
+  { value: '1', label: 'Mois bon' },
+  { value: '2', label: 'Mois faible' },
 ];
 
 @Component({
@@ -121,6 +121,7 @@ export class ActiviteSectionComponent implements OnInit {
   readonly CalendarIcon = Calendar;
   readonly MapPinIcon = MapPin;
   readonly BarChart2Icon = BarChart2;
+  readonly ChevronDownIcon = ChevronDown;
 
   private readonly fb = inject(FormBuilder);
   private readonly creditService = inject(CreditService);
@@ -170,6 +171,9 @@ export class ActiviteSectionComponent implements OnInit {
   readonly isSavingMarge = signal(false);
   readonly isDeleting = signal(false);
 
+  // Collapse/expand state: Map<activiteId, boolean> (true = collapsed)
+  readonly collapsedSections = signal<Map<number, boolean>>(new Map());
+
   // ── Forms ──────────────────────────────────────────────────────────────
   readonly activiteForm = this.fb.group({
     activite: [null as number | null],
@@ -180,9 +184,6 @@ export class ActiviteSectionComponent implements OnInit {
     rue: [''],
     boitePostale: [''],
     typeActivite: [null as number | null, Validators.required],
-    margePondere: [null as number | null],
-    valDernierAchat: [null as number | null],
-    dateDernierAchat: [''],
   });
 
   readonly venteMensuelleForm = this.fb.group({
@@ -250,6 +251,18 @@ export class ActiviteSectionComponent implements OnInit {
     return commune.libelle ?? '';
   }
 
+  // ── Collapse/Expand Helpers ────────────────────────────────────────────
+  toggleCollapseSection(activiteId: number) {
+    const map = this.collapsedSections();
+    const isCollapsed = map.get(activiteId) ?? false;
+    map.set(activiteId, !isCollapsed);
+    this.collapsedSections.set(new Map(map));
+  }
+
+  isSectionCollapsed(activiteId: number): boolean {
+    return this.collapsedSections().get(activiteId) ?? false;
+  }
+
   resolveCommune(commune: string | { id?: number; libelle?: string } | undefined): number | null {
     if (!commune) return null;
     if (typeof commune === 'object' && commune.id != null) return commune.id;
@@ -273,9 +286,6 @@ export class ActiviteSectionComponent implements OnInit {
       rue: '',
       boitePostale: '',
       typeActivite: null,
-      margePondere: null,
-      valDernierAchat: null,
-      dateDernierAchat: '',
     });
     this.activiteDrawerOpen = true;
   }
@@ -292,9 +302,6 @@ export class ActiviteSectionComponent implements OnInit {
       rue: a.rue ?? '',
       boitePostale: a.boitePostale ?? '',
       typeActivite: a.typeActivite?.id ?? null,
-      margePondere: a.margePondere ?? null,
-      valDernierAchat: a.valDernierAchat ?? null,
-      dateDernierAchat: a.dateDernierAchat ?? '',
     });
     this.activiteDrawerOpen = true;
   }
@@ -305,22 +312,15 @@ export class ActiviteSectionComponent implements OnInit {
       return;
     }
     const val = this.activiteForm.value;
-    const typeActiviteObj = this.typesActivite().find((ta) => ta.id === val.typeActivite);
-    const communeObj = val.commune != null
-      ? this.communes().find((c) => c.id === val.commune) ?? { id: val.commune }
-      : null;
     const payload: Record<string, unknown> = {
       libelle: val.libelle,
       typeAnalyse: val.typeAnalyse,
-      commune: communeObj,
+      commune: val.commune, // Send ID directly, not object
       quartier: val.quartier,
       rue: val.rue,
       boitePostale: val.boitePostale,
-      typeActivite: typeActiviteObj ?? val.typeActivite,
+      typeActivite: val.typeActivite, // Send ID directly, not object
       refDemande: this.ref(),
-      margePondere: val.margePondere,
-      valDernierAchat: val.valDernierAchat,
-      dateDernierAchat: val.dateDernierAchat || null,
     };
     if (val.activite) payload['activite'] = val.activite;
 

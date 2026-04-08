@@ -1,11 +1,6 @@
 import { UserRole } from '@/core/models/user.model';
 
-export type AnalyseTabId =
-  | 'demande'
-  | 'analyse'
-  | 'garanties'
-  | 'documents'
-  | 'geolocalisation';
+export type AnalyseTabId = 'demande' | 'analyse' | 'garanties' | 'documents' | 'geolocalisation';
 
 /** Sous-sections du tab "Analyse financière" (navigation secondaire) */
 export type AnalyseSectionId =
@@ -14,7 +9,8 @@ export type AnalyseSectionId =
   | 'tresorerie'
   | 'familial'
   | 'swot'
-  | 'envoi';
+  | 'envoi'
+  | 'analyse-financiere';
 
 /** Sous-sections du tab "Actifs & Garanties" */
 export type GarantiesSectionId = 'garanties' | 'cautions';
@@ -53,12 +49,13 @@ const ALL_TABS: AnalyseTab[] = [
 
 /** Sous-sections du tab "Analyse financière" */
 export const ANALYSE_SECTIONS: AnalyseSection[] = [
-  { id: 'activite', label: 'Profil Activité' },
+  { id: 'activite', label: 'Activité' },
   { id: 'achats', label: 'Achats & Charges' },
   { id: 'tresorerie', label: 'Trésorerie' },
   { id: 'familial', label: 'Profil Familial' },
   { id: 'swot', label: 'SWOT & Comités' },
   { id: 'envoi', label: 'Envoi & Validation' },
+  { id: 'analyse-financiere', label: 'Analyse Financière' },
 ];
 
 /** Sous-sections du tab "Actifs & Garanties" */

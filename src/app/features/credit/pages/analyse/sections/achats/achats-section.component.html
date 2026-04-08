@@ -45,7 +45,7 @@
 
           <div class="flex flex-col gap-4">
             @for (activite of activites(); track activite.id) {
-              @if ((activite.achatsMensuels?.length ?? 0) > 0) {
+              @if ((activite.achatMensuel?.length ?? 0) > 0) {
                 <div class="rounded-xl border border-border overflow-hidden">
 
                   <!-- Header activité -->
@@ -70,7 +70,7 @@
                       </tr>
                     </thead>
                     <tbody>
-                      @for (achat of activite.achatsMensuels; track achat.id) {
+                      @for (achat of activite.achatMensuel; track achat.id) {
                         <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
                           <td class="px-4 py-2.5 font-medium">{{ achat.article }}</td>
                           <td class="px-4 py-2.5 text-muted-foreground">{{ achat.fournisseur }}</td>
@@ -99,7 +99,7 @@
 
             <!-- Activités sans achats -->
             @for (activite of activites(); track activite.id) {
-              @if ((activite.achatsMensuels?.length ?? 0) === 0) {
+              @if ((activite.achatMensuel?.length ?? 0) === 0) {
                 <div class="flex items-center justify-between rounded-xl border border-dashed border-border px-4 py-3">
                   <span class="text-sm text-muted-foreground">{{ activite.libelle }} — aucun achat</span>
                   <button type="button" (click)="openAddAchat(activite.id)" appButton size="sm" variant="outline">
