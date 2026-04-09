@@ -60,11 +60,11 @@
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 flex-wrap">
                     <span class="font-semibold text-foreground">{{ activite.libelle }}</span>
-                    @if (activite.typeAnalyse) {
+                    <!-- @if (activite.typeAnalyse) { -->
                       <app-badge [variant]="i===0 ? 'success' : 'default'">
                         {{ i===0 ? "Principal" : "Secondaire" }}
                       </app-badge>
-                    }
+                    <!-- } -->
                   </div>
                   <div class="flex items-center gap-4 mt-1 text-xs text-muted-foreground flex-wrap">
                     @if (activite.typeActivite?.libelle) {

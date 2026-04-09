@@ -917,7 +917,9 @@ export interface ActiviteCredit {
   venteJournalieres?: ActiviteVenteJournaliere[];
   venteMensuelles?: ActiviteVenteMensuelle[];
   achatMensuel?: AchatMensuel[]; // Singulier comme dans l'API
+  chargeExploitation?: ChargeExploitation[]; // présent dans activites[] côté API legacy
   margeCommerciale?: MargeCommerciale[]; // Singulier comme dans l'API
+  Stock?: StockItem[]; // certains payloads API renvoient "Stock" (S majuscule)
   analyseFin?: {
     detteEtreprise?: number;
     detteFournisseur?: number;

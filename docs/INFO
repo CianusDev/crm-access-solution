@@ -48,3 +48,19 @@ __________________________________________________________
 
 
 ya pas le champs type d'acquistion dans la version legacy !
+____________________________________________________________________
+
+
+Du coup, le calcul est maintenant cohérent avec le
+legacy/back :
+
++++++++++++++++++++++++++++++
+IMPREVU CHARGE D'EXPLOITATION
+++++++++++++++++++++++++++++++
+
+ - sousTotal = somme des charges
+ - montant imprévus = sousTotal
+  * imprevu / 100
+ - total final côté analyse = sousTotal + montant
+imprévus (valeur API
+analyseFin.chargeExploitation.total).

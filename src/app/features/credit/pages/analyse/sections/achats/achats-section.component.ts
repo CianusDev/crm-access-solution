@@ -35,6 +35,7 @@ import {
 } from '@/shared/components/dialog/dialog.component';
 import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { FormSelect, SelectOption } from '@/shared/components/form-select/form-select.component';
+import { FormTextarea } from '@/shared/components/form-textarea/form-textarea.component';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { CreditService } from '../../../../services/credit/credit.service';
 import {
@@ -53,7 +54,9 @@ const SAISONS: SelectOption[] = [
 
 const IMPREVU_OPTIONS: SelectOption[] = [
   { value: 10, label: '10%' },
+  { value: 15, label: '15%' },
   { value: 20, label: '20%' },
+  { value: 25, label: '25%' },
   { value: 30, label: '30%' },
 ];
 
@@ -82,6 +85,7 @@ const IMPREVU_OPTIONS: SelectOption[] = [
     DialogFooterComponent,
     FormInput,
     FormSelect,
+    FormTextarea,
   ],
 })
 export class AchatsSectionComponent implements OnInit {
@@ -107,6 +111,7 @@ export class AchatsSectionComponent implements OnInit {
   // ── State ──────────────────────────────────────────────────────────────
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly demandeRef = signal<string>('');
   readonly activites = signal<ActiviteCredit[]>([]);
   readonly chargesExploitation = signal<ChargeExploitation[]>([]);
   readonly stocks = signal<StockItem[]>([]);
@@ -124,18 +129,18 @@ export class AchatsSectionComponent implements OnInit {
     let total = 0;
     for (const a of this.activites()) {
       for (const achat of a.achatMensuel ?? []) {
-        total += achat.achatsMensuels ?? 0;
+        total += this.toNumber(achat.achatsMensuels);
       }
     }
     return total;
   });
 
   readonly totalCharges = computed(() =>
-    this.chargesExploitation().reduce((s, c) => s + (c.montant ?? 0), 0),
+    this.chargesExploitation().reduce((s, c) => s + this.toNumber(c.montant), 0),
   );
 
   readonly totalStocks = computed(() =>
-    this.stocks().reduce((s, item) => s + (item.montantTotal ?? 0), 0),
+    this.stocks().reduce((s, item) => s + this.toNumber(item.montantTotal), 0),
   );
 
   // Imprévus : total charges par activité + imprevu % depuis analyseFin
@@ -143,8 +148,8 @@ export class AchatsSectionComponent implements OnInit {
     this.activites().map((a) => {
       const total = this.chargesExploitation()
         .filter((c) => c.activite === a.id)
-        .reduce((s, c) => s + (c.montant ?? 0), 0);
-      const imprevu = a.analyseFin?.chargeExploitation?.imprevu ?? null;
+        .reduce((s, c) => s + this.toNumber(c.montant), 0);
+      const imprevu = this.normalizeImprevu(a.analyseFin?.chargeExploitation?.imprevu);
       const montantImprevu = imprevu != null ? Math.round(total * imprevu / 100) : 0;
       return { activite: a, total, imprevu, montantImprevu };
     }),
@@ -174,7 +179,12 @@ export class AchatsSectionComponent implements OnInit {
 
   // Delete dialog
   deleteDialogOpen = false;
-  deleteTarget: { type: 'achat' | 'charge' | 'stock'; id: number; label: string } | null = null;
+  deleteTarget: {
+    type: 'achat' | 'charge' | 'stock';
+    id: number;
+    label: string;
+    chargeData?: ChargeExploitation;
+  } | null = null;
   readonly isDeleting = signal(false);
 
   // ── Forms ──────────────────────────────────────────────────────────────
@@ -191,6 +201,7 @@ export class AchatsSectionComponent implements OnInit {
     activite: [null as number | null, Validators.required],
     charge: [null as number | null, Validators.required],
     montant: [null as number | null, Validators.required],
+    commentaire: [''],
   });
 
   readonly stockForm = this.fb.group({
@@ -218,7 +229,14 @@ export class AchatsSectionComponent implements OnInit {
     }
     // Charge les activités via l'endpoint dédié pour alimenter le dropdown
     this.creditService.getActivitesDemande(this.ref()).subscribe({
-      next: (activites) => this.activites.set(activites),
+      next: (activites) => {
+        const current = this.activites();
+        // Avoid overwriting analyseFin-enriched activities when this request resolves later.
+        const currentHasAnalyseFin = current.some((a) => a.analyseFin?.chargeExploitation?.imprevu != null);
+        if (!currentHasAnalyseFin) {
+          this.activites.set(activites);
+        }
+      },
       error: () => {},
     });
     this.creditService.getAnalyseFinanciere(this.ref()).subscribe({
@@ -235,8 +253,20 @@ export class AchatsSectionComponent implements OnInit {
         if (activitesAvecNested.length > 0) {
           this.activites.set(activitesAvecNested);
         }
-        this.chargesExploitation.set(data.demande.chargesExploitation ?? []);
-        this.stocks.set(data.demande.stocks ?? []);
+        this.demandeRef.set(
+          data.demande.refDemande
+          ?? activitesAvecNested[0]?.refDemande
+          ?? this.ref(),
+        );
+        const chargesDemande = data.demande.chargesExploitation ?? [];
+        this.chargesExploitation.set(
+          chargesDemande.length > 0 ? chargesDemande : this.extractChargesFromActivites(activitesAvecNested),
+        );
+
+        const stocksDemande = data.demande.stocks ?? [];
+        this.stocks.set(
+          stocksDemande.length > 0 ? stocksDemande : this.extractStocksFromActivites(activitesAvecNested),
+        );
         this.isLoading.set(false);
       },
       error: () => {
@@ -249,6 +279,53 @@ export class AchatsSectionComponent implements OnInit {
   formatMontant(n: number | undefined): string {
     if (n == null) return '—';
     return new Intl.NumberFormat('fr-FR').format(n);
+  }
+
+  private toNumber(value: unknown): number {
+    if (value == null || value === '') return 0;
+    if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+    const normalized = String(value).replace(/\s/g, '').replace(',', '.');
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  normalizeImprevu(raw: unknown): number | null {
+    if (raw == null || raw === '') return null;
+    const num = Number(String(raw).replace('%', '').trim());
+    if (!Number.isFinite(num) || num <= 0) return null;
+    if (num === 1) return 10; // compat code legacy éventuel
+    if (num === 2) return 20;
+    if (num === 3) return 30;
+    if (num < 1) return Math.round(num * 100); // ex: 0.1 => 10
+    return Math.round(num);
+  }
+
+  private extractChargesFromActivites(activites: ActiviteCredit[]): ChargeExploitation[] {
+    return activites.flatMap((activite) =>
+      (activite.chargeExploitation ?? []).map((charge) => ({
+        ...charge,
+        activite:
+          charge.activite != null
+            ? charge.activite
+            : activite.id,
+      })),
+    );
+  }
+
+  private extractStocksFromActivites(activites: ActiviteCredit[]): StockItem[] {
+    return activites.flatMap((activite) =>
+      (activite.Stock ?? []).map((stock) => ({
+        ...stock,
+        activite:
+          stock.activite != null
+            ? stock.activite
+            : activite.id,
+      })),
+    );
+  }
+
+  payloadRefDemande(): string {
+    return this.demandeRef() || this.ref();
   }
 
   typeChargeLabel(chargeId: number | undefined | { id?: number; libelle?: string }): string {
@@ -264,15 +341,16 @@ export class AchatsSectionComponent implements OnInit {
     this.achatDrawerOpen = true;
   }
 
-  openEditAchat(a: AchatMensuel) {
-    this.editingAchatId.set(a.id ?? null);
+  openEditAchat(a: AchatMensuel, activiteId?: number) {
+    const editId = a.id ?? (a as unknown as { achatMensuel?: number }).achatMensuel ?? null;
+    this.editingAchatId.set(editId);
     this.achatForm.patchValue({
-      activite: (a.activite as any)?.id ?? a.activite ?? null,
+      activite: (a.activite as any)?.id ?? a.activite ?? activiteId ?? null,
       article: a.article ?? '',
       fournisseur: a.fournisseur ?? '',
       quantite: a.quantite ?? null,
       frequence: a.frequence ?? '',
-      montant: a.achatsMensuels ?? null,
+      montant: a.achatsMensuels ?? (a as unknown as { montant?: number }).montant ?? null,
     });
     this.achatDrawerOpen = true;
   }
@@ -284,7 +362,9 @@ export class AchatsSectionComponent implements OnInit {
     this.isSavingAchat.set(true);
     this.creditService.saveAchatMensuel({
         achatMensuel: editId ?? undefined,
-        refDemande: this.ref(),
+        achat: editId ?? undefined,
+        id: editId ?? undefined,
+        refDemande: this.payloadRefDemande(),
         activite: val.activite,
         article: val.article,
         fournisseur: val.fournisseur,
@@ -309,16 +389,18 @@ export class AchatsSectionComponent implements OnInit {
   // ── Charge Exploitation CRUD ───────────────────────────────────────────
   openAddCharge() {
     this.editingChargeId.set(null);
-    this.chargeForm.reset({ activite: null, charge: null, montant: null });
+    this.chargeForm.reset({ activite: null, charge: null, montant: null, commentaire: '' });
     this.chargeDrawerOpen = true;
   }
 
   openEditCharge(c: ChargeExploitation) {
-    this.editingChargeId.set(c.id ?? null);
+    const editId = c.id ?? (c as unknown as { chargeExploitation?: number }).chargeExploitation ?? null;
+    this.editingChargeId.set(editId);
     this.chargeForm.patchValue({
       activite: (c.activite as any)?.id ?? c.activite ?? null,
       charge: (c.charge as any)?.id ?? c.charge ?? null,
       montant: c.montant ?? null,
+      commentaire: c.commentaire ?? '',
     });
     this.chargeDrawerOpen = true;
   }
@@ -333,7 +415,8 @@ export class AchatsSectionComponent implements OnInit {
         activite: val.activite,
         charge: val.charge,
         montant: val.montant,
-        refDemande: this.ref(),
+        commentaire: val.commentaire ?? '',
+        refDemande: this.payloadRefDemande(),
       })
       .subscribe({
         next: () => {
@@ -378,7 +461,7 @@ export class AchatsSectionComponent implements OnInit {
         article: val.article,
         quantite: val.quantite,
         montanTotal: val.montantTotal,
-        refDemande: this.ref(),
+        refDemande: this.payloadRefDemande(),
       })
       .subscribe({
         next: () => {
@@ -401,7 +484,17 @@ export class AchatsSectionComponent implements OnInit {
   }
 
   openDeleteCharge(charge: ChargeExploitation) {
-    this.deleteTarget = { type: 'charge', id: charge.id!, label: this.typeChargeLabel(charge.charge) };
+    const chargeId = charge.id ?? (charge as unknown as { chargeExploitation?: number }).chargeExploitation;
+    if (chargeId == null) {
+      this.toast.error('Impossible de supprimer: identifiant de charge introuvable.');
+      return;
+    }
+    this.deleteTarget = {
+      type: 'charge',
+      id: chargeId,
+      label: this.typeChargeLabel(charge.charge),
+      chargeData: charge,
+    };
     this.deleteDialogOpen = true;
   }
 
@@ -412,28 +505,54 @@ export class AchatsSectionComponent implements OnInit {
 
   confirmDelete() {
     if (!this.deleteTarget) return;
-    const { type, id } = this.deleteTarget;
+    const { type, id, chargeData } = this.deleteTarget;
     this.deleteDialogOpen = false;
     this.isDeleting.set(true);
-    const obs$ =
-      type === 'achat'
-        ? this.creditService.deleteAchatMensuel(id)
-        : type === 'stock'
-          ? this.creditService.deleteStock(id)
-          : this.creditService.deleteChargeExploitation(id);
+    if (type === 'charge') {
+      this.creditService.deleteChargeExploitation(id).subscribe({
+        next: () => this.onDeleteSuccess(),
+        error: () => {
+          if (!chargeData) {
+            this.onDeleteError();
+            return;
+          }
+          this.creditService.saveChargeExploitation({
+            chargeExploitation: id,
+            activite: (chargeData.activite as { id?: number })?.id ?? chargeData.activite ?? null,
+            charge: (chargeData.charge as { id?: number })?.id ?? chargeData.charge ?? null,
+            montant: this.toNumber(chargeData.montant),
+            commentaire: chargeData.commentaire ?? '',
+            refDemande: this.payloadRefDemande(),
+            etat: 0,
+            statut: 0,
+          }).subscribe({
+            next: () => this.onDeleteSuccess(),
+            error: () => this.onDeleteError(),
+          });
+        },
+      });
+      return;
+    }
 
+    const obs$ = type === 'achat'
+      ? this.creditService.deleteAchatMensuel(id)
+      : this.creditService.deleteStock(id);
     obs$.subscribe({
-      next: () => {
-        this.toast.success('Supprimé avec succès.');
-        this.isDeleting.set(false);
-        this.deleteTarget = null;
-        this.loadData();
-      },
-      error: () => {
-        this.toast.error('Erreur lors de la suppression.');
-        this.isDeleting.set(false);
-      },
+      next: () => this.onDeleteSuccess(),
+      error: () => this.onDeleteError(),
     });
+  }
+
+  private onDeleteSuccess() {
+    this.toast.success('Supprimé avec succès.');
+    this.isDeleting.set(false);
+    this.deleteTarget = null;
+    this.loadData();
+  }
+
+  private onDeleteError() {
+    this.toast.error('Erreur lors de la suppression.');
+    this.isDeleting.set(false);
   }
 
   // ── Imprévus charges exploitation ─────────────────────────────────────
@@ -444,7 +563,12 @@ export class AchatsSectionComponent implements OnInit {
     this.creditService.saveImprevuChargeExploitation({
       activite: activiteId,
       imprevu: value,
-      refDemande: this.ref(),
+      refDemande: this.payloadRefDemande(),
+      // Legacy endpoint is lenient but historically receives the full charge form shape.
+      charge: null,
+      montant: null,
+      commentaire: '',
+      chargeExploitation: null,
     }).subscribe({
       next: () => {
         this.toast.success('Imprévus enregistrés.');

@@ -1,8 +1,9 @@
 <div class="flex flex-col gap-6">
-
   <!-- Erreur -->
   @if (error()) {
-    <div class="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3">
+    <div
+      class="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3"
+    >
       <lucide-icon [img]="AlertCircleIcon" [size]="16" class="text-destructive shrink-0" />
       <p class="text-sm text-destructive">{{ error() }}</p>
     </div>
@@ -16,7 +17,6 @@
       }
     </div>
   } @else {
-
     <!-- ══ ACHATS MENSUELS ══════════════════════════════════════════════ -->
     <app-card>
       <app-card-header>
@@ -24,8 +24,10 @@
           <div class="flex items-center gap-2">
             <app-card-title>Achats mensuels</app-card-title>
             @if (totalAchats() > 0) {
-              <span class="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-                Total : {{ totalAchats() | number:'1.0-0' }} FCFA
+              <span
+                class="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary"
+              >
+                Total : {{ totalAchats() | number: '1.0-0' }} FCFA
               </span>
             }
           </div>
@@ -39,19 +41,29 @@
         @if (activites().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
             <lucide-icon [img]="ShoppingCartIcon" [size]="32" class="text-muted-foreground/40" />
-            <p class="text-sm text-muted-foreground">Aucune activité enregistrée — veuillez d'abord créer une activité</p>
+            <p class="text-sm text-muted-foreground">
+              Aucune activité enregistrée — veuillez d'abord créer une activité
+            </p>
           </div>
         } @else {
-
           <div class="flex flex-col gap-4">
             @for (activite of activites(); track activite.id) {
               @if ((activite.achatMensuel?.length ?? 0) > 0) {
                 <div class="rounded-xl border border-border overflow-hidden">
-
                   <!-- Header activité -->
-                  <div class="flex items-center justify-between px-4 py-2.5 bg-muted/30 border-b border-border">
-                    <span class="text-sm font-semibold text-foreground">{{ activite.libelle }}</span>
-                    <button type="button" (click)="openAddAchat(activite.id)" appButton size="sm" variant="outline">
+                  <div
+                    class="flex items-center justify-between px-4 py-2.5 bg-muted/30 border-b border-border"
+                  >
+                    <span class="text-sm font-semibold text-foreground">{{
+                      activite.libelle
+                    }}</span>
+                    <button
+                      type="button"
+                      (click)="openAddAchat(activite.id)"
+                      appButton
+                      size="sm"
+                      variant="outline"
+                    >
                       <lucide-icon [img]="PlusIcon" [size]="12" />
                       Ajouter
                     </button>
@@ -61,30 +73,50 @@
                   <table class="w-full text-sm">
                     <thead>
                       <tr class="border-b border-border bg-muted/10">
-                        <th class="px-4 py-2 text-left font-medium text-muted-foreground">Article</th>
-                        <th class="px-4 py-2 text-left font-medium text-muted-foreground">Fournisseur</th>
+                        <th class="px-4 py-2 text-left font-medium text-muted-foreground">
+                          Article
+                        </th>
+                        <th class="px-4 py-2 text-left font-medium text-muted-foreground">
+                          Fournisseur
+                        </th>
                         <th class="px-4 py-2 text-right font-medium text-muted-foreground">Qté</th>
-                        <th class="px-4 py-2 text-left font-medium text-muted-foreground">Fréquence</th>
-                        <th class="px-4 py-2 text-right font-medium text-muted-foreground">Montant (FCFA)</th>
+                        <th class="px-4 py-2 text-left font-medium text-muted-foreground">
+                          Fréquence
+                        </th>
+                        <th class="px-4 py-2 text-right font-medium text-muted-foreground">
+                          Montant (FCFA)
+                        </th>
                         <th class="px-4 py-2 w-10"></th>
                       </tr>
                     </thead>
                     <tbody>
                       @for (achat of activite.achatMensuel; track achat.id) {
-                        <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
+                        <tr
+                          class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors"
+                        >
                           <td class="px-4 py-2.5 font-medium">{{ achat.article }}</td>
                           <td class="px-4 py-2.5 text-muted-foreground">{{ achat.fournisseur }}</td>
-                          <td class="px-4 py-2.5 text-right tabular-nums">{{ achat.quantite != null ? (achat.quantite | number) : '—' }}</td>
+                          <td class="px-4 py-2.5 text-right tabular-nums">
+                            {{ achat.quantite != null ? (achat.quantite | number) : '—' }}
+                          </td>
                           <td class="px-4 py-2.5 text-muted-foreground">{{ achat.frequence }}</td>
-                          <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(achat.achatsMensuels) }}</td>
+                          <td class="px-4 py-2.5 text-right font-semibold tabular-nums">
+                            {{ formatMontant(achat.achatsMensuels) }}
+                          </td>
                           <td class="px-4 py-2.5">
                             <div class="flex items-center gap-1">
-                              <button type="button" (click)="openEditAchat(achat)"
-                                class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer">
+                              <button
+                                type="button"
+                                (click)="openEditAchat(achat, activite.id)"
+                                class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                              >
                                 <lucide-icon [img]="PencilIcon" [size]="13" />
                               </button>
-                              <button type="button" (click)="openDeleteAchat(achat)"
-                                class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                              <button
+                                type="button"
+                                (click)="openDeleteAchat(achat)"
+                                class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                              >
                                 <lucide-icon [img]="Trash2Icon" [size]="13" />
                               </button>
                             </div>
@@ -100,9 +132,19 @@
             <!-- Activités sans achats -->
             @for (activite of activites(); track activite.id) {
               @if ((activite.achatMensuel?.length ?? 0) === 0) {
-                <div class="flex items-center justify-between rounded-xl border border-dashed border-border px-4 py-3">
-                  <span class="text-sm text-muted-foreground">{{ activite.libelle }} — aucun achat</span>
-                  <button type="button" (click)="openAddAchat(activite.id)" appButton size="sm" variant="outline">
+                <div
+                  class="flex items-center justify-between rounded-xl border border-dashed border-border px-4 py-3"
+                >
+                  <span class="text-sm text-muted-foreground"
+                    >{{ activite.libelle }} — aucun achat</span
+                  >
+                  <button
+                    type="button"
+                    (click)="openAddAchat(activite.id)"
+                    appButton
+                    size="sm"
+                    variant="outline"
+                  >
                     <lucide-icon [img]="PlusIcon" [size]="12" />
                     Ajouter
                   </button>
@@ -111,7 +153,6 @@
             }
           </div>
         }
-
       </app-card-content>
     </app-card>
 
@@ -122,8 +163,10 @@
           <div class="flex items-center gap-2">
             <app-card-title>Stocks</app-card-title>
             @if (totalStocks() > 0) {
-              <span class="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                Total : {{ totalStocks() | number:'1.0-0' }} FCFA
+              <span
+                class="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+              >
+                Total : {{ totalStocks() | number: '1.0-0' }} FCFA
               </span>
             }
           </div>
@@ -134,15 +177,14 @@
         </div>
       </app-card-header>
       <app-card-content>
-
         @if (stocks().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
             <lucide-icon [img]="PackageIcon" [size]="32" class="text-muted-foreground/40" />
             <p class="text-sm text-muted-foreground">Aucun stock enregistré</p>
-            <button type="button" (click)="openAddStock()" appButton size="sm">
+            <!-- <button type="button" (click)="openAddStock()" appButton size="sm">
               <lucide-icon [img]="PlusIcon" [size]="14" />
               Ajouter un stock
-            </button>
+            </button> -->
           </div>
         } @else {
           <table class="w-full text-sm">
@@ -157,19 +199,33 @@
             </thead>
             <tbody>
               @for (stock of stocks(); track stock.id) {
-                <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
-                  <td class="px-4 py-2.5 text-muted-foreground">{{ activiteLabel(stock.activite) }}</td>
+                <tr
+                  class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors"
+                >
+                  <td class="px-4 py-2.5 text-muted-foreground">
+                    {{ activiteLabel(stock.activite) }}
+                  </td>
                   <td class="px-4 py-2.5 font-medium">{{ stock.article }}</td>
-                  <td class="px-4 py-2.5 text-right tabular-nums">{{ stock.quantite != null ? (stock.quantite | number) : '—' }}</td>
-                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(stock.montantTotal) }}</td>
+                  <td class="px-4 py-2.5 text-right tabular-nums">
+                    {{ stock.quantite != null ? (stock.quantite | number) : '—' }}
+                  </td>
+                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">
+                    {{ formatMontant(stock.montantTotal) }}
+                  </td>
                   <td class="px-4 py-2.5">
                     <div class="flex items-center gap-1">
-                      <button type="button" (click)="openEditStock(stock)"
-                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer">
+                      <button
+                        type="button"
+                        (click)="openEditStock(stock)"
+                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                      >
                         <lucide-icon [img]="PencilIcon" [size]="13" />
                       </button>
-                      <button type="button" (click)="openDeleteStock(stock)"
-                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                      <button
+                        type="button"
+                        (click)="openDeleteStock(stock)"
+                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                      >
                         <lucide-icon [img]="Trash2Icon" [size]="13" />
                       </button>
                     </div>
@@ -179,7 +235,6 @@
             </tbody>
           </table>
         }
-
       </app-card-content>
     </app-card>
 
@@ -190,8 +245,10 @@
           <div class="flex items-center gap-2">
             <app-card-title>Charges d'exploitation</app-card-title>
             @if (totalCharges() > 0) {
-              <span class="rounded-full bg-orange-500/10 px-2.5 py-0.5 text-xs font-semibold text-orange-600 dark:text-orange-400">
-                Total : {{ totalCharges() | number:'1.0-0' }} FCFA
+              <span
+                class="rounded-full bg-orange-500/10 px-2.5 py-0.5 text-xs font-semibold text-orange-600 dark:text-orange-400"
+              >
+                Total : {{ totalCharges() | number: '1.0-0' }} FCFA
               </span>
             }
           </div>
@@ -202,7 +259,6 @@
         </div>
       </app-card-header>
       <app-card-content>
-
         @if (chargesExploitation().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
             <lucide-icon [img]="BanknoteIcon" [size]="32" class="text-muted-foreground/40" />
@@ -218,28 +274,46 @@
               <tr class="border-b border-border bg-muted/10">
                 <th class="px-4 py-2 text-left font-medium text-muted-foreground">Activité</th>
                 <th class="px-4 py-2 text-left font-medium text-muted-foreground">Charges</th>
-                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Montant (FCFA)</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Commentaire</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">
+                  Montant (FCFA)
+                </th>
                 <th class="px-4 py-2 w-10"></th>
               </tr>
             </thead>
             <tbody>
-              @for (charge of chargesExploitation(); track charge.id) {
-                <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
-                  <td class="px-4 py-2.5 text-muted-foreground">{{ activiteLabel(charge.activite) }}</td>
+              @for (charge of chargesExploitation(); track charge.id ?? $index) {
+                <tr
+                  class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors"
+                >
+                  <td class="px-4 py-2.5 text-muted-foreground">
+                    {{ activiteLabel(charge.activite) }}
+                  </td>
                   <td class="px-4 py-2.5 font-medium">
                     <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
                       {{ typeChargeLabel(charge.charge) }}
                     </span>
                   </td>
-                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(charge.montant) }}</td>
+                  <td class="px-4 py-2.5 text-muted-foreground">
+                    {{ charge.commentaire?.trim() || '—' }}
+                  </td>
+                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">
+                    {{ formatMontant(charge.montant) }}
+                  </td>
                   <td class="px-4 py-2.5">
                     <div class="flex items-center gap-1">
-                      <button type="button" (click)="openEditCharge(charge)"
-                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer">
+                      <button
+                        type="button"
+                        (click)="openEditCharge(charge)"
+                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                      >
                         <lucide-icon [img]="PencilIcon" [size]="13" />
                       </button>
-                      <button type="button" (click)="openDeleteCharge(charge)"
-                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                      <button
+                        type="button"
+                        (click)="openDeleteCharge(charge)"
+                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                      >
                         <lucide-icon [img]="Trash2Icon" [size]="13" />
                       </button>
                     </div>
@@ -249,7 +323,6 @@
             </tbody>
           </table>
         }
-
       </app-card-content>
     </app-card>
 
@@ -261,8 +334,10 @@
             <div class="flex items-center gap-2">
               <app-card-title>Imprévus charges d'exploitation</app-card-title>
               @if (totalImprevu() > 0) {
-                <span class="rounded-full bg-violet-500/10 px-2.5 py-0.5 text-xs font-semibold text-violet-600 dark:text-violet-400">
-                  Total : {{ totalImprevu() | number:'1.0-0' }} FCFA
+                <span
+                  class="rounded-full bg-violet-500/10 px-2.5 py-0.5 text-xs font-semibold text-violet-600 dark:text-violet-400"
+                >
+                  Total : {{ totalImprevu() | number: '1.0-0' }} FCFA
                 </span>
               }
             </div>
@@ -273,26 +348,41 @@
             <thead>
               <tr class="border-b border-border bg-muted/10">
                 <th class="px-4 py-2 text-left font-medium text-muted-foreground">Activité</th>
-                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Total charges</th>
-                <th class="px-4 py-2 text-center font-medium text-muted-foreground">Imprévus (%)</th>
-                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Montant imprévus</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">
+                  Total charges
+                </th>
+                <th class="px-4 py-2 text-center font-medium text-muted-foreground">
+                  Imprévus (%)
+                </th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">
+                  Montant imprévus
+                </th>
               </tr>
             </thead>
             <tbody>
               @for (row of chargesParActivite(); track row.activite.id) {
-                <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
+                <tr
+                  class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors"
+                >
                   <td class="px-4 py-2.5 font-medium">{{ row.activite.libelle }}</td>
-                  <td class="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{{ formatMontant(row.total) }}</td>
+                  <td class="px-4 py-2.5 text-right tabular-nums text-muted-foreground">
+                    {{ formatMontant(row.total) }}
+                  </td>
                   <td class="px-4 py-2.5">
                     <div class="flex justify-center">
                       <select
-                        [value]="row.imprevu ?? ''"
                         (change)="saveImprevu(row.activite.id!, $event)"
                         [disabled]="isSavingImprevu()"
-                        class="rounded-md border border-border bg-background px-2.5 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 cursor-pointer">
-                        <option value="" disabled>—</option>
+                        class="rounded-md border border-border bg-background px-2.5 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 cursor-pointer"
+                      >
+                        <option value="" [selected]="row.imprevu == null">—</option>
                         @for (opt of imprevuOptions; track opt.value) {
-                          <option [value]="opt.value">{{ opt.label }}</option>
+                          <option
+                            [value]="opt.value.toString()"
+                            [selected]="row.imprevu === opt.value"
+                          >
+                            {{ opt.label }}
+                          </option>
                         }
                       </select>
                     </div>
@@ -311,58 +401,63 @@
         </app-card-content>
       </app-card>
     }
-
   }
-
 </div>
 
 <!-- ══ DRAWER — Achat mensuel ══════════════════════════════════════════════ -->
 <app-drawer [(open)]="achatDrawerOpen">
   <app-drawer-header>
-    <app-drawer-title>{{ editingAchatId() ? 'Modifier l\'achat' : 'Ajouter un achat mensuel' }}</app-drawer-title>
+    <app-drawer-title>{{
+      editingAchatId() ? "Modifier l'achat" : 'Ajouter un achat mensuel'
+    }}</app-drawer-title>
   </app-drawer-header>
   <app-drawer-content>
     <form [formGroup]="achatForm" class="flex flex-col gap-4">
-
       <app-form-select
         name="activite"
         label="Activité"
         [options]="activiteOptions()"
         placeholder="Sélectionner une activité"
-        required />
+        required
+      />
 
       <app-form-input
         name="article"
         label="Article / Produit acheté"
         placeholder="Ex: Riz, Ciment..."
-        required />
+        required
+      />
 
       <app-form-input
         name="fournisseur"
         label="Fournisseur / Site d'achat"
         placeholder="Ex: Marché Adjamé"
-        required />
+        required
+      />
 
       <app-form-input
         name="quantite"
         label="Quantité"
         type="number"
         placeholder="Ex: 50"
-        required />
+        required
+      />
 
       <app-form-input
         name="frequence"
         label="Fréquence d'achat"
         placeholder="Ex: Hebdomadaire, Mensuel..."
-        required />
+        required
+      />
 
       <app-form-input
         name="montant"
         label="Achats mensuels (FCFA)"
         type="number"
+        format
         placeholder="Ex: 500000"
-        required />
-
+        required
+      />
     </form>
   </app-drawer-content>
   <app-drawer-footer>
@@ -371,7 +466,11 @@
         Annuler
       </button>
       <button type="button" (click)="saveAchat()" appButton [disabled]="isSavingAchat()">
-        @if (isSavingAchat()) { Enregistrement… } @else { Enregistrer }
+        @if (isSavingAchat()) {
+          Enregistrement…
+        } @else {
+          Enregistrer
+        }
       </button>
     </div>
   </app-drawer-footer>
@@ -380,32 +479,43 @@
 <!-- ══ DRAWER — Charge d'exploitation ══════════════════════════════════════ -->
 <app-drawer [(open)]="chargeDrawerOpen">
   <app-drawer-header>
-    <app-drawer-title>{{ editingChargeId() ? 'Modifier la charge' : 'Ajouter une charge d\'exploitation' }}</app-drawer-title>
+    <app-drawer-title>{{
+      editingChargeId() ? 'Modifier la charge' : "Ajouter une charge d'exploitation"
+    }}</app-drawer-title>
   </app-drawer-header>
   <app-drawer-content>
     <form [formGroup]="chargeForm" class="flex flex-col gap-4">
-
       <app-form-select
         name="activite"
         label="Activités"
         [options]="activiteOptions()"
         placeholder="Sélectionner une activité"
-        required />
+        required
+      />
 
       <app-form-select
         name="charge"
         label="Charges"
         [options]="typeChargeOptions()"
         placeholder="Sélectionner un type de charge"
-        required />
+        required
+      />
 
       <app-form-input
         name="montant"
         label="Montant"
         type="number"
+        format
         placeholder="Ex: 150000"
-        required />
+        required
+      />
 
+      <app-form-textarea
+        name="commentaire"
+        label="Commentaire"
+        placeholder="Ajouter un commentaire… (facultatif)"
+        [rows]="3"
+      />
     </form>
   </app-drawer-content>
   <app-drawer-footer>
@@ -414,7 +524,11 @@
         Annuler
       </button>
       <button type="button" (click)="saveCharge()" appButton [disabled]="isSavingCharge()">
-        @if (isSavingCharge()) { Enregistrement… } @else { Enregistrer }
+        @if (isSavingCharge()) {
+          Enregistrement…
+        } @else {
+          Enregistrer
+        }
       </button>
     </div>
   </app-drawer-footer>
@@ -423,31 +537,30 @@
 <!-- ══ DRAWER — Stock ═══════════════════════════════════════════════════════ -->
 <app-drawer [(open)]="stockDrawerOpen">
   <app-drawer-header>
-    <app-drawer-title>{{ editingStockId() ? 'Modifier le stock' : 'Ajouter un stock' }}</app-drawer-title>
+    <app-drawer-title>{{
+      editingStockId() ? 'Modifier le stock' : 'Ajouter un stock'
+    }}</app-drawer-title>
   </app-drawer-header>
   <app-drawer-content>
     <form [formGroup]="stockForm" class="flex flex-col gap-4">
-
       <app-form-select
         name="activite"
         label="Activité"
         [options]="activiteOptions()"
         placeholder="Sélectionner une activité"
-        required />
+        required
+      />
 
-      <app-form-input
-        name="article"
-        label="Désignation"
-        placeholder="Ex: Riz, Huile..."
-        required />
+      <app-form-input name="article" label="Désignation" placeholder="Ex: Riz, Huile..." required />
 
       <app-form-input
         name="montantTotal"
         label="Prix (FCFA)"
         type="number"
+        format
         placeholder="Ex: 250000"
-        required />
-
+        required
+      />
     </form>
   </app-drawer-content>
   <app-drawer-footer>
@@ -456,7 +569,11 @@
         Annuler
       </button>
       <button type="button" (click)="saveStock()" appButton [disabled]="isSavingStock()">
-        @if (isSavingStock()) { Enregistrement… } @else { Enregistrer }
+        @if (isSavingStock()) {
+          Enregistrement…
+        } @else {
+          Enregistrer
+        }
       </button>
     </div>
   </app-drawer-footer>
@@ -476,8 +593,18 @@
     <button type="button" (click)="deleteDialogOpen = false" appButton variant="outline">
       Annuler
     </button>
-    <button type="button" (click)="confirmDelete()" appButton variant="destructive" [disabled]="isDeleting()">
-      @if (isDeleting()) { Suppression… } @else { Supprimer }
+    <button
+      type="button"
+      (click)="confirmDelete()"
+      appButton
+      variant="destructive"
+      [disabled]="isDeleting()"
+    >
+      @if (isDeleting()) {
+        Suppression…
+      } @else {
+        Supprimer
+      }
     </button>
   </app-dialog-footer>
 </app-dialog>

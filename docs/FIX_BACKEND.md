@@ -70,3 +70,30 @@ visiteMedicale: 0
 ​
 <prototype>: Object { … }
 demande-section.component.ts:46:13
+
+
+
+ Oui, le payload que tu montres est conforme au legacy
+  pour [POST] /saveStock :
+
+REQ:
+   {"activite":113,"article":"Huile","quantite":null,"m
+  ontanTotal":25000,"refDemande":"1775126013C0503512"}
+  
+RES:
+SQLSTATE[01000]: Warning: 1265 Data truncated for column 'REF_DEMANDE' at row 1 (SQL: insert into `cr_stocks` (`REF_DEMANDE`, `activite_id`, `ARTICLE`, `QUANTITE`, `MONTANT`, `MONTANT_TOTAL`, `ETAT`, `STATUT`, `updated_at`, `created_at`) values (1775126013C0503512, 113, Huile, 0, 0, 25000, 1, 1, 2026-04-09 09:54:37, 2026-04-09 09:54:37))
+
+  Le problème vient du backend/table cr_stocks : la
+  colonne REF_DEMANDE n’accepte visiblement pas ce
+  format alphanumérique (d’où Data truncated).
+  Donc ici, ce n’est pas un écart de mapping frontend
+  par rapport au legacy, mais un souci de
+  schéma/validation côté API pour cr_stocks.
+
+
+
+
+[DELETE] /api/credit/deleteChargeExploitation/:id
+
+status : 200 ok
+mais l'element en question est toujours visible dans la liste

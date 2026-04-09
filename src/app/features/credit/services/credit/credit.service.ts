@@ -405,7 +405,15 @@ export class CreditService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
-  saveImprevuChargeExploitation(data: { activite?: number | null; imprevu?: number | null; refDemande?: string }) {
+  saveImprevuChargeExploitation(data: {
+    activite?: number | null;
+    imprevu?: number | null;
+    refDemande?: string;
+    charge?: number | null;
+    montant?: number | null;
+    commentaire?: string;
+    chargeExploitation?: number | null;
+  }) {
     return this.api
       .post<{ status: number; message?: string }>(this.endpoint + '/saveImprevus', data)
       .pipe(catchError((err) => throwError(() => err)));
