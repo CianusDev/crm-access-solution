@@ -78,7 +78,7 @@ const TYPE_ANALYSE: SelectOption[] = [
   { value: 'Semaine', label: 'Semaine' },
 ];
 
-const SAISONS: SelectOption[] = [
+const STATUTS_MOIS: SelectOption[] = [
   { value: '1', label: 'Mois bon' },
   { value: '2', label: 'Mois faible' },
 ];
@@ -131,7 +131,7 @@ export class ActiviteSectionComponent implements OnInit {
   readonly moisOptions = MOIS;
   readonly joursOptions = JOURS;
   readonly typeAnalyseOptions = TYPE_ANALYSE;
-  readonly saisonOptions = SAISONS;
+  readonly statutMoisOptions = STATUTS_MOIS;
 
   // ── State ──────────────────────────────────────────────────────────────
   readonly isLoading = signal(false);
@@ -152,6 +152,37 @@ export class ActiviteSectionComponent implements OnInit {
     this.communes().map((c) => ({ value: c.id!, label: c.libelle ?? '' })),
   );
 
+  readonly analyseFinTotals = computed(() => {
+    const toNumber = (value: unknown): number => {
+      if (typeof value === 'number') return value;
+      if (typeof value === 'string' && value.trim() !== '') return Number(value);
+      return 0;
+    };
+
+    return this.activites().reduce(
+      (acc, activite) => {
+        const analyse = activite.analyseFin;
+        acc.detteEntreprise += toNumber(analyse?.detteEtreprise);
+        acc.detteFournisseur += toNumber(analyse?.detteFournisseur);
+        acc.espece += toNumber(analyse?.tresorerie?.espece);
+        acc.banque += toNumber(analyse?.tresorerie?.banque);
+        acc.creanceClient += toNumber(analyse?.creanceClient);
+        acc.avanceFournisseur += toNumber(analyse?.avanceFournisseur);
+        acc.totalStock += toNumber(analyse?.stock?.totalStock);
+        return acc;
+      },
+      {
+        detteEntreprise: 0,
+        detteFournisseur: 0,
+        espece: 0,
+        banque: 0,
+        creanceClient: 0,
+        avanceFournisseur: 0,
+        totalStock: 0,
+      },
+    );
+  });
+
   // Drawer states
   activiteDrawerOpen = false;
   activiteDrawerMode: 'create' | 'edit' = 'create';
@@ -169,6 +200,7 @@ export class ActiviteSectionComponent implements OnInit {
   readonly isSavingVenteM = signal(false);
   readonly isSavingVenteJ = signal(false);
   readonly isSavingMarge = signal(false);
+  readonly savingMargePondereId = signal<number | null>(null);
   readonly isDeleting = signal(false);
 
   // Collapse/expand state: Map<activiteId, boolean> (true = collapsed)
@@ -243,6 +275,83 @@ export class ActiviteSectionComponent implements OnInit {
   formatMontant(n: number | undefined): string {
     if (n == null) return '—';
     return new Intl.NumberFormat('fr-FR').format(n);
+  }
+
+  formatPourcentage(n: number | undefined | null): string {
+    if (n == null) return '—';
+    return `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(n)} %`;
+  }
+
+  margeMontant(prixVente?: number | null, prixAchat?: number | null): number {
+    return (prixVente ?? 0) - (prixAchat ?? 0);
+  }
+
+  margePourcentage(prixVente?: number | null, prixAchat?: number | null): number | null {
+    const vente = prixVente ?? 0;
+    if (vente <= 0) return null;
+    return (this.margeMontant(prixVente, prixAchat) / vente) * 100;
+  }
+
+  margePourcentageLigne(marge: MargeCommerciale): number | null {
+    if (marge.marge != null) return marge.marge;
+    return this.margePourcentage(marge.prixVente, marge.prixAchat);
+  }
+
+  analyseMargeMoyenne(activite: ActiviteCredit): number | null {
+    return activite.analyseFin?.margeCommerciale?.margeMoyenne ?? null;
+  }
+
+  analyseMargeARetenir(activite: ActiviteCredit): number | null {
+    return activite.analyseFin?.margeCommerciale?.margeAretenir ?? null;
+  }
+
+  updateMargePondere(activite: ActiviteCredit, event: Event) {
+    const target = event.target as HTMLInputElement | null;
+    if (!target) return;
+    const raw = target.value.trim();
+    activite.margePondere = raw === '' ? 0 : Number(raw);
+  }
+
+  saveMargePondere(activite: ActiviteCredit) {
+    if (!activite.id) return;
+    const margePondere = Number(activite.margePondere ?? 0);
+    this.savingMargePondereId.set(activite.id);
+    this.creditService
+      .saveActivite({
+        activite: activite.id,
+        margePondere,
+        refDemande: this.ref(),
+      })
+      .subscribe({
+        next: () => {
+          this.toast.success('Marge pondérée enregistrée.');
+          this.savingMargePondereId.set(null);
+          this.loadData();
+        },
+        error: (err) => {
+          console.error(err);
+          this.toast.error(err.message ?? "Erreur lors de l'enregistrement.");
+          this.savingMargePondereId.set(null);
+        },
+      });
+  }
+
+  venteJStatutLabel(): string {
+    const activiteId = this.venteJournaliereForm.controls.activite.value;
+    const typeAnalyse = this.activites().find((a) => a.id === activiteId)?.typeAnalyse;
+    return typeAnalyse === 'Semaine' ? 'Statut de la semaine' : 'Statut du jour';
+  }
+
+  venteJStatutOptions(): SelectOption[] {
+    const activiteId = this.venteJournaliereForm.controls.activite.value;
+    const typeAnalyse = this.activites().find((a) => a.id === activiteId)?.typeAnalyse;
+    const isSemaine = typeAnalyse === 'Semaine';
+
+    return [
+      { value: '3', label: isSemaine ? 'Semaine bonne' : 'Jour bon' },
+      { value: '2', label: isSemaine ? 'Semaine moyenne' : 'Jour moyen' },
+      { value: '1', label: isSemaine ? 'Semaine faible' : 'Jour faible' },
+    ];
   }
 
   communeLabel(commune: string | { id?: number; libelle?: string } | undefined): string {

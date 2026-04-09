@@ -919,6 +919,22 @@ export interface ActiviteCredit {
   achatMensuel?: AchatMensuel[]; // Singulier comme dans l'API
   margeCommerciale?: MargeCommerciale[]; // Singulier comme dans l'API
   analyseFin?: {
+    detteEtreprise?: number;
+    detteFournisseur?: number;
+    creanceClient?: number;
+    avanceFournisseur?: number;
+    tresorerie?: {
+      espece?: number;
+      banque?: number;
+    };
+    stock?: {
+      totalStock?: number;
+    };
+    margeCommerciale?: {
+      margeMoyenne?: number;
+      margePondere?: number;
+      margeAretenir?: number;
+    };
     chargeExploitation?: {
       imprevu?: number;
       total?: number;
