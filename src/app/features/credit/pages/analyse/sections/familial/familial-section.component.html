@@ -407,13 +407,25 @@
   <app-drawer-content>
     <form [formGroup]="membreForm" class="flex flex-col gap-4">
       <app-form-select name="membreFamille" label="Type de membre" [options]="membresFamilleOptions" placeholder="Sélectionner" required />
-      <div class="grid grid-cols-2 gap-3">
-        <app-form-input name="nombre" label="Nombre" type="number" placeholder="Ex: 2" required />
-        <app-form-input name="age" label="Âge moyen" type="number" placeholder="Ex: 12" />
-      </div>
-      <app-form-input name="activite" label="Activité / Profession" placeholder="Ex: Scolarisés" />
-      <app-form-input name="revenus" label="Revenus mensuels (FCFA)" type="number" placeholder="Ex: 75000" />
-      <app-form-input name="justifs" label="Justificatifs" placeholder="Ex: Bulletins scolaires, etc." />
+      @if (selectedMembreCondition() !== 'none') {
+        <div class="grid grid-cols-2 gap-3">
+          @if (showMembreNombre()) {
+            <app-form-input name="nombre" label="Nombre" type="number" placeholder="Ex: 2" required />
+          }
+          @if (showMembreAge()) {
+            <app-form-input name="age" label="Âge moyen" type="number" placeholder="Ex: 12" required />
+          }
+        </div>
+        @if (showMembreActivite()) {
+          <app-form-input name="activite" label="Activité / Profession" placeholder="Ex: Scolarisés" required />
+        }
+        @if (showMembreRevenus()) {
+          <app-form-input name="revenus" label="Revenus mensuels (FCFA)" type="number" placeholder="Ex: 75000" required />
+        }
+        @if (showMembreJustifs()) {
+          <app-form-select name="justifs" label="Justificatifs" [options]="justifsOptions" placeholder="Sélectionner" required />
+        }
+      }
     </form>
   </app-drawer-content>
   <app-drawer-footer>

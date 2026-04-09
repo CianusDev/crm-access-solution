@@ -78,6 +78,13 @@ const MEMBRES_FAMILLE: SelectOption[] = [
   { value: 'Autres sources de revenus (loyer, transferts, pension, etc.)', label: 'Autres sources de revenus' },
 ];
 
+const JUSTIFS_OPTIONS: SelectOption[] = [
+  { value: '1', label: 'OUI' },
+  { value: '0', label: 'NON' },
+];
+
+type MembreCondition = 'none' | 'demandeur' | 'domestiques' | 'autresRevenus' | 'autresFamille';
+
 @Component({
   selector: 'app-familial-section',
   templateUrl: './familial-section.component.html',
@@ -120,6 +127,7 @@ export class FamilialSectionComponent implements OnInit {
 
   // ── Constants ──────────────────────────────────────────────────────────
   readonly membresFamilleOptions = MEMBRES_FAMILLE;
+  readonly justifsOptions = JUSTIFS_OPTIONS;
   readonly imprevuFamOptions = IMPREVU_FAM_OPTIONS;
   readonly typesChargeFam = TYPES_CHARGE_FAM;
   readonly typesChargeFamOptions = TYPES_CHARGE_FAM.map(t => ({ value: t.id, label: t.name }));
@@ -166,6 +174,36 @@ export class FamilialSectionComponent implements OnInit {
   readonly totalRevenusMembers = computed(() =>
     this.membresMenage().reduce((s, m) => s + (m.revenus ?? 0), 0),
   );
+  readonly selectedMembreCondition = signal<MembreCondition>('none');
+  readonly showMembreNombre = computed(
+    () =>
+      this.selectedMembreCondition() === 'domestiques' ||
+      this.selectedMembreCondition() === 'autresFamille',
+  );
+  readonly showMembreAge = computed(
+    () =>
+      this.selectedMembreCondition() === 'demandeur' ||
+      this.selectedMembreCondition() === 'domestiques' ||
+      this.selectedMembreCondition() === 'autresFamille',
+  );
+  readonly showMembreActivite = computed(
+    () =>
+      this.selectedMembreCondition() === 'demandeur' ||
+      this.selectedMembreCondition() === 'autresRevenus' ||
+      this.selectedMembreCondition() === 'autresFamille',
+  );
+  readonly showMembreRevenus = computed(
+    () =>
+      this.selectedMembreCondition() === 'demandeur' ||
+      this.selectedMembreCondition() === 'autresRevenus' ||
+      this.selectedMembreCondition() === 'autresFamille',
+  );
+  readonly showMembreJustifs = computed(
+    () =>
+      this.selectedMembreCondition() === 'demandeur' ||
+      this.selectedMembreCondition() === 'autresRevenus' ||
+      this.selectedMembreCondition() === 'autresFamille',
+  );
 
   // Drawer
   membreDrawerOpen = false;
@@ -191,12 +229,12 @@ export class FamilialSectionComponent implements OnInit {
   });
 
   readonly membreForm = this.fb.group({
-    membreFamille: [''],
-    nombre: [null as number | null, Validators.required],
-    age: [null as number | null, Validators.required],
-    activite: ['', Validators.required],
-    revenus: [null as number | null, Validators.required],
-    justifs: ['', Validators.required],
+    membreFamille: ['', Validators.required],
+    nombre: [null as number | null],
+    age: [null as number | null],
+    activite: [''],
+    revenus: [null as number | null],
+    justifs: [''],
   });
 
   readonly chargeForm = this.fb.group({
@@ -220,6 +258,11 @@ export class FamilialSectionComponent implements OnInit {
     this.chargeForm.get('typeCharge')!.valueChanges.subscribe(val => {
       this.selectedTypeChargeId.set(val);
       this.chargeForm.get('sousCharge')!.setValue('');
+    });
+    this.membreForm.get('membreFamille')!.valueChanges.subscribe((value) => {
+      const condition = this.resolveMembreCondition(value);
+      this.selectedMembreCondition.set(condition);
+      this.applyMembreValidators(condition);
     });
   }
 
@@ -423,9 +466,68 @@ export class FamilialSectionComponent implements OnInit {
   }
 
   // ── Membres du ménage ──────────────────────────────────────────────────
+  private resolveMembreCondition(value: string | null | undefined): MembreCondition {
+    const normalized = String(value ?? '').trim().toLowerCase();
+    if (!normalized) return 'none';
+    if (normalized === 'demandeur') return 'demandeur';
+    if (normalized.includes('domestique')) return 'domestiques';
+    if (normalized.includes('autres sources de revenus')) return 'autresRevenus';
+    return 'autresFamille';
+  }
+
+  private applyMembreValidators(condition: MembreCondition) {
+    const nombre = this.membreForm.get('nombre');
+    const age = this.membreForm.get('age');
+    const activite = this.membreForm.get('activite');
+    const revenus = this.membreForm.get('revenus');
+    const justifs = this.membreForm.get('justifs');
+    if (!nombre || !age || !activite || !revenus || !justifs) return;
+
+    nombre.clearValidators();
+    age.clearValidators();
+    activite.clearValidators();
+    revenus.clearValidators();
+    justifs.clearValidators();
+
+    if (condition === 'demandeur') {
+      age.setValidators([Validators.required]);
+      activite.setValidators([Validators.required]);
+      revenus.setValidators([Validators.required]);
+      justifs.setValidators([Validators.required]);
+    } else if (condition === 'domestiques') {
+      nombre.setValidators([Validators.required]);
+      age.setValidators([Validators.required]);
+    } else if (condition === 'autresRevenus') {
+      activite.setValidators([Validators.required]);
+      revenus.setValidators([Validators.required]);
+      justifs.setValidators([Validators.required]);
+    } else if (condition === 'autresFamille') {
+      nombre.setValidators([Validators.required]);
+      age.setValidators([Validators.required]);
+      activite.setValidators([Validators.required]);
+      revenus.setValidators([Validators.required]);
+      justifs.setValidators([Validators.required]);
+    }
+
+    nombre.updateValueAndValidity({ emitEvent: false });
+    age.updateValueAndValidity({ emitEvent: false });
+    activite.updateValueAndValidity({ emitEvent: false });
+    revenus.updateValueAndValidity({ emitEvent: false });
+    justifs.updateValueAndValidity({ emitEvent: false });
+  }
+
   openAddMembre() {
     if (!this.canEdit()) return;
-    this.membreForm.reset({ membreFamille: '', nombre: null, age: null, activite: '', revenus: null, justifs: '' });
+    this.membreForm.reset({
+      membreFamille: '',
+      nombre: null,
+      age: null,
+      activite: '',
+      revenus: null,
+      justifs: '',
+    });
+    this.selectedMembreCondition.set('none');
+    this.applyMembreValidators('none');
     this.membreDrawerOpen = true;
   }
 

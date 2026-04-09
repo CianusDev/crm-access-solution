@@ -47,6 +47,7 @@ import { CautionSolidaire } from '../../../../interfaces/credit.interface';
 import { DatePipe } from '@angular/common';
 import { CAUTION_IMAGE_TYPES, CAUTION_DOCUMENT_TYPES } from '../../../../constants/caution-documents';
 import { LightboxComponent, LightboxImage } from '@/shared/components/lightbox/lightbox.component';
+import { DropdownItem } from '@/shared/components/dropdown/dropdown.interface';
 
 const DOC_BASE_URL = 'https://crm-fichiers.creditaccess.ci/crm/credit-ca/';
 
@@ -88,6 +89,9 @@ type DocRow = {
 export class CautionsSectionComponent implements OnInit {
   ref          = input<string>('');
   isGP         = input<boolean>(false);
+  canAddOrUpload = input<boolean>(false);
+  canEditDelete = input<boolean>(false);
+  canEditPhoto = input<boolean>(false);
   view         = input<'cautions' | 'documents' | 'both'>('both');
   prefilledDoc = input<{ libelle: string; version: number } | null>(null);
   readonly docsChanged = output<void>();
@@ -114,10 +118,6 @@ export class CautionsSectionComponent implements OnInit {
   
   // Dropdown items (pre-computed to avoid .map() in template)
   readonly imageTypesDropdown = CAUTION_IMAGE_TYPES.map(t => ({ 
-    label: t.libelle, 
-    required: t.obligation 
-  }));
-  readonly documentTypesDropdown = CAUTION_DOCUMENT_TYPES.map(t => ({ 
     label: t.libelle, 
     required: t.obligation 
   }));
@@ -329,11 +329,14 @@ export class CautionsSectionComponent implements OnInit {
   }
 
   openEditCaution(caution: CautionSolidaire) {
+    const dateNaissance = caution.dateNaissance
+      ? String(caution.dateNaissance).substring(0, 10)
+      : '';
     this.editingCautionId = caution.id!;
     this.cautionForm.patchValue({
       nom: caution.nom,
       prenom: caution.prenom,
-      dateNaissance: caution.dateNaissance,
+      dateNaissance,
       lieuNaissance: caution.lieuNaissance,
       genre: caution.genre,
       situationMatri: caution.situationMatri?.toString(),
@@ -351,6 +354,10 @@ export class CautionsSectionComponent implements OnInit {
       rue: caution.rue,
     });
     this.cautionDrawerOpen = true;
+  }
+
+  drawerTitle(): string {
+    return this.editingCautionId ? 'Modifier une caution solidaire' : 'Ajouter une caution solidaire';
   }
 
   getPhotoUrl(photoProfil: string): string {
@@ -403,6 +410,22 @@ export class CautionsSectionComponent implements OnInit {
     inputEl.click();
   }
 
+  private hasMediaByLibelle(
+    media: { libelle?: string }[] | undefined,
+    libelle: string,
+  ): boolean {
+    const normalized = libelle.trim().toLowerCase();
+    return (media ?? []).some((m) => (m.libelle ?? '').trim().toLowerCase() === normalized);
+  }
+
+  cautionDocumentItems(caution: CautionSolidaire): DropdownItem[] {
+    return this.documentTypes.map((t) => ({
+      label: t.libelle,
+      required: t.obligation,
+      disabled: this.hasMediaByLibelle(caution.documents, t.libelle),
+    }));
+  }
+
   onMediaFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -444,6 +467,7 @@ export class CautionsSectionComponent implements OnInit {
     this.creditService
       .saveCautionSolidaire({
         refDemande: this.ref(),
+        crCaution: this.editingCautionId ?? null,
         nom: val.nom,
         prenom: val.prenom,
         dateNaissance: val.dateNaissance,

@@ -169,7 +169,6 @@ const STATUT_JURIDIQUE: Record<number, string> = {
               appButton
               size="sm"
               class="flex items-center gap-1.5"
-              [disabled]="!canFaireResume()"
               (click)="faireResume.emit()"
             >
               <lucide-icon [img]="FileSearchIcon" [size]="14" />
@@ -197,7 +196,6 @@ const STATUT_JURIDIQUE: Record<number, string> = {
               appButton
               size="sm"
               class="flex items-center gap-1.5"
-              [disabled]="!canFaireResume()"
               (click)="faireResume.emit()"
             >
               <lucide-icon [img]="FileSearchIcon" [size]="14" />
@@ -548,9 +546,9 @@ const STATUT_JURIDIQUE: Record<number, string> = {
 
               <div class="flex justify-between py-1.5">
                 <span class="text-xs text-muted-foreground">Mt souhaité / échéance</span>
-                <span class="text-xs font-semibold text-primary"
-                  >{{ d.montantEcheSouhaite | number: '1.0-0' : 'fr-FR' }} FCFA</span
-                >
+                <span class="text-xs font-semibold text-primary">
+                  {{ d.montantEcheSouhaite | number: '1.0-0' : 'fr-FR' }} FCFA
+                </span>
               </div>
             </div>
           </div>

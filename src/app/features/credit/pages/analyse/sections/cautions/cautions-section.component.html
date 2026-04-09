@@ -34,10 +34,12 @@
                 </span>
               }
             </div>
-            <button type="button" (click)="openAddCaution()" appButton size="sm">
-              <lucide-icon [img]="PlusIcon" [size]="14" />
-              Ajouter une caution
-            </button>
+            @if (canAddOrUpload()) {
+              <button type="button" (click)="openAddCaution()" appButton size="sm">
+                <lucide-icon [img]="PlusIcon" [size]="14" />
+                Ajouter une caution
+              </button>
+            }
           </div>
         </app-card-header>
         <app-card-content>
@@ -45,10 +47,12 @@
             <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
               <lucide-icon [img]="UserIcon" [size]="32" class="text-muted-foreground/40" />
               <p class="text-sm text-muted-foreground">Aucune caution solidaire enregistrée</p>
-              <button type="button" (click)="openAddCaution()" appButton size="sm">
-                <lucide-icon [img]="PlusIcon" [size]="14" />
-                Ajouter une caution
-              </button>
+              @if (canAddOrUpload()) {
+                <button type="button" (click)="openAddCaution()" appButton size="sm">
+                  <lucide-icon [img]="PlusIcon" [size]="14" />
+                  Ajouter une caution
+                </button>
+              }
             </div>
           } @else {
             <div class="flex flex-col gap-3">
@@ -61,56 +65,60 @@
                       <span class="text-xs text-muted-foreground">Caution solidaire {{ i + 1 }}</span>
                     </div>
                     <div class="flex items-center gap-2 shrink-0 ml-3">
-                      <!-- Supprimer -->
-                      <button type="button"
-                        (click)="openDelete('caution', caution.id!, (caution.prenom ?? '') + ' ' + (caution.nom ?? ''))"
-                        appButton variant="outline" size="icon"
-                        class="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                        title="Supprimer la caution">
-                        <lucide-icon [img]="Trash2Icon" [size]="14" />
-                      </button>
-
-                      <!-- Modifier -->
-                      <button type="button"
-                        (click)="openEditCaution(caution)"
-                        appButton variant="outline" size="icon"
-                        class="text-warning hover:bg-warning hover:text-warning-foreground"
-                        title="Modifier la caution">
-                        <lucide-icon [img]="EditIcon" [size]="14" />
-                      </button>
-
-                      <!-- Ajouter une image (avec dropdown) -->
-                      <app-dropdown
-                        [items]="imageTypesDropdown"
-                        (itemSelected)="triggerImageUpload(caution.id!, $event.label, imageInput)">
-                        <button dropdownTrigger type="button"
-                          appButton variant="outline" size="sm"
-                          [disabled]="isUploadingMedia()"
-                          title="Ajouter une image">
-                          <lucide-icon [img]="ImageIcon" [size]="14" />
-                          <span class="ml-1 hidden sm:inline">Image</span>
-                          <lucide-icon [img]="ChevronDownIcon" [size]="12" class="ml-1 opacity-60" />
+                      @if (canEditDelete()) {
+                        <!-- Supprimer -->
+                        <button type="button"
+                          (click)="openDelete('caution', caution.id!, (caution.prenom ?? '') + ' ' + (caution.nom ?? ''))"
+                          appButton variant="outline" size="icon"
+                          class="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                          title="Supprimer la caution">
+                          <lucide-icon [img]="Trash2Icon" [size]="14" />
                         </button>
-                      </app-dropdown>
 
-                      <!-- Ajouter un document (avec dropdown) -->
-                      <app-dropdown
-                        [items]="documentTypesDropdown"
-                        (itemSelected)="triggerDocUpload(caution.id!, $event.label, docInput)">
-                        <button dropdownTrigger type="button"
-                          appButton variant="outline" size="sm"
-                          [disabled]="isUploadingMedia()"
-                          title="Ajouter un document">
-                          <lucide-icon [img]="FilePlusIcon" [size]="14" />
-                          <span class="ml-1 hidden sm:inline">Document</span>
-                          <lucide-icon [img]="ChevronDownIcon" [size]="12" class="ml-1 opacity-60" />
+                        <!-- Modifier -->
+                        <button type="button"
+                          (click)="openEditCaution(caution)"
+                          appButton variant="outline" size="icon"
+                          class="text-warning hover:bg-warning hover:text-warning-foreground"
+                          title="Modifier la caution">
+                          <lucide-icon [img]="EditIcon" [size]="14" />
                         </button>
-                      </app-dropdown>
+                      }
+
+                      @if (canAddOrUpload()) {
+                        <!-- Ajouter une image (avec dropdown) -->
+                        <app-dropdown
+                          [items]="imageTypesDropdown"
+                          (itemSelected)="triggerImageUpload(caution.id!, $event.label, imageInput)">
+                          <button dropdownTrigger type="button"
+                            appButton variant="outline" size="sm"
+                            [disabled]="isUploadingMedia()"
+                            title="Ajouter une image">
+                            <lucide-icon [img]="ImageIcon" [size]="14" />
+                            <span class="ml-1 hidden sm:inline">Image</span>
+                            <lucide-icon [img]="ChevronDownIcon" [size]="12" class="ml-1 opacity-60" />
+                          </button>
+                        </app-dropdown>
+
+                        <!-- Ajouter un document (avec dropdown) -->
+                        <app-dropdown
+                          [items]="cautionDocumentItems(caution)"
+                          (itemSelected)="triggerDocUpload(caution.id!, $event.label, docInput)">
+                          <button dropdownTrigger type="button"
+                            appButton variant="outline" size="sm"
+                            [disabled]="isUploadingMedia()"
+                            title="Ajouter un document">
+                            <lucide-icon [img]="FilePlusIcon" [size]="14" />
+                            <span class="ml-1 hidden sm:inline">Document</span>
+                            <lucide-icon [img]="ChevronDownIcon" [size]="12" class="ml-1 opacity-60" />
+                          </button>
+                        </app-dropdown>
+                      }
 
                       <!-- Inputs fichiers cachés (partagés par caution) -->
                       <input #imageInput type="file" hidden accept="image/*"
                         (change)="onMediaFileSelected($event)" />
-                      <input #docInput type="file" hidden accept="application/pdf,image/*"
+                      <input #docInput type="file" hidden accept="application/pdf"
                         (change)="onMediaFileSelected($event)" />
                     </div>
                   </div>
@@ -129,12 +137,14 @@
                             }
                           </div>
                           <!-- Bouton caméra pour changer la photo -->
-                          <button type="button"
-                            (click)="photoInput.click()"
-                            class="absolute bottom-0 right-0 flex items-center justify-center w-8 h-8 rounded-full bg-background text-warning-foreground shadow-md hover:bg-warning/90 transition-colors">
-                            <lucide-icon [img]="CameraIcon" [size]="14" />
-                            <input #photoInput type="file" hidden accept="image/*" (change)="onPhotoChange($event, caution.id!)" />
-                          </button>
+                          @if (canEditPhoto()) {
+                            <button type="button"
+                              (click)="photoInput.click()"
+                              class="absolute bottom-0 right-0 flex items-center justify-center w-8 h-8 rounded-full bg-background text-warning-foreground shadow-md hover:bg-warning/90 transition-colors">
+                              <lucide-icon [img]="CameraIcon" [size]="14" />
+                              <input #photoInput type="file" hidden accept="image/*" (change)="onPhotoChange($event, caution.id!)" />
+                            </button>
+                          }
                         </div>
                       </div>
 
@@ -274,11 +284,13 @@
                                     class="text-white hover:text-primary">
                                     <lucide-icon [img]="EyeIcon" [size]="18" />
                                   </button>
-                                  <button type="button"
-                                    (click)="$event.stopPropagation(); openDelete('image', image.id!, image.libelle ?? 'Image')"
-                                    class="text-white hover:text-destructive">
-                                    <lucide-icon [img]="Trash2Icon" [size]="18" />
-                                  </button>
+                                  @if (canAddOrUpload()) {
+                                    <button type="button"
+                                      (click)="$event.stopPropagation(); openDelete('image', image.id!, image.libelle ?? 'Image')"
+                                      class="text-white hover:text-destructive">
+                                      <lucide-icon [img]="Trash2Icon" [size]="18" />
+                                    </button>
+                                  }
                                 </div>
                                 <div class="absolute bottom-0 left-0 right-0 bg-black/70 p-2">
                                   <p class="text-xs text-white truncate">{{ image.libelle }}</p>
@@ -313,13 +325,15 @@
                                     title="Télécharger">
                                     <lucide-icon [img]="DownloadIcon" [size]="14" />
                                   </button>
-                                  <button type="button"
-                                    (click)="openDelete('doc', doc.id!, doc.libelle ?? 'Document')"
-                                    appButton variant="ghost" size="icon"
-                                    class="text-destructive hover:text-destructive"
-                                    title="Supprimer">
-                                    <lucide-icon [img]="Trash2Icon" [size]="14" />
-                                  </button>
+                                  @if (canAddOrUpload()) {
+                                    <button type="button"
+                                      (click)="openDelete('doc', doc.id!, doc.libelle ?? 'Document')"
+                                      appButton variant="ghost" size="icon"
+                                      class="text-destructive hover:text-destructive"
+                                      title="Supprimer">
+                                      <lucide-icon [img]="Trash2Icon" [size]="14" />
+                                    </button>
+                                  }
                                 </div>
                               </div>
                             }
@@ -366,10 +380,12 @@
                 class="h-9 w-full rounded-lg border border-border bg-input/20 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-[2px] focus:ring-primary/50"
               />
             </div>
-            <button type="button" (click)="openUploadDoc()" appButton size="sm" class="shrink-0">
-              <lucide-icon [img]="UploadIcon" [size]="14" />
-              Ajouter
-            </button>
+            @if (canAddOrUpload()) {
+              <button type="button" (click)="openUploadDoc()" appButton size="sm" class="shrink-0">
+                <lucide-icon [img]="UploadIcon" [size]="14" />
+                Ajouter
+              </button>
+            }
           </div>
         </div>
       </app-card-header>
@@ -378,10 +394,12 @@
           <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
             <lucide-icon [img]="FileTextIcon" [size]="32" class="text-muted-foreground/40" />
             <p class="text-sm text-muted-foreground">Aucun document annexe enregistré</p>
-            <button type="button" (click)="openUploadDoc()" appButton size="sm">
-              <lucide-icon [img]="UploadIcon" [size]="14" />
-              Ajouter un document
-            </button>
+            @if (canAddOrUpload()) {
+              <button type="button" (click)="openUploadDoc()" appButton size="sm">
+                <lucide-icon [img]="UploadIcon" [size]="14" />
+                Ajouter un document
+              </button>
+            }
           </div>
         } @else if (documentsFiltered().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
@@ -403,12 +421,14 @@
 
                 <!-- Actions -->
                 <div class="flex items-center justify-end gap-1 px-3 py-2 border-t border-border bg-muted/20">
-                  <button type="button"
-                    (click)="openDelete('doc', doc.id!, doc.libelle ?? '')"
-                    title="Supprimer"
-                    class="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
-                    <lucide-icon [img]="Trash2Icon" [size]="14" />
-                  </button>
+                  @if (canAddOrUpload()) {
+                    <button type="button"
+                      (click)="openDelete('doc', doc.id!, doc.libelle ?? '')"
+                      title="Supprimer"
+                      class="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                      <lucide-icon [img]="Trash2Icon" [size]="14" />
+                    </button>
+                  }
                 </div>
               </div>
             }
@@ -425,7 +445,7 @@
 <!-- ══ DRAWER — Caution solidaire ═════════════════════════════════════════ -->
 <app-drawer [(open)]="cautionDrawerOpen">
   <app-drawer-header>
-    <app-drawer-title>Ajouter une caution solidaire</app-drawer-title>
+    <app-drawer-title>{{ drawerTitle() }}</app-drawer-title>
   </app-drawer-header>
   <app-drawer-content>
     <form [formGroup]="cautionForm" class="flex flex-col gap-4">

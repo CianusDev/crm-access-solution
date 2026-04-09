@@ -49,7 +49,11 @@ import {
   REQUIRED_DOCS_SPME_VISITE,
   RequiredDoc,
 } from '../../constants/required-documents';
-import { CREDIT_STATUTS, CreditFicheDemandeDetail } from '../../interfaces/credit.interface';
+import {
+  CREDIT_STATUTS,
+  CreditAnalyseDemandeDetail,
+  CreditFicheDemandeDetail,
+} from '../../interfaces/credit.interface';
 import { CreditService } from '../../services/credit/credit.service';
 import {
   canFaireResumeFromState,
@@ -80,11 +84,9 @@ import { ActiviteSectionComponent } from './sections/activite/activite-section.c
 import { CautionsSectionComponent } from './sections/cautions/cautions-section.component';
 import { DemandeSectionComponent } from './sections/demande/demande-section.component';
 import { DocumentsSectionComponent } from './sections/documents/documents-section.component';
-import { EnvoiSectionComponent } from './sections/envoi/envoi-section.component';
 import { FamilialSectionComponent } from './sections/familial/familial-section.component';
 import { GarantiesSectionComponent } from './sections/garanties/garanties-section.component';
 import { GeolocalisationSectionComponent } from './sections/geolocalisation/geolocalisation-section.component';
-import { SwotSectionComponent } from './sections/swot/swot-section.component';
 import { TresorerieSectionComponent } from './sections/tresorerie/tresorerie-section.component';
 
 @Component({
@@ -113,9 +115,7 @@ import { TresorerieSectionComponent } from './sections/tresorerie/tresorerie-sec
     GarantiesSectionComponent,
     CautionsSectionComponent,
     DocumentsSectionComponent,
-    SwotSectionComponent,
     GeolocalisationSectionComponent,
-    EnvoiSectionComponent,
     DemandeSectionComponent,
     Avatar,
     DrawerComponent,
@@ -235,14 +235,14 @@ export class AnalyseCreditComponent implements OnInit {
   readonly isLoading = signal(false);
   readonly ficheHeader = signal<CreditFicheDemandeDetail | null>(null);
   readonly fiche = signal<import('../../interfaces/credit.interface').CreditFiche | null>(null);
-  readonly demande = signal<CreditFicheDemandeDetail | null>(null);
+  readonly demande = signal<CreditAnalyseDemandeDetail | null>(null);
   readonly observations = signal<import('../../interfaces/credit.interface').CreditObservation[]>(
     [],
   );
   readonly error = signal<string | null>(null);
   readonly activeTab = signal<AnalyseTabId>('demande');
   readonly activeAnalyseSection = signal<AnalyseSectionId>('activite'); // Section active dans "Analyse financière"
-  readonly activeGarantiesSection = signal<GarantiesSectionId>('garanties'); // Section active dans "Actifs & Garanties"
+  readonly activeGarantiesSection = signal<GarantiesSectionId>('actifs-totaux'); // Section active dans "Actifs & Garanties"
   readonly pendingDocLibelle = signal<{ libelle: string; version: number } | null>(null);
   // private pendingDocVersion = 0;
 
@@ -303,6 +303,7 @@ export class AnalyseCreditComponent implements OnInit {
       enforceAnalysteDocRules: this.enforceAnalysteResumeDocs(),
       ficheHeader: this.ficheHeader(),
       uploadedDocLibelles: this.uploadedDocLibelles(),
+      analyseDemande: this.demande(),
     }),
   );
 
@@ -907,8 +908,15 @@ export class AnalyseCreditComponent implements OnInit {
   readonly arAlert = signal<string | null>(null);
 
   goResume() {
-    if (!this.canFaireResume()) {
-      this.arAlert.set(resumeAccessBlockedMessage(this.ficheHeader()));
+    const blockedMessage = resumeAccessBlockedMessage({
+      enforceAnalysteDocRules: this.enforceAnalysteResumeDocs(),
+      ficheHeader: this.ficheHeader(),
+      uploadedDocLibelles: this.uploadedDocLibelles(),
+      analyseDemande: this.demande(),
+    });
+
+    if (blockedMessage) {
+      this.arAlert.set(blockedMessage);
       return;
     }
 

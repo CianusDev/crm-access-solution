@@ -164,12 +164,6 @@
                 @case ('familial') {
                   <app-familial-section [ref]="ref()" [canEdit]="showAnalysteBandeau()" />
                 }
-                @case ('swot') {
-                  <app-swot-section [ref]="ref()" />
-                }
-                @case ('envoi') {
-                  <app-envoi-section [ref]="ref()" />
-                }
                 @case('analyse-financiere'){
                   @if (showAnalysteBandeau()) {
                     <div class="flex flex-col gap-4 mb-4">
@@ -210,10 +204,9 @@
             <!-- Contenu de la sous-section active -->
             <div class="flex-1 min-w-0">
               @switch (activeGarantiesSection()) {
-                @case ('garanties') {
-                  <app-garanties-section [ref]="ref()" />
+                @case ('actifs-garanties') {
                   @if (showAnalysteBandeau()) {
-                    <div class="flex flex-col gap-4 mt-6">
+                    <div class="flex flex-col gap-4">
                       <app-doc-analyse-upload
                         [ref]="ref()"
                         libelle="Actifs garanties"
@@ -222,8 +215,70 @@
                     </div>
                   }
                 }
+                @case ('actifs-totaux') {
+                  <app-garanties-section
+                    [ref]="ref()"
+                    [view]="'totaux'"
+                    [canAddOrUpload]="showAnalysteBandeau() || (isAR() && isPaused())"
+                    [canEditDelete]="showAnalysteBandeau()"
+                  />
+                }
+                @case ('actifs-immobiliers') {
+                  <app-garanties-section
+                    [ref]="ref()"
+                    [view]="'immobilier'"
+                    [canAddOrUpload]="showAnalysteBandeau() || (isAR() && isPaused())"
+                    [canEditDelete]="showAnalysteBandeau()"
+                  />
+                }
+                @case ('actifs-vehicules') {
+                  <app-garanties-section
+                    [ref]="ref()"
+                    [view]="'vehicule'"
+                    [canAddOrUpload]="showAnalysteBandeau() || (isAR() && isPaused())"
+                    [canEditDelete]="showAnalysteBandeau()"
+                  />
+                }
+                @case ('actifs-equipements') {
+                  <app-garanties-section
+                    [ref]="ref()"
+                    [view]="'equipement'"
+                    [canAddOrUpload]="showAnalysteBandeau() || (isAR() && isPaused())"
+                    [canEditDelete]="showAnalysteBandeau()"
+                  />
+                }
+                @case ('actifs-dat') {
+                  <app-garanties-section
+                    [ref]="ref()"
+                    [view]="'dat'"
+                    [canAddOrUpload]="showAnalysteBandeau() || (isAR() && isPaused())"
+                    [canEditDelete]="showAnalysteBandeau()"
+                  />
+                }
+                @case ('actifs-biens-mobiliers') {
+                  <app-garanties-section
+                    [ref]="ref()"
+                    [view]="'bien-mobilier'"
+                    [canAddOrUpload]="showAnalysteBandeau() || (isAR() && isPaused())"
+                    [canEditDelete]="showAnalysteBandeau()"
+                  />
+                }
+                @case ('actifs-stocks') {
+                  <app-garanties-section
+                    [ref]="ref()"
+                    [view]="'stock'"
+                    [canAddOrUpload]="showAnalysteBandeau() || (isAR() && isPaused())"
+                    [canEditDelete]="showAnalysteBandeau()"
+                  />
+                }
                 @case ('cautions') {
-                  <app-cautions-section [ref]="ref()" [view]="'cautions'" />
+                  <app-cautions-section
+                    [ref]="ref()"
+                    [view]="'cautions'"
+                    [canAddOrUpload]="showAnalysteBandeau() || (isAR() && isPaused())"
+                    [canEditDelete]="showAnalysteBandeau()"
+                    [canEditPhoto]="isAR() && (showAnalysteBandeau() || isPaused())"
+                  />
                 }
               }
             </div>

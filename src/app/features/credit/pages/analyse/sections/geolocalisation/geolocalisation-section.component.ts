@@ -2,10 +2,7 @@ import { Component, OnInit, inject, input, signal, viewChild } from '@angular/co
 import { GoogleMap, MapInfoWindow, MapMarker } from '@angular/google-maps';
 import { LucideAngularModule, MapPin, AlertCircle, RefreshCw } from 'lucide-angular';
 import { CreditService } from '../../../../services/credit/credit.service';
-import {
-  ActiviteCredit,
-  CautionSolidaire,
-} from '../../../../interfaces/credit.interface';
+import { ActiviteCredit, CautionSolidaire } from '../../../../interfaces/credit.interface';
 
 interface GeoMarker {
   position: google.maps.LatLngLiteral;
@@ -31,12 +28,12 @@ const MARKER_COLORS: Record<GeoMarker['type'], string> = {
         <span class="flex items-center gap-1.5">
           <span class="h-3 w-3 rounded-full bg-blue-600"></span> Domicile client
         </span>
-        <!-- <span class="flex items-center gap-1.5">
+        <span class="flex items-center gap-1.5">
           <span class="h-3 w-3 rounded-full bg-green-600"></span> Activité
         </span>
         <span class="flex items-center gap-1.5">
           <span class="h-3 w-3 rounded-full bg-amber-500"></span> Caution solidaire
-        </span> -->
+        </span>
       </div>
 
       <!-- Chargement -->

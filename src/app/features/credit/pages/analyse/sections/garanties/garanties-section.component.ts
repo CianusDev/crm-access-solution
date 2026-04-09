@@ -49,6 +49,7 @@ import {
   ActifGarantie,
   CautionSolidaire,
   CreditActifCirculantStock,
+  GarantieType,
   TypeActif,
 } from '../../../../interfaces/credit.interface';
 import { LightboxComponent, LightboxImage } from '@/shared/components/lightbox/lightbox.component';
@@ -58,6 +59,8 @@ import {
   getGarantieDocumentTypes,
 } from '../../../../constants/garantie-documents';
 import { FormTextarea } from '@/shared/components/form-textarea/form-textarea.component';
+import { Dropdown } from '@/shared/components/dropdown/dropdown.component';
+import { DropdownItem } from '@/shared/components/dropdown/dropdown.interface';
 
 const DOC_BASE_URL = 'https://crm-fichiers.creditaccess.ci/crm/credit-ca/';
 
@@ -107,6 +110,44 @@ const JUSTIFS_OPTIONS: SelectOption[] = [
   { value: '2', label: 'Titre de propriété' },
 ];
 
+const LEGACY_TYPE_ACTIF_GARANTIE_MAP: Partial<Record<TypeActif, number>> = {
+  IMMOBILIER: 1,
+  EQUIPEMENT: 2,
+  BIEN_MOBILIER: 3,
+  VEHICULE: 4,
+  DEPOSIT: 5,
+  DAT: 6,
+};
+
+const LEGACY_TYPE_ACTIF_GARANTIE_REVERSE_MAP: Record<number, TypeActif> = {
+  1: 'IMMOBILIER',
+  2: 'EQUIPEMENT',
+  3: 'BIEN_MOBILIER',
+  4: 'VEHICULE',
+  5: 'DEPOSIT',
+  6: 'DAT',
+};
+
+const GARANTIE_TYPE_SECTION_TO_ACTIF: Record<number, TypeActif> = {
+  1: 'IMMOBILIER',
+  2: 'EQUIPEMENT',
+  3: 'BIEN_MOBILIER',
+  4: 'VEHICULE',
+  5: 'DEPOSIT',
+  6: 'DAT',
+};
+
+type GarantiesViewId =
+  | 'all'
+  | 'totaux'
+  | 'immobilier'
+  | 'vehicule'
+  | 'equipement'
+  | 'dat'
+  | 'bien-mobilier'
+  | 'autre'
+  | 'stock';
+
 @Component({
   selector: 'app-garanties-section',
   templateUrl: './garanties-section.component.html',
@@ -131,11 +172,15 @@ const JUSTIFS_OPTIONS: SelectOption[] = [
     FormInput,
     FormTextarea,
     FormSelect,
+    Dropdown,
     LightboxComponent,
   ],
 })
 export class GarantiesSectionComponent implements OnInit {
   ref = input<string>('');
+  view = input<GarantiesViewId>('all');
+  canAddOrUpload = input<boolean>(false);
+  canEditDelete = input<boolean>(false);
 
   readonly PlusIcon = Plus;
   readonly Trash2Icon = Trash2;
@@ -270,6 +315,34 @@ export class GarantiesSectionComponent implements OnInit {
     return getGarantieDocumentTypes(type);
   }
 
+  private hasMediaByLabel(media: { libelle?: string }[] | undefined, label: string): boolean {
+    const normalized = label.trim().toLowerCase();
+    return (media ?? []).some((m) => (m.libelle ?? '').trim().toLowerCase() === normalized);
+  }
+
+  imageUploadItems(actif: ActifGarantie): DropdownItem[] {
+    return this.getImageTypes(actif.type ?? '').map((t) => ({ label: t.libelle }));
+  }
+
+  defaultImageUploadLabel(actif: ActifGarantie): string {
+    return this.imageUploadItems(actif)[0]?.label ?? 'Image';
+  }
+
+  documentUploadItems(actif: ActifGarantie): DropdownItem[] {
+    return this.getDocumentTypes(actif.type ?? '').map((t) => ({
+      label: t.libelle,
+      required: t.obligation,
+      disabled: this.hasMediaByLabel(actif.documents, t.libelle),
+    }));
+  }
+
+  immobilierTypeLabel(value: string | number | undefined): string {
+    const normalized = value != null ? String(value) : '';
+    if (normalized === '1') return 'Local';
+    if (normalized === '2') return 'Terrain';
+    return '—';
+  }
+
   // ── Form ───────────────────────────────────────────────────────────────
   readonly actifForm = this.fb.group({
     type: ['' as TypeActif | '', Validators.required],
@@ -351,6 +424,8 @@ export class GarantiesSectionComponent implements OnInit {
         }
         this.cautions.set(data.crCaution ?? []);
         this.stocks.set(data.actifCirculantStock ?? []);
+        const actifsFromGaranties = this.flattenTypeGaranties(data.typeGaranties ?? []);
+        this.actifs.set(actifsFromGaranties.map((a) => this.normalizeActif(a)));
         this.isLoading.set(false);
       },
       error: () => {
@@ -358,13 +433,52 @@ export class GarantiesSectionComponent implements OnInit {
         this.isLoading.set(false);
       },
     });
-    this.creditService.getAnalyseFinanciere(this.ref()).subscribe({
-      next: (data) => {
-        if (!data?.demande) return;
-        this.actifs.set(data.demande.actifsGaranties ?? []);
-      },
-      error: () => {},
-    });
+  }
+
+  private flattenTypeGaranties(typeGaranties: GarantieType[]): ActifGarantie[] {
+    return typeGaranties.flatMap((group) =>
+      (group.garanties ?? []).map((g) => {
+        const raw = g as unknown as Record<string, unknown>;
+        return {
+          ...(raw as ActifGarantie),
+          type: GARANTIE_TYPE_SECTION_TO_ACTIF[group.id],
+          typeActifGarantie: group.id,
+        } as ActifGarantie;
+      }),
+    );
+  }
+
+  private normalizeActif(actif: ActifGarantie): ActifGarantie {
+    const raw = actif as ActifGarantie & {
+      typeActifGarantie?: number | string;
+      valeurEstime?: number;
+      crActifGarantie?: number;
+    };
+
+    const normalizedType = this.resolveType(raw.type, raw.typeActifGarantie);
+    const valeurEstimee = raw.valeurEstimee ?? raw.valeurEstime;
+    const id = raw.id ?? raw.crActifGarantie;
+
+    return {
+      ...actif,
+      id,
+      type: normalizedType,
+      valeurEstimee,
+    };
+  }
+
+  private resolveType(
+    type: TypeActif | string | undefined,
+    typeActifGarantie: number | string | undefined,
+  ): TypeActif | undefined {
+    if (type && Object.prototype.hasOwnProperty.call(LEGACY_TYPE_ACTIF_GARANTIE_MAP, type)) {
+      return type as TypeActif;
+    }
+    const numericType =
+      typeof typeActifGarantie === 'number'
+        ? typeActifGarantie
+        : Number(typeActifGarantie ?? NaN);
+    return LEGACY_TYPE_ACTIF_GARANTIE_REVERSE_MAP[numericType];
   }
 
   formatMontant(n: number | undefined): string {
@@ -374,6 +488,11 @@ export class GarantiesSectionComponent implements OnInit {
 
   typeLabel(type: TypeActif | undefined): string {
     return TYPES_ACTIF.find((t) => t.value === type)?.label ?? type ?? '—';
+  }
+
+  isView(id: Exclude<GarantiesViewId, 'all'>): boolean {
+    const currentView = this.view();
+    return currentView === 'all' || currentView === id;
   }
 
   // ── CRUD ───────────────────────────────────────────────────────────────
@@ -493,60 +612,70 @@ export class GarantiesSectionComponent implements OnInit {
     }
     const val = this.actifForm.value;
     const editId = this.editingActifId();
+    const idCaution = val.idCaution != null ? Number(val.idCaution) : null;
+    const typeActifGarantie = val.type ? (LEGACY_TYPE_ACTIF_GARANTIE_MAP[val.type] ?? null) : null;
+    const valeurEstime = val.valeurEstimee;
+    const payload = {
+      // Legacy canonical keys
+      crActifGarantie: editId ?? '',
+      typeActifGarantie,
+      valeurEstime,
+      user: val.proprietaire === 'C' ? idCaution : '',
+      // Compatibility aliases already consumed in new code paths
+      actifGarantie: editId ?? undefined,
+      type: val.type,
+      valeurEstimee: val.valeurEstimee,
+      // Commun
+      proprietaire: val.proprietaire || null,
+      garantie: val.garantie != null ? Number(val.garantie) : null,
+      // Immobilier
+      localisation: val.localisation || null,
+      superficie: val.superficie,
+      typePropriete: val.typePropriete || null,
+      adressDescr: val.adressDescr || null,
+      titreFoncier: val.titreFoncier || null,
+      lot: val.lot || null,
+      ilot: val.ilot || null,
+      justifs: val.justifs || null,
+      // Véhicule
+      marque: val.marque || null,
+      immatriculation: val.immatriculation || null,
+      couleur: val.couleur || null,
+      typeVehicule: val.typeVehicule || null,
+      dateMiseEnCirculation: val.dateMiseEnCirculation || null,
+      nbrePlace: val.nbrePlace,
+      typeCommercial: val.typeCommercial || null,
+      typeTechnique: val.typeTechnique || null,
+      evaluation: val.evaluation || null,
+      vehiculeVu: val.vehiculeVu || null,
+      typeProPerso: val.typeProPerso || null,
+      nouvelleAcquisition: val.nouvelleAcquisition != null ? Number(val.nouvelleAcquisition) : null,
+      miniComm: val.miniComm != null ? Number(val.miniComm) : null,
+      societeCr: val.societeCr || null,
+      societe: val.societe || null,
+      // DAT
+      banque: val.banque || null,
+      echeance: val.echeance || null,
+      dureeDat: val.dureeDat,
+      dateEffetDat: val.dateEffetDat || null,
+      dateEcheanceDat: val.dateEcheanceDat || null,
+      numeroPerfectDat: val.numeroPerfectDat || null,
+      // Équipement
+      designation: val.designation || null,
+      // Biens mobiliers
+      quantite: val.quantite,
+      valeurAchat: val.valeurAchat,
+      dateAcquisition: val.dateAcquisition || null,
+      // DEPOSIT — code mort legacy
+      // especeBanque: val.especeBanque,
+      // typeCompte: val.typeCompte || null,
+      // Propriétaire
+      idCaution,
+      refDemande: this.ref(),
+    };
     this.isSaving.set(true);
     this.creditService
-      .saveActifGarantie({
-        actifGarantie: editId ?? undefined,
-        type: val.type,
-        valeurEstimee: val.valeurEstimee,
-        // Commun
-        proprietaire: val.proprietaire || null,
-        garantie: val.garantie != null ? Number(val.garantie) : null,
-        // Immobilier
-        localisation: val.localisation || null,
-        superficie: val.superficie,
-        typePropriete: val.typePropriete || null,
-        adressDescr: val.adressDescr || null,
-        titreFoncier: val.titreFoncier || null,
-        lot: val.lot || null,
-        ilot: val.ilot || null,
-        justifs: val.justifs || null,
-        // Véhicule
-        marque: val.marque || null,
-        immatriculation: val.immatriculation || null,
-        couleur: val.couleur || null,
-        typeVehicule: val.typeVehicule || null,
-        dateMiseEnCirculation: val.dateMiseEnCirculation || null,
-        nbrePlace: val.nbrePlace,
-        typeCommercial: val.typeCommercial || null,
-        typeTechnique: val.typeTechnique || null,
-        evaluation: val.evaluation || null,
-        vehiculeVu: val.vehiculeVu || null,
-        typeProPerso: val.typeProPerso || null,
-        nouvelleAcquisition: val.nouvelleAcquisition != null ? Number(val.nouvelleAcquisition) : null,
-        miniComm: val.miniComm != null ? Number(val.miniComm) : null,
-        societeCr: val.societeCr || null,
-        societe: val.societe || null,
-        // DAT
-        banque: val.banque || null,
-        echeance: val.echeance || null,
-        dureeDat: val.dureeDat,
-        dateEffetDat: val.dateEffetDat || null,
-        dateEcheanceDat: val.dateEcheanceDat || null,
-        numeroPerfectDat: val.numeroPerfectDat || null,
-        // Équipement
-        designation: val.designation || null,
-        // Biens mobiliers
-        quantite: val.quantite,
-        valeurAchat: val.valeurAchat,
-        dateAcquisition: val.dateAcquisition || null,
-        // DEPOSIT — code mort legacy
-        // especeBanque: val.especeBanque,
-        // typeCompte: val.typeCompte || null,
-        // Propriétaire
-        idCaution: val.idCaution != null ? Number(val.idCaution) : null,
-        refDemande: this.ref(),
-      })
+      .saveActifGarantie(payload)
       .subscribe({
         next: () => {
           this.toast.success(editId ? 'Actif modifié.' : 'Actif enregistré.');

@@ -17,7 +17,7 @@
   } @else {
 
     <!-- En-tête récap §7.11 -->
-    @if (totalGarantiesFixes() > 0 || totalGarantiesProposees() > 0) {
+    @if (isView('totaux')) {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="rounded-xl border border-border bg-muted/30 px-4 py-3">
           <p class="text-xs text-muted-foreground uppercase tracking-wide">Total garanties (fixes)</p>
@@ -33,142 +33,211 @@
     }
 
     <!-- ══ BIENS IMMOBILIERS ══════════════════════════════════════════════ -->
+    @if (isView('immobilier')) {
     <app-card>
       <app-card-header>
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
             <lucide-icon [img]="Building2Icon" [size]="16" class="text-muted-foreground" />
-            <app-card-title>Biens immobiliers</app-card-title>
+            <app-card-title>Immobilisations</app-card-title>
             @if (immobiliers().length > 0) {
               <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{{ immobiliers().length }}</span>
             }
           </div>
-          <button type="button" (click)="openAdd('IMMOBILIER')" appButton size="sm" variant="outline">
-            <lucide-icon [img]="PlusIcon" [size]="12" />
-            Ajouter
-          </button>
+          @if (canAddOrUpload()) {
+            <button type="button" (click)="openAdd('IMMOBILIER')" appButton size="sm" variant="outline">
+              <lucide-icon [img]="PlusIcon" [size]="12" />
+              Ajouter
+            </button>
+          }
         </div>
       </app-card-header>
       <app-card-content>
         @if (immobiliers().length === 0) {
           <p class="py-4 text-center text-sm text-muted-foreground">Aucun bien immobilier enregistré</p>
         } @else {
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b border-border bg-muted/10">
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Description</th>
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Superficie</th>
-                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Valeur (FCFA)</th>
-                <th class="px-4 py-2 w-10"></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (actif of immobiliers(); track actif.id) {
-                <tr class="border-b border-border hover:bg-muted/10 transition-colors">
-                  <td class="px-4 py-2.5 font-medium">{{ actif.adressDescr ?? '—' }}</td>
-                  <td class="px-4 py-2.5 text-muted-foreground">{{ actif.superficie ? actif.superficie + ' m²' : '—' }}</td>
-                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(actif.valeurEstimee) }}</td>
-                  <td class="px-4 py-2.5">
-                    <div class="flex items-center gap-1">
-                      <button type="button" (click)="toggleImages(actif.id!)" title="Photos"
-                        class="flex items-center gap-0.5 h-7 px-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
-                        [class.text-primary]="expandedImages().includes(actif.id!)">
-                        <lucide-icon [img]="ImageIcon" [size]="13" />
-                        @if (actif.images?.length) { <span class="text-xs">{{ actif.images!.length }}</span> }
+          <div class="flex flex-col gap-3">
+            @for (actif of immobiliers(); track actif.id; let i = $index) {
+              <div class="rounded-xl border border-border bg-card overflow-hidden">
+                <div class="flex items-start justify-between px-4 py-3 border-b border-border bg-muted/30">
+                  <div class="min-w-0">
+                    <p class="font-semibold text-foreground">Immobilisation ({{ i + 1 }})</p>
+                    <span class="text-xs text-muted-foreground">
+                      {{ actif.proprietaire === 'D' ? 'Demandeur' : actif.proprietaire === 'C' ? 'Caution' : '—' }}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0 ml-3">
+                    @if (canEditDelete()) {
+                      <button type="button" (click)="openEditActif(actif)" appButton variant="outline" size="icon" title="Modifier le bien">
+                        <lucide-icon [img]="PencilIcon" [size]="14" />
                       </button>
-                      <button type="button" (click)="toggleDocuments(actif.id!)" title="Documents"
-                        class="flex items-center gap-0.5 h-7 px-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
-                        [class.text-primary]="expandedDocuments().includes(actif.id!)">
-                        <lucide-icon [img]="FileTextIcon" [size]="13" />
-                        @if (actif.documents?.length) { <span class="text-xs">{{ actif.documents!.length }}</span> }
+                      <button type="button" (click)="openDelete(actif)" appButton variant="outline" size="icon" title="Supprimer le bien">
+                        <lucide-icon [img]="Trash2Icon" [size]="14" />
                       </button>
-                      <button type="button" (click)="openEditActif(actif)"
-                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer">
-                        <lucide-icon [img]="PencilIcon" [size]="13" />
+                      <button
+                        type="button"
+                        appButton
+                        variant="outline"
+                        size="sm"
+                        [disabled]="isUploadingMedia()"
+                        (click)="triggerMediaUpload(actif.id!, 'image', defaultImageUploadLabel(actif), fileImg)"
+                      >
+                        <lucide-icon [img]="ImageIcon" [size]="14" />
+                        <span class="ml-1 hidden sm:inline">Ajouter une image</span>
                       </button>
-                      <button type="button" (click)="openDelete(actif)"
-                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
-                        <lucide-icon [img]="Trash2Icon" [size]="13" />
-                      </button>
+                      <input #fileImg type="file" hidden accept="image/*" (change)="onMediaFileSelected($event)" />
+                    }
+                    @if (canAddOrUpload()) {
+                      <app-dropdown
+                        [items]="documentUploadItems(actif)"
+                        (itemSelected)="triggerMediaUpload(actif.id!, 'doc', $event.label, fileDoc)"
+                      >
+                        <button dropdownTrigger type="button" appButton variant="outline" size="sm" [disabled]="isUploadingMedia()">
+                          <lucide-icon [img]="FileTextIcon" [size]="14" />
+                          <span class="ml-1 hidden sm:inline">Ajouter un document</span>
+                          <lucide-icon [img]="ChevronDownIcon" [size]="12" class="ml-1 opacity-60" />
+                        </button>
+                      </app-dropdown>
+                      <input #fileDoc type="file" hidden accept="application/pdf" (change)="onMediaFileSelected($event)" />
+                    }
+                  </div>
+                </div>
+
+                <div class="p-4">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+                    <div class="flex flex-col py-1">
+                      <span class="text-xs text-muted-foreground">Type de bien immobilier</span>
+                      <span class="text-sm font-medium text-foreground">
+                        {{ immobilierTypeLabel(actif.typePropriete) }}
+                      </span>
                     </div>
-                  </td>
-                </tr>
-                @if (expandedImages().includes(actif.id!) || expandedDocuments().includes(actif.id!)) {
-                  <tr class="bg-muted/5 border-b border-border">
-                    <td colspan="5" class="px-4 py-4">
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        @if (expandedImages().includes(actif.id!)) {
-                          <div class="space-y-2">
-                            <div class="flex items-center justify-between flex-wrap gap-2">
-                              <h5 class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Photos</h5>
-                              <div class="flex gap-1 flex-wrap">
-                                @for (imgType of getImageTypes(actif.type!); track imgType.id) {
-                                  <button type="button" (click)="triggerMediaUpload(actif.id!, 'image', imgType.libelle, fileImg)" appButton variant="outline" size="sm" class="text-xs">
-                                    <lucide-icon [img]="UploadIcon" [size]="11" /> {{ imgType.libelle }}
+                    <div class="flex flex-col py-1">
+                      <span class="text-xs text-muted-foreground">Date d'acquisition</span>
+                      <span class="text-sm font-medium text-foreground">{{ actif.dateAcquisition ? actif.dateAcquisition.substring(0, 10) : '—' }}</span>
+                    </div>
+                    <div class="flex flex-col py-1">
+                      <span class="text-xs text-muted-foreground">Numéro titre foncier</span>
+                      <span class="text-sm font-medium text-foreground">{{ actif.titreFoncier ?? '—' }}</span>
+                    </div>
+                    <div class="flex flex-col py-1">
+                      <span class="text-xs text-muted-foreground">Lot</span>
+                      <span class="text-sm font-medium text-foreground">{{ actif.lot ?? '—' }}</span>
+                    </div>
+                    <div class="flex flex-col py-1">
+                      <span class="text-xs text-muted-foreground">Ilot</span>
+                      <span class="text-sm font-medium text-foreground">{{ actif.ilot ?? '—' }}</span>
+                    </div>
+                    <div class="flex flex-col py-1">
+                      <span class="text-xs text-muted-foreground">Valeur estimée</span>
+                      <span class="text-sm font-medium text-primary">{{ formatMontant(actif.valeurEstimee) }} FCFA</span>
+                    </div>
+                    <div class="flex flex-col py-1">
+                      <span class="text-xs text-muted-foreground">Quantité</span>
+                      <span class="text-sm font-medium text-foreground">{{ actif.quantite ?? '—' }}</span>
+                    </div>
+                    <div class="flex flex-col py-1">
+                      <span class="text-xs text-muted-foreground">Garantie</span>
+                      <span class="text-sm font-medium text-foreground">{{ actif.garantie === 1 ? 'Oui' : 'Non' }}</span>
+                    </div>
+                    <div class="flex flex-col py-1">
+                      <span class="text-xs text-muted-foreground">Superficie</span>
+                      <span class="text-sm font-medium text-foreground">{{ actif.superficie ?? '—' }}</span>
+                    </div>
+                    <div class="flex flex-col py-1 sm:col-span-2 lg:col-span-3">
+                      <span class="text-xs text-muted-foreground">Adresse & Description</span>
+                      <span class="text-sm font-medium text-foreground">{{ actif.adressDescr ?? '—' }}</span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2 mt-4 pt-4 border-t border-border">
+                    <button type="button" (click)="toggleImages(actif.id!)" appButton variant="outline" size="sm">
+                      <lucide-icon [img]="EyeIcon" [size]="14" />
+                      <span class="ml-1.5">Voir les images</span>
+                      @if (actif.images?.length) {
+                        <span class="ml-1.5 px-1.5 py-0.5 rounded-full bg-muted text-xs">{{ actif.images!.length }}</span>
+                      }
+                    </button>
+                    <button type="button" (click)="toggleDocuments(actif.id!)" appButton variant="outline" size="sm">
+                      <lucide-icon [img]="EyeIcon" [size]="14" />
+                      <span class="ml-1.5">Voir les documents</span>
+                      @if (actif.documents?.length) {
+                        <span class="ml-1.5 px-1.5 py-0.5 rounded-full bg-muted text-xs">{{ actif.documents!.length }}</span>
+                      }
+                    </button>
+                  </div>
+
+                  @if (expandedImages().includes(actif.id!)) {
+                    <div class="mt-4 pt-4 border-t border-border">
+                      <h5 class="text-sm font-semibold mb-3">Images</h5>
+                      @if (!actif.images || actif.images.length === 0) {
+                        <p class="text-sm text-muted-foreground">Aucune image chargée.</p>
+                      } @else {
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                          @for (img of actif.images!; track img.id; let idx = $index) {
+                            <div class="relative group rounded-lg border border-border overflow-hidden bg-muted/30 cursor-pointer" (click)="openLightbox(actif.images!, idx)">
+                              <img [src]="mediaUrl(img.lien!)" [alt]="img.libelle" class="w-full h-32 object-cover" />
+                              <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                                <button type="button" (click)="$event.stopPropagation(); openLightbox(actif.images!, idx)" class="text-white hover:text-primary">
+                                  <lucide-icon [img]="EyeIcon" [size]="18" />
+                                </button>
+                                @if (canEditDelete()) {
+                                  <button type="button" (click)="$event.stopPropagation(); openMediaDelete('image', img.id!, img.libelle ?? 'Photo')" class="text-white hover:text-destructive">
+                                    <lucide-icon [img]="Trash2Icon" [size]="18" />
                                   </button>
                                 }
-                                <input #fileImg type="file" hidden accept="image/*" (change)="onMediaFileSelected($event)" />
+                              </div>
+                              <div class="absolute bottom-0 left-0 right-0 bg-black/70 p-2">
+                                <p class="text-xs text-white truncate">{{ img.libelle }}</p>
                               </div>
                             </div>
-                            @if (actif.images?.length) {
-                              <div class="grid grid-cols-3 gap-2">
-                                @for (img of actif.images!; track img.id; let idx = $index) {
-                                  <div class="relative group rounded border border-border overflow-hidden cursor-pointer" (click)="openLightbox(actif.images!, idx)">
-                                    <img [src]="mediaUrl(img.lien!)" [alt]="img.libelle" class="w-full h-24 object-cover" />
-                                    <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                      <button type="button" (click)="$event.stopPropagation(); openLightbox(actif.images!, idx)" class="text-white"><lucide-icon [img]="EyeIcon" [size]="16" /></button>
-                                      <button type="button" (click)="$event.stopPropagation(); openMediaDelete('image', img.id!, img.libelle ?? 'Photo')" class="text-white hover:text-destructive"><lucide-icon [img]="Trash2Icon" [size]="16" /></button>
-                                    </div>
-                                    <div class="absolute bottom-0 left-0 right-0 bg-black/70 p-1"><p class="text-xs text-white truncate">{{ img.libelle }}</p></div>
-                                  </div>
-                                }
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  @if (expandedDocuments().includes(actif.id!)) {
+                    <div class="mt-4 pt-4 border-t border-border">
+                      <h5 class="text-sm font-semibold mb-3">Documents</h5>
+                      @if (!actif.documents || actif.documents.length === 0) {
+                        <p class="text-sm text-muted-foreground">Aucun document chargé.</p>
+                      } @else {
+                        <div class="space-y-2">
+                          @for (doc of actif.documents!; track doc.id) {
+                            <div class="flex items-center justify-between p-3 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors">
+                              <div class="flex items-center gap-3 min-w-0">
+                                <lucide-icon [img]="FileTextIcon" [size]="20" class="text-primary shrink-0" />
+                                <div class="min-w-0">
+                                  <p class="text-sm font-medium truncate">{{ doc.libelle }}</p>
+                                </div>
                               </div>
-                            } @else {
-                              <p class="text-xs text-muted-foreground py-2">Aucune photo chargée</p>
-                            }
-                          </div>
-                        }
-                        @if (expandedDocuments().includes(actif.id!)) {
-                          <div class="space-y-2">
-                            <div class="flex items-center justify-between flex-wrap gap-2">
-                              <h5 class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Documents</h5>
-                              <div class="flex gap-1 flex-wrap">
-                                @for (docType of getDocumentTypes(actif.type!); track docType.id) {
-                                  <button type="button" (click)="triggerMediaUpload(actif.id!, 'doc', docType.libelle, fileDoc)" appButton variant="outline" size="sm" class="text-xs">
-                                    <lucide-icon [img]="UploadIcon" [size]="11" /> {{ docType.libelle }}
+                              <div class="flex items-center gap-1 shrink-0">
+                                <a [href]="mediaUrl(doc.lien!)" target="_blank" appButton variant="ghost" size="icon" title="Voir">
+                                  <lucide-icon [img]="EyeIcon" [size]="14" />
+                                </a>
+                                @if (canAddOrUpload()) {
+                                  <button type="button" (click)="openMediaDelete('doc', doc.id!, doc.libelle ?? 'Document')" appButton variant="ghost" size="icon" class="text-destructive hover:text-destructive" title="Supprimer">
+                                    <lucide-icon [img]="Trash2Icon" [size]="14" />
                                   </button>
                                 }
-                                <input #fileDoc type="file" hidden accept="application/pdf,image/*" (change)="onMediaFileSelected($event)" />
                               </div>
                             </div>
-                            @if (actif.documents?.length) {
-                              <div class="space-y-1.5">
-                                @for (doc of actif.documents!; track doc.id) {
-                                  <div class="flex items-center gap-2 rounded border border-border bg-background px-3 py-2">
-                                    <lucide-icon [img]="FileTextIcon" [size]="13" class="text-muted-foreground shrink-0" />
-                                    <span class="text-xs font-medium flex-1 truncate">{{ doc.libelle }}</span>
-                                    <a [href]="mediaUrl(doc.lien!)" target="_blank" class="text-muted-foreground hover:text-primary"><lucide-icon [img]="EyeIcon" [size]="13" /></a>
-                                    <button type="button" (click)="openMediaDelete('doc', doc.id!, doc.libelle ?? 'Document')" class="text-muted-foreground hover:text-destructive"><lucide-icon [img]="Trash2Icon" [size]="13" /></button>
-                                  </div>
-                                }
-                              </div>
-                            } @else {
-                              <p class="text-xs text-muted-foreground py-2">Aucun document chargé</p>
-                            }
-                          </div>
-                        }
-                      </div>
-                    </td>
-                  </tr>
-                }
-              }
-            </tbody>
-          </table>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
         }
       </app-card-content>
     </app-card>
+    }
 
     <!-- ══ VÉHICULES ════════════════════════════════════════════════════ -->
+    @if (isView('vehicule')) {
     <app-card>
       <app-card-header>
         <div class="flex items-center justify-between w-full">
@@ -299,8 +368,10 @@
         }
       </app-card-content>
     </app-card>
+    }
 
     <!-- ══ ÉQUIPEMENTS ══════════════════════════════════════════════════ -->
+    @if (isView('equipement')) {
     <app-card>
       <app-card-header>
         <div class="flex items-center justify-between w-full">
@@ -353,8 +424,10 @@
         }
       </app-card-content>
     </app-card>
+    }
 
     <!-- ══ DAT ══════════════════════════════════════════════════════════ -->
+    @if (isView('dat')) {
     <app-card>
       <app-card-header>
         <div class="flex items-center justify-between w-full">
@@ -483,8 +556,10 @@
         }
       </app-card-content>
     </app-card>
+    }
 
     <!-- ══ BIENS MOBILIERS FAMILLE ══════════════════════════════════════ -->
+    @if (isView('bien-mobilier')) {
     <app-card>
       <app-card-header>
         <div class="flex items-center justify-between w-full">
@@ -543,6 +618,7 @@
         }
       </app-card-content>
     </app-card>
+    }
 
     <!-- ══ DÉPÔTS (Espèces en banque) — code mort dans le legacy, non affiché dans l'UI -->
     <!-- <app-card>
@@ -597,50 +673,57 @@
     </app-card> -->
 
     <!-- ══ AUTRES ACTIFS ════════════════════════════════════════════════ -->
-    @if (autres().length > 0) {
+    @if (isView('immobilier') && autres().length > 0) {
       <app-card>
         <app-card-header>
           <div class="flex items-center gap-2">
             <lucide-icon [img]="BoxIcon" [size]="16" class="text-muted-foreground" />
             <app-card-title>Autres actifs</app-card-title>
-            <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{{ autres().length }}</span>
+            @if (autres().length > 0) {
+              <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{{ autres().length }}</span>
+            }
           </div>
         </app-card-header>
         <app-card-content>
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b border-border bg-muted/10">
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Libellé</th>
-                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Valeur (FCFA)</th>
-                <th class="px-4 py-2 w-10"></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (actif of autres(); track actif.id) {
-                <tr class="border-b border-border hover:bg-muted/10 transition-colors">
-                  <td class="px-4 py-2.5 font-medium">{{ actif.designation ?? actif.evaluation ?? '—' }}</td>
-                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(actif.valeurEstimee) }}</td>
-                  <td class="px-4 py-2.5"><div class="flex items-center gap-1">
-                    <button type="button" (click)="toggleImages(actif.id!)" title="Photos" class="flex items-center gap-0.5 h-7 px-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer" [class.text-primary]="expandedImages().includes(actif.id!)"><lucide-icon [img]="ImageIcon" [size]="13" />@if (actif.images?.length) { <span class="text-xs">{{ actif.images!.length }}</span> }</button>
-                    <button type="button" (click)="toggleDocuments(actif.id!)" title="Documents" class="flex items-center gap-0.5 h-7 px-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer" [class.text-primary]="expandedDocuments().includes(actif.id!)"><lucide-icon [img]="FileTextIcon" [size]="13" />@if (actif.documents?.length) { <span class="text-xs">{{ actif.documents!.length }}</span> }</button>
-                    <button type="button" (click)="openEditActif(actif)" class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"><lucide-icon [img]="PencilIcon" [size]="13" /></button>
-                    <button type="button" (click)="openDelete(actif)" class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"><lucide-icon [img]="Trash2Icon" [size]="13" /></button>
-                  </div></td>
+          @if (autres().length === 0) {
+            <p class="py-4 text-center text-sm text-muted-foreground">Aucun autre actif enregistré</p>
+          } @else {
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-border bg-muted/10">
+                  <th class="px-4 py-2 text-left font-medium text-muted-foreground">Libellé</th>
+                  <th class="px-4 py-2 text-right font-medium text-muted-foreground">Valeur (FCFA)</th>
+                  <th class="px-4 py-2 w-10"></th>
                 </tr>
-                @if (expandedImages().includes(actif.id!) || expandedDocuments().includes(actif.id!)) {
-                  <tr class="bg-muted/5 border-b border-border"><td colspan="3" class="px-4 py-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    @if (expandedImages().includes(actif.id!)) { <div class="space-y-2"><div class="flex items-center justify-between flex-wrap gap-2"><h5 class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Photos</h5><div class="flex gap-1 flex-wrap">@for (imgType of getImageTypes(actif.type!); track imgType.id) { <button type="button" (click)="triggerMediaUpload(actif.id!, 'image', imgType.libelle, fileImg6)" appButton variant="outline" size="sm" class="text-xs"><lucide-icon [img]="UploadIcon" [size]="11" /> {{ imgType.libelle }}</button> }<input #fileImg6 type="file" hidden accept="image/*" (change)="onMediaFileSelected($event)" /></div></div>@if (actif.images?.length) { <div class="grid grid-cols-3 gap-2">@for (img of actif.images!; track img.id; let idx = $index) { <div class="relative group rounded border border-border overflow-hidden cursor-pointer" (click)="openLightbox(actif.images!, idx)"><img [src]="mediaUrl(img.lien!)" [alt]="img.libelle" class="w-full h-24 object-cover" /><div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2"><button type="button" (click)="$event.stopPropagation(); openLightbox(actif.images!, idx)" class="text-white"><lucide-icon [img]="EyeIcon" [size]="16" /></button><button type="button" (click)="$event.stopPropagation(); openMediaDelete('image', img.id!, img.libelle ?? 'Photo')" class="text-white hover:text-destructive"><lucide-icon [img]="Trash2Icon" [size]="16" /></button></div><div class="absolute bottom-0 left-0 right-0 bg-black/70 p-1"><p class="text-xs text-white truncate">{{ img.libelle }}</p></div></div> }</div> } @else { <p class="text-xs text-muted-foreground py-2">Aucune photo chargée</p> }</div> }
-                    @if (expandedDocuments().includes(actif.id!)) { <div class="space-y-2"><div class="flex items-center justify-between flex-wrap gap-2"><h5 class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Documents</h5><div class="flex gap-1 flex-wrap">@for (docType of getDocumentTypes(actif.type!); track docType.id) { <button type="button" (click)="triggerMediaUpload(actif.id!, 'doc', docType.libelle, fileDoc6)" appButton variant="outline" size="sm" class="text-xs"><lucide-icon [img]="UploadIcon" [size]="11" /> {{ docType.libelle }}</button> }<input #fileDoc6 type="file" hidden accept="application/pdf,image/*" (change)="onMediaFileSelected($event)" /></div></div>@if (actif.documents?.length) { <div class="space-y-1.5">@for (doc of actif.documents!; track doc.id) { <div class="flex items-center gap-2 rounded border border-border bg-background px-3 py-2"><lucide-icon [img]="FileTextIcon" [size]="13" class="text-muted-foreground shrink-0" /><span class="text-xs font-medium flex-1 truncate">{{ doc.libelle }}</span><a [href]="mediaUrl(doc.lien!)" target="_blank" class="text-muted-foreground hover:text-primary"><lucide-icon [img]="EyeIcon" [size]="13" /></a><button type="button" (click)="openMediaDelete('doc', doc.id!, doc.libelle ?? 'Document')" class="text-muted-foreground hover:text-destructive"><lucide-icon [img]="Trash2Icon" [size]="13" /></button></div> }</div> } @else { <p class="text-xs text-muted-foreground py-2">Aucun document chargé</p> }</div> }
-                  </div></td></tr>
+              </thead>
+              <tbody>
+                @for (actif of autres(); track actif.id) {
+                  <tr class="border-b border-border hover:bg-muted/10 transition-colors">
+                    <td class="px-4 py-2.5 font-medium">{{ actif.designation ?? actif.evaluation ?? '—' }}</td>
+                    <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(actif.valeurEstimee) }}</td>
+                    <td class="px-4 py-2.5"><div class="flex items-center gap-1">
+                      <button type="button" (click)="toggleImages(actif.id!)" title="Photos" class="flex items-center gap-0.5 h-7 px-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer" [class.text-primary]="expandedImages().includes(actif.id!)"><lucide-icon [img]="ImageIcon" [size]="13" />@if (actif.images?.length) { <span class="text-xs">{{ actif.images!.length }}</span> }</button>
+                      <button type="button" (click)="toggleDocuments(actif.id!)" title="Documents" class="flex items-center gap-0.5 h-7 px-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer" [class.text-primary]="expandedDocuments().includes(actif.id!)"><lucide-icon [img]="FileTextIcon" [size]="13" />@if (actif.documents?.length) { <span class="text-xs">{{ actif.documents!.length }}</span> }</button>
+                      <button type="button" (click)="openEditActif(actif)" class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"><lucide-icon [img]="PencilIcon" [size]="13" /></button>
+                      <button type="button" (click)="openDelete(actif)" class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"><lucide-icon [img]="Trash2Icon" [size]="13" /></button>
+                    </div></td>
+                  </tr>
+                  @if (expandedImages().includes(actif.id!) || expandedDocuments().includes(actif.id!)) {
+                    <tr class="bg-muted/5 border-b border-border"><td colspan="3" class="px-4 py-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      @if (expandedImages().includes(actif.id!)) { <div class="space-y-2"><div class="flex items-center justify-between flex-wrap gap-2"><h5 class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Photos</h5><div class="flex gap-1 flex-wrap">@for (imgType of getImageTypes(actif.type!); track imgType.id) { <button type="button" (click)="triggerMediaUpload(actif.id!, 'image', imgType.libelle, fileImg6)" appButton variant="outline" size="sm" class="text-xs"><lucide-icon [img]="UploadIcon" [size]="11" /> {{ imgType.libelle }}</button> }<input #fileImg6 type="file" hidden accept="image/*" (change)="onMediaFileSelected($event)" /></div></div>@if (actif.images?.length) { <div class="grid grid-cols-3 gap-2">@for (img of actif.images!; track img.id; let idx = $index) { <div class="relative group rounded border border-border overflow-hidden cursor-pointer" (click)="openLightbox(actif.images!, idx)"><img [src]="mediaUrl(img.lien!)" [alt]="img.libelle" class="w-full h-24 object-cover" /><div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2"><button type="button" (click)="$event.stopPropagation(); openLightbox(actif.images!, idx)" class="text-white"><lucide-icon [img]="EyeIcon" [size]="16" /></button><button type="button" (click)="$event.stopPropagation(); openMediaDelete('image', img.id!, img.libelle ?? 'Photo')" class="text-white hover:text-destructive"><lucide-icon [img]="Trash2Icon" [size]="16" /></button></div><div class="absolute bottom-0 left-0 right-0 bg-black/70 p-1"><p class="text-xs text-white truncate">{{ img.libelle }}</p></div></div> }</div> } @else { <p class="text-xs text-muted-foreground py-2">Aucune photo chargée</p> }</div> }
+                      @if (expandedDocuments().includes(actif.id!)) { <div class="space-y-2"><div class="flex items-center justify-between flex-wrap gap-2"><h5 class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Documents</h5><div class="flex gap-1 flex-wrap">@for (docType of getDocumentTypes(actif.type!); track docType.id) { <button type="button" (click)="triggerMediaUpload(actif.id!, 'doc', docType.libelle, fileDoc6)" appButton variant="outline" size="sm" class="text-xs"><lucide-icon [img]="UploadIcon" [size]="11" /> {{ docType.libelle }}</button> }<input #fileDoc6 type="file" hidden accept="application/pdf,image/*" (change)="onMediaFileSelected($event)" /></div></div>@if (actif.documents?.length) { <div class="space-y-1.5">@for (doc of actif.documents!; track doc.id) { <div class="flex items-center gap-2 rounded border border-border bg-background px-3 py-2"><lucide-icon [img]="FileTextIcon" [size]="13" class="text-muted-foreground shrink-0" /><span class="text-xs font-medium flex-1 truncate">{{ doc.libelle }}</span><a [href]="mediaUrl(doc.lien!)" target="_blank" class="text-muted-foreground hover:text-primary"><lucide-icon [img]="EyeIcon" [size]="13" /></a><button type="button" (click)="openMediaDelete('doc', doc.id!, doc.libelle ?? 'Document')" class="text-muted-foreground hover:text-destructive"><lucide-icon [img]="Trash2Icon" [size]="13" /></button></div> }</div> } @else { <p class="text-xs text-muted-foreground py-2">Aucun document chargé</p> }</div> }
+                    </div></td></tr>
+                  }
                 }
-              }
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          }
         </app-card-content>
       </app-card>
     }
 
     <!-- ══ ACTIFS CIRCULANTS (Stocks) ═══════════════════════════════════════ -->
+    @if (isView('stock')) {
     <app-card>
       <app-card-header>
         <div class="flex items-center justify-between w-full">
@@ -716,6 +799,7 @@
         }
       </app-card-content>
     </app-card>
+    }
 
   }
 

@@ -8,12 +8,19 @@ export type AnalyseSectionId =
   | 'achats'
   | 'tresorerie'
   | 'familial'
-  | 'swot'
-  | 'envoi'
   | 'analyse-financiere';
 
 /** Sous-sections du tab "Actifs & Garanties" */
-export type GarantiesSectionId = 'garanties' | 'cautions';
+export type GarantiesSectionId =
+  | 'actifs-totaux'
+  | 'cautions'
+  | 'actifs-immobiliers'
+  | 'actifs-dat'
+  | 'actifs-equipements'
+  | 'actifs-biens-mobiliers'
+  | 'actifs-vehicules'
+  | 'actifs-stocks'
+  | 'actifs-garanties';
 
 export interface AnalyseTab {
   id: AnalyseTabId;
@@ -53,15 +60,20 @@ export const ANALYSE_SECTIONS: AnalyseSection[] = [
   { id: 'achats', label: 'Achats & Charges' },
   { id: 'tresorerie', label: 'Trésorerie' },
   { id: 'familial', label: 'Profil Familial' },
-  { id: 'swot', label: 'SWOT & Comités' },
-  { id: 'envoi', label: 'Envoi & Validation' },
   { id: 'analyse-financiere', label: 'Analyse Financière' },
 ];
 
 /** Sous-sections du tab "Actifs & Garanties" */
 export const GARANTIES_SECTIONS: GarantiesSection[] = [
-  { id: 'garanties', label: 'Actifs & Garanties' },
+  { id: 'actifs-totaux', label: 'Totaux garanties' },
   { id: 'cautions', label: 'Cautions solidaires' },
+  { id: 'actifs-immobiliers', label: 'Immobilisations' },
+  { id: 'actifs-dat', label: 'Dépôts à terme (DAT)' },
+  { id: 'actifs-equipements', label: 'Matériels professionnels' },
+  { id: 'actifs-biens-mobiliers', label: 'Biens mobiliers de la famille' },
+  { id: 'actifs-vehicules', label: 'Véhicules' },
+  { id: 'actifs-stocks', label: 'Actifs circulants (Stocks)' },
+  { id: 'actifs-garanties', label: 'Document Actifs & Garanties' },
 ];
 
 const GP_TAB_IDS: AnalyseTabId[] = ['demande', 'documents', 'geolocalisation'];
