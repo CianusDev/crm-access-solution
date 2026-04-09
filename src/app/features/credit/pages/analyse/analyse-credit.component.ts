@@ -274,7 +274,8 @@ export class AnalyseCreditComponent implements OnInit {
     if (bandeauAnalyste) {
       return getRequiredDocsForAR(code);
     }
-    if (this.isGP()) {
+    // Legacy: GP charge ses documents requis uniquement à l'étape d'enregistrement (statut 1).
+    if (this.isGP() && h.statut === 1) {
       return getRequiredDocsForGP(code, h.client?.entreprise?.statutJuridique);
     }
     return [];

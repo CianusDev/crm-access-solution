@@ -16,39 +16,6 @@
     </div>
   } @else {
 
-    <!-- ══ TRÉSORERIE DISPONIBLE (ancien format) ════════════════════════ -->
-    <app-card>
-      <app-card-header>
-        <div class="flex items-center justify-between w-full">
-          <div class="flex items-center gap-2">
-            <app-card-title>Trésorerie disponible</app-card-title>
-            @if (totalTresorerie() > 0) {
-              <span class="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-                Total : {{ totalTresorerie() | number:'1.0-0' }} FCFA
-              </span>
-            }
-          </div>
-        </div>
-      </app-card-header>
-      <app-card-content>
-        <form [formGroup]="tresorerieForm" class="flex flex-col gap-4">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <app-form-input name="caisse" label="Caisse (FCFA)" type="number" placeholder="Ex: 200000" />
-            <app-form-input name="banque" label="Banque (FCFA)" type="number" placeholder="Ex: 1500000" />
-            <app-form-input name="mobileMoney" label="Mobile Money (FCFA)" type="number" placeholder="Ex: 50000" />
-          </div>
-          @if (canEdit()) {
-            <div class="flex justify-end">
-              <button type="button" (click)="saveTresorerie()" appButton size="sm" [disabled]="isSavingTresorerie()">
-                <lucide-icon [img]="SaveIcon" [size]="14" />
-                @if (isSavingTresorerie()) { Enregistrement… } @else { Enregistrer }
-              </button>
-            </div>
-          }
-        </form>
-      </app-card-content>
-    </app-card>
-
     <!-- ══ TRÉSORERIE ACTIF CIRCULANT (format legacy CRUD) ═══════════════ -->
     <app-card>
       <app-card-header>
@@ -187,20 +154,20 @@
       </app-card-content>
     </app-card>
 
-    <!-- ══ STOCKS ════════════════════════════════════════════════════════ -->
+    <!-- ══ AVANCES FOURNISSEURS ═══════════════════════════════════════════ -->
     <app-card>
       <app-card-header>
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
-            <app-card-title>Stocks</app-card-title>
-            @if (totalStocks() > 0) {
-              <span class="rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">
-                Total : {{ totalStocks() | number:'1.0-0' }} FCFA
+            <app-card-title>Avances fournisseurs</app-card-title>
+            @if (totalAvances() > 0) {
+              <span class="rounded-full bg-teal-500/10 px-2.5 py-0.5 text-xs font-semibold text-teal-600 dark:text-teal-400">
+                Total : {{ totalAvances() | number:'1.0-0' }} FCFA
               </span>
             }
           </div>
           @if (canEdit()) {
-            <button type="button" (click)="openAddStock()" appButton size="sm">
+            <button type="button" (click)="openAddAvance()" appButton size="sm">
               <lucide-icon [img]="PlusIcon" [size]="14" />
               Ajouter
             </button>
@@ -208,57 +175,35 @@
         </div>
       </app-card-header>
       <app-card-content>
-        @if (stocks().length === 0) {
+        @if (avancesFournisseurs().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-8 text-center">
-            <lucide-icon [img]="PackageIcon" [size]="28" class="text-muted-foreground/40" />
-            <p class="text-sm text-muted-foreground">Aucun stock enregistré</p>
+            <lucide-icon [img]="WalletIcon" [size]="28" class="text-muted-foreground/40" />
+            <p class="text-sm text-muted-foreground">Aucune avance fournisseur enregistrée</p>
           </div>
         } @else {
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-border bg-muted/10">
-                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Description</th>
-                <th class="px-4 py-2 text-center font-medium text-muted-foreground">Quantité</th>
-                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Prix unit.</th>
-                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Valeur (FCFA)</th>
-                <th class="px-4 py-2 text-center font-medium text-muted-foreground">Assurance</th>
-                <th class="px-4 py-2 text-center font-medium text-muted-foreground">Garantie</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Objet</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Montant (FCFA)</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Reste à payer</th>
                 <th class="px-4 py-2 w-10"></th>
               </tr>
             </thead>
             <tbody>
-              @for (stock of stocks(); track stock.id) {
+              @for (avance of avancesFournisseurs(); track avance.id) {
                 <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
-                  <td class="px-4 py-2.5 font-medium">{{ stock.description || stock.libelle }}</td>
-                  <td class="px-4 py-2.5 text-center tabular-nums">{{ stock.quantite || '-' }}</td>
-                  <td class="px-4 py-2.5 text-right tabular-nums">{{ stock.prix ? (stock.prix | number:'1.0-0') : '-' }}</td>
-                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(stock.montant) }}</td>
-                  <td class="px-4 py-2.5 text-center">
-                    @if (stock.assurStock === 1) {
-                      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-500/10 text-green-600">OUI</span>
-                    } @else if (stock.assurStock === 2) {
-                      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground">NON</span>
-                    } @else {
-                      <span class="text-muted-foreground">-</span>
-                    }
-                  </td>
-                  <td class="px-4 py-2.5 text-center">
-                    @if (stock.garantie === 1) {
-                      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-blue-500/10 text-blue-600">OUI</span>
-                    } @else if (stock.garantie === 2) {
-                      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground">NON</span>
-                    } @else {
-                      <span class="text-muted-foreground">-</span>
-                    }
-                  </td>
+                  <td class="px-4 py-2.5 font-medium">{{ avance.objet }}</td>
+                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(avance.montant) }}</td>
+                  <td class="px-4 py-2.5 text-right tabular-nums">{{ formatMontant(avance.resteApay) }}</td>
                   <td class="px-4 py-2.5">
                     @if (canEdit()) {
                       <div class="flex items-center gap-1">
-                        <button type="button" (click)="openEditStock(stock)"
+                        <button type="button" (click)="openEditAvance(avance)"
                           class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer">
                           <lucide-icon [img]="PencilIcon" [size]="13" />
                         </button>
-                        <button type="button" (click)="openDelete('stock', stock.id!, stock.description ?? stock.libelle ?? '')"
+                        <button type="button" (click)="openDelete('avance', avance.id!, avance.objet ?? '')"
                           class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
                           <lucide-icon [img]="Trash2Icon" [size]="13" />
                         </button>
@@ -468,6 +413,7 @@
         name="montant"
         label="Montant (FCFA)"
         type="number"
+        format
         placeholder="Ex: 500000"
         required
       />
@@ -555,58 +501,6 @@
   </app-drawer-footer>
 </app-drawer>
 
-<!-- ══ DRAWER — Stock ══════════════════════════════════════════════════════ -->
-<app-drawer [(open)]="stockDrawerOpen">
-  <app-drawer-header>
-    <app-drawer-title>{{ editingStockId() ? 'Modifier le stock' : 'Ajouter un stock' }}</app-drawer-title>
-  </app-drawer-header>
-  <app-drawer-content>
-    <form [formGroup]="stockForm" class="flex flex-col gap-4">
-      <app-form-input name="description" label="Description" placeholder="Ex: Produits divers" required />
-
-      <app-form-input name="quantite" label="Quantité" type="number" placeholder="Ex: 100" required />
-
-      <app-form-input name="prix" label="Prix unitaire d'achat (FCFA)" type="number" placeholder="Ex: 5000" required />
-
-      <div class="space-y-2">
-        <label class="text-sm font-medium">Assurance Stock ? <span class="text-destructive">*</span></label>
-        <div class="flex gap-4">
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="radio" formControlName="assurStock" [value]="1" class="w-4 h-4" />
-            <span class="text-sm">OUI</span>
-          </label>
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="radio" formControlName="assurStock" [value]="2" class="w-4 h-4" />
-            <span class="text-sm">NON</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="space-y-2">
-        <label class="text-sm font-medium">Garantie ? <span class="text-destructive">*</span></label>
-        <div class="flex gap-4">
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="radio" formControlName="garantie" [value]="1" class="w-4 h-4" />
-            <span class="text-sm">OUI</span>
-          </label>
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="radio" formControlName="garantie" [value]="2" class="w-4 h-4" />
-            <span class="text-sm">NON</span>
-          </label>
-        </div>
-      </div>
-    </form>
-  </app-drawer-content>
-  <app-drawer-footer>
-    <div class="flex gap-2 justify-end">
-      <button type="button" (click)="stockDrawerOpen = false" appButton variant="outline">Annuler</button>
-      <button type="button" (click)="saveStock()" appButton [disabled]="isSavingStock()">
-        @if (isSavingStock()) { Enregistrement… } @else { Enregistrer }
-      </button>
-    </div>
-  </app-drawer-footer>
-</app-drawer>
-
 <!-- ══ DRAWER — Dette fournisseur ══════════════════════════════════════════ -->
 <app-drawer [(open)]="detteFournisseurDrawerOpen">
   <app-drawer-header>
@@ -621,10 +515,10 @@
       <app-form-input name="objet" label="Objet" placeholder="Ex: Fournitures Diallo" required />
       <app-form-input name="montant" label="Montant (FCFA)" type="number" placeholder="Ex: 450000" required />
       <div class="grid grid-cols-2 gap-4">
-        <app-form-input name="datePaie" label="Date de paiement" type="date" />
-        <app-form-input name="dateRecepMarch" label="Date réception marchandises" type="date" />
+        <app-form-input name="datePaie" label="Date de paiement" type="date" required />
+        <app-form-input name="dateRecepMarch" label="Date réception marchandises" type="date" required />
       </div>
-      <app-form-input name="solde" label="Solde (FCFA)" type="number" placeholder="Ex: 200000" />
+      <app-form-input name="solde" label="Solde (FCFA)" type="number" placeholder="Ex: 200000" required />
     </form>
   </app-drawer-content>
   <app-drawer-footer>

@@ -189,6 +189,14 @@ const OBJETS_CREDIT_MAP: Record<string | number, string> = {
               </p>
               <p class="text-sm text-foreground leading-relaxed">{{ d.description || '—' }}</p>
             </div>
+            <div class="mt-4 rounded-lg border border-border bg-muted/30 p-4">
+              <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                Autres commentaires de l'agent de crédit
+              </p>
+              <p class="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                {{ d.autreCommentAgCredit || '—' }}
+              </p>
+            </div>
 
             <!-- ── Mode édition ───────────────────────────────────────── -->
           } @else {
@@ -254,6 +262,11 @@ const OBJETS_CREDIT_MAP: Record<string | number, string> = {
                 label="Description de l'utilisation du crédit"
                 [rows]="4"
                 required
+              />
+              <app-form-textarea
+                name="autreCommentAgCredit"
+                label="Autres commentaires de l'agent de crédit"
+                [rows]="6"
               />
 
               <div class="flex justify-end gap-2 pt-2">
@@ -342,6 +355,7 @@ export class CreditInfoFormComponent implements OnInit {
     nbreEcheDiffere: new FormControl<number | null>(null),
     numTransaction: new FormControl<string | null>(null),
     description: new FormControl<string>('', Validators.required),
+    autreCommentAgCredit: new FormControl<string>(''),
   });
 
   constructor() {
@@ -400,6 +414,7 @@ export class CreditInfoFormComponent implements OnInit {
       nbreEcheDiffere: d.nbreEcheDiffere ?? null,
       numTransaction: d.numTransaction ?? null,
       description: d.description ?? '',
+      autreCommentAgCredit: d.autreCommentAgCredit ?? '',
     });
     this.editing.set(true);
   }
@@ -429,6 +444,7 @@ export class CreditInfoFormComponent implements OnInit {
         nbreEcheDiffere: v.nbreEcheDiffere ?? null,
         numTransaction: v.numTransaction ?? undefined,
         description: v.description!,
+        autreCommentAgCredit: v.autreCommentAgCredit ?? undefined,
       })
       .subscribe({
         next: (res) => {

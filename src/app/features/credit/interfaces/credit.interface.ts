@@ -146,6 +146,7 @@ export interface CreditDemande {
   avsFond?: CreditAvsFond;
   bonDeCommande?: CreditBonDeCommande;
   crFacture?: CreditFacture;
+  autreCommentAgCredit?: string;
 }
 
 export interface CreditBonDeCommande {

@@ -9,7 +9,6 @@ import {
   AlertCircle,
   ShoppingCart,
   Banknote,
-  Package,
   TrendingUp,
 } from 'lucide-angular';
 import {
@@ -43,7 +42,6 @@ import {
   AchatMensuel,
   ChargeExploitation,
   CrTypeCharge,
-  StockItem,
 } from '../../../../interfaces/credit.interface';
 
 const SAISONS: SelectOption[] = [
@@ -97,7 +95,6 @@ export class AchatsSectionComponent implements OnInit {
   readonly AlertCircleIcon = AlertCircle;
   readonly ShoppingCartIcon = ShoppingCart;
   readonly BanknoteIcon = Banknote;
-  readonly PackageIcon = Package;
   readonly TrendingUpIcon = TrendingUp;
 
   private readonly fb = inject(FormBuilder);
@@ -114,7 +111,6 @@ export class AchatsSectionComponent implements OnInit {
   readonly demandeRef = signal<string>('');
   readonly activites = signal<ActiviteCredit[]>([]);
   readonly chargesExploitation = signal<ChargeExploitation[]>([]);
-  readonly stocks = signal<StockItem[]>([]);
   readonly typeCharges = signal<CrTypeCharge[]>([]);
 
   readonly activiteOptions = computed<SelectOption[]>(() =>
@@ -137,10 +133,6 @@ export class AchatsSectionComponent implements OnInit {
 
   readonly totalCharges = computed(() =>
     this.chargesExploitation().reduce((s, c) => s + this.toNumber(c.montant), 0),
-  );
-
-  readonly totalStocks = computed(() =>
-    this.stocks().reduce((s, item) => s + this.toNumber(item.montantTotal), 0),
   );
 
   // Imprévus : total charges par activité + imprevu % depuis analyseFin
@@ -169,18 +161,13 @@ export class AchatsSectionComponent implements OnInit {
   readonly isSavingCharge = signal(false);
   readonly editingChargeId = signal<number | null>(null);
 
-  // Drawer — Stocks
-  stockDrawerOpen = false;
-  readonly isSavingStock = signal(false);
-  readonly editingStockId = signal<number | null>(null);
-
   // Imprévus
   readonly isSavingImprevu = signal(false);
 
   // Delete dialog
   deleteDialogOpen = false;
   deleteTarget: {
-    type: 'achat' | 'charge' | 'stock';
+    type: 'achat' | 'charge';
     id: number;
     label: string;
     chargeData?: ChargeExploitation;
@@ -202,13 +189,6 @@ export class AchatsSectionComponent implements OnInit {
     charge: [null as number | null, Validators.required],
     montant: [null as number | null, Validators.required],
     commentaire: [''],
-  });
-
-  readonly stockForm = this.fb.group({
-    activite: [null as number | null, Validators.required],
-    article: ['', Validators.required],
-    quantite: [null as number | null],
-    montantTotal: [null as number | null, Validators.required],
   });
 
   // ── Lifecycle ──────────────────────────────────────────────────────────
@@ -263,10 +243,6 @@ export class AchatsSectionComponent implements OnInit {
           chargesDemande.length > 0 ? chargesDemande : this.extractChargesFromActivites(activitesAvecNested),
         );
 
-        const stocksDemande = data.demande.stocks ?? [];
-        this.stocks.set(
-          stocksDemande.length > 0 ? stocksDemande : this.extractStocksFromActivites(activitesAvecNested),
-        );
         this.isLoading.set(false);
       },
       error: () => {
@@ -307,18 +283,6 @@ export class AchatsSectionComponent implements OnInit {
         activite:
           charge.activite != null
             ? charge.activite
-            : activite.id,
-      })),
-    );
-  }
-
-  private extractStocksFromActivites(activites: ActiviteCredit[]): StockItem[] {
-    return activites.flatMap((activite) =>
-      (activite.Stock ?? []).map((stock) => ({
-        ...stock,
-        activite:
-          stock.activite != null
-            ? stock.activite
             : activite.id,
       })),
     );
@@ -432,51 +396,6 @@ export class AchatsSectionComponent implements OnInit {
       });
   }
 
-  // ── Stock CRUD ─────────────────────────────────────────────────────────
-  openAddStock() {
-    this.editingStockId.set(null);
-    this.stockForm.reset({ activite: null, article: '', quantite: null, montantTotal: null });
-    this.stockDrawerOpen = true;
-  }
-
-  openEditStock(s: StockItem) {
-    this.editingStockId.set(s.id ?? null);
-    this.stockForm.patchValue({
-      activite: (s.activite as any)?.id ?? s.activite ?? null,
-      article: s.article ?? '',
-      quantite: s.quantite ?? null,
-      montantTotal: s.montantTotal ?? null,
-    });
-    this.stockDrawerOpen = true;
-  }
-
-  saveStock() {
-    if (this.stockForm.invalid) { this.stockForm.markAllAsTouched(); return; }
-    const val = this.stockForm.value;
-    const editId = this.editingStockId();
-    this.isSavingStock.set(true);
-    this.creditService.saveStock({
-        stock: editId ?? undefined,
-        activite: val.activite,
-        article: val.article,
-        quantite: val.quantite,
-        montanTotal: val.montantTotal,
-        refDemande: this.payloadRefDemande(),
-      })
-      .subscribe({
-        next: () => {
-          this.toast.success(editId ? 'Stock modifié.' : 'Stock enregistré.');
-          this.stockDrawerOpen = false;
-          this.isSavingStock.set(false);
-          this.loadData();
-        },
-        error: () => {
-          this.toast.error("Erreur lors de l'enregistrement.");
-          this.isSavingStock.set(false);
-        },
-      });
-  }
-
   // ── Delete ─────────────────────────────────────────────────────────────
   openDeleteAchat(achat: AchatMensuel) {
     this.deleteTarget = { type: 'achat', id: achat.id!, label: achat.article ?? '' };
@@ -495,11 +414,6 @@ export class AchatsSectionComponent implements OnInit {
       label: this.typeChargeLabel(charge.charge),
       chargeData: charge,
     };
-    this.deleteDialogOpen = true;
-  }
-
-  openDeleteStock(stock: StockItem) {
-    this.deleteTarget = { type: 'stock', id: stock.id!, label: stock.article ?? '' };
     this.deleteDialogOpen = true;
   }
 
@@ -534,9 +448,7 @@ export class AchatsSectionComponent implements OnInit {
       return;
     }
 
-    const obs$ = type === 'achat'
-      ? this.creditService.deleteAchatMensuel(id)
-      : this.creditService.deleteStock(id);
+    const obs$ = this.creditService.deleteAchatMensuel(id);
     obs$.subscribe({
       next: () => this.onDeleteSuccess(),
       error: () => this.onDeleteError(),

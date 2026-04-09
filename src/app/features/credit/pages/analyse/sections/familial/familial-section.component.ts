@@ -34,23 +34,7 @@ import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { FormSelect, SelectOption } from '@/shared/components/form-select/form-select.component';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { CreditService } from '../../../../services/credit/credit.service';
-import { ChargeFamille, MembreMenage, ProfilFamilial, TresorerieFamille } from '../../../../interfaces/credit.interface';
-
-const SITUATIONS: SelectOption[] = [
-  { value: 'CELIBATAIRE', label: 'Célibataire' },
-  { value: 'MARIE', label: 'Marié(e)' },
-  { value: 'DIVORCE', label: 'Divorcé(e)' },
-  { value: 'VEUF', label: 'Veuf/Veuve' },
-  { value: 'UNION_LIBRE', label: 'Union libre' },
-];
-
-const NIVEAUX_INSTRUCTION: SelectOption[] = [
-  { value: 'SANS', label: 'Sans instruction' },
-  { value: 'PRIMAIRE', label: 'Primaire' },
-  { value: 'SECONDAIRE', label: 'Secondaire' },
-  { value: 'SUPERIEUR', label: 'Supérieur' },
-  { value: 'TECHNIQUE', label: 'Formation technique' },
-];
+import { ChargeFamille, MembreMenage, TresorerieFamille } from '../../../../interfaces/credit.interface';
 
 interface TypeChargeFamiliale {
   id: number;
@@ -74,11 +58,6 @@ const TYPES_CHARGE_FAM: TypeChargeFamiliale[] = [
   { id: 3, name: 'Personnel', sousCharges: ['Employés de maison', 'Actions sociales et religieuses'] },
   { id: 4, name: 'Familiale', sousCharges: ['Alimentation', 'Santé', 'Hygiène'] },
   { id: 5, name: 'Autres', sousCharges: [] },
-];
-
-const REGIMES: SelectOption[] = [
-  { value: 'SEPARATION', label: 'Séparation de biens' },
-  { value: 'COMMUNAUTE', label: 'Communauté de biens' },
 ];
 
 const IMPREVU_FAM_OPTIONS: SelectOption[] = [
@@ -126,6 +105,7 @@ const MEMBRES_FAMILLE: SelectOption[] = [
 })
 export class FamilialSectionComponent implements OnInit {
   ref = input<string>('');
+  canEdit = input<boolean>(false);
 
   readonly PlusIcon = Plus;
   readonly PencilIcon = Pencil;
@@ -139,9 +119,6 @@ export class FamilialSectionComponent implements OnInit {
   private readonly toast = inject(ToastService);
 
   // ── Constants ──────────────────────────────────────────────────────────
-  readonly situationOptions = SITUATIONS;
-  readonly niveauOptions = NIVEAUX_INSTRUCTION;
-  readonly regimeOptions = REGIMES;
   readonly membresFamilleOptions = MEMBRES_FAMILLE;
   readonly imprevuFamOptions = IMPREVU_FAM_OPTIONS;
   readonly typesChargeFam = TYPES_CHARGE_FAM;
@@ -186,11 +163,6 @@ export class FamilialSectionComponent implements OnInit {
     return pct != null ? Math.round(total * pct / 100) : 0;
   });
 
-  readonly totalChargesFamiliales = computed(() => {
-    const f = this.profilForm.value;
-    return (f.loyerMensuel ?? 0) + (f.scolarite ?? 0) + (f.sante ?? 0) + (f.autresChargesFamiliales ?? 0);
-  });
-
   readonly totalRevenusMembers = computed(() =>
     this.membresMenage().reduce((s, m) => s + (m.revenus ?? 0), 0),
   );
@@ -215,25 +187,16 @@ export class FamilialSectionComponent implements OnInit {
 
   // ── Forms ──────────────────────────────────────────────────────────────
   readonly profilForm = this.fb.group({
-    situationMatrimoniale: [''],
-    nbreEpouses: [null as number | null],
-    nbreEnfants: [null as number | null],
-    niveauInstruction: [''],
-    regimeMatrimonial: [''],
-    loyerMensuel: [null as number | null],
-    scolarite: [null as number | null],
-    sante: [null as number | null],
-    autresChargesFamiliales: [null as number | null],
-    commentaire: [''],
+    commentaire: ['', Validators.required],
   });
 
   readonly membreForm = this.fb.group({
-    membreFamille: ['', Validators.required],
+    membreFamille: [''],
     nombre: [null as number | null, Validators.required],
-    age: [null as number | null],
-    activite: [''],
-    revenus: [null as number | null],
-    justifs: [''],
+    age: [null as number | null, Validators.required],
+    activite: ['', Validators.required],
+    revenus: [null as number | null, Validators.required],
+    justifs: ['', Validators.required],
   });
 
   readonly chargeForm = this.fb.group({
@@ -273,15 +236,6 @@ export class FamilialSectionComponent implements OnInit {
         const p = data.demande.profilFamilial;
         if (p) {
           this.profilForm.patchValue({
-            situationMatrimoniale: p.situationMatrimoniale ?? '',
-            nbreEpouses: p.nbreEpouses ?? null,
-            nbreEnfants: p.nbreEnfants ?? null,
-            niveauInstruction: p.niveauInstruction ?? '',
-            regimeMatrimonial: p.regimeMatrimonial ?? '',
-            loyerMensuel: p.loyerMensuel ?? null,
-            scolarite: p.scolarite ?? null,
-            sante: p.sante ?? null,
-            autresChargesFamiliales: p.autresChargesFamiliales ?? null,
             commentaire: p.commentaire ?? '',
           });
         }
@@ -305,10 +259,15 @@ export class FamilialSectionComponent implements OnInit {
 
   // ── Profil familial ────────────────────────────────────────────────────
   saveProfil() {
+    if (!this.canEdit()) return;
+    if (this.profilForm.invalid) {
+      this.profilForm.markAllAsTouched();
+      return;
+    }
     const val = this.profilForm.value;
     this.isSavingProfil.set(true);
     this.creditService.saveProfilFamilial({
-      ...val,
+      commentaire: val.commentaire,
       refDemande: this.ref(),
     }).subscribe({
       next: () => {
@@ -325,6 +284,7 @@ export class FamilialSectionComponent implements OnInit {
 
   // ── Imprévus charges familiales ────────────────────────────────────────
   saveImprevuChargesFamiliales(event: Event) {
+    if (!this.canEdit()) return;
     const value = Number((event.target as HTMLSelectElement).value);
     if (!value) return;
     this.isSavingImprevu.set(true);
@@ -350,6 +310,7 @@ export class FamilialSectionComponent implements OnInit {
   }
 
   openAddCharge() {
+    if (!this.canEdit()) return;
     this.chargeDrawerMode = 'create';
     this.currentChargeId = null;
     this.selectedTypeChargeId.set(null);
@@ -358,6 +319,7 @@ export class FamilialSectionComponent implements OnInit {
   }
 
   openEditCharge(charge: ChargeFamille) {
+    if (!this.canEdit()) return;
     this.chargeDrawerMode = 'edit';
     this.currentChargeId = charge.id ?? null;
     this.selectedTypeChargeId.set(charge.typeCharge ?? null);
@@ -370,6 +332,7 @@ export class FamilialSectionComponent implements OnInit {
   }
 
   saveCharge() {
+    if (!this.canEdit()) return;
     if (this.chargeForm.invalid) { this.chargeForm.markAllAsTouched(); return; }
     const val = this.chargeForm.value;
     const typeId = val.typeCharge;
@@ -408,6 +371,7 @@ export class FamilialSectionComponent implements OnInit {
   }
 
   openAddTresorerie() {
+    if (!this.canEdit()) return;
     this.tresorerieDrawerMode = 'create';
     this.currentTresorerieId = null;
     this.tresorerieForm.reset({ libelle: '', type: null, typeCompte: null, montant: null, provenance: '' });
@@ -415,6 +379,7 @@ export class FamilialSectionComponent implements OnInit {
   }
 
   openEditTresorerie(t: TresorerieFamille) {
+    if (!this.canEdit()) return;
     this.tresorerieDrawerMode = 'edit';
     this.currentTresorerieId = t.id ?? null;
     this.tresorerieForm.reset({
@@ -428,6 +393,7 @@ export class FamilialSectionComponent implements OnInit {
   }
 
   saveTresorerie() {
+    if (!this.canEdit()) return;
     if (this.tresorerieForm.invalid) { this.tresorerieForm.markAllAsTouched(); return; }
     const val = this.tresorerieForm.value;
     const payload: Record<string, unknown> = {
@@ -458,11 +424,13 @@ export class FamilialSectionComponent implements OnInit {
 
   // ── Membres du ménage ──────────────────────────────────────────────────
   openAddMembre() {
+    if (!this.canEdit()) return;
     this.membreForm.reset({ membreFamille: '', nombre: null, age: null, activite: '', revenus: null, justifs: '' });
     this.membreDrawerOpen = true;
   }
 
   saveMembre() {
+    if (!this.canEdit()) return;
     if (this.membreForm.invalid) { this.membreForm.markAllAsTouched(); return; }
     const val = this.membreForm.value;
     this.isSavingMembre.set(true);
@@ -489,11 +457,13 @@ export class FamilialSectionComponent implements OnInit {
   }
 
   openDeleteMembre(m: MembreMenage) {
+    if (!this.canEdit()) return;
     this.membreToDelete = m;
     this.deleteDialogOpen = true;
   }
 
   confirmDelete() {
+    if (!this.canEdit()) return;
     if (!this.membreToDelete?.id) return;
     this.deleteDialogOpen = false;
     this.isDeleting.set(true);

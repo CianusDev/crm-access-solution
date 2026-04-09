@@ -44,17 +44,6 @@ const STATUT_JURIDIQUE: Record<number, string> = {
   11: 'COOP-CA',
 };
 
-const PREDEFINED_DOC_TYPES = [
-  'Facture',
-  'RCCM',
-  'DFE',
-  'Contrat de bail',
-  'Certificat de résidence ou quittance CIE/SODECI',
-  'CNI du client',
-  "Demande physique d'avance sur facture",
-  'Fiche de prélèvement des frais',
-];
-
 @Component({
   selector: 'app-analyse-header-card',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -345,25 +334,27 @@ const PREDEFINED_DOC_TYPES = [
             }
           } @else {
             <!-- GP / Other: Charger docs + Envoyer -->
-            <app-dropdown class="min-w-96!" [items]="docTypeItems()" align="start">
-              <button
-                type="button"
-                appButton
-                variant="outline"
-                size="sm"
-                class="flex items-center min-w-96! gap-1.5"
-                dropdownTrigger
-                [disabled]="uploadingDocLibelle() !== null"
-              >
-                @if (uploadingDocLibelle()) {
-                  Chargement...
-                } @else {
-                  <lucide-icon [img]="UploadIcon" [size]="14" />
-                  Charger les documents
-                  <lucide-icon [img]="ChevronDownIcon" [size]="12" />
-                }
-              </button>
-            </app-dropdown>
+            @if (docTypeItems().length > 0) {
+              <app-dropdown class="min-w-96!" [items]="docTypeItems()" align="start">
+                <button
+                  type="button"
+                  appButton
+                  variant="outline"
+                  size="sm"
+                  class="flex items-center min-w-96! gap-1.5"
+                  dropdownTrigger
+                  [disabled]="uploadingDocLibelle() !== null"
+                >
+                  @if (uploadingDocLibelle()) {
+                    Chargement...
+                  } @else {
+                    <lucide-icon [img]="UploadIcon" [size]="14" />
+                    Charger les documents
+                    <lucide-icon [img]="ChevronDownIcon" [size]="12" />
+                  }
+                </button>
+              </app-dropdown>
+            }
             <button
               type="button"
               appButton
@@ -637,7 +628,7 @@ export class AnalyseHeaderCardComponent {
     return STATUT_JURIDIQUE[key] ?? String(sj);
   });
 
-  /** Dropdown items : docs requis selon le type de crédit, ou fallback générique */
+  /** Dropdown items : docs requis selon le type de crédit. */
   readonly docTypeItems = computed<DropdownItem[]>(() => {
     const f = this.fiche();
     const code = f?.typeCredit?.code;
@@ -681,11 +672,7 @@ export class AnalyseHeaderCardComponent {
       });
     }
 
-    // Fallback : liste générique
-    return PREDEFINED_DOC_TYPES.map((label) => ({
-      label,
-      action: () => this.chargerDocuments.emit(label),
-    }));
+    return [];
   });
 
   readonly uploadingDocLibelle = input<string | null>(null);

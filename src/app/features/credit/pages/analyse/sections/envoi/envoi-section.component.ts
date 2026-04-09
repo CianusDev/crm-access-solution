@@ -112,7 +112,14 @@ export class EnvoiSectionComponent implements OnInit {
       { label: 'Profil activité', done: (d.activites?.length ?? 0) > 0 },
       { label: 'Achats & Charges', done: hasAchats || (d.chargesExploitation?.length ?? 0) > 0 },
       { label: 'Trésorerie', done: !!(d.tresorerie?.caisse || d.tresorerie?.banque || d.tresorerie?.mobileMoney || (d.creances?.length ?? 0) > 0 || (d.stocks?.length ?? 0) > 0 || (d.dettes?.length ?? 0) > 0) },
-      { label: 'Profil familial', done: !!(d.profilFamilial?.situationMatrimoniale) },
+      {
+        label: 'Profil familial',
+        done:
+          !!(d.profilFamilial?.commentaire?.trim()) ||
+          (d.membresMenage?.length ?? 0) > 0 ||
+          (d.chargesFamiliales?.length ?? 0) > 0 ||
+          (d.tresoreriesFamiliales?.length ?? 0) > 0,
+      },
       { label: 'Actifs & Garanties', done: (d.actifsGaranties?.length ?? 0) > 0 },
       { label: 'Cautions & Documents', done: (d.cautionsSolidaires?.length ?? 0) > 0 || (d.documentsAnalyse?.length ?? 0) > 0 },
       { label: 'Analyse SWOT', done: !!(d.swot?.forces?.length || d.swot?.faiblesses?.length) },

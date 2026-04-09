@@ -23,20 +23,6 @@
       </app-card-header>
       <app-card-content>
         <form [formGroup]="profilForm" class="flex flex-col gap-5">
-
-          <!-- Situation -->
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Situation personnelle</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <app-form-select name="situationMatrimoniale" label="Situation matrimoniale" [options]="situationOptions" placeholder="Sélectionner" />
-              <app-form-input name="nbreEpouses" label="Nombre d'épouses" type="number" placeholder="Ex: 1" />
-              <app-form-input name="nbreEnfants" label="Enfants à charge" type="number" placeholder="Ex: 3" />
-              <app-form-select name="niveauInstruction" label="Niveau d'instruction" [options]="niveauOptions" placeholder="Sélectionner" />
-              <app-form-select name="regimeMatrimonial" label="Régime matrimonial" [options]="regimeOptions" placeholder="Sélectionner" />
-            </div>
-          </div>
-
-          <!-- Commentaire -->
           <div>
             <label class="text-sm font-medium mb-1.5 block text-foreground" for="commentaireProfil">Commentaire</label>
             <textarea
@@ -44,16 +30,19 @@
               formControlName="commentaire"
               rows="3"
               placeholder="Observations sur le profil familial…"
+              [readOnly]="!canEdit()"
               class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none">
             </textarea>
           </div>
 
-          <div class="flex justify-end">
-            <button type="button" (click)="saveProfil()" appButton size="sm" [disabled]="isSavingProfil()">
-              <lucide-icon [img]="SaveIcon" [size]="14" />
-              @if (isSavingProfil()) { Enregistrement… } @else { Enregistrer }
-            </button>
-          </div>
+          @if (canEdit()) {
+            <div class="flex justify-end">
+              <button type="button" (click)="saveProfil()" appButton size="sm" [disabled]="isSavingProfil()">
+                <lucide-icon [img]="SaveIcon" [size]="14" />
+                @if (isSavingProfil()) { Enregistrement… } @else { Enregistrer }
+              </button>
+            </div>
+          }
 
         </form>
       </app-card-content>
@@ -71,20 +60,24 @@
               </span>
             }
           </div>
-          <button type="button" (click)="openAddCharge()" appButton size="sm">
-            <lucide-icon [img]="PlusIcon" [size]="14" />
-            Ajouter
-          </button>
+          @if (canEdit()) {
+            <button type="button" (click)="openAddCharge()" appButton size="sm">
+              <lucide-icon [img]="PlusIcon" [size]="14" />
+              Ajouter
+            </button>
+          }
         </div>
       </app-card-header>
       <app-card-content>
         @if (chargesFamiliales().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
             <p class="text-sm text-muted-foreground">Aucune charge familiale enregistrée</p>
-            <button type="button" (click)="openAddCharge()" appButton size="sm">
-              <lucide-icon [img]="PlusIcon" [size]="14" />
-              Ajouter une charge
-            </button>
+            @if (canEdit()) {
+              <button type="button" (click)="openAddCharge()" appButton size="sm">
+                <lucide-icon [img]="PlusIcon" [size]="14" />
+                Ajouter une charge
+              </button>
+            }
           </div>
         } @else {
           <table class="w-full text-sm">
@@ -93,7 +86,9 @@
                 <th class="px-4 py-2 text-left font-medium text-muted-foreground">Type</th>
                 <th class="px-4 py-2 text-left font-medium text-muted-foreground">Charge</th>
                 <th class="px-4 py-2 text-right font-medium text-muted-foreground">Montant (FCFA)</th>
-                <th class="px-4 py-2 w-16"></th>
+                @if (canEdit()) {
+                  <th class="px-4 py-2 w-16"></th>
+                }
               </tr>
             </thead>
             <tbody>
@@ -108,14 +103,16 @@
                     {{ charge.chargeMens === 'RAS' ? '—' : charge.chargeMens }}
                   </td>
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(charge.montant) }}</td>
-                  <td class="px-4 py-2.5">
-                    <div class="flex items-center justify-end gap-0.5">
-                      <button type="button" (click)="openEditCharge(charge)" title="Modifier"
-                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer">
-                        <lucide-icon [img]="PencilIcon" [size]="13" />
-                      </button>
-                    </div>
-                  </td>
+                  @if (canEdit()) {
+                    <td class="px-4 py-2.5">
+                      <div class="flex items-center justify-end gap-0.5">
+                        <button type="button" (click)="openEditCharge(charge)" title="Modifier"
+                          class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer">
+                          <lucide-icon [img]="PencilIcon" [size]="13" />
+                        </button>
+                      </div>
+                    </td>
+                  }
                 </tr>
               }
             </tbody>
@@ -123,7 +120,9 @@
               <tr class="border-t border-border bg-muted/10">
                 <td colspan="2" class="px-4 py-2 text-sm font-semibold text-muted-foreground">Total charges familiales</td>
                 <td class="px-4 py-2 text-right font-bold tabular-nums">{{ formatMontant(totalChargesFamilialesDetail()) }}</td>
-                <td></td>
+                @if (canEdit()) {
+                  <td></td>
+                }
               </tr>
               <tr class="border-t border-border bg-violet-500/5">
                 <td class="px-4 py-2.5 text-sm font-medium text-muted-foreground">Imprévus</td>
@@ -131,7 +130,7 @@
                   <select
                     [value]="imprevuChargeFamille() ?? ''"
                     (change)="saveImprevuChargesFamiliales($event)"
-                    [disabled]="isSavingImprevu()"
+                    [disabled]="isSavingImprevu() || !canEdit()"
                     class="rounded-md border border-border bg-background px-2.5 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 cursor-pointer">
                     <option value="" disabled>—</option>
                     @for (opt of imprevuFamOptions; track opt.value) {
@@ -146,7 +145,9 @@
                     <span class="text-muted-foreground text-xs">Sélectionner un %</span>
                   }
                 </td>
-                <td></td>
+                @if (canEdit()) {
+                  <td></td>
+                }
               </tr>
             </tfoot>
           </table>
@@ -166,20 +167,24 @@
               </span>
             }
           </div>
-          <button type="button" (click)="openAddTresorerie()" appButton size="sm">
-            <lucide-icon [img]="PlusIcon" [size]="14" />
-            Ajouter
-          </button>
+          @if (canEdit()) {
+            <button type="button" (click)="openAddTresorerie()" appButton size="sm">
+              <lucide-icon [img]="PlusIcon" [size]="14" />
+              Ajouter
+            </button>
+          }
         </div>
       </app-card-header>
       <app-card-content>
         @if (tresoreriesFamiliales().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
             <p class="text-sm text-muted-foreground">Aucune trésorerie enregistrée</p>
-            <button type="button" (click)="openAddTresorerie()" appButton size="sm">
-              <lucide-icon [img]="PlusIcon" [size]="14" />
-              Ajouter
-            </button>
+            @if (canEdit()) {
+              <button type="button" (click)="openAddTresorerie()" appButton size="sm">
+                <lucide-icon [img]="PlusIcon" [size]="14" />
+                Ajouter
+              </button>
+            }
           </div>
         } @else {
           <table class="w-full text-sm">
@@ -190,7 +195,9 @@
                 <th class="px-4 py-2 text-left font-medium text-muted-foreground">Compte</th>
                 <th class="px-4 py-2 text-left font-medium text-muted-foreground">Provenance</th>
                 <th class="px-4 py-2 text-right font-medium text-muted-foreground">Montant (FCFA)</th>
-                <th class="px-4 py-2 w-10"></th>
+                @if (canEdit()) {
+                  <th class="px-4 py-2 w-10"></th>
+                }
               </tr>
             </thead>
             <tbody>
@@ -209,12 +216,14 @@
                   <td class="px-4 py-2.5 text-muted-foreground">{{ typeCompteLabel(t.typeCompte) }}</td>
                   <td class="px-4 py-2.5 text-muted-foreground">{{ t.provenance || '—' }}</td>
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(t.montant) }}</td>
-                  <td class="px-4 py-2.5">
-                    <button type="button" (click)="openEditTresorerie(t)" title="Modifier"
-                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer">
-                      <lucide-icon [img]="PencilIcon" [size]="13" />
-                    </button>
-                  </td>
+                  @if (canEdit()) {
+                    <td class="px-4 py-2.5">
+                      <button type="button" (click)="openEditTresorerie(t)" title="Modifier"
+                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer">
+                        <lucide-icon [img]="PencilIcon" [size]="13" />
+                      </button>
+                    </td>
+                  }
                 </tr>
               }
             </tbody>
@@ -230,7 +239,9 @@
                   [class.text-destructive]="totalEpargnes() < totalDettes()">
                   {{ formatMontant(totalEpargnes() - totalDettes()) }}
                 </td>
-                <td></td>
+                @if (canEdit()) {
+                  <td></td>
+                }
               </tr>
             </tfoot>
           </table>
@@ -250,10 +261,12 @@
               </span>
             }
           </div>
-          <button type="button" (click)="openAddMembre()" appButton size="sm">
-            <lucide-icon [img]="PlusIcon" [size]="14" />
-            Ajouter
-          </button>
+          @if (canEdit()) {
+            <button type="button" (click)="openAddMembre()" appButton size="sm">
+              <lucide-icon [img]="PlusIcon" [size]="14" />
+              Ajouter
+            </button>
+          }
         </div>
       </app-card-header>
       <app-card-content>
@@ -261,10 +274,12 @@
           <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
             <lucide-icon [img]="UsersIcon" [size]="32" class="text-muted-foreground/40" />
             <p class="text-sm text-muted-foreground">Aucun membre du ménage enregistré</p>
-            <button type="button" (click)="openAddMembre()" appButton size="sm">
-              <lucide-icon [img]="PlusIcon" [size]="14" />
-              Ajouter un membre
-            </button>
+            @if (canEdit()) {
+              <button type="button" (click)="openAddMembre()" appButton size="sm">
+                <lucide-icon [img]="PlusIcon" [size]="14" />
+                Ajouter un membre
+              </button>
+            }
           </div>
         } @else {
           <table class="w-full text-sm">
@@ -275,7 +290,9 @@
                 <th class="px-4 py-2 text-right font-medium text-muted-foreground">Âge moy.</th>
                 <th class="px-4 py-2 text-left font-medium text-muted-foreground">Activité</th>
                 <th class="px-4 py-2 text-right font-medium text-muted-foreground">Revenus (FCFA)</th>
-                <th class="px-4 py-2 w-10"></th>
+                @if (canEdit()) {
+                  <th class="px-4 py-2 w-10"></th>
+                }
               </tr>
             </thead>
             <tbody>
@@ -286,12 +303,14 @@
                   <td class="px-4 py-2.5 text-right text-muted-foreground">{{ membre.age ?? '—' }}</td>
                   <td class="px-4 py-2.5 text-muted-foreground">{{ membre.activite ?? '—' }}</td>
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(membre.revenus) }}</td>
-                  <td class="px-4 py-2.5">
-                    <button type="button" (click)="openDeleteMembre(membre)"
-                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
-                      <lucide-icon [img]="Trash2Icon" [size]="13" />
-                    </button>
-                  </td>
+                  @if (canEdit()) {
+                    <td class="px-4 py-2.5">
+                      <button type="button" (click)="openDeleteMembre(membre)"
+                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                        <lucide-icon [img]="Trash2Icon" [size]="13" />
+                      </button>
+                    </td>
+                  }
                 </tr>
               }
             </tbody>
@@ -300,7 +319,9 @@
                 <tr class="border-t border-border bg-muted/10">
                   <td colspan="4" class="px-4 py-2 text-sm font-semibold text-muted-foreground">Total revenus ménage</td>
                   <td class="px-4 py-2 text-right font-bold tabular-nums">{{ formatMontant(totalRevenusMembers()) }}</td>
-                  <td></td>
+                  @if (canEdit()) {
+                    <td></td>
+                  }
                 </tr>
               </tfoot>
             }
@@ -333,10 +354,11 @@
           name="sousCharge"
           label="Charge mensuelle"
           [options]="sousChargesOptions()"
-          placeholder="Sélectionner"
-          required />
+          placeholder="Sélectionner" />
       }
-      <app-form-input name="montant" label="Montant (FCFA)" type="number" placeholder="Ex: 50 000" required />
+      @if (selectedTypeChargeId() != null) {
+        <app-form-input name="montant" label="Montant (FCFA)" type="number" placeholder="Ex: 50 000" required />
+      }
     </form>
   </app-drawer-content>
   <app-drawer-footer>

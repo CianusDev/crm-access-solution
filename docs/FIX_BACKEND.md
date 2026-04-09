@@ -97,3 +97,51 @@ SQLSTATE[01000]: Warning: 1265 Data truncated for column 'REF_DEMANDE' at row 1 
 
 status : 200 ok
 mais l'element en question est toujours visible dans la liste
+
+
+[POST] /credit/saveTresorerie
+
+RES:                                                
+  {"message":"SQLSTATE[HY000]: General error: 1364 Field    
+  'id' doesn't have a default value (SQL: insert into       
+  `cr_tresoreries` (`REF_DEMANDE`, `activite_id`, `LIBELLE`,
+   `MONTANT`, `TYPE`, `ETAT`, `STATUT`, `updated_at`,       
+  `created_at`) values (1775126013C0503512, 113,            
+  Esp\u00e8ces du jour, 500000, 1, 1, 1, 2026-04-09         
+  12:22:37, 2026-04-09 12:22:37))"}                         
+
+REQ:                                                 
+  {"tresorerie":null,"refDemande":"1775126013C0503512","acti
+  vite":113,"type":"1","libelle":"Espèces du                
+  jour","montant":"500000"}
+
+
+[POST] /credit/saveCreanceClient
+RES :
+{"message":"SQLSTATE[01000]: Warning: 1265 Data truncated for column 'REF_DEMANDE' at row 1 (SQL: insert into `cr_creance_clients` (`REF_DEMANDE`, `activite_id`, `OBJET`, `DUREE`, `MONTANT_INITIAL`, `SOLDE`, `RECOUVR_MAX`, `MONT_ARECEVOIR`, `ETAT`, `STATUT`, `updated_at`, `created_at`) values (1775126013C0503512, 113, Vente de marchandise, 30, 300000, 15000, 10, 1500, 1, 1, 2026-04-09 14:44:17, 2026-04-09 14:44:17
+
+
+[POST] 	/api/credit/saveAvanceFournisseur
+RES :
+{"message":"SQLSTATE[01000]: Warning: 1265 Data truncated for column 'REF_DEMANDE' at row 1 (SQL: insert into `cr_avances_fournisseurs` (`REF_DEMANDE`, `activite_id`, `OBJET`, `MONTANT`, `DATE_VERS_AVC`, `DATE_RECEP_MARCH`, `RESTE_A_PAY`, `ETAT`, `STATUT`, `updated_at`, `created_at`) values (1775126013C0503512, 113, Avance pour achat de marchandise, 50000, 2026-04-06, 2026-04-08, 200000, 1, 1, 2026-04-09 14:50:20, 2026-04-09 14:50:20))"}
+
+[POST] /credit/saveDetteFournisseur
+
+RES:
+{"message":"SQLSTATE[HY000]: General error: 1364 Field 'id' doesn't have a default value (SQL: insert into `cr_dette_fournisseurs` (`REF_DEMANDE`, `activite_id`, `OBJET`, `MONTANT`, `DATE_PAIE`, `DATE_RECEP_MARCH`, `SOLDE`, `ETAT`, `STATUT`, `updated_at`, `created_at`) values (1775126013C0503512, 113, Fourniture Diallo, 450000, 2026-04-06, 2026-04-08, 200000, 1, 1, 2026-04-09 14:53:50, 2026-04-09 14:53:50))"}
+
+[POST] /api/credit/saveDetteEntreprise
+
+RES :
+{
+"message": "This action is unauthorized.",
+    "exception": "Symfony\\Component\\HttpKernel\\Exception\\AccessDeniedHttpException",
+    "file": "/var/www/html/cacrm/backend_dev/vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/Handler.php",
+    "line": 395,
+}
+
+
+[POST] /api/credit/saveChargeFamille
+
+RES:
+{"message":"SQLSTATE[HY000]: General error: 1364 Field 'id' doesn't have a default value (SQL: insert into `cr_charge_familles` (`REF_DEMANDE`, `TYPE_CHARGE`, `CHARGE_MENS`, `MONTANT`, `COMMENTAIRE`, `ETAT`, `STATUT`, `updated_at`, `created_at`) values (1775126013C0503512, 1, Entretien et r\u00e9paration, 50000, RAS, 1, 1, 2026-04-09 15:14:23, 2026-04-09 15:14:23))"}
