@@ -6,6 +6,7 @@ import {
   Pencil,
   Trash2,
   AlertCircle,
+  ChevronDown,
   Users,
   Save,
 } from 'lucide-angular';
@@ -124,6 +125,7 @@ export class FamilialSectionComponent implements OnInit {
   readonly PencilIcon = Pencil;
   readonly Trash2Icon = Trash2;
   readonly AlertCircleIcon = AlertCircle;
+  readonly ChevronDownIcon = ChevronDown;
   readonly UsersIcon = Users;
   readonly SaveIcon = Save;
 
@@ -147,7 +149,14 @@ export class FamilialSectionComponent implements OnInit {
   readonly chargesFamiliales = signal<ChargeFamille[]>([]);
   readonly tresoreriesFamiliales = signal<TresorerieFamille[]>([]);
   readonly imprevuChargeFamille = signal<number | null>(null);
+  readonly profilCommentaire = signal('');
+  readonly profilEditMode = signal(false);
   readonly isSavingImprevu = signal(false);
+  readonly collapsedSections = signal<Record<string, boolean>>({
+    chargesFamiliales: true,
+    tresorerieFamiliale: true,
+    compositionMenage: true,
+  });
 
   readonly totalEpargnes = computed(() =>
     this.tresoreriesFamiliales()
@@ -217,6 +226,8 @@ export class FamilialSectionComponent implements OnInit {
 
   // Drawer
   membreDrawerOpen = false;
+  membreDrawerMode: 'create' | 'edit' = 'create';
+  private currentMembreId: number | null = null;
   chargeDrawerOpen = false;
   chargeDrawerMode: 'create' | 'edit' = 'create';
   private currentChargeId: number | null = null;
@@ -294,6 +305,9 @@ export class FamilialSectionComponent implements OnInit {
           menageRevenuFamilles?: MembreMenage[];
         };
         const p = demande.profilFamilial ?? this.extractProfilFamilialFromActivites(activites);
+        const commentaireProfil = (p?.commentaire ?? '').trim();
+        this.profilCommentaire.set(commentaireProfil);
+        this.profilEditMode.set(commentaireProfil.length === 0 && this.canEdit());
         if (p) {
           this.profilForm.patchValue({
             commentaire: p.commentaire ?? '',
@@ -349,6 +363,17 @@ export class FamilialSectionComponent implements OnInit {
     return new Intl.NumberFormat('fr-FR').format(this.toNumber(n));
   }
 
+  isSectionCollapsed(key: string): boolean {
+    return !!this.collapsedSections()[key];
+  }
+
+  toggleSection(key: string): void {
+    this.collapsedSections.update((state) => ({
+      ...state,
+      [key]: !state[key],
+    }));
+  }
+
   private toNumber(value: unknown): number {
     if (value == null || value === '') return 0;
     if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
@@ -375,30 +400,62 @@ export class FamilialSectionComponent implements OnInit {
   }
 
   private extractChargesFromActivites(activites: ActiviteCredit[]): ChargeFamille[] {
-    return activites.flatMap((activite) =>
-      ((activite as unknown as { chargeFamilles?: ChargeFamille[] }).chargeFamilles ?? []).map((item) => ({
-        ...item,
-        refDemande: item.refDemande ?? activite.refDemande,
-      })),
-    );
+    for (const activite of activites) {
+      const source = (activite as unknown as { chargeFamilles?: ChargeFamille[] }).chargeFamilles ?? [];
+      if (source.length > 0) {
+        return this.dedupeByIdOrPayload(
+          source.map((item) => ({
+            ...item,
+            refDemande: item.refDemande ?? activite.refDemande,
+          })),
+        );
+      }
+    }
+    return [];
   }
 
   private extractTresoreriesFromActivites(activites: ActiviteCredit[]): TresorerieFamille[] {
-    return activites.flatMap((activite) =>
-      ((activite as unknown as { tresorerieFamilles?: TresorerieFamille[] }).tresorerieFamilles ?? []).map((item) => ({
-        ...item,
-        refDemande: item.refDemande ?? activite.refDemande,
-      })),
-    );
+    for (const activite of activites) {
+      const source =
+        (activite as unknown as { tresorerieFamilles?: TresorerieFamille[] }).tresorerieFamilles ?? [];
+      if (source.length > 0) {
+        return this.dedupeByIdOrPayload(
+          source.map((item) => ({
+            ...item,
+            refDemande: item.refDemande ?? activite.refDemande,
+          })),
+        );
+      }
+    }
+    return [];
   }
 
   private extractMenageFromActivites(activites: ActiviteCredit[]): MembreMenage[] {
-    return activites.flatMap((activite) =>
-      ((activite as unknown as { menageRevenuFamilles?: MembreMenage[] }).menageRevenuFamilles ?? []).map((item) => ({
-        ...item,
-        refDemande: item.refDemande ?? activite.refDemande,
-      })),
-    );
+    for (const activite of activites) {
+      const source =
+        (activite as unknown as { menageRevenuFamilles?: MembreMenage[] }).menageRevenuFamilles ?? [];
+      if (source.length > 0) {
+        return this.dedupeByIdOrPayload(
+          source.map((item) => ({
+            ...item,
+            refDemande: item.refDemande ?? activite.refDemande,
+          })),
+        );
+      }
+    }
+    return [];
+  }
+
+  private dedupeByIdOrPayload<T extends { id?: number }>(items: T[]): T[] {
+    const seen = new Set<string>();
+    const deduped: T[] = [];
+    for (const item of items) {
+      const key = item.id != null ? `id:${item.id}` : `payload:${JSON.stringify(item)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(item);
+    }
+    return deduped;
   }
 
   private extractImprevuChargeFamille(source: unknown): number | null {
@@ -415,6 +472,17 @@ export class FamilialSectionComponent implements OnInit {
   }
 
   // ── Profil familial ────────────────────────────────────────────────────
+  enterProfilEditMode() {
+    if (!this.canEdit()) return;
+    this.profilForm.patchValue({ commentaire: this.profilCommentaire() });
+    this.profilEditMode.set(true);
+  }
+
+  cancelProfilEditMode() {
+    this.profilForm.patchValue({ commentaire: this.profilCommentaire() });
+    this.profilEditMode.set(false);
+  }
+
   saveProfil() {
     if (!this.canEdit()) return;
     if (this.profilForm.invalid) {
@@ -428,9 +496,10 @@ export class FamilialSectionComponent implements OnInit {
       refDemande: this.ref(),
     }).subscribe({
       next: () => {
+        this.profilCommentaire.set((val.commentaire ?? '').trim());
+        this.profilEditMode.set(false);
         this.toast.success('Profil familial enregistré.');
         this.isSavingProfil.set(false);
-        this.loadData();
       },
       error: () => {
         this.toast.error("Erreur lors de l'enregistrement.");
@@ -647,6 +716,8 @@ export class FamilialSectionComponent implements OnInit {
 
   openAddMembre() {
     if (!this.canEdit()) return;
+    this.membreDrawerMode = 'create';
+    this.currentMembreId = null;
     this.membreForm.reset({
       membreFamille: '',
       nombre: null,
@@ -660,12 +731,30 @@ export class FamilialSectionComponent implements OnInit {
     this.membreDrawerOpen = true;
   }
 
+  openEditMembre(membre: MembreMenage) {
+    if (!this.canEdit()) return;
+    this.membreDrawerMode = 'edit';
+    this.currentMembreId = membre.id ?? null;
+    const membreFamille = membre.membreFamille ?? '';
+    this.membreForm.reset({
+      membreFamille,
+      nombre: membre.nombre ?? null,
+      age: membre.age ?? null,
+      activite: membre.activite ?? '',
+      revenus: membre.revenus ?? null,
+      justifs: membre.justifs != null ? String(membre.justifs) : '',
+    });
+    const condition = this.resolveMembreCondition(membreFamille);
+    this.selectedMembreCondition.set(condition);
+    this.applyMembreValidators(condition);
+    this.membreDrawerOpen = true;
+  }
+
   saveMembre() {
     if (!this.canEdit()) return;
     if (this.membreForm.invalid) { this.membreForm.markAllAsTouched(); return; }
     const val = this.membreForm.value;
-    this.isSavingMembre.set(true);
-    this.creditService.saveMembreMenage({
+    const payload: Record<string, unknown> = {
       membreFamille: val.membreFamille,
       nombre: val.nombre,
       age: val.age,
@@ -673,9 +762,14 @@ export class FamilialSectionComponent implements OnInit {
       revenus: val.revenus,
       justifs: val.justifs,
       refDemande: this.ref(),
-    }).subscribe({
+    };
+    if (this.membreDrawerMode === 'edit' && this.currentMembreId != null) {
+      payload['menageRevenuFamille'] = this.currentMembreId;
+    }
+    this.isSavingMembre.set(true);
+    this.creditService.saveMembreMenage(payload).subscribe({
       next: () => {
-        this.toast.success('Membre ajouté.');
+        this.toast.success(this.membreDrawerMode === 'create' ? 'Membre ajouté.' : 'Membre modifié.');
         this.membreDrawerOpen = false;
         this.isSavingMembre.set(false);
         this.loadData();

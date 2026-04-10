@@ -28,14 +28,21 @@
               </span>
             }
           </div>
-          @if (canEdit()) {
-            <button type="button" (click)="openAddTresorerie()" appButton size="sm">
-              <lucide-icon [img]="PlusIcon" [size]="14" />
-              Ajouter
+          <div class="flex items-center gap-2">
+            <button type="button" (click)="toggleSection('tresorerie')" appButton variant="outline" size="sm" title="Plier / Déplier">
+              <lucide-icon [img]="ChevronDownIcon" [size]="14" [class.rotate-180]="!isSectionCollapsed('tresorerie')" class="transition-transform" />
+              <span class="text-xs">{{ isSectionCollapsed('tresorerie') ? 'Déplier' : 'Plier' }}</span>
             </button>
-          }
+            @if (canEdit()) {
+              <button type="button" (click)="openAddTresorerie()" appButton size="sm">
+                <lucide-icon [img]="PlusIcon" [size]="14" />
+                Ajouter
+              </button>
+            }
+          </div>
         </div>
       </app-card-header>
+      @if (!isSectionCollapsed('tresorerie')) {
       <app-card-content>
         @if (tresoreriesActifCirculant().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-8 text-center">
@@ -88,14 +95,15 @@
           </table>
         }
       </app-card-content>
+      }
     </app-card>
 
     <!-- ══ ACTIFS CIRCULANTS (STOCKS) ═════════════════════════════════════ -->
-    <app-card>
+    <!-- <app-card>
       <app-card-header>
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
-            <app-card-title>STOCKS</app-card-title>
+            <app-card-title>Stocks</app-card-title>
             <span class="text-xs text-muted-foreground">Actifs et garanties</span>
           </div>
           @if (canEdit()) {
@@ -106,65 +114,70 @@
           }
         </div>
       </app-card-header>
-      <app-card-content class="space-y-4">
+      <app-card-content>
         @if (stocks().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-8 text-center">
             <lucide-icon [img]="WalletIcon" [size]="28" class="text-muted-foreground/40" />
             <p class="text-sm text-muted-foreground">Aucun stock enregistré</p>
           </div>
         } @else {
-          @for (stock of stocks(); track stock.id ?? $index) {
-            <div class="rounded-xl border border-border bg-card">
-              <div class="flex items-center justify-between border-b border-border px-4 py-3">
-                <h4 class="text-sm font-semibold">Stock ({{ $index + 1 }})</h4>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border bg-muted/10">
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Activité</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Désignation</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Quantité</th>
+                <th class="px-4 py-2 text-right font-medium text-muted-foreground">Prix (FCFA)</th>
                 @if (canEdit()) {
-                  <div class="flex items-center gap-1">
-                    <button
-                      type="button"
-                      (click)="openEditStock(stock)"
-                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                      title="Modifier">
-                      <lucide-icon [img]="PencilIcon" [size]="13" />
-                    </button>
-                    @if (stock.id) {
-                      <button
-                        type="button"
-                        (click)="openDelete('stock', stock.id, stock.article ?? '')"
-                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                        title="Supprimer">
-                        <lucide-icon [img]="Trash2Icon" [size]="13" />
-                      </button>
-                    }
-                  </div>
+                  <th class="px-4 py-2 w-20"></th>
                 }
-              </div>
-              <div class="grid gap-4 px-4 py-3 md:grid-cols-2">
-                <div class="space-y-2 text-sm">
-                  <div class="flex justify-between gap-2">
-                    <span class="text-muted-foreground">Activité :</span>
-                    <span class="font-medium text-right">{{ getActiviteLibelle(stock.activite) }}</span>
-                  </div>
-                  <div class="flex justify-between gap-2">
-                    <span class="text-muted-foreground">Désignation :</span>
-                    <span class="font-medium text-right">{{ stock.article || '—' }}</span>
-                  </div>
-                </div>
-                <div class="space-y-2 text-sm">
-                  <div class="flex justify-between gap-2">
-                    <span class="text-muted-foreground">Quantité :</span>
-                    <span class="font-medium text-right">{{ stock.quantite | number:'1.0-0' }}</span>
-                  </div>
-                  <div class="flex justify-between gap-2">
-                    <span class="text-muted-foreground">Prix :</span>
-                    <span class="font-medium text-right">{{ stockMontant(stock) | number:'1.0-0' }} FCFA</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          }
+              </tr>
+            </thead>
+            <tbody>
+              @for (stock of stocks(); track stock.id ?? $index) {
+                <tr class="border-b border-border last:border-0 hover:bg-muted/10 transition-colors">
+                  <td class="px-4 py-2.5">{{ getActiviteLibelle(stock.activite) }}</td>
+                  <td class="px-4 py-2.5 font-medium">{{ stock.article || '—' }}</td>
+                  <td class="px-4 py-2.5 text-right tabular-nums">{{ stock.quantite | number:'1.0-0' }}</td>
+                  <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ stockMontant(stock) | number:'1.0-0' }}</td>
+                  @if (canEdit()) {
+                    <td class="px-4 py-2.5">
+                      <div class="flex items-center gap-1 justify-end">
+                        <button
+                          type="button"
+                          (click)="openEditStock(stock)"
+                          class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                          title="Modifier">
+                          <lucide-icon [img]="PencilIcon" [size]="13" />
+                        </button>
+                        @if (stock.id) {
+                          <button
+                            type="button"
+                            (click)="openDelete('stock', stock.id, stock.article ?? '')"
+                            class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                            title="Supprimer">
+                            <lucide-icon [img]="Trash2Icon" [size]="13" />
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr class="border-t border-border bg-muted/10">
+                <td colspan="3" class="px-4 py-2 text-sm font-semibold text-muted-foreground">Total stocks</td>
+                <td class="px-4 py-2 text-right font-bold tabular-nums">{{ totalStockActifCirculant() | number:'1.0-0' }}</td>
+                @if (canEdit()) {
+                  <td></td>
+                }
+              </tr>
+            </tfoot>
+          </table>
         }
       </app-card-content>
-    </app-card>
+    </app-card> -->
 
     <!-- ══ CRÉANCES CLIENTS ══════════════════════════════════════════════ -->
     <app-card>
@@ -178,14 +191,21 @@
               </span>
             }
           </div>
-          @if (canEdit()) {
-            <button type="button" (click)="openAddCreance()" appButton size="sm">
-              <lucide-icon [img]="PlusIcon" [size]="14" />
-              Ajouter
+          <div class="flex items-center gap-2">
+            <button type="button" (click)="toggleSection('creances')" appButton variant="outline" size="sm" title="Plier / Déplier">
+              <lucide-icon [img]="ChevronDownIcon" [size]="14" [class.rotate-180]="!isSectionCollapsed('creances')" class="transition-transform" />
+              <span class="text-xs">{{ isSectionCollapsed('creances') ? 'Déplier' : 'Plier' }}</span>
             </button>
-          }
+            @if (canEdit()) {
+              <button type="button" (click)="openAddCreance()" appButton size="sm">
+                <lucide-icon [img]="PlusIcon" [size]="14" />
+                Ajouter
+              </button>
+            }
+          </div>
         </div>
       </app-card-header>
+      @if (!isSectionCollapsed('creances')) {
       <app-card-content>
         @if (creances().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-8 text-center">
@@ -228,6 +248,7 @@
           </table>
         }
       </app-card-content>
+      }
     </app-card>
 
     <!-- ══ AVANCES FOURNISSEURS ═══════════════════════════════════════════ -->
@@ -242,14 +263,21 @@
               </span>
             }
           </div>
-          @if (canEdit()) {
-            <button type="button" (click)="openAddAvance()" appButton size="sm">
-              <lucide-icon [img]="PlusIcon" [size]="14" />
-              Ajouter
+          <div class="flex items-center gap-2">
+            <button type="button" (click)="toggleSection('avances')" appButton variant="outline" size="sm" title="Plier / Déplier">
+              <lucide-icon [img]="ChevronDownIcon" [size]="14" [class.rotate-180]="!isSectionCollapsed('avances')" class="transition-transform" />
+              <span class="text-xs">{{ isSectionCollapsed('avances') ? 'Déplier' : 'Plier' }}</span>
             </button>
-          }
+            @if (canEdit()) {
+              <button type="button" (click)="openAddAvance()" appButton size="sm">
+                <lucide-icon [img]="PlusIcon" [size]="14" />
+                Ajouter
+              </button>
+            }
+          </div>
         </div>
       </app-card-header>
+      @if (!isSectionCollapsed('avances')) {
       <app-card-content>
         @if (avancesFournisseurs().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-8 text-center">
@@ -292,6 +320,7 @@
           </table>
         }
       </app-card-content>
+      }
     </app-card>
 
     <!-- ══ DETTES FOURNISSEURS ═══════════════════════════════════════════ -->
@@ -306,14 +335,21 @@
               </span>
             }
           </div>
-          @if (canEdit()) {
-            <button type="button" (click)="openAddDetteFournisseur()" appButton size="sm">
-              <lucide-icon [img]="PlusIcon" [size]="14" />
-              Ajouter
+          <div class="flex items-center gap-2">
+            <button type="button" (click)="toggleSection('dettesFournisseurs')" appButton variant="outline" size="sm" title="Plier / Déplier">
+              <lucide-icon [img]="ChevronDownIcon" [size]="14" [class.rotate-180]="!isSectionCollapsed('dettesFournisseurs')" class="transition-transform" />
+              <span class="text-xs">{{ isSectionCollapsed('dettesFournisseurs') ? 'Déplier' : 'Plier' }}</span>
             </button>
-          }
+            @if (canEdit()) {
+              <button type="button" (click)="openAddDetteFournisseur()" appButton size="sm">
+                <lucide-icon [img]="PlusIcon" [size]="14" />
+                Ajouter
+              </button>
+            }
+          </div>
         </div>
       </app-card-header>
+      @if (!isSectionCollapsed('dettesFournisseurs')) {
       <app-card-content>
         @if (dettesFournisseurs().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-8 text-center">
@@ -356,6 +392,7 @@
           </table>
         }
       </app-card-content>
+      }
     </app-card>
 
     <!-- ══ HISTORIQUE DETTES ENTREPRISE ══════════════════════════════════ -->
@@ -370,14 +407,21 @@
               </span>
             }
           </div>
-          @if (canEdit()) {
-            <button type="button" (click)="openAddDetteEntreprise()" appButton size="sm">
-              <lucide-icon [img]="PlusIcon" [size]="14" />
-              Ajouter
+          <div class="flex items-center gap-2">
+            <button type="button" (click)="toggleSection('dettesEntreprise')" appButton variant="outline" size="sm" title="Plier / Déplier">
+              <lucide-icon [img]="ChevronDownIcon" [size]="14" [class.rotate-180]="!isSectionCollapsed('dettesEntreprise')" class="transition-transform" />
+              <span class="text-xs">{{ isSectionCollapsed('dettesEntreprise') ? 'Déplier' : 'Plier' }}</span>
             </button>
-          }
+            @if (canEdit()) {
+              <button type="button" (click)="openAddDetteEntreprise()" appButton size="sm">
+                <lucide-icon [img]="PlusIcon" [size]="14" />
+                Ajouter
+              </button>
+            }
+          </div>
         </div>
       </app-card-header>
+      @if (!isSectionCollapsed('dettesEntreprise')) {
       <app-card-content>
         @if (dettesEntreprise().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-8 text-center">
@@ -420,6 +464,7 @@
           </table>
         }
       </app-card-content>
+      }
     </app-card>
 
   }

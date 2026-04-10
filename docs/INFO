@@ -64,3 +64,28 @@ IMPREVU CHARGE D'EXPLOITATION
  - total final côté analyse = sousTotal + montant
 imprévus (valeur API
 analyseFin.chargeExploitation.total).
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+CALCUL GARANTIE
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+● Non, pas exactement.
+  Dans le legacy, les totaux “garanties” sont calculés comme
+  ça :
+
+   - totauxGarantiesFixes = immobilisation.total +
+  materiels.total + vehicules.total + bienMobilier.total +
+  totalStock
+   - totauxGarantiesProposees = immobilisation.total_prime +
+  materiels.total_prime + vehicules.total_prime +
+  bienMobilier.total_prime + totalStockGaranti
+
+  Donc le legacy se base sur les groupes IMMOBILIER / MATÉRIEL
+  / VÉHICULE / BIEN MOBILIER + STOCK, avec garantie === 1 pour
+  “proposées”.
+
+  Dans le new, totalGarantiesFixes et totalGarantiesProposees
+  somment tous les actifs (actifs()) + stocks, ce qui peut
+  inclure des types supplémentaires (ex: DAT/AUTRE).
+  Donc il peut y avoir un écart avec le legacy.

@@ -19,34 +19,50 @@
     <!-- ══ PROFIL FAMILIAL ════════════════════════════════════════════════ -->
     <app-card>
       <app-card-header>
-        <app-card-title>Profil familial</app-card-title>
-      </app-card-header>
-      <app-card-content>
-        <form [formGroup]="profilForm" class="flex flex-col gap-5">
-          <div>
-            <label class="text-sm font-medium mb-1.5 block text-foreground" for="commentaireProfil">
-              Commentaires de la visite au domicile du client (aspect de l'habitat, description de la relation familiale, composition du ménage, statut civil du client, etc.)
-            </label>
-            <textarea
-              id="commentaireProfil"
-              formControlName="commentaire"
-              rows="3"
-              placeholder="Observations sur le profil familial…"
-              [readOnly]="!canEdit()"
-              class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none">
-            </textarea>
-          </div>
-
-          @if (canEdit()) {
-            <div class="flex justify-end">
-              <button type="button" (click)="saveProfil()" appButton size="sm" [disabled]="isSavingProfil()">
-                <lucide-icon [img]="SaveIcon" [size]="14" />
-                @if (isSavingProfil()) { Enregistrement… } @else { Enregistrer }
-              </button>
-            </div>
+        <div class="flex items-center justify-between w-full">
+          <app-card-title>Commentaire</app-card-title>
+          @if (canEdit() && !profilEditMode() && profilCommentaire()) {
+            <button type="button" (click)="enterProfilEditMode()" appButton variant="outline" size="sm">
+              <lucide-icon [img]="PencilIcon" [size]="14" />
+              Modifier
+            </button>
           }
+        </div>
+      </app-card-header>
+      <app-card-content class="gap-0! pt-0!">
+        <label class="text-sm font-medium mb-1.5 block text-foreground" for="commentaireProfil">
+          Commentaires de la visite au domicile du client (aspect de l'habitat, description de la relation familiale, composition du ménage, statut civil du client, etc.)
+        </label>
+        @if (!profilEditMode() && profilCommentaire()) {
+          <div class="rounded-lg border border-border bg-muted px-4 py-3 text-sm leading-6 whitespace-pre-line">
+            {{ profilCommentaire() }}
+          </div>
+        } @else {
+          <form [formGroup]="profilForm" class="flex flex-col gap-5">
+            <div>
+              <textarea
+                id="commentaireProfil"
+                formControlName="commentaire"
+                rows="3"
+                placeholder="Observations sur le profil familial…"
+                [readOnly]="!canEdit()"
+                class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none">
+              </textarea>
+            </div>
 
-        </form>
+            @if (canEdit()) {
+              <div class="flex justify-end gap-2">
+                @if (profilCommentaire()) {
+                  <button type="button" (click)="cancelProfilEditMode()" appButton variant="outline" size="sm">Annuler</button>
+                }
+                <button type="button" (click)="saveProfil()" appButton size="sm" [disabled]="isSavingProfil()">
+                  <lucide-icon [img]="SaveIcon" [size]="14" />
+                  @if (isSavingProfil()) { Enregistrement… } @else { Enregistrer }
+                </button>
+              </div>
+            }
+          </form>
+        }
       </app-card-content>
     </app-card>
 
@@ -62,14 +78,21 @@
               </span>
             }
           </div>
-          @if (canEdit()) {
-            <button type="button" (click)="openAddCharge()" appButton size="sm">
-              <lucide-icon [img]="PlusIcon" [size]="14" />
-              Ajouter
+          <div class="flex items-center gap-2">
+            <button type="button" (click)="toggleSection('chargesFamiliales')" appButton variant="outline" size="sm" title="Plier / Déplier">
+              <lucide-icon [img]="ChevronDownIcon" [size]="14" [class.rotate-180]="!isSectionCollapsed('chargesFamiliales')" class="transition-transform" />
+              <span class="text-xs">{{ isSectionCollapsed('chargesFamiliales') ? 'Déplier' : 'Plier' }}</span>
             </button>
-          }
+            @if (canEdit()) {
+              <button type="button" (click)="openAddCharge()" appButton size="sm">
+                <lucide-icon [img]="PlusIcon" [size]="14" />
+                Ajouter
+              </button>
+            }
+          </div>
         </div>
       </app-card-header>
+      @if (!isSectionCollapsed('chargesFamiliales')) {
       <app-card-content>
         @if (chargesFamiliales().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
@@ -155,6 +178,7 @@
           </table>
         }
       </app-card-content>
+      }
     </app-card>
 
     <!-- ══ TRÉSORERIE FAMILLE ════════════════════════════════════════════ -->
@@ -169,14 +193,21 @@
               </span>
             }
           </div>
-          @if (canEdit()) {
-            <button type="button" (click)="openAddTresorerie()" appButton size="sm">
-              <lucide-icon [img]="PlusIcon" [size]="14" />
-              Ajouter
+          <div class="flex items-center gap-2">
+            <button type="button" (click)="toggleSection('tresorerieFamiliale')" appButton variant="outline" size="sm" title="Plier / Déplier">
+              <lucide-icon [img]="ChevronDownIcon" [size]="14" [class.rotate-180]="!isSectionCollapsed('tresorerieFamiliale')" class="transition-transform" />
+              <span class="text-xs">{{ isSectionCollapsed('tresorerieFamiliale') ? 'Déplier' : 'Plier' }}</span>
             </button>
-          }
+            @if (canEdit()) {
+              <button type="button" (click)="openAddTresorerie()" appButton size="sm">
+                <lucide-icon [img]="PlusIcon" [size]="14" />
+                Ajouter
+              </button>
+            }
+          </div>
         </div>
       </app-card-header>
+      @if (!isSectionCollapsed('tresorerieFamiliale')) {
       <app-card-content>
         @if (tresoreriesFamiliales().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
@@ -249,6 +280,7 @@
           </table>
         }
       </app-card-content>
+      }
     </app-card>
 
     <!-- ══ COMPOSITION DU MÉNAGE ═════════════════════════════════════════ -->
@@ -263,14 +295,21 @@
               </span>
             }
           </div>
-          @if (canEdit()) {
-            <button type="button" (click)="openAddMembre()" appButton size="sm">
-              <lucide-icon [img]="PlusIcon" [size]="14" />
-              Ajouter
+          <div class="flex items-center gap-2">
+            <button type="button" (click)="toggleSection('compositionMenage')" appButton variant="outline" size="sm" title="Plier / Déplier">
+              <lucide-icon [img]="ChevronDownIcon" [size]="14" [class.rotate-180]="!isSectionCollapsed('compositionMenage')" class="transition-transform" />
+              <span class="text-xs">{{ isSectionCollapsed('compositionMenage') ? 'Déplier' : 'Plier' }}</span>
             </button>
-          }
+            @if (canEdit()) {
+              <button type="button" (click)="openAddMembre()" appButton size="sm">
+                <lucide-icon [img]="PlusIcon" [size]="14" />
+                Ajouter
+              </button>
+            }
+          </div>
         </div>
       </app-card-header>
+      @if (!isSectionCollapsed('compositionMenage')) {
       <app-card-content>
         @if (membresMenage().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
@@ -294,7 +333,7 @@
                 <th class="px-4 py-2 text-right font-medium text-muted-foreground">Revenus (FCFA)</th>
                 <th class="px-4 py-2 text-left font-medium text-muted-foreground">Justificatifs</th>
                 @if (canEdit()) {
-                  <th class="px-4 py-2 w-10"></th>
+                  <th class="px-4 py-2 w-20"></th>
                 }
               </tr>
             </thead>
@@ -309,10 +348,16 @@
                   <td class="px-4 py-2.5 text-muted-foreground">{{ justifLabel(membre.justifs) }}</td>
                   @if (canEdit()) {
                     <td class="px-4 py-2.5">
-                      <button type="button" (click)="openDeleteMembre(membre)"
-                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
-                        <lucide-icon [img]="Trash2Icon" [size]="13" />
-                      </button>
+                      <div class="flex items-center gap-1 justify-end">
+                        <button type="button" (click)="openEditMembre(membre)"
+                          class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer">
+                          <lucide-icon [img]="PencilIcon" [size]="13" />
+                        </button>
+                        <button type="button" (click)="openDeleteMembre(membre)"
+                          class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                          <lucide-icon [img]="Trash2Icon" [size]="13" />
+                        </button>
+                      </div>
                     </td>
                   }
                 </tr>
@@ -332,6 +377,7 @@
           </table>
         }
       </app-card-content>
+      }
     </app-card>
 
   }
@@ -406,7 +452,7 @@
 <!-- ══ DRAWER — Membre du ménage ══════════════════════════════════════════ -->
 <app-drawer [(open)]="membreDrawerOpen">
   <app-drawer-header>
-    <app-drawer-title>Ajouter un membre du ménage</app-drawer-title>
+    <app-drawer-title>{{ membreDrawerMode === 'create' ? 'Ajouter un membre du ménage' : 'Modifier un membre du ménage' }}</app-drawer-title>
   </app-drawer-header>
   <app-drawer-content>
     <form [formGroup]="membreForm" class="flex flex-col gap-4">

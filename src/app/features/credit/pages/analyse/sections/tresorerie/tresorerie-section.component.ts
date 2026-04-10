@@ -7,6 +7,7 @@ import {
   Trash2,
   Pencil,
   AlertCircle,
+  ChevronDown,
   Landmark,
   Users,
   Wallet,
@@ -81,6 +82,7 @@ export class TresorerieSectionComponent implements OnInit {
   readonly Trash2Icon = Trash2;
   readonly PencilIcon = Pencil;
   readonly AlertCircleIcon = AlertCircle;
+  readonly ChevronDownIcon = ChevronDown;
   readonly LandmarkIcon = Landmark;
   readonly UsersIcon = Users;
   readonly WalletIcon = Wallet;
@@ -162,6 +164,14 @@ export class TresorerieSectionComponent implements OnInit {
     label: string;
   } | null = null;
   readonly isDeleting = signal(false);
+  readonly collapsedSections = signal<Record<string, boolean>>({
+    tresorerie: true,
+    stocks: true,
+    creances: true,
+    avances: true,
+    dettesFournisseurs: true,
+    dettesEntreprise: true,
+  });
 
   // ── Forms ──────────────────────────────────────────────────────────────
 
@@ -236,6 +246,33 @@ export class TresorerieSectionComponent implements OnInit {
     restantDu: [null as number | null],
     typeObjDette: [''],
   });
+
+  isSectionCollapsed(
+    section:
+      | 'tresorerie'
+      | 'stocks'
+      | 'creances'
+      | 'avances'
+      | 'dettesFournisseurs'
+      | 'dettesEntreprise',
+  ): boolean {
+    return this.collapsedSections()[section] ?? false;
+  }
+
+  toggleSection(
+    section:
+      | 'tresorerie'
+      | 'stocks'
+      | 'creances'
+      | 'avances'
+      | 'dettesFournisseurs'
+      | 'dettesEntreprise',
+  ) {
+    this.collapsedSections.update((current) => ({
+      ...current,
+      [section]: !current[section],
+    }));
+  }
 
   readonly stockForm = this.fb.group({
     activite: [null as number | null, Validators.required],

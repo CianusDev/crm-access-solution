@@ -65,7 +65,7 @@ export class CardDescriptionComponent {}
 @Component({
   selector: 'app-card-content',
   standalone: true,
-  host: { class: 'block p-6 flex flex-col gap-6' },
+  host: { class: 'block p-6 pt-0! flex flex-col gap-6' },
   template: `<ng-content />`,
 })
 export class CardContentComponent {}
@@ -75,7 +75,7 @@ export class CardContentComponent {}
   selector: 'app-card-footer',
   standalone: true,
   template: `
-    <div class="flex items-center p-6 pt-0!">
+    <div class="flex items-center p-6">
       <ng-content />
     </div>
   `,

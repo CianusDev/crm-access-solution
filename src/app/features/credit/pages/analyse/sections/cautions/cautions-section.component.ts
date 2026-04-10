@@ -116,12 +116,6 @@ export class CautionsSectionComponent implements OnInit {
   readonly imageTypes = CAUTION_IMAGE_TYPES;
   readonly documentTypes = CAUTION_DOCUMENT_TYPES;
   
-  // Dropdown items (pre-computed to avoid .map() in template)
-  readonly imageTypesDropdown = CAUTION_IMAGE_TYPES.map(t => ({ 
-    label: t.libelle, 
-    required: t.obligation 
-  }));
-
   private readonly fb = inject(FormBuilder);
   private readonly creditService = inject(CreditService);
   private readonly toast = inject(ToastService);
@@ -423,6 +417,14 @@ export class CautionsSectionComponent implements OnInit {
       label: t.libelle,
       required: t.obligation,
       disabled: this.hasMediaByLibelle(caution.documents, t.libelle),
+    }));
+  }
+
+  cautionImageItems(caution: CautionSolidaire): DropdownItem[] {
+    return this.imageTypes.map((t) => ({
+      label: t.libelle,
+      required: t.obligation,
+      disabled: this.hasMediaByLibelle(caution.images, t.libelle),
     }));
   }
 

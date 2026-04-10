@@ -189,14 +189,14 @@ const OBJETS_CREDIT_MAP: Record<string | number, string> = {
               </p>
               <p class="text-sm text-foreground leading-relaxed">{{ d.description || '—' }}</p>
             </div>
-            <div class="mt-4 rounded-lg border border-border bg-muted/30 p-4">
+            <!-- <div class="mt-4 rounded-lg border border-border bg-muted/30 p-4">
               <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                 Autres commentaires de l'agent de crédit
               </p>
               <p class="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
                 {{ d.autreCommentAgCredit || '—' }}
               </p>
-            </div>
+            </div> -->
 
             <!-- ── Mode édition ───────────────────────────────────────── -->
           } @else {
@@ -263,11 +263,11 @@ const OBJETS_CREDIT_MAP: Record<string | number, string> = {
                 [rows]="4"
                 required
               />
-              <app-form-textarea
+              <!-- <app-form-textarea
                 name="autreCommentAgCredit"
                 label="Autres commentaires de l'agent de crédit"
                 [rows]="6"
-              />
+              /> -->
 
               <div class="flex justify-end gap-2 pt-2">
                 <button

@@ -88,7 +88,7 @@
                       @if (canAddOrUpload()) {
                         <!-- Ajouter une image (avec dropdown) -->
                         <app-dropdown
-                          [items]="imageTypesDropdown"
+                          [items]="cautionImageItems(caution)"
                           (itemSelected)="triggerImageUpload(caution.id!, $event.label, imageInput)">
                           <button dropdownTrigger type="button"
                             appButton variant="outline" size="sm"

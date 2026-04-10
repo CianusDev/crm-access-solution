@@ -31,12 +31,19 @@
               </span>
             }
           </div>
-          <button type="button" (click)="openAddAchat()" appButton size="sm">
-            <lucide-icon [img]="PlusIcon" [size]="14" />
-            Ajouter
-          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" (click)="toggleSection('achats')" appButton variant="outline" size="sm" title="Plier / Déplier">
+              <lucide-icon [img]="ChevronDownIcon" [size]="14" [class.rotate-180]="!isSectionCollapsed('achats')" class="transition-transform" />
+              <span class="text-xs">{{ isSectionCollapsed('achats') ? 'Déplier' : 'Plier' }}</span>
+            </button>
+            <button type="button" (click)="openAddAchat()" appButton size="sm">
+              <lucide-icon [img]="PlusIcon" [size]="14" />
+              Ajouter
+            </button>
+          </div>
         </div>
       </app-card-header>
+      @if (!isSectionCollapsed('achats')) {
       <app-card-content>
         @if (activites().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
@@ -154,6 +161,7 @@
           </div>
         }
       </app-card-content>
+      }
     </app-card>
 
     <!-- ══ CHARGES D'EXPLOITATION ════════════════════════════════════════ -->
@@ -170,12 +178,19 @@
               </span>
             }
           </div>
-          <button type="button" (click)="openAddCharge()" appButton size="sm">
-            <lucide-icon [img]="PlusIcon" [size]="14" />
-            Ajouter
-          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" (click)="toggleSection('charges')" appButton variant="outline" size="sm" title="Plier / Déplier">
+              <lucide-icon [img]="ChevronDownIcon" [size]="14" [class.rotate-180]="!isSectionCollapsed('charges')" class="transition-transform" />
+              <span class="text-xs">{{ isSectionCollapsed('charges') ? 'Déplier' : 'Plier' }}</span>
+            </button>
+            <button type="button" (click)="openAddCharge()" appButton size="sm">
+              <lucide-icon [img]="PlusIcon" [size]="14" />
+              Ajouter
+            </button>
+          </div>
         </div>
       </app-card-header>
+      @if (!isSectionCollapsed('charges')) {
       <app-card-content>
         @if (chargesExploitation().length === 0) {
           <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
@@ -242,6 +257,7 @@
           </table>
         }
       </app-card-content>
+      }
     </app-card>
 
     <!-- ══ IMPRÉVUS CHARGES EXPLOITATION ══════════════════════════════════ -->
@@ -259,8 +275,13 @@
                 </span>
               }
             </div>
+            <button type="button" (click)="toggleSection('imprevus')" appButton variant="outline" size="sm" title="Plier / Déplier">
+              <lucide-icon [img]="ChevronDownIcon" [size]="14" [class.rotate-180]="!isSectionCollapsed('imprevus')" class="transition-transform" />
+              <span class="text-xs">{{ isSectionCollapsed('imprevus') ? 'Déplier' : 'Plier' }}</span>
+            </button>
           </div>
         </app-card-header>
+        @if (!isSectionCollapsed('imprevus')) {
         <app-card-content>
           <table class="w-full text-sm">
             <thead>
@@ -317,6 +338,7 @@
             </tbody>
           </table>
         </app-card-content>
+        }
       </app-card>
     }
   }

@@ -7,6 +7,7 @@ import {
   Trash2,
   Pencil,
   AlertCircle,
+  ChevronDown,
   ShoppingCart,
   Banknote,
   TrendingUp,
@@ -93,6 +94,7 @@ export class AchatsSectionComponent implements OnInit {
   readonly Trash2Icon = Trash2;
   readonly PencilIcon = Pencil;
   readonly AlertCircleIcon = AlertCircle;
+  readonly ChevronDownIcon = ChevronDown;
   readonly ShoppingCartIcon = ShoppingCart;
   readonly BanknoteIcon = Banknote;
   readonly TrendingUpIcon = TrendingUp;
@@ -173,6 +175,11 @@ export class AchatsSectionComponent implements OnInit {
     chargeData?: ChargeExploitation;
   } | null = null;
   readonly isDeleting = signal(false);
+  readonly collapsedSections = signal<Record<string, boolean>>({
+    achats: true,
+    charges: true,
+    imprevus: true,
+  });
 
   // ── Forms ──────────────────────────────────────────────────────────────
   readonly achatForm = this.fb.group({
@@ -194,6 +201,17 @@ export class AchatsSectionComponent implements OnInit {
   // ── Lifecycle ──────────────────────────────────────────────────────────
   ngOnInit() {
     this.loadData();
+  }
+
+  isSectionCollapsed(section: 'achats' | 'charges' | 'imprevus'): boolean {
+    return this.collapsedSections()[section] ?? false;
+  }
+
+  toggleSection(section: 'achats' | 'charges' | 'imprevus') {
+    this.collapsedSections.update((current) => ({
+      ...current,
+      [section]: !current[section],
+    }));
   }
 
   // ── Data loading ───────────────────────────────────────────────────────
