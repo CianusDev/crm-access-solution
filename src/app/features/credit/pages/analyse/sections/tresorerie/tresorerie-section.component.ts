@@ -43,6 +43,7 @@ import {
   TresorerieActifCirculant,
   ActiviteCredit,
   CreditAnalyseDemandeDetail,
+  StockItem,
 } from '../../../../interfaces/credit.interface';
 import { FormSelect } from '@/shared/components/form-select/form-select.component';
 
@@ -97,6 +98,7 @@ export class TresorerieSectionComponent implements OnInit {
   readonly avancesFournisseurs = signal<AvanceFournisseur[]>([]);
   readonly dettesFournisseurs = signal<DetteFournisseur[]>([]);
   readonly dettesEntreprise = signal<DetteEntreprise[]>([]);
+  readonly stocks = signal<StockItem[]>([]);
   readonly activitesList = signal<ActiviteCredit[]>([]);
 
   readonly totalCreances = computed(() =>
@@ -116,6 +118,12 @@ export class TresorerieSectionComponent implements OnInit {
   readonly totalTresorerieActifCirculant = computed(() =>
     this.tresoreriesActifCirculant().reduce((s, t) => s + this.toNumber(t.montant), 0),
   );
+  readonly totalStockActifCirculant = computed(() =>
+    this.stocks().reduce((total, stock) => total + this.stockMontant(stock), 0),
+  );
+  readonly totalStockActifCirculantGaranties = computed(() =>
+    this.totalStockActifCirculant(),
+  );
 
   // Drawer states
   tresorerieActifCirculantDrawerOpen = false; // Nouveau
@@ -123,6 +131,7 @@ export class TresorerieSectionComponent implements OnInit {
   avanceDrawerOpen = false;
   detteFournisseurDrawerOpen = false;
   detteEntrepriseDrawerOpen = false;
+  stockDrawerOpen = false;
 
   // Edit IDs
   readonly editingTresorerieId = signal<number | null>(null); // Nouveau
@@ -130,18 +139,21 @@ export class TresorerieSectionComponent implements OnInit {
   readonly editingAvanceId = signal<number | null>(null);
   readonly editingDetteFournisseurId = signal<number | null>(null);
   readonly editingDetteEntrepriseId = signal<number | null>(null);
+  readonly editingStockId = signal<number | null>(null);
 
   readonly isSavingTresorerieActifCirculant = signal(false); // Nouveau
   readonly isSavingCreance = signal(false);
   readonly isSavingAvance = signal(false);
   readonly isSavingDetteFournisseur = signal(false);
   readonly isSavingDetteEntreprise = signal(false);
+  readonly isSavingStock = signal(false);
 
   // Delete
   deleteDialogOpen = false;
   deleteTarget: {
     type:
       | 'tresorerieActifCirculant'
+      | 'stock'
       | 'creance'
       | 'avance'
       | 'detteFournisseur'
@@ -225,6 +237,13 @@ export class TresorerieSectionComponent implements OnInit {
     typeObjDette: [''],
   });
 
+  readonly stockForm = this.fb.group({
+    activite: [null as number | null, Validators.required],
+    article: ['', Validators.required],
+    quantite: [null as number | null],
+    montanTotal: [null as number | null, Validators.required],
+  });
+
   // ── Lifecycle ──────────────────────────────────────────────────────────
   ngOnInit() {
     this.loadData();
@@ -290,6 +309,12 @@ export class TresorerieSectionComponent implements OnInit {
           ...(demandeLegacy.detteFournisseurs ?? []),
           ...(demande.dettes ?? []),
         ]);
+        this.stocks.set(
+          this.firstNonEmptyArray(
+            demande.stocks,
+            this.extractStocksFromActivites(activites),
+          ),
+        );
 
         this.isLoading.set(false);
       },
@@ -385,6 +410,16 @@ export class TresorerieSectionComponent implements OnInit {
     });
   }
 
+  private extractStocksFromActivites(activites: ActiviteCredit[]): StockItem[] {
+    return activites.flatMap((activite) => {
+      const source = (activite.Stock ?? []).map((item) => ({
+        ...item,
+        activite: item.activite ?? activite.id,
+      }));
+      return source;
+    });
+  }
+
   private payloadRefDemande(): string {
     return this.demandeRef() || this.ref();
   }
@@ -462,16 +497,83 @@ export class TresorerieSectionComponent implements OnInit {
     this.deleteDialogOpen = true;
   }
 
-  getActiviteLibelle(actId: number | undefined): string {
-    if (!actId) return '—';
-    const act = this.activitesList().find((a) => a.id === actId);
-    return act?.libelle ?? `Activité #${actId}`;
+  getActiviteLibelle(actId: unknown): string {
+    const normalized =
+      typeof actId === 'object' && actId !== null
+        ? (actId as { id?: number }).id
+        : this.toNumber(actId);
+    if (!normalized) return '—';
+    const act = this.activitesList().find((a) => a.id === normalized);
+    return act?.libelle ?? `Activité #${normalized}`;
   }
 
   getTypeLabel(type: number | undefined): string {
     if (type === 1) return 'Espèce';
     if (type === 2) return 'Banque';
     return '—';
+  }
+
+  stockMontant(stock: StockItem): number {
+    const item = stock as StockItem & { montanTotal?: number; montant?: number };
+    const direct =
+      this.toNumber(item.montanTotal) ||
+      this.toNumber(item.montantTotal) ||
+      this.toNumber(item.montant);
+    if (direct > 0) return direct;
+    return this.toNumber(item.quantite) * this.toNumber(item.montantTotal);
+  }
+
+  // ── Stocks actifs circulants (legacy) ──────────────────────────────────
+  openAddStock() {
+    this.editingStockId.set(null);
+    this.stockForm.reset({ activite: null, article: '', quantite: null, montanTotal: null });
+    this.stockDrawerOpen = true;
+  }
+
+  openEditStock(stock: StockItem) {
+    const item = stock as StockItem & { montanTotal?: number; montant?: number };
+    this.editingStockId.set(stock.id ?? null);
+    this.stockForm.patchValue({
+      activite: (stock.activite as unknown as { id?: number })?.id ?? stock.activite ?? null,
+      article: stock.article ?? '',
+      quantite: stock.quantite ?? null,
+      montanTotal: item.montanTotal ?? item.montantTotal ?? item.montant ?? null,
+    });
+    this.stockDrawerOpen = true;
+  }
+
+  saveStock() {
+    if (this.stockForm.invalid) {
+      this.stockForm.markAllAsTouched();
+      return;
+    }
+
+    const value = this.stockForm.value;
+    const editId = this.editingStockId();
+
+    this.isSavingStock.set(true);
+    this.creditService
+      .saveStock({
+        stock: editId ?? undefined,
+        activite: value.activite,
+        article: value.article,
+        quantite: value.quantite,
+        montanTotal: value.montanTotal,
+        montantTotal: value.montanTotal,
+        refDemande: this.payloadRefDemande(),
+      })
+      .subscribe({
+        next: () => {
+          this.toast.success(editId ? 'Stock modifié.' : 'Stock enregistré.');
+          this.stockDrawerOpen = false;
+          this.isSavingStock.set(false);
+          this.loadData();
+        },
+        error: () => {
+          this.toast.error("Erreur lors de l'enregistrement.");
+          this.isSavingStock.set(false);
+        },
+      });
   }
 
   // ── Créances ───────────────────────────────────────────────────────────
@@ -728,7 +830,7 @@ export class TresorerieSectionComponent implements OnInit {
 
   // ── Delete ─────────────────────────────────────────────────────────────
   openDelete(
-    type: 'creance' | 'avance' | 'detteFournisseur' | 'detteEntreprise',
+    type: 'stock' | 'creance' | 'avance' | 'detteFournisseur' | 'detteEntreprise',
     id: number,
     label: string,
   ) {
@@ -744,6 +846,8 @@ export class TresorerieSectionComponent implements OnInit {
     const obs$ =
       type === 'tresorerieActifCirculant'
         ? this.creditService.deleteTresorerie(id)
+        : type === 'stock'
+          ? this.creditService.deleteStock(id)
         : type === 'creance'
           ? this.creditService.deleteCreanceClient(id)
           : type === 'avance'

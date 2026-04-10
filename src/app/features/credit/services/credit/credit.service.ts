@@ -420,8 +420,12 @@ export class CreditService {
   }
 
   saveImprevuChargeFamilial(data: { imprevu?: number | null; refDemande?: string }) {
+    const payload = {
+      imprevu: data.imprevu ?? null,
+      demande: data.refDemande ?? null,
+    };
     return this.api
-      .post<{ status: number; message?: string }>(this.endpoint + '/saveImprevuChargeFamilial', data)
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveImprevusChFam', payload)
       .pipe(catchError((err) => throwError(() => err)));
   }
 

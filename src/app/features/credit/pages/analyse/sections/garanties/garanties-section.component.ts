@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   LucideAngularModule,
@@ -173,6 +174,7 @@ type GarantiesViewId =
     FormTextarea,
     FormSelect,
     Dropdown,
+    DatePipe,
     LightboxComponent,
   ],
 })
@@ -221,6 +223,12 @@ export class GarantiesSectionComponent implements OnInit {
 
   readonly totalStocks = computed(() =>
     this.stocks().reduce((s, item) => s + (item.cout ?? 0), 0),
+  );
+
+  readonly totalStocksGaranties = computed(() =>
+    this.stocks()
+      .filter((item) => item.garantie === 1)
+      .reduce((s, item) => s + (item.cout ?? 0), 0),
   );
 
   readonly PROPRIETAIRE_OPTIONS: SelectOption[] = [
@@ -301,6 +309,15 @@ export class GarantiesSectionComponent implements OnInit {
   mediaDeleteTarget: { type: 'image' | 'doc'; id: number; label: string } | null = null;
   mediaDeleteDialogOpen = false;
   readonly isDeletingMedia = signal(false);
+  imageDrawerOpen = false;
+  readonly imageUploadActifId = signal<number | null>(null);
+  readonly imageUploadLabel = signal('');
+  imageUploadFile: File | null = null;
+  mediaDrawerOpen = false;
+  readonly mediaDrawerActifId = signal<number | null>(null);
+  readonly mediaDrawerType = signal<'image' | 'doc'>('image');
+  readonly mediaDrawerLabel = signal('');
+  mediaDrawerFile: File | null = null;
 
   // Lightbox
   lightboxOpen = false;
@@ -328,6 +345,10 @@ export class GarantiesSectionComponent implements OnInit {
     return this.imageUploadItems(actif)[0]?.label ?? 'Image';
   }
 
+  defaultDocumentUploadLabel(actif: ActifGarantie): string {
+    return this.getDocumentTypes(actif.type ?? '')[0]?.libelle ?? 'Document';
+  }
+
   documentUploadItems(actif: ActifGarantie): DropdownItem[] {
     return this.getDocumentTypes(actif.type ?? '').map((t) => ({
       label: t.libelle,
@@ -343,13 +364,33 @@ export class GarantiesSectionComponent implements OnInit {
     return '—';
   }
 
+  oneAsYes(value: string | number | undefined): string {
+    return String(value ?? '') === '1' ? 'Oui' : 'Non';
+  }
+
+  private asSelectValue(value: string | number | undefined | null): string {
+    return value == null ? '' : String(value);
+  }
+
+  totalActifByType(type: TypeActif): number {
+    return this.actifs()
+      .filter((a) => a.type === type)
+      .reduce((s, a) => s + (a.valeurEstimee ?? 0), 0);
+  }
+
+  totalActifByTypeGaranties(type: TypeActif): number {
+    return this.actifs()
+      .filter((a) => a.type === type && String(a.garantie ?? '') === '1')
+      .reduce((s, a) => s + (a.valeurEstimee ?? 0), 0);
+  }
+
   // ── Form ───────────────────────────────────────────────────────────────
   readonly actifForm = this.fb.group({
     type: ['' as TypeActif | '', Validators.required],
     valeurEstimee: [null as number | null, Validators.required],
     // Commun à plusieurs types
     proprietaire: [''],
-    garantie: [null as number | null],
+    garantie: [''],
     // Immobilier
     localisation: [''],
     superficie: [null as number | null],
@@ -372,7 +413,7 @@ export class GarantiesSectionComponent implements OnInit {
     vehiculeVu: [''],
     typeProPerso: [''],
     nouvelleAcquisition: [null as number | null],
-    miniComm: [null as number | null],
+    miniComm: [''],
     societeCr: [''],
     societe: [''],
     // DAT
@@ -503,7 +544,7 @@ export class GarantiesSectionComponent implements OnInit {
       valeurEstimee: null,
       // Commun
       proprietaire: '',
-      garantie: null,
+      garantie: '',
       // Immobilier
       localisation: '',
       superficie: null,
@@ -526,7 +567,7 @@ export class GarantiesSectionComponent implements OnInit {
       vehiculeVu: '',
       typeProPerso: '',
       nouvelleAcquisition: nouvelleAcquisition ?? null,  // set programmatically, not via select
-      miniComm: null,
+      miniComm: '',
       societeCr: '',
       societe: '',
       // DAT
@@ -562,10 +603,10 @@ export class GarantiesSectionComponent implements OnInit {
       type: a.type ?? '',
       valeurEstimee: a.valeurEstimee ?? null,
       proprietaire,
-      garantie: a.garantie ?? null,
+      garantie: this.asSelectValue(a.garantie),
       localisation: a.localisation ?? '',
       superficie: a.superficie ?? null,
-      typePropriete: a.typePropriete ?? '',
+      typePropriete: this.asSelectValue(a.typePropriete),
       adressDescr: a.adressDescr ?? '',
       titreFoncier: a.titreFoncier ?? '',
       lot: a.lot ?? '',
@@ -580,11 +621,11 @@ export class GarantiesSectionComponent implements OnInit {
       typeCommercial: a.typeCommercial ?? '',
       typeTechnique: a.typeTechnique ?? '',
       evaluation: a.evaluation ?? '',
-      vehiculeVu: a.vehiculeVu ?? '',
+      vehiculeVu: this.asSelectValue(a.vehiculeVu),
       typeProPerso: a.typeProPerso ?? '',
       nouvelleAcquisition: a.nouvelleAcquisition ?? null,
-      miniComm: a.miniComm ?? null,
-      societeCr: a.societeCr ?? '',
+      miniComm: this.asSelectValue(a.miniComm),
+      societeCr: this.asSelectValue(a.societeCr),
       societe: a.societe ?? '',
       banque: a.banque ?? '',
       echeance: a.echeance ?? '',
@@ -600,7 +641,7 @@ export class GarantiesSectionComponent implements OnInit {
     });
     this.selectedType.set(a.type ?? null);
     this.isProprietaireCaution.set(proprietaire === 'C');
-    this.isSocieteCr.set(a.societeCr === '1');
+    this.isSocieteCr.set(this.asSelectValue(a.societeCr) === '1');
     this.nouvelleAcquisition.set(a.nouvelleAcquisition ?? null);
     this.actifDrawerOpen = true;
   }
@@ -615,19 +656,21 @@ export class GarantiesSectionComponent implements OnInit {
     const idCaution = val.idCaution != null ? Number(val.idCaution) : null;
     const typeActifGarantie = val.type ? (LEGACY_TYPE_ACTIF_GARANTIE_MAP[val.type] ?? null) : null;
     const valeurEstime = val.valeurEstimee;
+    // Legacy parity: DAT is always stored with owner "D" (demandeur).
+    const proprietaire = val.type === 'DAT' ? 'D' : (val.proprietaire || null);
     const payload = {
       // Legacy canonical keys
       crActifGarantie: editId ?? '',
       typeActifGarantie,
       valeurEstime,
-      user: val.proprietaire === 'C' ? idCaution : '',
+      user: proprietaire === 'C' ? idCaution : '',
       // Compatibility aliases already consumed in new code paths
       actifGarantie: editId ?? undefined,
       type: val.type,
       valeurEstimee: val.valeurEstimee,
       // Commun
-      proprietaire: val.proprietaire || null,
-      garantie: val.garantie != null ? Number(val.garantie) : null,
+      proprietaire,
+      garantie: val.garantie ? Number(val.garantie) : null,
       // Immobilier
       localisation: val.localisation || null,
       superficie: val.superficie,
@@ -650,7 +693,7 @@ export class GarantiesSectionComponent implements OnInit {
       vehiculeVu: val.vehiculeVu || null,
       typeProPerso: val.typeProPerso || null,
       nouvelleAcquisition: val.nouvelleAcquisition != null ? Number(val.nouvelleAcquisition) : null,
-      miniComm: val.miniComm != null ? Number(val.miniComm) : null,
+      miniComm: val.miniComm ? Number(val.miniComm) : null,
       societeCr: val.societeCr || null,
       societe: val.societe || null,
       // DAT
@@ -737,6 +780,127 @@ export class GarantiesSectionComponent implements OnInit {
   ) {
     this.mediaTarget = { actifId, type, libelle };
     input.click();
+  }
+
+  openImageUploadDrawer(actifId: number): void {
+    this.imageUploadActifId.set(actifId);
+    this.imageUploadLabel.set('');
+    this.imageUploadFile = null;
+    this.imageDrawerOpen = true;
+  }
+
+  onImageUploadFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.imageUploadFile = input.files?.[0] ?? null;
+  }
+
+  closeImageUploadDrawer(): void {
+    this.imageDrawerOpen = false;
+    this.imageUploadActifId.set(null);
+    this.imageUploadLabel.set('');
+    this.imageUploadFile = null;
+  }
+
+  submitImageUploadDrawer(): void {
+    const actifId = this.imageUploadActifId();
+    const libelle = this.imageUploadLabel().trim();
+    const file = this.imageUploadFile;
+
+    if (!actifId || !file || !libelle) {
+      this.toast.error('Veuillez renseigner le libellé et sélectionner une image.');
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append('type', 'GARANTIE');
+    fd.append('element', String(actifId));
+    fd.append('libelle', libelle);
+    fd.append('description', '');
+    fd.append('photo', file);
+
+    this.isUploadingMedia.set(true);
+    this.creditService.uploadImageGarantie(fd).subscribe({
+      next: () => {
+        this.toast.success('Image ajoutée.');
+        this.isUploadingMedia.set(false);
+        this.closeImageUploadDrawer();
+        this.loadData();
+      },
+      error: () => {
+        this.toast.error("Erreur lors de l'upload.");
+        this.isUploadingMedia.set(false);
+      },
+    });
+  }
+
+  openMediaUploadDrawer(actifId: number, type: 'image' | 'doc'): void {
+    this.mediaDrawerActifId.set(actifId);
+    this.mediaDrawerType.set(type);
+    this.mediaDrawerLabel.set('');
+    this.mediaDrawerFile = null;
+    this.mediaDrawerOpen = true;
+  }
+
+  onMediaUploadDrawerFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.mediaDrawerFile = input.files?.[0] ?? null;
+  }
+
+  closeMediaUploadDrawer(): void {
+    this.mediaDrawerOpen = false;
+    this.mediaDrawerActifId.set(null);
+    this.mediaDrawerLabel.set('');
+    this.mediaDrawerFile = null;
+  }
+
+  submitMediaUploadDrawer(): void {
+    const actifId = this.mediaDrawerActifId();
+    const type = this.mediaDrawerType();
+    const libelle = this.mediaDrawerLabel().trim();
+    const file = this.mediaDrawerFile;
+
+    if (!actifId || !file || !libelle) {
+      this.toast.error('Veuillez renseigner le libellé et sélectionner un fichier.');
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append('type', 'GARANTIE');
+    fd.append('element', String(actifId));
+    fd.append('libelle', libelle);
+    fd.append('description', '');
+
+    this.isUploadingMedia.set(true);
+    if (type === 'image') {
+      fd.append('photo', file);
+      this.creditService.uploadImageGarantie(fd).subscribe({
+        next: () => {
+          this.toast.success('Image ajoutée.');
+          this.isUploadingMedia.set(false);
+          this.closeMediaUploadDrawer();
+          this.loadData();
+        },
+        error: () => {
+          this.toast.error("Erreur lors de l'upload.");
+          this.isUploadingMedia.set(false);
+        },
+      });
+      return;
+    }
+
+    fd.append('file', file);
+    this.creditService.uploadDocumentGarantie(fd).subscribe({
+      next: () => {
+        this.toast.success('Document ajouté.');
+        this.isUploadingMedia.set(false);
+        this.closeMediaUploadDrawer();
+        this.loadData();
+      },
+      error: () => {
+        this.toast.error("Erreur lors de l'upload.");
+        this.isUploadingMedia.set(false);
+      },
+    });
   }
 
   onMediaFileSelected(event: Event) {

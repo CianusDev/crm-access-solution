@@ -24,7 +24,9 @@
       <app-card-content>
         <form [formGroup]="profilForm" class="flex flex-col gap-5">
           <div>
-            <label class="text-sm font-medium mb-1.5 block text-foreground" for="commentaireProfil">Commentaire</label>
+            <label class="text-sm font-medium mb-1.5 block text-foreground" for="commentaireProfil">
+              Commentaires de la visite au domicile du client (aspect de l'habitat, description de la relation familiale, composition du ménage, statut civil du client, etc.)
+            </label>
             <textarea
               id="commentaireProfil"
               formControlName="commentaire"
@@ -100,7 +102,7 @@
                     </span>
                   </td>
                   <td class="px-4 py-2.5 text-muted-foreground">
-                    {{ charge.chargeMens === 'RAS' ? '—' : charge.chargeMens }}
+                    {{ charge.chargeMens || '—' }}
                   </td>
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(charge.montant) }}</td>
                   @if (canEdit()) {
@@ -206,10 +208,10 @@
                   <td class="px-4 py-2.5 font-medium">{{ t.libelle }}</td>
                   <td class="px-4 py-2.5">
                     <span class="rounded-full px-2 py-0.5 text-xs font-medium"
-                      [class.bg-success/10]="t.type === 1"
-                      [class.text-success]="t.type === 1"
-                      [class.bg-destructive/10]="t.type === 2"
-                      [class.text-destructive]="t.type === 2">
+                      [class.bg-success/10]="isTypeEpargne(t.type)"
+                      [class.text-success]="isTypeEpargne(t.type)"
+                      [class.bg-destructive/10]="isTypeDette(t.type)"
+                      [class.text-destructive]="isTypeDette(t.type)">
                       {{ typeLabel(t.type) }}
                     </span>
                   </td>
@@ -290,6 +292,7 @@
                 <th class="px-4 py-2 text-right font-medium text-muted-foreground">Âge moy.</th>
                 <th class="px-4 py-2 text-left font-medium text-muted-foreground">Activité</th>
                 <th class="px-4 py-2 text-right font-medium text-muted-foreground">Revenus (FCFA)</th>
+                <th class="px-4 py-2 text-left font-medium text-muted-foreground">Justificatifs</th>
                 @if (canEdit()) {
                   <th class="px-4 py-2 w-10"></th>
                 }
@@ -303,6 +306,7 @@
                   <td class="px-4 py-2.5 text-right text-muted-foreground">{{ membre.age ?? '—' }}</td>
                   <td class="px-4 py-2.5 text-muted-foreground">{{ membre.activite ?? '—' }}</td>
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">{{ formatMontant(membre.revenus) }}</td>
+                  <td class="px-4 py-2.5 text-muted-foreground">{{ justifLabel(membre.justifs) }}</td>
                   @if (canEdit()) {
                     <td class="px-4 py-2.5">
                       <button type="button" (click)="openDeleteMembre(membre)"
@@ -317,7 +321,7 @@
             @if (totalRevenusMembers() > 0) {
               <tfoot>
                 <tr class="border-t border-border bg-muted/10">
-                  <td colspan="4" class="px-4 py-2 text-sm font-semibold text-muted-foreground">Total revenus ménage</td>
+                  <td colspan="5" class="px-4 py-2 text-sm font-semibold text-muted-foreground">Total revenus ménage</td>
                   <td class="px-4 py-2 text-right font-bold tabular-nums">{{ formatMontant(totalRevenusMembers()) }}</td>
                   @if (canEdit()) {
                     <td></td>

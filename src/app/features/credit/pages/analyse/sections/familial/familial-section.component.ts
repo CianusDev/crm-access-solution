@@ -34,7 +34,13 @@ import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { FormSelect, SelectOption } from '@/shared/components/form-select/form-select.component';
 import { ToastService } from '@/core/services/toast/toast.service';
 import { CreditService } from '../../../../services/credit/credit.service';
-import { ChargeFamille, MembreMenage, TresorerieFamille } from '../../../../interfaces/credit.interface';
+import {
+  ActiviteCredit,
+  ChargeFamille,
+  CreditAnalyseDemandeDetail,
+  MembreMenage,
+  TresorerieFamille,
+} from '../../../../interfaces/credit.interface';
 
 interface TypeChargeFamiliale {
   id: number;
@@ -144,10 +150,14 @@ export class FamilialSectionComponent implements OnInit {
   readonly isSavingImprevu = signal(false);
 
   readonly totalEpargnes = computed(() =>
-    this.tresoreriesFamiliales().filter(t => String(t.type) === '1').reduce((s, t) => s + (t.montant ?? 0), 0),
+    this.tresoreriesFamiliales()
+      .filter(t => String(t.type) === '1')
+      .reduce((s, t) => s + this.toNumber(t.montant), 0),
   );
   readonly totalDettes = computed(() =>
-    this.tresoreriesFamiliales().filter(t => String(t.type) === '2').reduce((s, t) => s + (t.montant ?? 0), 0),
+    this.tresoreriesFamiliales()
+      .filter(t => String(t.type) === '2')
+      .reduce((s, t) => s + this.toNumber(t.montant), 0),
   );
 
   // Charge form — type sélectionné pour sous-charges
@@ -162,7 +172,7 @@ export class FamilialSectionComponent implements OnInit {
   });
 
   readonly totalChargesFamilialesDetail = computed(() =>
-    this.chargesFamiliales().reduce((s, c) => s + (c.montant ?? 0), 0),
+    this.chargesFamiliales().reduce((s, c) => s + this.toNumber(c.montant), 0),
   );
 
   readonly montantImprevuChargesFam = computed(() => {
@@ -172,7 +182,7 @@ export class FamilialSectionComponent implements OnInit {
   });
 
   readonly totalRevenusMembers = computed(() =>
-    this.membresMenage().reduce((s, m) => s + (m.revenus ?? 0), 0),
+    this.membresMenage().reduce((s, m) => s + this.toNumber(m.revenus), 0),
   );
   readonly selectedMembreCondition = signal<MembreCondition>('none');
   readonly showMembreNombre = computed(
@@ -276,16 +286,55 @@ export class FamilialSectionComponent implements OnInit {
           this.isLoading.set(false);
           return;
         }
-        const p = data.demande.profilFamilial;
+        const demande = data.demande;
+        const activites = demande.activites ?? [];
+        const demandeLegacy = demande as CreditAnalyseDemandeDetail & {
+          chargeFamilles?: ChargeFamille[];
+          tresorerieFamilles?: TresorerieFamille[];
+          menageRevenuFamilles?: MembreMenage[];
+        };
+        const p = demande.profilFamilial ?? this.extractProfilFamilialFromActivites(activites);
         if (p) {
           this.profilForm.patchValue({
             commentaire: p.commentaire ?? '',
           });
+        } else {
+          this.profilForm.patchValue({ commentaire: '' });
         }
-        this.membresMenage.set(data.demande.membresMenage ?? []);
-        this.chargesFamiliales.set(data.demande.chargesFamiliales ?? []);
-        this.tresoreriesFamiliales.set(data.demande.tresoreriesFamiliales ?? []);
-        this.imprevuChargeFamille.set(data.demande.imprevuChargeFamille ?? null);
+        this.membresMenage.set(
+          this.firstNonEmptyArray(
+            demande.membresMenage,
+            demandeLegacy.menageRevenuFamilles,
+            this.extractMenageFromActivites(activites),
+          ),
+        );
+        this.chargesFamiliales.set(
+          this.firstNonEmptyArray(
+            demande.chargesFamiliales,
+            demandeLegacy.chargeFamilles,
+            this.extractChargesFromActivites(activites),
+          ),
+        );
+        this.tresoreriesFamiliales.set(
+          this.firstNonEmptyArray(
+            demande.tresoreriesFamiliales,
+            demandeLegacy.tresorerieFamilles,
+            this.extractTresoreriesFromActivites(activites),
+          ),
+        );
+        const imprevuAnalyse = this.extractImprevuChargeFamille(demande);
+        this.imprevuChargeFamille.set(imprevuAnalyse);
+        this.creditService.getDetailsDemande(this.ref()).subscribe({
+          next: (details) => {
+            const imprevuDetails = this.extractImprevuChargeFamille(details);
+            if (imprevuDetails != null) {
+              this.imprevuChargeFamille.set(imprevuDetails);
+            }
+          },
+          error: () => {
+            // no-op: analyse data remains source of truth if details endpoint fails
+          },
+        });
         this.isLoading.set(false);
       },
       error: () => {
@@ -295,9 +344,74 @@ export class FamilialSectionComponent implements OnInit {
     });
   }
 
-  formatMontant(n: number | undefined): string {
+  formatMontant(n: number | string | undefined | null): string {
     if (n == null) return '—';
-    return new Intl.NumberFormat('fr-FR').format(n);
+    return new Intl.NumberFormat('fr-FR').format(this.toNumber(n));
+  }
+
+  private toNumber(value: unknown): number {
+    if (value == null || value === '') return 0;
+    if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+    const normalized = String(value).replace(/\s/g, '').replace(',', '.');
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  private firstNonEmptyArray<T>(...arrays: Array<T[] | undefined>): T[] {
+    for (const arr of arrays) {
+      if (arr && arr.length > 0) return arr;
+    }
+    return [];
+  }
+
+  private extractProfilFamilialFromActivites(activites: ActiviteCredit[]) {
+    for (const activite of activites) {
+      const profil = (activite as unknown as { profilFamilial?: { commentaire?: string } }).profilFamilial;
+      if (profil && (profil.commentaire ?? '').trim() !== '') {
+        return profil;
+      }
+    }
+    return null;
+  }
+
+  private extractChargesFromActivites(activites: ActiviteCredit[]): ChargeFamille[] {
+    return activites.flatMap((activite) =>
+      ((activite as unknown as { chargeFamilles?: ChargeFamille[] }).chargeFamilles ?? []).map((item) => ({
+        ...item,
+        refDemande: item.refDemande ?? activite.refDemande,
+      })),
+    );
+  }
+
+  private extractTresoreriesFromActivites(activites: ActiviteCredit[]): TresorerieFamille[] {
+    return activites.flatMap((activite) =>
+      ((activite as unknown as { tresorerieFamilles?: TresorerieFamille[] }).tresorerieFamilles ?? []).map((item) => ({
+        ...item,
+        refDemande: item.refDemande ?? activite.refDemande,
+      })),
+    );
+  }
+
+  private extractMenageFromActivites(activites: ActiviteCredit[]): MembreMenage[] {
+    return activites.flatMap((activite) =>
+      ((activite as unknown as { menageRevenuFamilles?: MembreMenage[] }).menageRevenuFamilles ?? []).map((item) => ({
+        ...item,
+        refDemande: item.refDemande ?? activite.refDemande,
+      })),
+    );
+  }
+
+  private extractImprevuChargeFamille(source: unknown): number | null {
+    const input = source as
+      | { imprevuChargeFamille?: unknown; imprevu?: unknown; analyseFin?: { chargeFamille?: { imprevu?: unknown } } }
+      | undefined;
+    const raw =
+      input?.imprevuChargeFamille ??
+      input?.imprevu ??
+      input?.analyseFin?.chargeFamille?.imprevu ??
+      null;
+    const value = this.toNumber(raw);
+    return value > 0 ? value : null;
   }
 
   // ── Profil familial ────────────────────────────────────────────────────
@@ -336,9 +450,9 @@ export class FamilialSectionComponent implements OnInit {
       refDemande: this.ref(),
     }).subscribe({
       next: () => {
+        this.imprevuChargeFamille.set(value);
         this.toast.success('Imprévus charges familiales enregistrés.');
         this.isSavingImprevu.set(false);
-        this.loadData();
       },
       error: () => {
         this.toast.error("Erreur lors de l'enregistrement.");
@@ -348,8 +462,9 @@ export class FamilialSectionComponent implements OnInit {
   }
 
   // ── Charges familiales ─────────────────────────────────────────────────
-  typeChargeLabel(typeId: number | undefined): string {
-    return TYPES_CHARGE_FAM.find(t => t.id === typeId)?.name ?? '—';
+  typeChargeLabel(typeId: number | string | undefined): string {
+    const normalized = this.toNumber(typeId);
+    return TYPES_CHARGE_FAM.find(t => t.id === normalized)?.name ?? '—';
   }
 
   openAddCharge() {
@@ -411,6 +526,20 @@ export class FamilialSectionComponent implements OnInit {
 
   typeCompteLabel(tc: number | string | undefined): string {
     return TYPES_COMPTE.find(t => String(t.value) === String(tc))?.label ?? '—';
+  }
+
+  isTypeEpargne(type: number | string | undefined): boolean {
+    return String(type) === '1';
+  }
+
+  isTypeDette(type: number | string | undefined): boolean {
+    return String(type) === '2';
+  }
+
+  justifLabel(value: string | number | undefined): string {
+    if (String(value) === '1') return 'OUI';
+    if (String(value) === '0') return 'NON';
+    return '—';
   }
 
   openAddTresorerie() {

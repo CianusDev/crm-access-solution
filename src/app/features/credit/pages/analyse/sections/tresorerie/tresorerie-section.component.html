@@ -90,6 +90,82 @@
       </app-card-content>
     </app-card>
 
+    <!-- ══ ACTIFS CIRCULANTS (STOCKS) ═════════════════════════════════════ -->
+    <app-card>
+      <app-card-header>
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <app-card-title>STOCKS</app-card-title>
+            <span class="text-xs text-muted-foreground">Actifs et garanties</span>
+          </div>
+          @if (canEdit()) {
+            <button type="button" (click)="openAddStock()" appButton size="sm">
+              <lucide-icon [img]="PlusIcon" [size]="14" />
+              Ajouter
+            </button>
+          }
+        </div>
+      </app-card-header>
+      <app-card-content class="space-y-4">
+        @if (stocks().length === 0) {
+          <div class="flex flex-col items-center justify-center gap-3 py-8 text-center">
+            <lucide-icon [img]="WalletIcon" [size]="28" class="text-muted-foreground/40" />
+            <p class="text-sm text-muted-foreground">Aucun stock enregistré</p>
+          </div>
+        } @else {
+          @for (stock of stocks(); track stock.id ?? $index) {
+            <div class="rounded-xl border border-border bg-card">
+              <div class="flex items-center justify-between border-b border-border px-4 py-3">
+                <h4 class="text-sm font-semibold">Stock ({{ $index + 1 }})</h4>
+                @if (canEdit()) {
+                  <div class="flex items-center gap-1">
+                    <button
+                      type="button"
+                      (click)="openEditStock(stock)"
+                      class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                      title="Modifier">
+                      <lucide-icon [img]="PencilIcon" [size]="13" />
+                    </button>
+                    @if (stock.id) {
+                      <button
+                        type="button"
+                        (click)="openDelete('stock', stock.id, stock.article ?? '')"
+                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        title="Supprimer">
+                        <lucide-icon [img]="Trash2Icon" [size]="13" />
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+              <div class="grid gap-4 px-4 py-3 md:grid-cols-2">
+                <div class="space-y-2 text-sm">
+                  <div class="flex justify-between gap-2">
+                    <span class="text-muted-foreground">Activité :</span>
+                    <span class="font-medium text-right">{{ getActiviteLibelle(stock.activite) }}</span>
+                  </div>
+                  <div class="flex justify-between gap-2">
+                    <span class="text-muted-foreground">Désignation :</span>
+                    <span class="font-medium text-right">{{ stock.article || '—' }}</span>
+                  </div>
+                </div>
+                <div class="space-y-2 text-sm">
+                  <div class="flex justify-between gap-2">
+                    <span class="text-muted-foreground">Quantité :</span>
+                    <span class="font-medium text-right">{{ stock.quantite | number:'1.0-0' }}</span>
+                  </div>
+                  <div class="flex justify-between gap-2">
+                    <span class="text-muted-foreground">Prix :</span>
+                    <span class="font-medium text-right">{{ stockMontant(stock) | number:'1.0-0' }} FCFA</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        }
+      </app-card-content>
+    </app-card>
+
     <!-- ══ CRÉANCES CLIENTS ══════════════════════════════════════════════ -->
     <app-card>
       <app-card-header>
@@ -424,6 +500,41 @@
       <button type="button" (click)="tresorerieActifCirculantDrawerOpen = false" appButton variant="outline">Annuler</button>
       <button type="button" (click)="saveTresorerieActifCirculant()" appButton [disabled]="isSavingTresorerieActifCirculant()">
         @if (isSavingTresorerieActifCirculant()) { Enregistrement… } @else { Enregistrer }
+      </button>
+    </div>
+  </app-drawer-footer>
+</app-drawer>
+
+<!-- ══ DRAWER — Stocks actif circulant ═════════════════════════════════════ -->
+<app-drawer [(open)]="stockDrawerOpen">
+  <app-drawer-header>
+    <app-drawer-title>{{ editingStockId() ? 'Modifier le stock' : 'Ajouter un stock' }}</app-drawer-title>
+  </app-drawer-header>
+  <app-drawer-content>
+    <form [formGroup]="stockForm" class="flex flex-col gap-4">
+      <div>
+        <label class="text-sm font-medium mb-1.5 block">Activité <span class="text-destructive">*</span></label>
+        <app-form-select
+          name="activite"
+          [options]="activitesList()"
+          bindLabel="libelle"
+          bindValue="id"
+          placeholder="Sélectionner une activité"
+          required
+        />
+      </div>
+      <app-form-input name="article" label="Désignation" placeholder="Ex: Stock de riz" required />
+      <div class="grid grid-cols-2 gap-4">
+        <app-form-input name="quantite" label="Quantité" type="number" placeholder="Ex: 50" />
+        <app-form-input name="montanTotal" label="Prix" type="number" placeholder="Ex: 20000" required />
+      </div>
+    </form>
+  </app-drawer-content>
+  <app-drawer-footer>
+    <div class="flex gap-2 justify-end">
+      <button type="button" (click)="stockDrawerOpen = false" appButton variant="outline">Annuler</button>
+      <button type="button" (click)="saveStock()" appButton [disabled]="isSavingStock()">
+        @if (isSavingStock()) { Enregistrement… } @else { Enregistrer }
       </button>
     </div>
   </app-drawer-footer>
