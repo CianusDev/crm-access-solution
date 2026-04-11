@@ -3,6 +3,7 @@ import {
   Component,
   inject,
   input,
+  output,
   signal,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
@@ -60,9 +61,12 @@ export class TirageDocumentsPanelComponent {
 
   readonly ref = input.required<string>();
   readonly documents = signal<CreditDocumentAnnexe[]>([]);
+  readonly canManage = input<boolean>(true);
+  readonly currentUserId = input<number | null>(null);
 
   // Initialise depuis l'input parent via setter
   readonly documentsIn = input<CreditDocumentAnnexe[]>([]);
+  readonly documentsChanged = output<CreditDocumentAnnexe[]>();
 
   constructor() {
     // Sync signal interne depuis l'input au démarrage
@@ -85,6 +89,7 @@ export class TirageDocumentsPanelComponent {
   }
 
   upload() {
+    if (!this.canManage()) return;
     if (!this.selectedFile || !this.uploadLibelle.trim() || this.isUploading) return;
 
     const formData = new FormData();
@@ -122,11 +127,13 @@ export class TirageDocumentsPanelComponent {
   isDeleting = false;
 
   confirmDelete(doc: CreditDocumentAnnexe) {
+    if (!this.canDeleteDocument(doc)) return;
     this.docToDelete = doc;
     this.deleteDialogOpen = true;
   }
 
   executeDelete() {
+    if (!this.docToDelete || !this.canDeleteDocument(this.docToDelete)) return;
     if (!this.docToDelete || this.isDeleting) return;
     this.isDeleting = true;
     this.creditService.deleteDocument(this.docToDelete.id).subscribe({
@@ -152,8 +159,17 @@ export class TirageDocumentsPanelComponent {
   // ── Rechargement ──────────────────────────────────────────────────────────
   private reloadDocuments() {
     this.creditService.getDocuments(this.ref()).subscribe({
-      next: (docs) => this.documents.set(docs),
+      next: (docs) => {
+        this.documents.set(docs);
+        this.documentsChanged.emit(docs);
+      },
     });
+  }
+
+  canDeleteDocument(doc: CreditDocumentAnnexe): boolean {
+    const currentUserId = this.currentUserId();
+    if (!currentUserId || !doc.userId) return false;
+    return currentUserId === doc.userId;
   }
 
   // Exposer une méthode pour que le parent puisse initialiser

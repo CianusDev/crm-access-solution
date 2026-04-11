@@ -63,6 +63,17 @@ interface SimpleAction {
   title: string;
 }
 
+interface RequiredTirageDocument {
+  libelle: string;
+  obligation: boolean;
+}
+
+const REQUIRED_TIRAGE_DOCUMENTS: RequiredTirageDocument[] = [
+  { libelle: 'Le courrier de demande signé', obligation: true },
+  { libelle: 'La situation du compte', obligation: true },
+  { libelle: 'Relevé de compte', obligation: true },
+];
+
 @Component({
   selector: 'app-tirage-detail-credit',
   templateUrl: './tirage-detail-credit.component.html',
@@ -134,9 +145,12 @@ export class TirageDetailCreditComponent implements OnInit {
   readonly documents = signal<CreditDocumentAnnexe[]>([]);
   readonly ref = signal('');
   readonly refDecouvert = signal('');
+  readonly requiredDocumentLabel = signal('');
+  readonly isUploadingRequiredDocument = signal(false);
 
   // ── Dérivés ───────────────────────────────────────────────────────────────
   readonly demande = computed(() => this.fiche()?.demande ?? null);
+  readonly currentUserId = computed(() => this.auth.currentUser()?.id ?? null);
 
   readonly statutInfo = computed(() => {
     const s = this.demande()?.statut ?? 0;
@@ -158,8 +172,6 @@ export class TirageDetailCreditComponent implements OnInit {
     return this.permissions.hasRole(
       UserRole.GestionnairePortefeuilles,
       UserRole.Admin,
-      UserRole.ChefEquipe,
-      UserRole.AgentCommercialJunior,
     );
   });
 
@@ -174,6 +186,34 @@ export class TirageDetailCreditComponent implements OnInit {
       UserRole.DGA,
       UserRole.Admin,
     );
+  });
+
+  readonly sendAfterComiteLabel = computed(() =>
+    this.demande()?.statut === 28 ? 'Envoyer le tirage' : 'Envoyer le dossier',
+  );
+
+  readonly validateComiteLabel = computed(() =>
+    this.demande()?.statut === 28 ? 'Valider le tirage' : 'Valider le dossier',
+  );
+
+  readonly requiredDocuments = computed(() =>
+    REQUIRED_TIRAGE_DOCUMENTS.map((doc) => ({
+      ...doc,
+      uploaded: this.documents().some(
+        (d) => this.normalizeDocumentLabel(d.libelle) === this.normalizeDocumentLabel(doc.libelle),
+      ),
+    })),
+  );
+
+  readonly allRequiredDocsLoaded = computed(() =>
+    this.requiredDocuments()
+      .filter((doc) => doc.obligation)
+      .every((doc) => doc.uploaded),
+  );
+
+  readonly canManageDocuments = computed(() => {
+    const statut = this.demande()?.statut ?? 0;
+    return ![21, 25, 30].includes(statut) && !this.permissions.hasRole(UserRole.AdministrationAudit);
   });
 
   /** Statut 12 + DG/Admin → validation finale */
@@ -223,6 +263,44 @@ export class TirageDetailCreditComponent implements OnInit {
     this.actionDialogOpen = true;
   }
 
+  openRequiredDocPicker(libelle: string) {
+    this.requiredDocumentLabel.set(libelle);
+  }
+
+  uploadRequiredDocument(event: Event) {
+    if (!this.showEnvoyer() || this.isUploadingRequiredDocument()) return;
+
+    const label = this.requiredDocumentLabel().trim();
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+
+    if (!file || !label) {
+      input.value = '';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('refDemande', this.ref());
+    formData.append('libelle', label);
+    formData.append('description', '');
+    formData.append('document', file);
+
+    this.isUploadingRequiredDocument.set(true);
+    this.creditService.uploadDocument(formData).subscribe({
+      next: () => {
+        this.toast.success('Document chargé avec succès.');
+        this.reloadDocuments();
+        this.isUploadingRequiredDocument.set(false);
+      },
+      error: (err) => {
+        this.toast.error(err?.error?.message ?? "Erreur lors de l'ajout du document.");
+        this.isUploadingRequiredDocument.set(false);
+      },
+    });
+
+    input.value = '';
+  }
+
   submitAction() {
     if (!this.currentAction || !this.actionPwd().trim()) return;
     const payload: CreditActionPayload = {
@@ -261,8 +339,22 @@ export class TirageDetailCreditComponent implements OnInit {
     this.creditService.getObservations(ref).subscribe({
       next: (o) => this.observations.set(o),
     });
+    this.reloadDocuments();
+  }
+
+  onDocumentsUpdated(docs: CreditDocumentAnnexe[]) {
+    this.documents.set(docs);
+  }
+
+  private reloadDocuments() {
+    const ref = this.ref();
+    if (!ref) return;
     this.creditService.getDocuments(ref).subscribe({
       next: (d) => this.documents.set(d),
     });
+  }
+
+  private normalizeDocumentLabel(value: string | undefined | null): string {
+    return (value ?? '').trim().toLowerCase();
   }
 }

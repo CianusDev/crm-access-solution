@@ -63,6 +63,7 @@ const STATUT_JURIDIQUE: Record<number, string> = {
         <div
           class="flex items-center justify-end gap-2 px-4 py-2.5 border-b border-border bg-muted/30 flex-wrap"
         >
+          @if (!isDossierCloture()) {
           @if (isSuperviseurRisqueZone() && d.statut === 24) {
             <button
               type="button"
@@ -239,7 +240,7 @@ const STATUT_JURIDIQUE: Record<number, string> = {
               <lucide-icon [img]="RotateCcwIcon" [size]="14" />
               Remettre dans le circuit
             </button>
-          } @else if (isRCCC()) {
+          } @else if (isRCCC() && d.statut === 3) {
             <!-- RC/CC: Ajourner -->
             <button
               type="button"
@@ -334,8 +335,8 @@ const STATUT_JURIDIQUE: Record<number, string> = {
                 Affecter le dossier à un AR
               </button>
             }
-          } @else {
-            <!-- GP / Other: Charger docs + Envoyer -->
+          } @else if (isGP() && d.statut === 1) {
+            <!-- GP statut 1: Charger docs + Envoyer -->
             @if (docTypeItems().length > 0) {
               <app-dropdown class="min-w-96!" [items]="docTypeItems()" align="start">
                 <button
@@ -362,12 +363,13 @@ const STATUT_JURIDIQUE: Record<number, string> = {
               appButton
               size="sm"
               class="flex items-center gap-1.5"
-              [disabled]="isGP() ? false : !canSendDossier()"
+              [disabled]="!canSendDossier()"
               (click)="envoyerDossier.emit()"
             >
               <lucide-icon [img]="SendIcon" [size]="14" />
               {{ statusOneGpPrimaryLabel() }}
             </button>
+          }
           }
           @if (showVoirResume()) {
             <button
@@ -631,10 +633,16 @@ export class AnalyseHeaderCardComponent {
     return STATUT_JURIDIQUE[key] ?? String(sj);
   });
 
+  readonly isDossierCloture = computed(() => this.fiche()?.statut === 30);
+
   /** Dropdown items : docs requis selon le type de crédit. */
   readonly docTypeItems = computed<DropdownItem[]>(() => {
     const f = this.fiche();
     const code = f?.typeCredit?.code;
+
+    if (f?.statut === 30) {
+      return [];
+    }
 
     /** Legacy : pas de menu « Charger les documents » pour AR sur avance BC / facture (032, 033). */
     if (this.showAnalysteBandeau() && (code === '032' || code === '033')) {

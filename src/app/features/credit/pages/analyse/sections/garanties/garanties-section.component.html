@@ -260,10 +260,12 @@
               <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{{ vehicules().length }}</span>
             }
           </div>
-          <button type="button" (click)="openAdd('VEHICULE', 0)" appButton size="sm" variant="outline">
-            <lucide-icon [img]="PlusIcon" [size]="12" />
-            Ajouter
-          </button>
+          @if (canAddOrUpload()) {
+            <button type="button" (click)="openAdd('VEHICULE', 0)" appButton size="sm" variant="outline">
+              <lucide-icon [img]="PlusIcon" [size]="12" />
+              Ajouter
+            </button>
+          }
         </div>
       </app-card-header>
       <app-card-content>
@@ -281,32 +283,36 @@
                     </span>
                   </div>
                   <div class="flex items-center gap-2 shrink-0 ml-3">
-                    <button type="button" (click)="openEditActif(actif)" appButton variant="outline" size="icon" title="Modifier le véhicule">
-                      <lucide-icon [img]="PencilIcon" [size]="14" />
-                    </button>
-                    <button type="button" (click)="openDelete(actif)" appButton variant="outline" size="icon" title="Supprimer le véhicule">
-                      <lucide-icon [img]="Trash2Icon" [size]="14" />
-                    </button>
-                    <button
-                      type="button"
-                      appButton
-                      variant="outline"
-                      size="sm"
-                      [disabled]="isUploadingMedia()"
-                      (click)="openMediaUploadDrawer(actif.id!, 'image')">
-                      <lucide-icon [img]="ImageIcon" [size]="14" />
-                      <span class="ml-1 hidden sm:inline">Ajouter une image</span>
-                    </button>
-                    <button
-                      type="button"
-                      appButton
-                      variant="outline"
-                      size="sm"
-                      [disabled]="isUploadingMedia()"
-                      (click)="openMediaUploadDrawer(actif.id!, 'doc')">
-                      <lucide-icon [img]="FileTextIcon" [size]="14" />
-                      <span class="ml-1 hidden sm:inline">Ajouter un document</span>
-                    </button>
+                    @if (canEditDelete()) {
+                      <button type="button" (click)="openEditActif(actif)" appButton variant="outline" size="icon" title="Modifier le véhicule">
+                        <lucide-icon [img]="PencilIcon" [size]="14" />
+                      </button>
+                      <button type="button" (click)="openDelete(actif)" appButton variant="outline" size="icon" title="Supprimer le véhicule">
+                        <lucide-icon [img]="Trash2Icon" [size]="14" />
+                      </button>
+                    }
+                    @if (canAddOrUpload()) {
+                      <button
+                        type="button"
+                        appButton
+                        variant="outline"
+                        size="sm"
+                        [disabled]="isUploadingMedia()"
+                        (click)="openMediaUploadDrawer(actif.id!, 'image')">
+                        <lucide-icon [img]="ImageIcon" [size]="14" />
+                        <span class="ml-1 hidden sm:inline">Ajouter une image</span>
+                      </button>
+                      <button
+                        type="button"
+                        appButton
+                        variant="outline"
+                        size="sm"
+                        [disabled]="isUploadingMedia()"
+                        (click)="openMediaUploadDrawer(actif.id!, 'doc')">
+                        <lucide-icon [img]="FileTextIcon" [size]="14" />
+                        <span class="ml-1 hidden sm:inline">Ajouter un document</span>
+                      </button>
+                    }
                   </div>
                 </div>
 
@@ -362,9 +368,11 @@
                                 <button type="button" (click)="$event.stopPropagation(); openLightbox(actif.images!, idx)" class="text-white hover:text-primary">
                                   <lucide-icon [img]="EyeIcon" [size]="18" />
                                 </button>
-                                <button type="button" (click)="$event.stopPropagation(); openMediaDelete('image', img.id!, img.libelle ?? 'Photo')" class="text-white hover:text-destructive">
-                                  <lucide-icon [img]="Trash2Icon" [size]="18" />
-                                </button>
+                                @if (canEditDelete()) {
+                                  <button type="button" (click)="$event.stopPropagation(); openMediaDelete('image', img.id!, img.libelle ?? 'Photo')" class="text-white hover:text-destructive">
+                                    <lucide-icon [img]="Trash2Icon" [size]="18" />
+                                  </button>
+                                }
                               </div>
                               <div class="absolute bottom-0 left-0 right-0 bg-black/70 p-2">
                                 <p class="text-xs text-white truncate">{{ img.libelle }}</p>
@@ -395,9 +403,11 @@
                                 <a [href]="mediaUrl(doc.lien!)" target="_blank" appButton variant="ghost" size="icon" title="Voir">
                                   <lucide-icon [img]="EyeIcon" [size]="14" />
                                 </a>
-                                <button type="button" (click)="openMediaDelete('doc', doc.id!, doc.libelle ?? 'Document')" appButton variant="ghost" size="icon" class="text-destructive hover:text-destructive" title="Supprimer">
-                                  <lucide-icon [img]="Trash2Icon" [size]="14" />
-                                </button>
+                                @if (canAddOrUpload()) {
+                                  <button type="button" (click)="openMediaDelete('doc', doc.id!, doc.libelle ?? 'Document')" appButton variant="ghost" size="icon" class="text-destructive hover:text-destructive" title="Supprimer">
+                                    <lucide-icon [img]="Trash2Icon" [size]="14" />
+                                  </button>
+                                }
                               </div>
                             </div>
                           }
@@ -716,10 +726,12 @@
               <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{{ biensMobiliers().length }}</span>
             }
           </div>
-          <button type="button" (click)="openAdd('BIEN_MOBILIER')" appButton size="sm" variant="outline">
-            <lucide-icon [img]="PlusIcon" [size]="12" />
-            Ajouter
-          </button>
+          @if (canAddOrUpload()) {
+            <button type="button" (click)="openAdd('BIEN_MOBILIER')" appButton size="sm" variant="outline">
+              <lucide-icon [img]="PlusIcon" [size]="12" />
+              Ajouter
+            </button>
+          }
         </div>
       </app-card-header>
       <app-card-content>
@@ -737,32 +749,36 @@
                     </span>
                   </div>
                   <div class="flex items-center gap-2 shrink-0 ml-3">
-                    <button type="button" (click)="openEditActif(actif)" appButton variant="outline" size="icon" title="Modifier le bien">
-                      <lucide-icon [img]="PencilIcon" [size]="14" />
-                    </button>
-                    <button type="button" (click)="openDelete(actif)" appButton variant="outline" size="icon" title="Supprimer le bien">
-                      <lucide-icon [img]="Trash2Icon" [size]="14" />
-                    </button>
-                    <button
-                      type="button"
-                      appButton
-                      variant="outline"
-                      size="sm"
-                      [disabled]="isUploadingMedia()"
-                      (click)="openMediaUploadDrawer(actif.id!, 'image')">
-                      <lucide-icon [img]="ImageIcon" [size]="14" />
-                      <span class="ml-1 hidden sm:inline">Ajouter une image</span>
-                    </button>
-                    <button
-                      type="button"
-                      appButton
-                      variant="outline"
-                      size="sm"
-                      [disabled]="isUploadingMedia()"
-                      (click)="openMediaUploadDrawer(actif.id!, 'doc')">
-                      <lucide-icon [img]="FileTextIcon" [size]="14" />
-                      <span class="ml-1 hidden sm:inline">Ajouter un document</span>
-                    </button>
+                    @if (canEditDelete()) {
+                      <button type="button" (click)="openEditActif(actif)" appButton variant="outline" size="icon" title="Modifier le bien">
+                        <lucide-icon [img]="PencilIcon" [size]="14" />
+                      </button>
+                      <button type="button" (click)="openDelete(actif)" appButton variant="outline" size="icon" title="Supprimer le bien">
+                        <lucide-icon [img]="Trash2Icon" [size]="14" />
+                      </button>
+                    }
+                    @if (canAddOrUpload()) {
+                      <button
+                        type="button"
+                        appButton
+                        variant="outline"
+                        size="sm"
+                        [disabled]="isUploadingMedia()"
+                        (click)="openMediaUploadDrawer(actif.id!, 'image')">
+                        <lucide-icon [img]="ImageIcon" [size]="14" />
+                        <span class="ml-1 hidden sm:inline">Ajouter une image</span>
+                      </button>
+                      <button
+                        type="button"
+                        appButton
+                        variant="outline"
+                        size="sm"
+                        [disabled]="isUploadingMedia()"
+                        (click)="openMediaUploadDrawer(actif.id!, 'doc')">
+                        <lucide-icon [img]="FileTextIcon" [size]="14" />
+                        <span class="ml-1 hidden sm:inline">Ajouter un document</span>
+                      </button>
+                    }
                   </div>
                 </div>
 
@@ -829,9 +845,11 @@
                                 <button type="button" (click)="$event.stopPropagation(); openLightbox(actif.images!, idx)" class="text-white hover:text-primary">
                                   <lucide-icon [img]="EyeIcon" [size]="18" />
                                 </button>
-                                <button type="button" (click)="$event.stopPropagation(); openMediaDelete('image', img.id!, img.libelle ?? 'Photo')" class="text-white hover:text-destructive">
-                                  <lucide-icon [img]="Trash2Icon" [size]="18" />
-                                </button>
+                                @if (canEditDelete()) {
+                                  <button type="button" (click)="$event.stopPropagation(); openMediaDelete('image', img.id!, img.libelle ?? 'Photo')" class="text-white hover:text-destructive">
+                                    <lucide-icon [img]="Trash2Icon" [size]="18" />
+                                  </button>
+                                }
                               </div>
                               <div class="absolute bottom-0 left-0 right-0 bg-black/70 p-2">
                                 <p class="text-xs text-white truncate">{{ img.libelle }}</p>
@@ -862,9 +880,11 @@
                                 <a [href]="mediaUrl(doc.lien!)" target="_blank" appButton variant="ghost" size="icon" title="Voir">
                                   <lucide-icon [img]="EyeIcon" [size]="14" />
                                 </a>
-                                <button type="button" (click)="openMediaDelete('doc', doc.id!, doc.libelle ?? 'Document')" appButton variant="ghost" size="icon" class="text-destructive hover:text-destructive" title="Supprimer">
-                                  <lucide-icon [img]="Trash2Icon" [size]="14" />
-                                </button>
+                                @if (canAddOrUpload()) {
+                                  <button type="button" (click)="openMediaDelete('doc', doc.id!, doc.libelle ?? 'Document')" appButton variant="ghost" size="icon" class="text-destructive hover:text-destructive" title="Supprimer">
+                                    <lucide-icon [img]="Trash2Icon" [size]="14" />
+                                  </button>
+                                }
                               </div>
                             </div>
                           }

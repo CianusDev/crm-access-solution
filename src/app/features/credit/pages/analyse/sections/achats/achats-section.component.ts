@@ -88,6 +88,7 @@ const IMPREVU_OPTIONS: SelectOption[] = [
 })
 export class AchatsSectionComponent implements OnInit {
   ref = input<string>('');
+  canEdit = input<boolean>(false);
 
   readonly PlusIcon = Plus;
   readonly Trash2Icon = Trash2;
@@ -326,6 +327,7 @@ export class AchatsSectionComponent implements OnInit {
 
   // ── Achat Mensuel CRUD ─────────────────────────────────────────────────
   openAddAchat(activiteId?: number) {
+    if (!this.canEdit()) return;
     this.editingAchatId.set(null);
     this.achatForm.reset({
       activite: activiteId ?? null,
@@ -339,6 +341,7 @@ export class AchatsSectionComponent implements OnInit {
   }
 
   openEditAchat(a: AchatMensuel, activiteId?: number) {
+    if (!this.canEdit()) return;
     const editId = a.id ?? (a as unknown as { achatMensuel?: number }).achatMensuel ?? null;
     this.editingAchatId.set(editId);
     this.achatForm.patchValue({
@@ -353,6 +356,7 @@ export class AchatsSectionComponent implements OnInit {
   }
 
   saveAchat() {
+    if (!this.canEdit()) return;
     if (this.achatForm.invalid) {
       this.achatForm.markAllAsTouched();
       return;
@@ -389,12 +393,14 @@ export class AchatsSectionComponent implements OnInit {
 
   // ── Charge Exploitation CRUD ───────────────────────────────────────────
   openAddCharge() {
+    if (!this.canEdit()) return;
     this.editingChargeId.set(null);
     this.chargeForm.reset({ activite: null, charge: null, montant: null, commentaire: '' });
     this.chargeDrawerOpen = true;
   }
 
   openEditCharge(c: ChargeExploitation) {
+    if (!this.canEdit()) return;
     const editId =
       c.id ?? (c as unknown as { chargeExploitation?: number }).chargeExploitation ?? null;
     this.editingChargeId.set(editId);
@@ -408,6 +414,7 @@ export class AchatsSectionComponent implements OnInit {
   }
 
   saveCharge() {
+    if (!this.canEdit()) return;
     if (this.chargeForm.invalid) {
       this.chargeForm.markAllAsTouched();
       return;
@@ -440,11 +447,13 @@ export class AchatsSectionComponent implements OnInit {
 
   // ── Delete ─────────────────────────────────────────────────────────────
   openDeleteAchat(achat: AchatMensuel) {
+    if (!this.canEdit()) return;
     this.deleteTarget = { type: 'achat', id: achat.id!, label: achat.article ?? '' };
     this.deleteDialogOpen = true;
   }
 
   openDeleteCharge(charge: ChargeExploitation) {
+    if (!this.canEdit()) return;
     const chargeId =
       charge.id ?? (charge as unknown as { chargeExploitation?: number }).chargeExploitation;
     if (chargeId == null) {
@@ -461,6 +470,7 @@ export class AchatsSectionComponent implements OnInit {
   }
 
   confirmDelete() {
+    if (!this.canEdit()) return;
     if (!this.deleteTarget) return;
     const { type, id, chargeData } = this.deleteTarget;
     this.deleteDialogOpen = false;
@@ -514,6 +524,7 @@ export class AchatsSectionComponent implements OnInit {
 
   // ── Imprévus charges exploitation ─────────────────────────────────────
   saveImprevu(activiteId: number, event: Event) {
+    if (!this.canEdit()) return;
     const value = Number((event.target as HTMLSelectElement).value);
     if (!value) return;
     this.isSavingImprevu.set(true);

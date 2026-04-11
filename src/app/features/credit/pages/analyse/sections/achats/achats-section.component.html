@@ -36,10 +36,12 @@
               <lucide-icon [img]="ChevronDownIcon" [size]="14" [class.rotate-180]="!isSectionCollapsed('achats')" class="transition-transform" />
               <span class="text-xs">{{ isSectionCollapsed('achats') ? 'Déplier' : 'Plier' }}</span>
             </button>
-            <button type="button" (click)="openAddAchat()" appButton size="sm">
-              <lucide-icon [img]="PlusIcon" [size]="14" />
-              Ajouter
-            </button>
+            @if (canEdit()) {
+              <button type="button" (click)="openAddAchat()" appButton size="sm">
+                <lucide-icon [img]="PlusIcon" [size]="14" />
+                Ajouter
+              </button>
+            }
           </div>
         </div>
       </app-card-header>
@@ -64,16 +66,18 @@
                     <span class="text-sm font-semibold text-foreground">{{
                       activite.libelle
                     }}</span>
-                    <button
-                      type="button"
-                      (click)="openAddAchat(activite.id)"
-                      appButton
-                      size="sm"
-                      variant="outline"
-                    >
-                      <lucide-icon [img]="PlusIcon" [size]="12" />
-                      Ajouter
-                    </button>
+                    @if (canEdit()) {
+                      <button
+                        type="button"
+                        (click)="openAddAchat(activite.id)"
+                        appButton
+                        size="sm"
+                        variant="outline"
+                      >
+                        <lucide-icon [img]="PlusIcon" [size]="12" />
+                        Ajouter
+                      </button>
+                    }
                   </div>
 
                   <!-- Table achats -->
@@ -93,7 +97,9 @@
                         <th class="px-4 py-2 text-right font-medium text-muted-foreground">
                           Montant (FCFA)
                         </th>
-                        <th class="px-4 py-2 w-10"></th>
+                        @if (canEdit()) {
+                          <th class="px-4 py-2 w-10"></th>
+                        }
                       </tr>
                     </thead>
                     <tbody>
@@ -110,24 +116,26 @@
                           <td class="px-4 py-2.5 text-right font-semibold tabular-nums">
                             {{ formatMontant(achat.achatsMensuels) }}
                           </td>
-                          <td class="px-4 py-2.5">
-                            <div class="flex items-center gap-1">
-                              <button
-                                type="button"
-                                (click)="openEditAchat(achat, activite.id)"
-                                class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
-                              >
-                                <lucide-icon [img]="PencilIcon" [size]="13" />
-                              </button>
-                              <button
-                                type="button"
-                                (click)="openDeleteAchat(achat)"
-                                class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-                              >
-                                <lucide-icon [img]="Trash2Icon" [size]="13" />
-                              </button>
-                            </div>
-                          </td>
+                          @if (canEdit()) {
+                            <td class="px-4 py-2.5">
+                              <div class="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  (click)="openEditAchat(achat, activite.id)"
+                                  class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                                >
+                                  <lucide-icon [img]="PencilIcon" [size]="13" />
+                                </button>
+                                <button
+                                  type="button"
+                                  (click)="openDeleteAchat(achat)"
+                                  class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                                >
+                                  <lucide-icon [img]="Trash2Icon" [size]="13" />
+                                </button>
+                              </div>
+                            </td>
+                          }
                         </tr>
                       }
                     </tbody>
@@ -145,16 +153,18 @@
                   <span class="text-sm text-muted-foreground"
                     >{{ activite.libelle }} — aucun achat</span
                   >
-                  <button
-                    type="button"
-                    (click)="openAddAchat(activite.id)"
-                    appButton
-                    size="sm"
-                    variant="outline"
-                  >
-                    <lucide-icon [img]="PlusIcon" [size]="12" />
-                    Ajouter
-                  </button>
+                  @if (canEdit()) {
+                    <button
+                      type="button"
+                      (click)="openAddAchat(activite.id)"
+                      appButton
+                      size="sm"
+                      variant="outline"
+                    >
+                      <lucide-icon [img]="PlusIcon" [size]="12" />
+                      Ajouter
+                    </button>
+                  }
                 </div>
               }
             }
@@ -183,10 +193,12 @@
               <lucide-icon [img]="ChevronDownIcon" [size]="14" [class.rotate-180]="!isSectionCollapsed('charges')" class="transition-transform" />
               <span class="text-xs">{{ isSectionCollapsed('charges') ? 'Déplier' : 'Plier' }}</span>
             </button>
-            <button type="button" (click)="openAddCharge()" appButton size="sm">
-              <lucide-icon [img]="PlusIcon" [size]="14" />
-              Ajouter
-            </button>
+            @if (canEdit()) {
+              <button type="button" (click)="openAddCharge()" appButton size="sm">
+                <lucide-icon [img]="PlusIcon" [size]="14" />
+                Ajouter
+              </button>
+            }
           </div>
         </div>
       </app-card-header>
@@ -196,10 +208,12 @@
           <div class="flex flex-col items-center justify-center gap-3 py-10 text-center">
             <lucide-icon [img]="BanknoteIcon" [size]="32" class="text-muted-foreground/40" />
             <p class="text-sm text-muted-foreground">Aucune charge d'exploitation enregistrée</p>
-            <button type="button" (click)="openAddCharge()" appButton size="sm">
-              <lucide-icon [img]="PlusIcon" [size]="14" />
-              Ajouter une charge
-            </button>
+            @if (canEdit()) {
+              <button type="button" (click)="openAddCharge()" appButton size="sm">
+                <lucide-icon [img]="PlusIcon" [size]="14" />
+                Ajouter une charge
+              </button>
+            }
           </div>
         } @else {
           <table class="w-full text-sm">
@@ -211,7 +225,9 @@
                 <th class="px-4 py-2 text-right font-medium text-muted-foreground">
                   Montant (FCFA)
                 </th>
-                <th class="px-4 py-2 w-10"></th>
+                @if (canEdit()) {
+                  <th class="px-4 py-2 w-10"></th>
+                }
               </tr>
             </thead>
             <tbody>
@@ -233,24 +249,26 @@
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">
                     {{ formatMontant(charge.montant) }}
                   </td>
-                  <td class="px-4 py-2.5">
-                    <div class="flex items-center gap-1">
-                      <button
-                        type="button"
-                        (click)="openEditCharge(charge)"
-                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
-                      >
-                        <lucide-icon [img]="PencilIcon" [size]="13" />
-                      </button>
-                      <button
-                        type="button"
-                        (click)="openDeleteCharge(charge)"
-                        class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-                      >
-                        <lucide-icon [img]="Trash2Icon" [size]="13" />
-                      </button>
-                    </div>
-                  </td>
+                  @if (canEdit()) {
+                    <td class="px-4 py-2.5">
+                      <div class="flex items-center gap-1">
+                        <button
+                          type="button"
+                          (click)="openEditCharge(charge)"
+                          class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                        >
+                          <lucide-icon [img]="PencilIcon" [size]="13" />
+                        </button>
+                        <button
+                          type="button"
+                          (click)="openDeleteCharge(charge)"
+                          class="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                        >
+                          <lucide-icon [img]="Trash2Icon" [size]="13" />
+                        </button>
+                      </div>
+                    </td>
+                  }
                 </tr>
               }
             </tbody>
@@ -311,7 +329,7 @@
                     <div class="flex justify-center">
                       <select
                         (change)="saveImprevu(row.activite.id!, $event)"
-                        [disabled]="isSavingImprevu()"
+                        [disabled]="isSavingImprevu() || !canEdit()"
                         class="rounded-md border border-border bg-background px-2.5 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 cursor-pointer"
                       >
                         <option value="" [selected]="row.imprevu == null">—</option>
@@ -409,7 +427,7 @@
       <button type="button" (click)="achatDrawerOpen = false" appButton variant="outline">
         Annuler
       </button>
-      <button type="button" (click)="saveAchat()" appButton [disabled]="isSavingAchat()">
+      <button type="button" (click)="saveAchat()" appButton [disabled]="isSavingAchat() || !canEdit()">
         @if (isSavingAchat()) {
           Enregistrement…
         } @else {
@@ -467,7 +485,7 @@
       <button type="button" (click)="chargeDrawerOpen = false" appButton variant="outline">
         Annuler
       </button>
-      <button type="button" (click)="saveCharge()" appButton [disabled]="isSavingCharge()">
+      <button type="button" (click)="saveCharge()" appButton [disabled]="isSavingCharge() || !canEdit()">
         @if (isSavingCharge()) {
           Enregistrement…
         } @else {
@@ -497,7 +515,7 @@
       (click)="confirmDelete()"
       appButton
       variant="destructive"
-      [disabled]="isDeleting()"
+      [disabled]="isDeleting() || !canEdit()"
     >
       @if (isDeleting()) {
         Suppression…

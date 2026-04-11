@@ -23,6 +23,8 @@ import { ButtonDirective } from '@/shared/directives/ui/button/button';
 import { FormInput } from '@/shared/components/form-input/form-input.component';
 import { FormTextarea } from '@/shared/components/form-textarea/form-textarea.component';
 import { ToastService } from '@/core/services/toast/toast.service';
+import { PermissionService } from '@/core/services/permission/permission.service';
+import { UserRole } from '@/core/models/user.model';
 import { CreditService } from '../../../services/credit/credit.service';
 import {
   CreditFiche,
@@ -55,6 +57,7 @@ export class TirageDecisionDialogComponent {
   private readonly fb = inject(FormBuilder);
   private readonly creditService = inject(CreditService);
   private readonly toast = inject(ToastService);
+  private readonly permissions = inject(PermissionService);
 
   readonly ref = input.required<string>();
   readonly demande = input<CreditFicheDemandeDetail | null>(null);
@@ -76,6 +79,12 @@ export class TirageDecisionDialogComponent {
   );
 
   readonly montantTirageSollicite = computed(() => this.demande()?.montantSollicite ?? null);
+  readonly maxValidationAmount = computed<number | null>(() => {
+    if (this.permissions.hasRole(UserRole.Admin, UserRole.DG)) return null;
+    if (this.permissions.hasRole(UserRole.DirectriceExploitation)) return 10_000_000;
+    if (this.permissions.hasRole(UserRole.DirecteurRisque, UserRole.DGA)) return 50_000_000;
+    return 0;
+  });
 
   constructor() {
     effect(() => {
@@ -100,12 +109,30 @@ export class TirageDecisionDialogComponent {
     if (this.form.invalid || this.isSubmitting()) return;
 
     const val = this.form.getRawValue();
+    const montantPropose = Number(val.montantPropose ?? 0);
+    const montantSollicite = Number(this.demande()?.montantSollicite ?? 0);
+    const limit = this.maxValidationAmount();
+
+    if (montantSollicite > 0 && montantPropose > montantSollicite) {
+      this.toast.warning('Le montant validé ne peut pas dépasser le montant sollicité.');
+      return;
+    }
+
+    if (limit === 0) {
+      this.toast.warning("Votre profil n'est pas autorisé à valider ce tirage.");
+      return;
+    }
+
+    if (limit !== null && montantPropose > limit) {
+      this.toast.warning(`Montant supérieur à votre seuil de validation (${limit.toLocaleString('fr-FR')} FCFA).`);
+      return;
+    }
 
     const payload: CreditSaveDecisionFinale = {
       refDemande: this.ref(),
-      montantPropose: val.montantPropose ?? 0,
-      montantEmprunte: val.montantPropose ?? 0,
-      mensualite: val.montantPropose ?? 0,
+      montantPropose,
+      montantEmprunte: montantPropose,
+      mensualite: montantPropose,
       duree: 1,
       fraisDossier: 0,
       commissionDeboursement: 0,

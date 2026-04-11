@@ -162,10 +162,16 @@
                         articleLabel="votre analyse financière" />
                     </div>
                   } -->
-                  <app-activite-section [ref]="ref()" />
+                  <app-activite-section
+                    [ref]="ref()"
+                    [canEdit]="canEditFinancialSections()"
+                  />
                 }
                 @case ('achats') {
-                  <app-achats-section [ref]="ref()" />
+                  <app-achats-section
+                    [ref]="ref()"
+                    [canEdit]="canEditFinancialSections()"
+                  />
                 }
                 @case ('tresorerie') {
                   <app-tresorerie-section [ref]="ref()" [canEdit]="showAnalysteBandeau()" />
@@ -174,15 +180,14 @@
                   <app-familial-section [ref]="ref()" [canEdit]="showAnalysteBandeau()" />
                 }
                 @case('analyse-financiere'){
-                  @if (showAnalysteBandeau()) {
-                    <div class="flex flex-col gap-4 mb-4">
-                      <app-doc-analyse-upload
-                        [ref]="ref()"
-                        libelle="Analyse financière"
-                        label="Analyse financière"
-                        articleLabel="votre analyse financière" />
-                    </div>
-                  }
+                  <div class="flex flex-col gap-4 mb-4">
+                    <app-doc-analyse-upload
+                      [ref]="ref()"
+                      [readOnly]="!showAnalysteBandeau()"
+                      libelle="Analyse financière"
+                      label="Analyse financière"
+                      articleLabel="votre analyse financière" />
+                  </div>
                 }
               }
             </div>
@@ -214,79 +219,78 @@
             <div class="flex-1 min-w-0">
               @switch (activeGarantiesSection()) {
                 @case ('actifs-garanties') {
-                  @if (showAnalysteBandeau()) {
-                    <div class="flex flex-col gap-4">
-                      <app-doc-analyse-upload
-                        [ref]="ref()"
-                        libelle="Actifs garanties"
-                        label="Actifs & Garanties"
-                        articleLabel="vos actifs et garanties" />
-                    </div>
-                  }
+                  <div class="flex flex-col gap-4">
+                    <app-doc-analyse-upload
+                      [ref]="ref()"
+                      [readOnly]="!(showAnalysteBandeau() || (isAR() && isPaused()))"
+                      libelle="Actifs garanties"
+                      label="Actifs & Garanties"
+                      articleLabel="vos actifs et garanties" />
+                  </div>
                 }
                 @case ('actifs-totaux') {
                   <app-garanties-section
                     [ref]="ref()"
                     [view]="'totaux'"
-                    [canAddOrUpload]="showAnalysteBandeau() || (isAR() && isPaused())"
-                    [canEditDelete]="showAnalysteBandeau()"
+                    [canAddOrUpload]="canAddOrUploadGaranties()"
+                    [canEditDelete]="canEditGaranties()"
                   />
                 }
                 @case ('actifs-immobiliers') {
                   <app-garanties-section
                     [ref]="ref()"
                     [view]="'immobilier'"
-                    [canAddOrUpload]="showAnalysteBandeau() || (isAR() && isPaused())"
-                    [canEditDelete]="showAnalysteBandeau()"
+                    [canAddOrUpload]="canAddOrUploadGaranties()"
+                    [canEditDelete]="canEditGaranties()"
                   />
                 }
                 @case ('actifs-vehicules') {
                   <app-garanties-section
                     [ref]="ref()"
                     [view]="'vehicule'"
-                    [canAddOrUpload]="showAnalysteBandeau() || (isAR() && isPaused())"
-                    [canEditDelete]="showAnalysteBandeau()"
+                    [canAddOrUpload]="canAddOrUploadGaranties()"
+                    [canEditDelete]="canEditGaranties()"
                   />
                 }
                 @case ('actifs-equipements') {
                   <app-garanties-section
                     [ref]="ref()"
                     [view]="'equipement'"
-                    [canAddOrUpload]="showAnalysteBandeau() || (isAR() && isPaused())"
-                    [canEditDelete]="showAnalysteBandeau()"
+                    [canAddOrUpload]="canAddOrUploadGaranties()"
+                    [canEditDelete]="canEditGaranties()"
                   />
                 }
                 @case ('actifs-dat') {
                   <app-garanties-section
                     [ref]="ref()"
                     [view]="'dat'"
-                    [canAddOrUpload]="showAnalysteBandeau() || (isAR() && isPaused())"
-                    [canEditDelete]="showAnalysteBandeau()"
+                    [canAddOrUpload]="canAddOrUploadGaranties()"
+                    [canEditDelete]="canEditGaranties()"
                   />
                 }
                 @case ('actifs-biens-mobiliers') {
                   <app-garanties-section
                     [ref]="ref()"
                     [view]="'bien-mobilier'"
-                    [canAddOrUpload]="showAnalysteBandeau() || (isAR() && isPaused())"
-                    [canEditDelete]="showAnalysteBandeau()"
+                    [canAddOrUpload]="canAddOrUploadGaranties()"
+                    [canEditDelete]="canEditGaranties()"
                   />
                 }
                 @case ('actifs-stocks') {
                   <app-garanties-section
                     [ref]="ref()"
                     [view]="'stock'"
-                    [canAddOrUpload]="showAnalysteBandeau() || (isAR() && isPaused())"
-                    [canEditDelete]="showAnalysteBandeau()"
+                    [canAddOrUpload]="canAddOrUploadGaranties()"
+                    [canEditDelete]="canEditGaranties()"
                   />
                 }
                 @case ('cautions') {
                   <app-cautions-section
                     [ref]="ref()"
                     [view]="'cautions'"
-                    [canAddOrUpload]="showAnalysteBandeau() || (isAR() && isPaused())"
-                    [canEditDelete]="showAnalysteBandeau()"
-                    [canEditPhoto]="isAR() && (showAnalysteBandeau() || isPaused())"
+                    [canAddOrUpload]="canAddOrUploadGaranties()"
+                    [canEditDelete]="canEditGaranties()"
+                    [canEditPhoto]="canEditCautionPhoto()"
                   />
                 }
               }
@@ -294,7 +298,10 @@
           </div>
         }
         @case ('documents') {
-          <app-documents-section [ref]="ref()" (docsChanged)="onDocsChanged()" />
+          <app-documents-section
+            [ref]="ref()"
+            [canManage]="canManageDocumentsAnnexes()"
+            (docsChanged)="onDocsChanged()" />
         }
         @case ('geolocalisation') {
           <app-geolocalisation-section [ref]="ref()" />

@@ -64,6 +64,8 @@ import {
   SignatureDirecteurGeneralBase64,
 } from '../../enumeration/logo_base64.enum';
 import {
+  CreditCommune,
+  CreditNationalite,
   CreditActionPayload,
   CREDIT_STATUTS,
   CreditDocumentAnnexe,
@@ -353,31 +355,18 @@ export class FicheCreditComponent implements OnInit {
   readonly garantieSectionItems = computed(() => {
     const g = this.garanties();
     if (!g) return [];
-    return [
-      { id: 0, label: 'Totaux', count: null },
-      {
+    const items: Array<{ id: number; label: string; count: number | null }> = [];
+    if (this.garantieVehicules().length > 0) {
+      items.push({
         id: GARANTIE_TYPE_IDS.VEHICULE,
-        label: 'Véhicules',
+        label: 'Authentification des gages',
         count: this.garantieVehicules().length,
-      },
-      {
-        id: GARANTIE_TYPE_IDS.IMMOBILISATION,
-        label: 'Immobilisations',
-        count: this.garantieImmobilisations().length,
-      },
-      { id: GARANTIE_TYPE_IDS.DAT, label: 'DAT', count: this.garantieDats().length },
-      {
-        id: GARANTIE_TYPE_IDS.MATERIEL_PRO,
-        label: 'Matériels professionnels',
-        count: this.garantieMateriels().length,
-      },
-      {
-        id: GARANTIE_TYPE_IDS.BIEN_MOBILIER_FAMILLE,
-        label: 'Biens mobiliers famille',
-        count: this.garantieBiensMobiliers().length,
-      },
-      { id: -1, label: 'Cautions solidaires', count: g.crCaution?.length ?? 0 },
-    ];
+      });
+    }
+    if ((g.crCaution?.length ?? 0) > 0) {
+      items.push({ id: -1, label: 'Cautions solidaires', count: g.crCaution?.length ?? 0 });
+    }
+    return items;
   });
 
   // ── Computed helpers ────────────────────────────────────────────────────
@@ -498,13 +487,15 @@ export class FicheCreditComponent implements OnInit {
       next: (data) => {
         this.garanties.set(data);
         this.isLoadingGaranties.set(false);
-        // Default to vehicules if present, else totaux
+        // Legacy-like default: véhicules, sinon cautions
         if (
           data.typeGaranties?.find((t) => t.id === GARANTIE_TYPE_IDS.VEHICULE)?.garanties?.length
         ) {
           this.activeGarantiesSection.set(GARANTIE_TYPE_IDS.VEHICULE);
+        } else if ((data.crCaution?.length ?? 0) > 0) {
+          this.activeGarantiesSection.set(-1);
         } else {
-          this.activeGarantiesSection.set(0);
+          this.activeGarantiesSection.set(GARANTIE_TYPE_IDS.VEHICULE);
         }
       },
       error: () => {
@@ -580,6 +571,11 @@ export class FicheCreditComponent implements OnInit {
     a.click();
   }
 
+  signatairePhotoUrl(photoProfil: string | undefined): string {
+    if (!photoProfil) return '';
+    return this.DOC_BASE_URL + photoProfil;
+  }
+
   // ── Navigation ─────────────────────────────────────────────────────────
   goAnalyse() {
     this.router.navigate(['/app/credit/analyse', this.ref()]);
@@ -633,6 +629,57 @@ export class FicheCreditComponent implements OnInit {
     if (s == null) return '—';
     const n = Number(s);
     return map[n] ?? String(s);
+  }
+
+  typePieceLabel(typePiece: string | number | undefined): string {
+    const map: Record<number, string> = {
+      1: 'CNI',
+      2: 'PASSEPORT',
+      3: 'CARTE CONSULAIRE',
+      4: 'PERMIS DE CONDUIT',
+      5: "ATTESTATION D'IDENTITE",
+      6: 'CARTE DE RESIDENT',
+    };
+    if (typePiece == null) return '—';
+    const n = Number(typePiece);
+    return map[n] ?? String(typePiece);
+  }
+
+  sexeLabel(sexe: string | number | undefined): string {
+    if (sexe == null) return '—';
+    const n = Number(sexe);
+    if (n === 1) return 'Féminin';
+    if (n === 2) return 'Masculin';
+    return String(sexe);
+  }
+
+  situationMatrimonialeLabel(situation: string | number | undefined): string {
+    const map: Record<number, string> = {
+      1: 'Célibataire',
+      2: 'Concubinage',
+      3: 'Marié(e)',
+      4: 'Divorcé',
+      5: 'Veuf / Veuve',
+    };
+    if (situation == null) return '—';
+    const n = Number(situation);
+    return map[n] ?? String(situation);
+  }
+
+  localiteLabel(localite: CreditCommune | number | string | undefined | null): string {
+    if (localite == null) return '—';
+    if (typeof localite === 'object') {
+      return localite.libelle ?? '—';
+    }
+    return String(localite);
+  }
+
+  nationaliteLabel(nationalite: CreditNationalite | number | string | undefined | null): string {
+    if (nationalite == null) return '—';
+    if (typeof nationalite === 'object') {
+      return nationalite.nationalite ?? '—';
+    }
+    return String(nationalite);
   }
 
   totalDepositCalc(): number {
@@ -845,117 +892,35 @@ export class FicheCreditComponent implements OnInit {
   private populateDocChecklist() {
     const code = this.demande()?.typeCredit?.code ?? '';
     const list = this.getDocListForCode(code);
-    this.docChecklistItems.set(list.map((d) => ({ ...d, done: false })));
+    const checkedIds = this.parseChecklistIds(this.demande()?.checkliste);
+    this.docChecklistItems.set(list.map((d) => ({ ...d, done: checkedIds.includes(d.id) })));
   }
 
   private getDocListForCode(code: string): Omit<DocCheckItem, 'done'>[] {
-    if (['004', '011', '019', '021'].includes(code)) {
+    if (['002', '035', '011', '004', '019', '021', '015', '032', '033', '016'].includes(code)) {
       return [
-        { id: 1, libelle: 'Courrier de demande de prêt', obligation: true },
-        { id: 2, libelle: 'Fiche de consentement BIC', obligation: true },
-        {
-          id: 3,
-          libelle: "Fiche d'autorisation de prélèvement des frais de demande",
-          obligation: true,
-        },
-        { id: 4, libelle: 'RCCM', obligation: true },
-        { id: 5, libelle: 'CNI du client', obligation: true },
-        { id: 6, libelle: 'Certificat de résidence ou quittance CIE / SODECI', obligation: true },
-      ];
-    }
-    if (code === '015') {
-      return [
-        { id: 1, libelle: 'Courrier de demande de prêt', obligation: true },
-        { id: 2, libelle: 'Fiche de consentement BIC', obligation: true },
-        { id: 3, libelle: 'RCCM', obligation: true },
-        { id: 4, libelle: 'CNI du client', obligation: true },
-        { id: 5, libelle: 'Certificat de résidence ou quittance CIE / SODECI', obligation: true },
-      ];
-    }
-    if (code === '016') {
-      return [
-        { id: 1, libelle: 'La traite', obligation: true },
-        { id: 2, libelle: 'Ordre irrévocable de domiciliation', obligation: true },
-        { id: 3, libelle: 'Facture', obligation: true },
-        { id: 4, libelle: 'Bon de commande', obligation: true },
-        { id: 5, libelle: 'Contrat lié à la traite', obligation: true },
-        { id: 6, libelle: "Demande physique d'avance sur traite", obligation: true },
-        { id: 7, libelle: 'Autorisation de prélèvement des frais', obligation: true },
-      ];
-    }
-    if (code === '033') {
-      return [
-        { id: 1, libelle: 'Facture', obligation: true },
-        { id: 2, libelle: 'RCCM', obligation: true },
-        { id: 3, libelle: 'DFE', obligation: true },
-        { id: 4, libelle: 'Contrat de bail', obligation: true },
-        { id: 5, libelle: 'Certificat de résidence ou quittance CIE / SODECI', obligation: true },
-        { id: 6, libelle: 'CNI du client', obligation: true },
-        { id: 7, libelle: "Demande physique d'avance sur facture", obligation: true },
-        { id: 8, libelle: 'Fiche de prélèvement des frais', obligation: true },
-      ];
-    }
-    if (code === '032') {
-      return [
-        { id: 1, libelle: 'Bon de commande', obligation: true },
-        { id: 2, libelle: 'RCCM', obligation: true },
-        { id: 3, libelle: 'DFE', obligation: true },
-        { id: 4, libelle: 'Statut', obligation: false },
-        { id: 5, libelle: 'Contrat de bail', obligation: true },
-        { id: 6, libelle: 'Certificat de résidence ou quittance CIE / SODECI', obligation: true },
-        { id: 7, libelle: 'CNI du client', obligation: true },
-        { id: 8, libelle: "Demande physique d'avance sur bon de commande", obligation: true },
-        { id: 9, libelle: 'Fiche de prélèvement des frais', obligation: true },
-      ];
-    }
-    if (code === '035') {
-      return [
-        { id: 1, libelle: 'Courrier de demande de prêt signé par le mandataire', obligation: true },
-        { id: 2, libelle: "Statuts / PV de l'AG donnant quitus au mandataire", obligation: true },
-        {
-          id: 3,
-          libelle: "Fiche d'autorisation de prélèvement des frais de demande",
-          obligation: true,
-        },
-        { id: 4, libelle: 'RCCM', obligation: true },
-        { id: 5, libelle: 'Contrat de bail', obligation: true },
-        { id: 6, libelle: 'Certificat de résidence ou quittance CIE / SODECI', obligation: true },
-        { id: 7, libelle: 'CNI du client', obligation: true },
-        { id: 8, libelle: 'Quittance de loyer', obligation: true },
-        {
-          id: 9,
-          libelle: 'Relevés des comptes bancaires sur les 6 derniers mois',
-          obligation: true,
-        },
-        { id: 10, libelle: "Preuves d'existence d'activités sur 12 mois", obligation: true },
-      ];
-    }
-    if (['002', '036'].includes(code)) {
-      return [
-        { id: 1, libelle: 'Demande de prêt', obligation: true },
-        { id: 2, libelle: "L'autorisation de prélèvement des frais de demande", obligation: true },
-        { id: 3, libelle: 'Formulaire de titre de consentement (BIC)', obligation: true },
-        { id: 4, libelle: "Pièce d'identité du client", obligation: true },
-        { id: 5, libelle: 'Certificat de résidence', obligation: true },
-      ];
-    }
-    if (['001', '008', '014'].includes(code)) {
-      return [
-        { id: 1, libelle: 'Courrier de demande de prêt signé par le salarié', obligation: true },
-        { id: 2, libelle: 'PV de comité signé par le CA/CAA', obligation: true },
-        { id: 3, libelle: 'PV de comité renseigné', obligation: true },
-        { id: 4, libelle: 'Ordre irrévocable de salaire', obligation: true },
-        { id: 5, libelle: 'CNI', obligation: true },
-        { id: 6, libelle: '1er bulletin salaire', obligation: true },
-        { id: 7, libelle: '2ème bulletin salaire', obligation: true },
-        { id: 8, libelle: '3ème bulletin salaire', obligation: true },
-        { id: 9, libelle: 'Facture CIE/SODECI ou certificat de résidence', obligation: true },
-        { id: 10, libelle: 'Situation du compte', obligation: true },
-        { id: 11, libelle: 'Simulation du taux de charge', obligation: true },
-        { id: 12, libelle: 'Attestation de travail', obligation: true },
+        { id: 2, libelle: 'Prélèvement du déposit', obligation: true },
+        { id: 3, libelle: "Récupération de la prime d'assurances", obligation: true },
+        { id: 4, libelle: 'Prélèvement des frais de demandes', obligation: true },
       ];
     }
     return [];
+  }
+
+  private parseChecklistIds(value: unknown): number[] {
+    if (value == null) return [];
+    let parsed: unknown = value;
+    if (typeof parsed === 'string') {
+      try {
+        parsed = JSON.parse(parsed);
+      } catch {
+        return [];
+      }
+    }
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((id) => Number(id))
+      .filter((id) => Number.isFinite(id));
   }
 
   // ── PDF helpers ─────────────────────────────────────────────────────────

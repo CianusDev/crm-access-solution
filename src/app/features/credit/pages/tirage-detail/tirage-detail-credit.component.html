@@ -40,9 +40,40 @@
 
         <!-- Statut 1 : Envoyer le dossier -->
         @if (showEnvoyer()) {
+          <input
+            #requiredDocInput
+            type="file"
+            accept="application/pdf"
+            class="hidden"
+            (change)="uploadRequiredDocument($event)"
+          />
+
+          <details class="relative">
+            <summary
+              class="list-none inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-4 h-9 text-sm font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
+            >
+              <lucide-icon [img]="SendIcon" [size]="14" />
+              Charger les documents
+            </summary>
+            <div class="absolute left-0 mt-2 z-20 w-72 rounded-md border border-border bg-background p-1 shadow-lg">
+              @for (doc of requiredDocuments(); track doc.libelle) {
+                <button
+                  type="button"
+                  (click)="openRequiredDocPicker(doc.libelle); requiredDocInput.click()"
+                  [disabled]="doc.uploaded || isUploadingRequiredDocument()"
+                  class="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {{ doc.libelle }}
+                  @if (doc.uploaded) { <span class="text-xs text-muted-foreground"> (déjà chargé)</span> }
+                </button>
+              }
+            </div>
+          </details>
+
           <button
             type="button"
             (click)="openAction(1, 'Envoyer le dossier')"
+            [disabled]="!allRequiredDocsLoaded()"
             class="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 h-9 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
           >
             <lucide-icon [img]="SendIcon" [size]="14" />
@@ -70,7 +101,6 @@
           </button>
 
           @if (!hasAlreadyVotedComite()) {
-            <!-- Pas encore voté → Faire le comité -->
             <button
               type="button"
               (click)="comiteDialogOpen = true"
@@ -79,15 +109,22 @@
               <lucide-icon [img]="AwardIcon" [size]="14" />
               Faire le comité
             </button>
-          } @else {
-            <!-- Déjà voté → Envoyer le tirage (ou valider) -->
             <button
               type="button"
-              (click)="openAction(1, 'Envoyer le tirage')"
+              (click)="decisionDialogOpen = true"
+              class="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-4 h-9 text-sm font-medium text-white hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 transition-colors cursor-pointer"
+            >
+              <lucide-icon [img]="CircleCheckIcon" [size]="14" />
+              {{ validateComiteLabel() }}
+            </button>
+          } @else {
+            <button
+              type="button"
+              (click)="openAction(1, sendAfterComiteLabel())"
               class="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-4 h-9 text-sm font-medium text-white hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 transition-colors cursor-pointer"
             >
               <lucide-icon [img]="SendIcon" [size]="14" />
-              Envoyer le tirage
+              {{ sendAfterComiteLabel() }}
             </button>
           }
         }
@@ -300,6 +337,9 @@
           <app-tirage-documents-panel
             [ref]="ref()"
             [documentsIn]="documents()"
+            [canManage]="canManageDocuments()"
+            [currentUserId]="currentUserId()"
+            (documentsChanged)="onDocumentsUpdated($event)"
           />
         </div>
       </app-tab>

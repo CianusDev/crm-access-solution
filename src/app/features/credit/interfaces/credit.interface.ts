@@ -597,6 +597,7 @@ export interface CreditFicheDemandeDetail extends CreditDemande {
   description?: string;
   objetCredit?: string | number;
   nbreEcheDiffere?: number;
+  checkliste?: string | number[] | null;
   ar?: { nom?: string; prenom?: string; nomPrenom?: string };
   typeActivite?: { libelle: string };
   numTransaction?: string; // N° demande Perfect

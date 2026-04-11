@@ -2,7 +2,7 @@
   <app-card-header>
     <div class="flex items-center justify-between w-full">
       <app-card-title>Documents annexes</app-card-title>
-      @if (!showUploadForm) {
+      @if (!showUploadForm && canManage()) {
         <button
           type="button"
           (click)="showUploadForm = true"
@@ -108,14 +108,16 @@
               >
                 <lucide-icon [img]="ExternalLinkIcon" [size]="14" />
               </button>
-              <button
-                type="button"
-                (click)="confirmDelete(doc)"
-                title="Supprimer"
-                class="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-              >
-                <lucide-icon [img]="Trash2Icon" [size]="14" />
-              </button>
+              @if (canDeleteDocument(doc)) {
+                <button
+                  type="button"
+                  (click)="confirmDelete(doc)"
+                  title="Supprimer"
+                  class="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                >
+                  <lucide-icon [img]="Trash2Icon" [size]="14" />
+                </button>
+              }
             </div>
           </div>
         }

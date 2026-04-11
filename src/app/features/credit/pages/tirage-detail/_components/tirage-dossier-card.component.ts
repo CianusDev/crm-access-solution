@@ -71,7 +71,7 @@ import { CreditFicheDemandeDetail, CreditResume } from '../../../interfaces/cred
             @if (d.objetCredit) {
               <div class="flex justify-between py-1.5 border-b border-border/40">
                 <span class="text-xs text-muted-foreground">Objet du crédit</span>
-                <span class="text-xs font-medium text-foreground max-w-[180px] text-right">{{ d.objetCredit }}</span>
+                <span class="text-xs font-medium text-foreground max-w-[180px] text-right">{{ objetCreditLabel() }}</span>
               </div>
             }
 
@@ -93,6 +93,13 @@ import { CreditFicheDemandeDetail, CreditResume } from '../../../interfaces/cred
               <span class="text-xs text-muted-foreground">Durée souhaitée</span>
               <span class="text-xs font-medium text-foreground">{{ d.nbreEcheanceSollicite }} mois</span>
             </div>
+
+            @if (d.nbreEcheDiffere) {
+              <div class="flex justify-between py-1.5 border-b border-border/40">
+                <span class="text-xs text-muted-foreground">Échéances différées</span>
+                <span class="text-xs font-medium text-foreground">{{ d.nbreEcheDiffere }} mois</span>
+              </div>
+            }
 
             <div class="flex justify-between py-1.5 border-b border-border/40">
               <span class="text-xs text-muted-foreground">Échéance souhaitée</span>
@@ -160,4 +167,12 @@ export class TirageDossierCardComponent {
 
   readonly demande = input<CreditFicheDemandeDetail | null>(null);
   readonly resume = input<CreditResume | null>(null);
+  readonly objetCreditLabel = computed(() => {
+    const raw = this.demande()?.objetCredit;
+    const value = typeof raw === 'number' ? raw : Number(raw);
+    if (value === 1) return 'Fonds de roulement';
+    if (value === 2) return 'Investissement';
+    if (value === 3) return 'Fonds de roulement et Investissement';
+    return raw ? String(raw) : '';
+  });
 }

@@ -111,6 +111,7 @@ const STATUTS_MOIS: SelectOption[] = [
 })
 export class ActiviteSectionComponent implements OnInit {
   ref = input<string>('');
+  canEdit = input<boolean>(false);
 
   readonly PlusIcon = Plus;
   readonly PencilIcon = Pencil;
@@ -306,6 +307,7 @@ export class ActiviteSectionComponent implements OnInit {
   }
 
   updateMargePondere(activite: ActiviteCredit, event: Event) {
+    if (!this.canEdit()) return;
     const target = event.target as HTMLInputElement | null;
     if (!target) return;
     const raw = target.value.trim();
@@ -313,6 +315,7 @@ export class ActiviteSectionComponent implements OnInit {
   }
 
   saveMargePondere(activite: ActiviteCredit) {
+    if (!this.canEdit()) return;
     if (!activite.id) return;
     const margePondere = Number(activite.margePondere ?? 0);
     this.savingMargePondereId.set(activite.id);
@@ -385,6 +388,7 @@ export class ActiviteSectionComponent implements OnInit {
 
   // ── Activité CRUD ──────────────────────────────────────────────────────
   openCreateActivite() {
+    if (!this.canEdit()) return;
     this.activiteDrawerMode = 'create';
     this.activiteForm.reset({
       activite: null,
@@ -400,6 +404,7 @@ export class ActiviteSectionComponent implements OnInit {
   }
 
   openEditActivite(a: ActiviteCredit) {
+    if (!this.canEdit()) return;
     this.activiteDrawerMode = 'edit';
     const communeId = this.resolveCommune(a.commune);
     this.activiteForm.reset({
@@ -416,6 +421,7 @@ export class ActiviteSectionComponent implements OnInit {
   }
 
   saveActivite() {
+    if (!this.canEdit()) return;
     if (this.activiteForm.invalid) {
       this.activiteForm.markAllAsTouched();
       return;
@@ -453,6 +459,7 @@ export class ActiviteSectionComponent implements OnInit {
 
   // ── Vente Mensuelle ────────────────────────────────────────────────────
   openAddVenteMensuelle(activiteId: number) {
+    if (!this.canEdit()) return;
     this.venteMensuelleForm.reset({
       venteMensuelle: null,
       activite: activiteId,
@@ -464,6 +471,7 @@ export class ActiviteSectionComponent implements OnInit {
   }
 
   saveVenteMensuelle() {
+    if (!this.canEdit()) return;
     if (this.venteMensuelleForm.invalid) {
       this.venteMensuelleForm.markAllAsTouched();
       return;
@@ -495,6 +503,7 @@ export class ActiviteSectionComponent implements OnInit {
 
   // ── Vente Journalière ──────────────────────────────────────────────────
   openAddVenteJournaliere(activiteId: number) {
+    if (!this.canEdit()) return;
     this.venteJournaliereForm.reset({
       venteJournaliere: null,
       activite: activiteId,
@@ -506,6 +515,7 @@ export class ActiviteSectionComponent implements OnInit {
   }
 
   saveVenteJournaliere() {
+    if (!this.canEdit()) return;
     if (this.venteJournaliereForm.invalid) {
       this.venteJournaliereForm.markAllAsTouched();
       return;
@@ -537,6 +547,7 @@ export class ActiviteSectionComponent implements OnInit {
 
   // ── Marge Commerciale ──────────────────────────────────────────────────
   openAddMarge(activiteId: number) {
+    if (!this.canEdit()) return;
     this.margeDrawerMode = 'create';
     this.currentMargeId = null;
     this.margeForm.reset({ activite: activiteId, article: '', quantite: null, prixVente: null, prixAchat: null });
@@ -544,6 +555,7 @@ export class ActiviteSectionComponent implements OnInit {
   }
 
   openEditMarge(marge: MargeCommerciale, activiteId: number) {
+    if (!this.canEdit()) return;
     this.margeDrawerMode = 'edit';
     this.currentMargeId = marge.id ?? null;
     this.margeForm.reset({
@@ -557,6 +569,7 @@ export class ActiviteSectionComponent implements OnInit {
   }
 
   saveMarge() {
+    if (!this.canEdit()) return;
     if (this.margeForm.invalid) {
       this.margeForm.markAllAsTouched();
       return;
@@ -591,26 +604,31 @@ export class ActiviteSectionComponent implements OnInit {
 
   // ── Delete ─────────────────────────────────────────────────────────────
   openDeleteActivite(a: ActiviteCredit) {
+    if (!this.canEdit()) return;
     this.deleteTarget = { type: 'activite', id: a.id!, label: a.libelle ?? '' };
     this.deleteDialogOpen = true;
   }
 
   openDeleteVenteM(vm: ActiviteVenteMensuelle) {
+    if (!this.canEdit()) return;
     this.deleteTarget = { type: 'venteM', id: vm.id!, label: vm.mois ?? '' };
     this.deleteDialogOpen = true;
   }
 
   openDeleteVenteJ(vj: ActiviteVenteJournaliere) {
+    if (!this.canEdit()) return;
     this.deleteTarget = { type: 'venteJ', id: vj.id!, label: vj.jour ?? '' };
     this.deleteDialogOpen = true;
   }
 
   openDeleteMarge(marge: MargeCommerciale) {
+    if (!this.canEdit()) return;
     this.deleteTarget = { type: 'marge', id: marge.id!, label: marge.article ?? '' };
     this.deleteDialogOpen = true;
   }
 
   confirmDelete() {
+    if (!this.canEdit()) return;
     if (!this.deleteTarget) return;
     const { type, id } = this.deleteTarget;
     this.deleteDialogOpen = false;

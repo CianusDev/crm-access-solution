@@ -22,10 +22,12 @@
       <app-card-header>
         <div class="flex items-center justify-between w-full">
           <app-card-title>Activité</app-card-title>
-          <button type="button" (click)="openCreateActivite()" appButton size="sm">
-            <lucide-icon [img]="PlusIcon" [size]="14" />
-            Ajouter une activité
-          </button>
+          @if (canEdit()) {
+            <button type="button" (click)="openCreateActivite()" appButton size="sm">
+              <lucide-icon [img]="PlusIcon" [size]="14" />
+              Ajouter une activité
+            </button>
+          }
         </div>
       </app-card-header>
       <app-card-content>
@@ -86,16 +88,18 @@
                   </div>
                 </div>
                 <div class="flex items-center gap-2 ml-3 shrink-0">
-                  <button type="button" (click)="openEditActivite(activite)"
-                    title="Modifier"
-                    class="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer">
-                    <lucide-icon [img]="PencilIcon" [size]="13" />
-                  </button>
-                  <button type="button" (click)="openDeleteActivite(activite)"
-                    title="Supprimer"
-                    class="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
-                    <lucide-icon [img]="Trash2Icon" [size]="13" />
-                  </button>
+                  @if (canEdit()) {
+                    <button type="button" (click)="openEditActivite(activite)"
+                      title="Modifier"
+                      class="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer">
+                      <lucide-icon [img]="PencilIcon" [size]="13" />
+                    </button>
+                    <button type="button" (click)="openDeleteActivite(activite)"
+                      title="Supprimer"
+                      class="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer">
+                      <lucide-icon [img]="Trash2Icon" [size]="13" />
+                    </button>
+                  }
                   <button type="button" (click)="toggleCollapseSection(activite.id!)"
                     class="flex items-center gap-1.5 text-xs hover:underline text-foreground text-primary tracking-wide hover:text-primary transition-colors cursor-pointer">
                     Détails d'activité
@@ -129,11 +133,13 @@
                           <lucide-icon [img]="CalendarIcon" [size]="12" />
                           Ventes Mensuelles
                         </h4>
-                        <button type="button" (click)="openAddVenteMensuelle(activite.id!)"
-                          class="flex items-center gap-1 text-xs text-primary hover:underline cursor-pointer">
-                          <lucide-icon [img]="PlusIcon" [size]="11" />
-                          Ajouter
-                        </button>
+                        @if (canEdit()) {
+                          <button type="button" (click)="openAddVenteMensuelle(activite.id!)"
+                            class="flex items-center gap-1 text-xs text-primary hover:underline cursor-pointer">
+                            <lucide-icon [img]="PlusIcon" [size]="11" />
+                            Ajouter
+                          </button>
+                        }
                       </div>
                       @if ((activite.venteMensuelles?.length ?? 0) === 0) {
                         <p class="text-xs text-muted-foreground italic">Aucune vente mensuelle</p>
@@ -148,10 +154,12 @@
                               <!-- @if (vm.statut) {
                                 <span class="text-[10px] text-muted-foreground shrink-0">{{ vm.statut }}</span>
                               } -->
-                              <button type="button" (click)="openDeleteVenteM(vm)"
-                                class="shrink-0 text-muted-foreground hover:text-destructive transition-colors cursor-pointer">
-                                <lucide-icon [img]="Trash2Icon" [size]="11" />
-                              </button>
+                              @if (canEdit()) {
+                                <button type="button" (click)="openDeleteVenteM(vm)"
+                                  class="shrink-0 text-muted-foreground hover:text-destructive transition-colors cursor-pointer">
+                                  <lucide-icon [img]="Trash2Icon" [size]="11" />
+                                </button>
+                              }
                             </div>
                           }
                         </div>
@@ -165,11 +173,13 @@
                           <lucide-icon [img]="TrendingUpIcon" [size]="12" />
                           Ventes Journalières
                         </h4>
-                        <button type="button" (click)="openAddVenteJournaliere(activite.id!)"
-                          class="flex items-center gap-1 text-xs text-primary hover:underline cursor-pointer">
-                          <lucide-icon [img]="PlusIcon" [size]="11" />
-                          Ajouter
-                        </button>
+                        @if (canEdit()) {
+                          <button type="button" (click)="openAddVenteJournaliere(activite.id!)"
+                            class="flex items-center gap-1 text-xs text-primary hover:underline cursor-pointer">
+                            <lucide-icon [img]="PlusIcon" [size]="11" />
+                            Ajouter
+                          </button>
+                        }
                       </div>
                       @if ((activite.venteJournalieres?.length ?? 0) === 0) {
                         <p class="text-xs text-muted-foreground italic">Aucune vente journalière</p>
@@ -184,10 +194,12 @@
                               <!-- @if (vj.statut) {
                                 <span class="text-[10px] text-muted-foreground shrink-0">{{ vj.statut }}</span>
                               } -->
-                              <button type="button" (click)="openDeleteVenteJ(vj)"
-                                class="shrink-0 text-muted-foreground hover:text-destructive transition-colors cursor-pointer">
-                                <lucide-icon [img]="Trash2Icon" [size]="11" />
-                              </button>
+                              @if (canEdit()) {
+                                <button type="button" (click)="openDeleteVenteJ(vj)"
+                                  class="shrink-0 text-muted-foreground hover:text-destructive transition-colors cursor-pointer">
+                                  <lucide-icon [img]="Trash2Icon" [size]="11" />
+                                </button>
+                              }
                             </div>
                           }
                         </div>
@@ -202,11 +214,13 @@
                         <lucide-icon [img]="BarChart2Icon" [size]="12" />
                         Marges Commerciales
                       </h4>
-                      <button type="button" (click)="openAddMarge(activite.id!)"
-                        class="flex items-center gap-1 text-xs text-primary hover:underline cursor-pointer">
-                        <lucide-icon [img]="PlusIcon" [size]="11" />
-                        Ajouter
-                      </button>
+                      @if (canEdit()) {
+                        <button type="button" (click)="openAddMarge(activite.id!)"
+                          class="flex items-center gap-1 text-xs text-primary hover:underline cursor-pointer">
+                          <lucide-icon [img]="PlusIcon" [size]="11" />
+                          Ajouter
+                        </button>
+                      }
                     </div>
                     @if ((activite.margeCommerciale?.length ?? 0) === 0) {
                       <p class="text-xs text-muted-foreground italic">Aucune marge commerciale</p>
@@ -240,16 +254,18 @@
                               </td>
                               <td class="py-1.5 text-right">
                                 <div class="flex items-center justify-end gap-0.5">
-                                  <button type="button" (click)="openEditMarge(marge, activite.id!)"
-                                    title="Modifier"
-                                    class="text-muted-foreground hover:text-foreground transition-colors cursor-pointer p-0.5">
-                                    <lucide-icon [img]="PencilIcon" [size]="11" />
-                                  </button>
-                                  <button type="button" (click)="openDeleteMarge(marge)"
-                                    title="Supprimer"
-                                    class="text-muted-foreground hover:text-destructive transition-colors cursor-pointer p-0.5">
-                                    <lucide-icon [img]="Trash2Icon" [size]="11" />
-                                  </button>
+                                  @if (canEdit()) {
+                                    <button type="button" (click)="openEditMarge(marge, activite.id!)"
+                                      title="Modifier"
+                                      class="text-muted-foreground hover:text-foreground transition-colors cursor-pointer p-0.5">
+                                      <lucide-icon [img]="PencilIcon" [size]="11" />
+                                    </button>
+                                    <button type="button" (click)="openDeleteMarge(marge)"
+                                      title="Supprimer"
+                                      class="text-muted-foreground hover:text-destructive transition-colors cursor-pointer p-0.5">
+                                      <lucide-icon [img]="Trash2Icon" [size]="11" />
+                                    </button>
+                                  }
                                 </div>
                               </td>
                             </tr>
@@ -278,16 +294,19 @@
                               min="0"
                               [value]="activite.margePondere ?? 0"
                               (input)="updateMargePondere(activite, $event)"
+                              [disabled]="!canEdit()"
                               class="h-8 w-full rounded-md outline-primary border border-border bg-background px-2 text-xs text-foreground"
                             />
-                            <button
-                              type="button"
-                              (click)="saveMargePondere(activite)"
-                              [disabled]="savingMargePondereId() === activite.id"
-                              class="h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors cursor-pointer"
-                            >
-                              @if (savingMargePondereId() === activite.id) { ... } @else { OK }
-                            </button>
+                            @if (canEdit()) {
+                              <button
+                                type="button"
+                                (click)="saveMargePondere(activite)"
+                                [disabled]="savingMargePondereId() === activite.id"
+                                class="h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors cursor-pointer"
+                              >
+                                @if (savingMargePondereId() === activite.id) { ... } @else { OK }
+                              </button>
+                            }
                           </div>
                         </div>
                       </div>
@@ -335,7 +354,7 @@
         class="flex-1 h-9 rounded-md border border-border bg-background text-sm text-muted-foreground hover:bg-muted transition-colors cursor-pointer">
         Annuler
       </button>
-      <button type="button" (click)="saveActivite()" [disabled]="isSavingActivite()" appButton class="flex-1">
+      <button type="button" (click)="saveActivite()" [disabled]="isSavingActivite() || !canEdit()" appButton class="flex-1">
         @if (isSavingActivite()) { Enregistrement… } @else { Enregistrer }
       </button>
     </div>
@@ -363,7 +382,7 @@
         class="flex-1 h-9 rounded-md border border-border bg-background text-sm text-muted-foreground hover:bg-muted transition-colors cursor-pointer">
         Annuler
       </button>
-      <button type="button" (click)="saveVenteMensuelle()" [disabled]="isSavingVenteM()" appButton class="flex-1">
+      <button type="button" (click)="saveVenteMensuelle()" [disabled]="isSavingVenteM() || !canEdit()" appButton class="flex-1">
         @if (isSavingVenteM()) { Enregistrement… } @else { Enregistrer }
       </button>
     </div>
@@ -391,7 +410,7 @@
         class="flex-1 h-9 rounded-md border border-border bg-background text-sm text-muted-foreground hover:bg-muted transition-colors cursor-pointer">
         Annuler
       </button>
-      <button type="button" (click)="saveVenteJournaliere()" [disabled]="isSavingVenteJ()" appButton class="flex-1">
+      <button type="button" (click)="saveVenteJournaliere()" [disabled]="isSavingVenteJ() || !canEdit()" appButton class="flex-1">
         @if (isSavingVenteJ()) { Enregistrement… } @else { Enregistrer }
       </button>
     </div>
@@ -437,7 +456,7 @@
         class="flex-1 h-9 rounded-md border border-border bg-background text-sm text-muted-foreground hover:bg-muted transition-colors cursor-pointer">
         Annuler
       </button>
-      <button type="button" (click)="saveMarge()" [disabled]="isSavingMarge()" appButton class="flex-1">
+      <button type="button" (click)="saveMarge()" [disabled]="isSavingMarge() || !canEdit()" appButton class="flex-1">
         @if (isSavingMarge()) { Enregistrement… } @else { Enregistrer }
       </button>
     </div>
@@ -457,7 +476,7 @@
       class="h-9 px-4 rounded-md border border-border bg-background text-sm text-muted-foreground hover:bg-muted transition-colors cursor-pointer">
       Annuler
     </button>
-    <button type="button" (click)="confirmDelete()" [disabled]="isDeleting()"
+    <button type="button" (click)="confirmDelete()" [disabled]="isDeleting() || !canEdit()"
       class="h-9 px-4 rounded-md bg-destructive text-accent text-sm font-medium hover:bg-destructive/90 transition-colors cursor-pointer disabled:opacity-50">
       @if (isDeleting()) { Suppression… } @else { Supprimer }
     </button>

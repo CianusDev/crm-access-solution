@@ -76,6 +76,7 @@ const DOCUMENT_TYPES = [
 })
 export class DocumentsSectionComponent implements OnInit {
   ref = input<string>('');
+  canManage = input<boolean>(true);
   readonly docsChanged = output<void>();
 
   readonly PlusIcon = Plus;
@@ -166,6 +167,7 @@ export class DocumentsSectionComponent implements OnInit {
 
   // ── Upload Document ────────────────────────────────────────────────────
   openAddDocument(libelle?: string) {
+    if (!this.canManage()) return;
     this.docForm.reset();
     if (libelle) {
       this.docForm.patchValue({ libelle });
@@ -190,6 +192,7 @@ export class DocumentsSectionComponent implements OnInit {
   }
 
   uploadDocument() {
+    if (!this.canManage()) return;
     if (!this.docForm.valid || !this.selectedFile) {
       this.toast.error('Veuillez remplir tous les champs requis et sélectionner un fichier.');
       return;
@@ -220,11 +223,13 @@ export class DocumentsSectionComponent implements OnInit {
 
   // ── Delete Document ────────────────────────────────────────────────────
   openDeleteDocument(id: number, libelle: string) {
+    if (!this.canManage()) return;
     this.deleteTarget = { id, label: libelle };
     this.deleteDialogOpen = true;
   }
 
   confirmDelete() {
+    if (!this.canManage()) return;
     if (!this.deleteTarget) return;
 
     this.isDeleting.set(true);

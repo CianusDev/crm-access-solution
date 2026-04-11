@@ -216,6 +216,23 @@ export class AnalyseCreditComponent implements OnInit {
     );
   });
   readonly isPaused = computed(() => this.ficheHeader()?.pause === 1);
+  readonly isDossierCloture = computed(() => this.ficheHeader()?.statut === 30);
+  readonly canEditFinancialSections = computed(
+    () => !this.isDossierCloture() && this.showAnalysteBandeau(),
+  );
+  readonly canAddOrUploadGaranties = computed(
+    () => !this.isDossierCloture() && (this.showAnalysteBandeau() || (this.isAR() && this.isPaused())),
+  );
+  readonly canEditGaranties = computed(
+    () => !this.isDossierCloture() && this.showAnalysteBandeau(),
+  );
+  readonly canEditCautionPhoto = computed(
+    () =>
+      !this.isDossierCloture() &&
+      this.isAR() &&
+      (this.showAnalysteBandeau() || this.isPaused()),
+  );
+  readonly canManageDocumentsAnnexes = computed(() => !this.isDossierCloture());
 
   /** Legacy : « Voir le résumé » hors phases 1–5 et 19, dossier non en pause. */
   readonly showVoirResume = computed(() => {
