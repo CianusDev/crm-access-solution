@@ -221,7 +221,11 @@ const STATUT_JURIDIQUE: Record<number, string> = {
               (click)="affecterAR.emit()"
             >
               <lucide-icon [img]="SendIcon" [size]="14" />
-              Affecter le dossier à un AR
+              {{
+                !isAdmin() && (d.typeCredit.code === '032' || d.typeCredit.code === '033')
+                  ? 'Affecter le dossier (Sup OP / CAA)'
+                  : 'Affecter le dossier à un AR'
+              }}
             </button>
           } @else if (isAdmin() && d.statut === 21) {
             <!-- Admin statut 21: Remettre dans le circuit -->
@@ -358,11 +362,11 @@ const STATUT_JURIDIQUE: Record<number, string> = {
               appButton
               size="sm"
               class="flex items-center gap-1.5"
-              [disabled]="!canSendDossier()"
+              [disabled]="isGP() ? false : !canSendDossier()"
               (click)="envoyerDossier.emit()"
             >
               <lucide-icon [img]="SendIcon" [size]="14" />
-              Envoyer le dossier
+              {{ statusOneGpPrimaryLabel() }}
             </button>
           }
           @if (showVoirResume()) {
@@ -574,6 +578,7 @@ export class AnalyseHeaderCardComponent {
   readonly requiredDocs = input<RequiredDoc[]>([]);
   readonly uploadedDocLibelles = input<string[]>([]);
   readonly canSendDossier = input<boolean>(true);
+  readonly isGP = input<boolean>(false);
   readonly canFaireResume = input<boolean>(true);
   readonly isRCCC = input<boolean>(false);
   readonly isChefAgenceWorkflow = input<boolean>(false);
@@ -674,4 +679,19 @@ export class AnalyseHeaderCardComponent {
   });
 
   readonly uploadingDocLibelle = input<string | null>(null);
+
+  readonly statusOneGpPrimaryLabel = computed(() => {
+    const f = this.fiche();
+    if (!f || !this.isGP() || f.statut !== 1) {
+      return 'Envoyer le dossier';
+    }
+    const code = f.typeCredit?.code;
+    if (code === '002') {
+      return 'Avis ACJ';
+    }
+    if (code === '011') {
+      return 'Envoyer au CA';
+    }
+    return 'Envoyer le dossier';
+  });
 }

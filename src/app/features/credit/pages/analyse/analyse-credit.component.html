@@ -51,6 +51,14 @@
     </div>
   }
 
+  @if (envoiAlert()) {
+    <div class="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3">
+      <lucide-icon [img]="AlertCircleIcon" [size]="16" class="text-primary shrink-0" />
+      <p class="text-sm text-primary flex-1">{{ envoiAlert() }}</p>
+      <button type="button" class="text-primary/60 hover:text-primary text-lg leading-none" (click)="envoiAlert.set(null)">&times;</button>
+    </div>
+  }
+
   <!-- ── Carte résumé client + demande (style old frontend) ───────────── -->
   @if (!isLoading()) {
     <app-analyse-header-card
@@ -58,6 +66,7 @@
       [requiredDocs]="requiredDocs()"
       [uploadedDocLibelles]="uploadedDocLibelles()"
       [canSendDossier]="canSendDossier()"
+      [isGP]="isGP()"
       [canFaireResume]="canFaireResume()"
       [isRCCC]="isRCCC()"
       [isChefAgenceWorkflow]="isChefAgenceWorkflow()"
@@ -377,39 +386,65 @@
   <!-- ── Dialog Affecter à un AR (CA/CAA) ───────────────────────────────── -->
   <app-dialog [(open)]="affecterARDialogOpen">
     <app-dialog-header>
-      <app-dialog-title>Affecter le dossier à un AR</app-dialog-title>
+      <app-dialog-title>
+        @if (isAffectationSuperviseurMode()) {
+          Affecter le dossier à un superviseur PME
+        } @else {
+          Affecter le dossier à un AR
+        }
+      </app-dialog-title>
       <app-dialog-description>
-        Sélectionnez une zone puis un analyste risque pour affecter ce dossier.
+        @if (isAffectationSuperviseurMode()) {
+          Sélectionnez un superviseur PME ou chef d'agence pour affecter ce dossier.
+        } @else {
+          Sélectionnez une zone puis un analyste risque pour affecter ce dossier.
+        }
       </app-dialog-description>
     </app-dialog-header>
 
     <form [formGroup]="affecterARForm" class="flex flex-col gap-4 py-2">
-      <app-form-select
-        name="zone"
-        label="Zone"
-        [required]="true"
-        [options]="zones()"
-        [loading]="zonesLoading()"
-        bindLabel="libelle"
-        bindValue="id"
-        placeholder="Sélectionnez une zone"
-        (change)="onZoneChange($event)"
-      />
-
-      @if (affecterARForm.get('zone')?.value) {
+      @if (!isAffectationSuperviseurMode()) {
         <app-form-select
-          name="ar"
-          label="Analyste Risque"
+          name="zone"
+          label="Zone"
           [required]="true"
-          [options]="ars()"
-          [loading]="arsLoading()"
+          [options]="zones()"
+          [loading]="zonesLoading()"
           bindLabel="libelle"
-          bindValue="codeAr"
-          placeholder="Sélectionnez un analyste risque"
+          bindValue="id"
+          placeholder="Sélectionnez une zone"
+          (change)="onZoneChange($event)"
+        />
+
+        @if (affecterARForm.get('zone')?.value) {
+          <app-form-select
+            name="ar"
+            label="Analyste Risque"
+            [required]="true"
+            [options]="ars()"
+            [loading]="arsLoading()"
+            bindLabel="libelle"
+            bindValue="codeAr"
+            placeholder="Sélectionnez un analyste risque"
+          />
+        }
+      } @else {
+        <app-form-select
+          name="supOpSen"
+          label="Superviseur PME ou Chef Agence"
+          [required]="true"
+          [options]="superviseursPme()"
+          [loading]="superviseursPmeLoading()"
+          bindLabel="libelle"
+          bindValue="id"
+          placeholder="Sélectionnez un superviseur PME"
         />
       }
 
-      @if (affecterARForm.get('ar')?.value) {
+      @if (
+        (isAffectationSuperviseurMode() && affecterARForm.get('supOpSen')?.value) ||
+        (!isAffectationSuperviseurMode() && affecterARForm.get('ar')?.value)
+      ) {
         <app-form-input name="password" type="password" label="Mot de passe" [required]="true" />
         <app-form-textarea name="observation" label="Observation" placeholder="Ajouter une observation… (facultatif)" [rows]="2" />
       }
@@ -425,7 +460,7 @@
         Annuler
       </button>
       <button type="button" appButton size="sm"
-        (click)="confirmAffecterAR()" [disabled]="affecterARLoading() || !affecterARForm.get('ar')?.value">
+        (click)="confirmAffecterAR()" [disabled]="!canConfirmAffectation()">
         {{ affecterARLoading() ? 'Affectation…' : 'Confirmer l\'affectation' }}
       </button>
     </app-dialog-footer>

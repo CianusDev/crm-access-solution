@@ -10,9 +10,16 @@ import {
   gpTypeAttachmentCompleteForSend,
 } from './send-dossier.validation';
 import { REQUIRED_DOCS_SPME_VISITE } from '../constants/required-documents';
-import type { CreditAnalyseDemandeDetail, GarantieMedia } from '../interfaces/credit.interface';
+import type {
+  ActifGarantie,
+  CautionSolidaire,
+  CreditAnalyseDemandeDetail,
+  GarantieMedia,
+  GarantiesData,
+} from '../interfaces/credit.interface';
 import { CAUTION_DOCUMENT_TYPES } from '../constants/caution-documents';
 import { getGarantieDocumentTypes } from '../constants/garantie-documents';
+import { GARANTIE_TYPE_IDS } from '../interfaces/credit.interface';
 
 /** Entrée pure : testable sans Angular. */
 export interface CanSendDossierInput {
@@ -32,63 +39,71 @@ export interface CanSendDossierInput {
 }
 
 export function canSendDossierFromState(i: CanSendDossierInput): boolean {
+  return sendDossierBlockedMessage(i) === null;
+}
+
+/** Message utilisateur quand l'envoi du dossier est bloqué. */
+export function sendDossierBlockedMessage(i: CanSendDossierInput): string | null {
   const h = i.ficheHeader;
-  if (!h) return false;
+  if (!h) return 'Données du dossier indisponibles.';
 
   if (i.isGP) {
     const docsOk =
       i.requiredDocs.length === 0 || allRequiredDocsUploaded(i.requiredDocs, i.uploadedDocLibelles);
-    console.log('docsOk:', docsOk);
+    if (!docsOk) {
+      return "Merci de charger tous les documents obligatoires (liste dans l'en-tête) avant d'envoyer le dossier.";
+    }
 
-    const profileOk = gpClientProfileCompleteForSend(h.client);
-    console.log('profileOk:', profileOk);
+    if (!gpClientProfileCompleteForSend(h.client)) {
+      return "Veuillez remplir tous les champs obligatoires avant d'envoyer le dossier au chef d'agence. Merci pour votre collaboration.";
+    }
 
     const isPM = h.client?.typeAgent !== 'PP';
-    const attachmentOk = gpTypeAttachmentCompleteForSend(
-      h.typeCredit?.code,
-      isPM,
-      i.fiche,
-      i.demandeDetail,
-    );
-    console.log(
-      'attachmentOk:',
-      attachmentOk,
-      '| isPM:',
-      isPM,
-      '| crFacture:',
-      i.demandeDetail?.crFacture,
-    );
+    if (!gpTypeAttachmentCompleteForSend(h.typeCredit?.code, isPM, i.fiche, i.demandeDetail)) {
+      return gpMissingAttachmentMessage(h.typeCredit?.code);
+    }
 
-    if (!docsOk) return false;
-    if (!profileOk) return false;
-    if (!attachmentOk) return false;
-    return true;
+    return null;
   }
 
   if (i.isAR) {
     const required = getRequiredDocsForAR(h.typeCredit?.code);
-    if (required.length === 0) return true;
-    return allRequiredDocsUploaded(required, i.uploadedDocLibelles);
+    if (required.length === 0) return null;
+    if (!allRequiredDocsUploaded(required, i.uploadedDocLibelles)) {
+      return "Merci de charger tous les documents obligatoires (liste dans l'en-tête) avant d'envoyer le rapport.";
+    }
+    return null;
   }
 
   if (i.isRCCC) {
-    if (!h.numTransaction) return false;
-    if (h.typeCredit?.code === '015') return true;
-    return i.confirmationFrais;
+    if (!h.numTransaction) {
+      return 'Veuillez ajouter le N° demande Perfect avant de poursuivre.';
+    }
+    if (h.typeCredit?.code === '015') return null;
+    if (!i.confirmationFrais) {
+      return "Veuillez confirmer le prélèvement des frais de demande avant d'envoyer le dossier.";
+    }
+    return null;
   }
 
   if (i.isCACaa) {
-    return cacaaRapportVisiteComplete(h.statut, h.typeCredit?.code, i.uploadedDocLibelles);
+    if (!cacaaRapportVisiteComplete(h.statut, h.typeCredit?.code, i.uploadedDocLibelles)) {
+      return "Vérifiez que vous avez chargé votre rapport de visite commanditaire avant d'envoyer la demande.";
+    }
+    return null;
   }
 
   if (i.isSuperviseurPME) {
     if (h.statut === 19) {
-      return allRequiredDocsUploaded(REQUIRED_DOCS_SPME_VISITE, i.uploadedDocLibelles);
+      if (!allRequiredDocsUploaded(REQUIRED_DOCS_SPME_VISITE, i.uploadedDocLibelles)) {
+        return "Vérifiez que vous avez chargé votre rapport de visite commanditaire avant d'envoyer la demande.";
+      }
+      return null;
     }
-    return false;
+    return "Action indisponible pour ce statut de dossier.";
   }
 
-  return true;
+  return null;
 }
 
 export interface CanFaireResumeInput {
@@ -97,6 +112,7 @@ export interface CanFaireResumeInput {
   ficheHeader: CreditFicheDemandeDetail | null;
   uploadedDocLibelles: string[];
   analyseDemande?: CreditAnalyseDemandeDetail | null;
+  garantiesData?: GarantiesData | null;
 }
 
 export function canFaireResumeFromState(i: CanFaireResumeInput): boolean {
@@ -130,6 +146,7 @@ export function resumeAccessBlockedMessage(i: CanFaireResumeInput): string | nul
   }
 
   const analyse = i.analyseDemande;
+  const { actifs, cautions } = resolveGarantiesForResumeChecks(i);
   const activites = analyse?.activites ?? [];
   if (activites.length === 0) {
     return "Veuillez ajouter les activités du client dans l'analyse financière.";
@@ -149,7 +166,7 @@ export function resumeAccessBlockedMessage(i: CanFaireResumeInput): string | nul
     }
   }
 
-  for (const caution of analyse?.cautionsSolidaires ?? []) {
+  for (const caution of cautions) {
     for (const docType of CAUTION_DOCUMENT_TYPES.filter((d) => d.obligation)) {
       if (!hasMediaByLabel(caution.documents, docType.libelle)) {
         return `Le chargement du document (${docType.libelle}) de la caution ${caution.nom ?? ''} ${caution.prenom ?? ''} est obligatoire. Merci de la charger dès que possible afin de pouvoir continuer.`;
@@ -157,7 +174,6 @@ export function resumeAccessBlockedMessage(i: CanFaireResumeInput): string | nul
     }
   }
 
-  const actifs = analyse?.actifsGaranties ?? [];
   for (const actif of actifs.filter((a) => a.type === 'IMMOBILIER')) {
     for (const docType of getGarantieDocumentTypes('IMMOBILIER').filter((d) => d.obligation)) {
       if (!hasMediaByLabel(actif.documents, docType.libelle)) {
@@ -197,4 +213,82 @@ export function resumeAccessBlockedMessage(i: CanFaireResumeInput): string | nul
 function hasMediaByLabel(media: GarantieMedia[] | undefined, label: string): boolean {
   const wanted = label.trim().toLowerCase();
   return (media ?? []).some((m) => (m.libelle ?? '').trim().toLowerCase() === wanted);
+}
+
+function gpMissingAttachmentMessage(typeCreditCode: string | undefined): string {
+  if (typeCreditCode === '019') {
+    return "Merci d'enregistrer les informations du véhicule demandées.";
+  }
+  if (typeCreditCode === '032') {
+    return "Merci d'enregistrer les informations du bon de commande.";
+  }
+  if (typeCreditCode === '033') {
+    return "Merci d'enregistrer les informations de la facture.";
+  }
+  if (typeCreditCode === '035' || typeCreditCode === '036') {
+    return "Merci d'enregistrer les informations du magasin.";
+  }
+  return "Veuillez compléter les informations obligatoires liées au type de crédit avant d'envoyer le dossier.";
+}
+
+const LEGACY_GARANTIE_GROUP_TO_ACTIF_TYPE: Partial<Record<number, ActifGarantie['type']>> = {
+  [GARANTIE_TYPE_IDS.IMMOBILISATION]: 'IMMOBILIER',
+  [GARANTIE_TYPE_IDS.MATERIEL_PRO]: 'EQUIPEMENT',
+  [GARANTIE_TYPE_IDS.BIEN_MOBILIER_FAMILLE]: 'BIEN_MOBILIER',
+  [GARANTIE_TYPE_IDS.VEHICULE]: 'VEHICULE',
+  [GARANTIE_TYPE_IDS.DAT]: 'DAT',
+  [GARANTIE_TYPE_IDS.DEPOSIT]: 'DEPOSIT',
+};
+
+function resolveGarantiesForResumeChecks(i: CanFaireResumeInput): {
+  actifs: ActifGarantie[];
+  cautions: CautionSolidaire[];
+} {
+  const actifsFromAnalyse = i.analyseDemande?.actifsGaranties ?? [];
+  const cautionsFromAnalyse = i.analyseDemande?.cautionsSolidaires ?? [];
+  if (actifsFromAnalyse.length > 0 || cautionsFromAnalyse.length > 0) {
+    return { actifs: actifsFromAnalyse, cautions: cautionsFromAnalyse };
+  }
+
+  const garanties = i.garantiesData ?? extractGarantiesFromFicheHeader(i.ficheHeader);
+  if (!garanties) {
+    return { actifs: [], cautions: [] };
+  }
+
+  return {
+    actifs: flattenTypeGaranties(garanties.typeGaranties ?? []),
+    cautions: garanties.crCaution ?? [],
+  };
+}
+
+function extractGarantiesFromFicheHeader(
+  ficheHeader: CreditFicheDemandeDetail | null,
+): GarantiesData | null {
+  if (!ficheHeader) return null;
+  const raw = ficheHeader as unknown as Partial<GarantiesData>;
+  const hasTypeGaranties = Array.isArray(raw.typeGaranties);
+  const hasCautions = Array.isArray(raw.crCaution);
+  const hasStocks = Array.isArray(raw.actifCirculantStock);
+  if (!hasTypeGaranties && !hasCautions && !hasStocks) {
+    return null;
+  }
+  return {
+    typeGaranties: hasTypeGaranties ? (raw.typeGaranties as GarantiesData['typeGaranties']) : [],
+    crCaution: hasCautions ? (raw.crCaution as GarantiesData['crCaution']) : [],
+    actifCirculantStock: hasStocks
+      ? (raw.actifCirculantStock as GarantiesData['actifCirculantStock'])
+      : [],
+  };
+}
+
+function flattenTypeGaranties(typeGaranties: GarantiesData['typeGaranties']): ActifGarantie[] {
+  return (typeGaranties ?? []).flatMap((group) =>
+    (group.garanties ?? []).map((garantie) => {
+      const typedGarantie = garantie as ActifGarantie;
+      return {
+        ...typedGarantie,
+        type: LEGACY_GARANTIE_GROUP_TO_ACTIF_TYPE[group.id] ?? typedGarantie.type,
+      };
+    }),
+  );
 }

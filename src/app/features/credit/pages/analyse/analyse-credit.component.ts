@@ -53,12 +53,15 @@ import {
   CREDIT_STATUTS,
   CreditAnalyseDemandeDetail,
   CreditFicheDemandeDetail,
+  GarantiesData,
+  CreditSuperviseurPmeAffectation,
 } from '../../interfaces/credit.interface';
 import { CreditService } from '../../services/credit/credit.service';
 import {
   canFaireResumeFromState,
   canSendDossierFromState,
   resumeAccessBlockedMessage,
+  sendDossierBlockedMessage,
 } from '../../validation/analyse-send-eligibility';
 import { AnalyseHeaderCardComponent } from './_components/analyse-header-card.component';
 import { DocAnalyseUploadComponent } from './_components/doc-analyse-upload.component';
@@ -151,6 +154,7 @@ export class AnalyseCreditComponent implements OnInit {
       this.demandeDetailsOverride.set(null);
       this.fiche.set(data.fiche);
       this.ficheHeader.set(data.fiche.demande);
+      this.garantiesData.set(this.extractGarantiesDataFromDemande(data.fiche.demande));
       if (data.analyse?.demande) {
         this.demande.set(data.analyse.demande as CreditFicheDemandeDetail);
       }
@@ -172,6 +176,9 @@ export class AnalyseCreditComponent implements OnInit {
         this.enforceAnalysteResumeDocs()
       ) {
         this.loadUploadedDocs();
+      }
+      if (this.enforceAnalysteResumeDocs()) {
+        this.loadGarantiesForResumeChecks();
       }
     });
   }
@@ -202,8 +209,11 @@ export class AnalyseCreditComponent implements OnInit {
   });
   readonly enforceAnalysteResumeDocs = computed(() => {
     const h = this.ficheHeader();
-    if (this.isAR()) return true;
-    return !!(h && this.permissionService.hasRole(UserRole.Admin) && h.statut === 5);
+    return !!(
+      h &&
+      h.statut === 5 &&
+      (this.isAR() || this.permissionService.hasRole(UserRole.Admin))
+    );
   });
   readonly isPaused = computed(() => this.ficheHeader()?.pause === 1);
 
@@ -254,6 +264,7 @@ export class AnalyseCreditComponent implements OnInit {
    * Sinon on utilise `data().details` du resolver.
    */
   readonly demandeDetailsOverride = signal<CreditFicheDemandeDetail | null>(null);
+  readonly garantiesData = signal<GarantiesData | null>(null);
 
   readonly effectiveDemandeDetails = computed(
     () => this.demandeDetailsOverride() ?? this.data()?.details ?? null,
@@ -304,6 +315,7 @@ export class AnalyseCreditComponent implements OnInit {
       ficheHeader: this.ficheHeader(),
       uploadedDocLibelles: this.uploadedDocLibelles(),
       analyseDemande: this.demande(),
+      garantiesData: this.garantiesData(),
     }),
   );
 
@@ -314,6 +326,7 @@ export class AnalyseCreditComponent implements OnInit {
   readonly obsDrawerOpen = signal(false);
 
   // ── Dialog envoi dossier ──────────────────────────────────────────────
+  readonly envoiAlert = signal<string | null>(null);
   envoiDialogOpen = false;
   readonly envoiLoading = signal(false);
   readonly envoiError = signal<string | null>(null);
@@ -342,21 +355,36 @@ export class AnalyseCreditComponent implements OnInit {
   });
 
   // ── Dialog Affecter AR ────────────────────────────────────────────────
+  readonly affectationTargetMode = signal<'ar' | 'sup-pme'>('ar');
+  readonly isAffectationSuperviseurMode = computed(
+    () => this.affectationTargetMode() === 'sup-pme',
+  );
   affecterARDialogOpen = false;
   readonly affecterARLoading = signal(false);
   readonly affecterARError = signal<string | null>(null);
   readonly zonesLoading = signal(false);
   readonly arsLoading = signal(false);
+  readonly superviseursPmeLoading = signal(false);
   readonly zones = signal<{ id: number; libelle: string }[]>([]);
   readonly ars = signal<
     { id: number; codeAr: string; nom: string; prenom: string; libelle?: string }[]
   >([]);
+  readonly superviseursPme = signal<CreditSuperviseurPmeAffectation[]>([]);
 
   readonly affecterARForm = this.fb.group({
-    zone: ['', Validators.required],
-    ar: ['', Validators.required],
+    zone: [''],
+    ar: [''],
+    supOpSen: [null as number | null],
     password: ['', Validators.required],
     observation: [''],
+  });
+
+  readonly canConfirmAffectation = computed(() => {
+    if (this.affecterARLoading()) return false;
+    if (this.isAffectationSuperviseurMode()) {
+      return !!this.affecterARForm.get('supOpSen')?.value;
+    }
+    return !!this.affecterARForm.get('ar')?.value;
   });
 
   // ── Lifecycle ──────────────────────────────────────────────────────────
@@ -379,6 +407,7 @@ export class AnalyseCreditComponent implements OnInit {
       next: ({ fiche, analyse, details }) => {
         this.fiche.set(fiche);
         this.ficheHeader.set(fiche.demande);
+        this.garantiesData.set(this.extractGarantiesDataFromDemande(fiche.demande));
         this.demandeDetailsOverride.set(details);
         if (!analyse?.demande) {
           this.error.set('Données du dossier introuvables.');
@@ -395,6 +424,9 @@ export class AnalyseCreditComponent implements OnInit {
           this.enforceAnalysteResumeDocs()
         ) {
           this.loadUploadedDocs();
+        }
+        if (this.enforceAnalysteResumeDocs()) {
+          this.loadGarantiesForResumeChecks();
         }
       },
       error: () => {
@@ -437,6 +469,39 @@ export class AnalyseCreditComponent implements OnInit {
       },
       error: () => {},
     });
+  }
+
+  private loadGarantiesForResumeChecks() {
+    const r = this.ref();
+    if (!r) return;
+    this.creditService.getGarantiesDemande(r).subscribe({
+      next: (data) => {
+        if (data) {
+          this.garantiesData.set(data);
+        }
+      },
+      error: () => {},
+    });
+  }
+
+  private extractGarantiesDataFromDemande(
+    demande: CreditFicheDemandeDetail | null | undefined,
+  ): GarantiesData | null {
+    if (!demande) return null;
+    const raw = demande as unknown as Partial<GarantiesData>;
+    const hasTypeGaranties = Array.isArray(raw.typeGaranties);
+    const hasCautions = Array.isArray(raw.crCaution);
+    const hasStocks = Array.isArray(raw.actifCirculantStock);
+    if (!hasTypeGaranties && !hasCautions && !hasStocks) {
+      return null;
+    }
+    return {
+      typeGaranties: hasTypeGaranties ? (raw.typeGaranties as GarantiesData['typeGaranties']) : [],
+      crCaution: hasCautions ? (raw.crCaution as GarantiesData['crCaution']) : [],
+      actifCirculantStock: hasStocks
+        ? (raw.actifCirculantStock as GarantiesData['actifCirculantStock'])
+        : [],
+    };
   }
 
   switchTab(id: AnalyseTabId) {
@@ -538,6 +603,25 @@ export class AnalyseCreditComponent implements OnInit {
   }
 
   openEnvoiDialog() {
+    const blockedMessage = sendDossierBlockedMessage({
+      ficheHeader: this.ficheHeader(),
+      fiche: this.fiche(),
+      demandeDetail: this.effectiveDemandeDetails(),
+      uploadedDocLibelles: this.uploadedDocLibelles(),
+      confirmationFrais: this.confirmationFrais(),
+      isGP: this.isGP(),
+      isAR: this.isAR(),
+      isRCCC: this.isRCCC(),
+      isCACaa: this.isCACaa(),
+      isSuperviseurPME: this.isSuperviseurPME(),
+      requiredDocs: this.requiredDocs(),
+    });
+    if (blockedMessage) {
+      this.envoiAlert.set(blockedMessage);
+      return;
+    }
+
+    this.envoiAlert.set(null);
     this.envoiForm.reset();
     this.envoiError.set(null);
     this.envoiDialogOpen = true;
@@ -643,10 +727,47 @@ export class AnalyseCreditComponent implements OnInit {
 
   // ── Affecter AR ───────────────────────────────────────────────────────
   openAffecterARDialog() {
-    this.affecterARForm.reset();
+    const h = this.ficheHeader();
+    const shouldAffecterSuperviseurPme =
+      !!h &&
+      h.statut === 4 &&
+      (h.typeCredit?.code === '032' || h.typeCredit?.code === '033') &&
+      this.isCACaa();
+
+    this.affectationTargetMode.set(shouldAffecterSuperviseurPme ? 'sup-pme' : 'ar');
+    this.configureAffecterFormValidators(this.affectationTargetMode());
+
+    this.affecterARForm.reset({
+      zone: '',
+      ar: '',
+      supOpSen: null,
+      password: '',
+      observation: '',
+    });
     this.affecterARError.set(null);
+    this.zonesLoading.set(false);
+    this.arsLoading.set(false);
+    this.superviseursPmeLoading.set(false);
+    this.zones.set([]);
     this.ars.set([]);
+    this.superviseursPme.set([]);
     this.affecterARDialogOpen = true;
+
+    if (this.isAffectationSuperviseurMode()) {
+      this.superviseursPmeLoading.set(true);
+      this.analyseFlow.loadSuperviseursPmeForAffectation().subscribe({
+        next: (users) => {
+          this.superviseursPme.set(users);
+          this.superviseursPmeLoading.set(false);
+        },
+        error: () => {
+          this.toast.error('Erreur lors du chargement de la liste des superviseurs PME.');
+          this.superviseursPmeLoading.set(false);
+          this.superviseursPme.set([]);
+        },
+      });
+      return;
+    }
 
     this.zonesLoading.set(true);
     this.analyseFlow.loadZones().subscribe({
@@ -663,6 +784,9 @@ export class AnalyseCreditComponent implements OnInit {
   }
 
   onZoneChange(zoneId: number) {
+    if (this.isAffectationSuperviseurMode()) {
+      return;
+    }
     if (!zoneId) {
       this.ars.set([]);
       this.affecterARForm.patchValue({ ar: '' });
@@ -691,17 +815,34 @@ export class AnalyseCreditComponent implements OnInit {
       this.affecterARForm.markAllAsTouched();
       return;
     }
-    const { zone, ar, password, observation } = this.affecterARForm.value;
+    const { zone, ar, supOpSen, password, observation } = this.affecterARForm.value;
     this.affecterARLoading.set(true);
     this.affecterARError.set(null);
 
-    this.analyseFlow
-      .affecterAnalysteRisque(this.ref(), Number(zone), ar!, password!, observation || '')
-      .subscribe({
+    const request$ = this.isAffectationSuperviseurMode()
+      ? this.analyseFlow.affecterSuperviseurPme(
+          this.ref(),
+          Number(supOpSen),
+          password!,
+          observation || '',
+        )
+      : this.analyseFlow.affecterAnalysteRisque(
+          this.ref(),
+          Number(zone),
+          ar!,
+          password!,
+          observation || '',
+        );
+
+    request$.subscribe({
         next: (data) => {
           this.affecterARLoading.set(false);
           if (data.status === 200) {
-            this.toast.success("Dossier affecté avec succès à l'AR.");
+            if (this.isAffectationSuperviseurMode()) {
+              this.toast.success('Dossier affecté avec succès au superviseur PME.');
+            } else {
+              this.toast.success("Dossier affecté avec succès à l'AR.");
+            }
             this.affecterARDialogOpen = false;
             this.router.navigate(['/app/credit/list']);
           } else {
@@ -717,6 +858,26 @@ export class AnalyseCreditComponent implements OnInit {
           this.toast.error("Erreur lors de l'affectation.");
         },
       });
+  }
+
+  private configureAffecterFormValidators(mode: 'ar' | 'sup-pme') {
+    const zoneControl = this.affecterARForm.get('zone');
+    const arControl = this.affecterARForm.get('ar');
+    const supControl = this.affecterARForm.get('supOpSen');
+
+    if (mode === 'sup-pme') {
+      zoneControl?.clearValidators();
+      arControl?.clearValidators();
+      supControl?.setValidators([Validators.required]);
+    } else {
+      zoneControl?.setValidators([Validators.required]);
+      arControl?.setValidators([Validators.required]);
+      supControl?.clearValidators();
+    }
+
+    zoneControl?.updateValueAndValidity({ emitEvent: false });
+    arControl?.updateValueAndValidity({ emitEvent: false });
+    supControl?.updateValueAndValidity({ emitEvent: false });
   }
 
   // ── AR : Avis défavorable ──────────────────────────────────────────
@@ -908,20 +1069,41 @@ export class AnalyseCreditComponent implements OnInit {
   readonly arAlert = signal<string | null>(null);
 
   goResume() {
-    const blockedMessage = resumeAccessBlockedMessage({
-      enforceAnalysteDocRules: this.enforceAnalysteResumeDocs(),
-      ficheHeader: this.ficheHeader(),
-      uploadedDocLibelles: this.uploadedDocLibelles(),
-      analyseDemande: this.demande(),
-    });
+    const evaluateResumeAccess = (garantiesData: GarantiesData | null) => {
+      const blockedMessage = resumeAccessBlockedMessage({
+        enforceAnalysteDocRules: this.enforceAnalysteResumeDocs(),
+        ficheHeader: this.ficheHeader(),
+        uploadedDocLibelles: this.uploadedDocLibelles(),
+        analyseDemande: this.demande(),
+        garantiesData,
+      });
 
-    if (blockedMessage) {
-      this.arAlert.set(blockedMessage);
-      return;
+      if (blockedMessage) {
+        this.arAlert.set(blockedMessage);
+        return;
+      }
+
+      this.arAlert.set(null);
+      this.router.navigate(['/app/credit/resume', this.ref()]);
+    };
+
+    if (this.enforceAnalysteResumeDocs()) {
+      const r = this.ref();
+      if (r) {
+        this.creditService.getGarantiesDemande(r).subscribe({
+          next: (data) => {
+            if (data) {
+              this.garantiesData.set(data);
+            }
+            evaluateResumeAccess(data ?? this.garantiesData());
+          },
+          error: () => evaluateResumeAccess(this.garantiesData()),
+        });
+        return;
+      }
     }
 
-    this.arAlert.set(null);
-    this.router.navigate(['/app/credit/resume', this.ref()]);
+    evaluateResumeAccess(this.garantiesData());
   }
 
   /** Legacy « Voir le résumé » — navigation sans contrôle doc (étapes post-analyse). */

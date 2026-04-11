@@ -19,15 +19,15 @@
     <!-- En-tête récap §7.11 -->
     @if (isView('totaux')) {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div class="rounded-xl border border-border bg-muted/30 px-4 py-3">
-          <p class="text-xs text-muted-foreground uppercase tracking-wide">Total garanties (fixes)</p>
+        <div class="rounded-xl border border-border bg-background px-4 py-3">
+          <!-- <p class="text-xs text-muted-foreground uppercase tracking-wide">Garanties fixes</p> -->
           <p class="text-lg font-bold tabular-nums">{{ formatMontant(totalGarantiesFixes()) }} FCFA</p>
-          <p class="text-xs text-muted-foreground mt-0.5">Actifs + stocks actifs circulants</p>
+          <p class="text-xs text-muted-foreground mt-0.5">Total actifs fixes (A+B+C+D)</p>
         </div>
         <div class="rounded-xl border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/30 px-4 py-3">
-          <p class="text-xs text-green-700 dark:text-green-300 uppercase tracking-wide">Garanties proposées (garantie = OUI)</p>
+          <!-- <p class="text-xs text-green-700 dark:text-green-300 uppercase tracking-wide">Garanties proposées</p> -->
           <p class="text-lg font-bold tabular-nums text-green-700 dark:text-green-300">{{ formatMontant(totalGarantiesProposees()) }} FCFA</p>
-          <p class="text-xs text-green-600/70 mt-0.5">Actifs + stocks avec garantie activée</p>
+          <p class="text-xs text-green-600/70 mt-0.5">Total garanties proposées(A'+B'+C'+D'+E)</p>
         </div>
       </div>
     }

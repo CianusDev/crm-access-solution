@@ -267,13 +267,13 @@
           <div class="flex items-center justify-between w-full">
             <div class="flex items-center gap-2">
               <app-card-title>Imprévus charges d'exploitation</app-card-title>
-              @if (totalImprevu() > 0) {
+              <!-- @if (totalImprevu() > 0) {
                 <span
                   class="rounded-full bg-violet-500/10 px-2.5 py-0.5 text-xs font-semibold text-violet-600 dark:text-violet-400"
                 >
-                  Total : {{ totalImprevu() | number: '1.0-0' }} FCFA
+                  Total :  {{ totalImprevu() | number: '1.0-0' }} FCFA
                 </span>
-              }
+              } -->
             </div>
             <button type="button" (click)="toggleSection('imprevus')" appButton variant="outline" size="sm" title="Plier / Déplier">
               <lucide-icon [img]="ChevronDownIcon" [size]="14" [class.rotate-180]="!isSectionCollapsed('imprevus')" class="transition-transform" />
@@ -288,13 +288,13 @@
               <tr class="border-b border-border bg-muted/10">
                 <th class="px-4 py-2 text-left font-medium text-muted-foreground">Activité</th>
                 <th class="px-4 py-2 text-right font-medium text-muted-foreground">
-                  Total charges
+                 sous Total
                 </th>
                 <th class="px-4 py-2 text-center font-medium text-muted-foreground">
                   Imprévus (%)
                 </th>
                 <th class="px-4 py-2 text-right font-medium text-muted-foreground">
-                  Montant imprévus
+                  Total
                 </th>
               </tr>
             </thead>
@@ -305,7 +305,7 @@
                 >
                   <td class="px-4 py-2.5 font-medium">{{ row.activite.libelle }}</td>
                   <td class="px-4 py-2.5 text-right tabular-nums text-muted-foreground">
-                    {{ formatMontant(row.total) }}
+                    {{ formatMontant(row.sousTotal) }}
                   </td>
                   <td class="px-4 py-2.5">
                     <div class="flex justify-center">
@@ -327,8 +327,12 @@
                     </div>
                   </td>
                   <td class="px-4 py-2.5 text-right font-semibold tabular-nums">
-                    @if (row.imprevu != null) {
-                      {{ formatMontant(row.montantImprevu) }}
+                    @if (row.total) {
+                      <span
+                        class="rounded-full bg-violet-500/10 px-2.5 py-0.5 text-xs font-semibold text-violet-600 dark:text-violet-400"
+                      >
+                      {{ formatMontant(row.total) }}
+                      </span>
                     } @else {
                       <span class="text-muted-foreground">—</span>
                     }

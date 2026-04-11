@@ -28,6 +28,14 @@ export interface CreditAnalysteRisque {
   libelle?: string; // nom + prenom
 }
 
+export interface CreditSuperviseurPmeAffectation {
+  id: number;
+  nom: string;
+  prenom: string;
+  profil?: string;
+  libelle?: string; // nom + prenom (+ profil)
+}
+
 export interface CreditSignataire {
   id?: number;
   nom?: string;
@@ -821,6 +829,7 @@ export interface CreditContreEvaluation {
 }
 
 export interface CreditGarantieProposes {
+  total?: number;
   montantTotal?: number;
   rapportCredit?: number;
   garanties?: Array<{ libelle: string; montant: number }>;
@@ -867,6 +876,42 @@ export interface DocumentAnalyse {
   user?: { nomPrenom?: string };
 }
 
+export interface CreditCompteResultatCreditAnterieurActivite {
+  vente?: number;
+  achat?: number;
+  margeComm?: number;
+  chargeExplo?: number;
+}
+
+export interface CreditCompteResultatActivite {
+  id?: number;
+  libelle?: string;
+  ventes?: number;
+  achats?: number;
+  margeCom?: number;
+  chargeExpl?: number;
+  resultNet?: number;
+  creditAnt?: CreditCompteResultatCreditAnterieurActivite;
+}
+
+export interface CreditCompteResultatMontantCreditAnterieur {
+  total?: number;
+  creditAnt?: number;
+}
+
+export interface CreditCompteResultat {
+  activitePrincipal?: CreditCompteResultatActivite;
+  autresActivite?: Array<{
+    id?: number;
+    libelle?: string;
+    resultNet?: number;
+  }>;
+  autreRevenuFamille?: CreditCompteResultatMontantCreditAnterieur;
+  chargeFamilliale?: CreditCompteResultatMontantCreditAnterieur;
+  soldeFamille?: CreditCompteResultatMontantCreditAnterieur;
+  capaciteRemb?: CreditCompteResultatMontantCreditAnterieur;
+}
+
 export interface CreditResume {
   demande: CreditFicheDemandeDetail;
   aSwots?: CreditSWOTItem[];
@@ -880,6 +925,7 @@ export interface CreditResume {
   nombreDemandes?: number;
   observations?: CreditObservation[];
   documentsAnalyse?: DocumentAnalyse[];
+  compteResultat?: CreditCompteResultat;
 }
 
 // ── Analyse financière ────────────────────────────────────────────────────────
@@ -941,6 +987,7 @@ export interface ActiviteCredit {
     chargeExploitation?: {
       imprevu?: number;
       total?: number;
+      sousTotal?: number;
     };
   };
 }
@@ -1273,6 +1320,7 @@ export interface CreditSaveComite {
   // Champ comité vs décision finale
   comite?: number;
   precomite?: number;
+  comiteClt?: number;
 }
 
 export interface CreditSaveDecisionFinale {

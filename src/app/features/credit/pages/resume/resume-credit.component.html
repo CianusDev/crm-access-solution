@@ -74,7 +74,7 @@
 
     <!-- ── Section Client & Demande (même design que analyse-header-card) ── -->
     @if (demande(); as d) {
-      <div class="rounded-xl border border-border bg-card shadow-sm">
+      <div class="rounded-xl border border-border  bg-card shadow-sm">
         <div class="flex flex-col md:flex-row gap-0 divide-y md:divide-y-0 md:divide-x divide-border">
           <!-- ── Client section ──────────────────────────────────────── -->
           <div class="flex gap-4 p-5 flex-1 min-w-0">
@@ -219,38 +219,51 @@
     }
 
     <!-- Bannière action disponible -->
-    @if (canAct()) {
+    <!-- @if (canAct()) {
       <div class="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
         <lucide-icon [img]="AlertCircleIcon" [size]="18" class="text-primary shrink-0" />
         <p class="text-sm text-primary font-medium">Ce dossier attend une action de votre part.</p>
       </div>
-    }
+    } -->
 
-    <app-card>
-      <!-- Navigation onglets -->
-      <app-card-header class="!pb-0">
-        <div class="overflow-x-auto">
-          <div class="flex border-b border-border min-w-max">
-            @for (tab of tabs(); track tab.id) {
-              @if (tab.show) {
-                <button
-                  type="button"
-                  (click)="switchTab(tab.id)"
-                  class="px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px cursor-pointer whitespace-nowrap"
-                  [class.border-primary]="activeTab() === tab.id"
-                  [class.text-primary]="activeTab() === tab.id"
-                  [class.border-transparent]="activeTab() !== tab.id"
-                  [class.text-muted-foreground]="activeTab() !== tab.id"
-                >
-                  {{ tab.label }}
-                </button>
+    <!-- <app-card>
+      <app-card-content> -->
+        <div class="grid gap-6 md:grid-cols-[280px_minmax(0,1fr)]">
+          <aside class="md:sticky md:top-4 md:self-start">
+            <nav class="flex flex-col gap-1 rounded-lg border border-border bg-card p-2">
+              @for (tab of tabs(); track tab.id) {
+                @if (tab.show) {
+                  <button
+                    type="button"
+                    (click)="switchTab(tab.id)"
+                    class="w-full text-left rounded-md px-3 py-2.5 text-xs font-medium tracking-wide transition-colors cursor-pointer flex items-center gap-2"
+                    [class.bg-primary/10]="activeTab() === tab.id"
+                    [class.text-primary]="activeTab() === tab.id"
+                    [class.text-muted-foreground]="activeTab() !== tab.id"
+                    [class.hover:bg-muted]="activeTab() !== tab.id"
+                  >
+                    @switch (tab.id) {
+                      @case ('synthese') { <lucide-icon [img]="FileTextIcon" [size]="14" class="shrink-0" /> }
+                      @case ('compte-resultats') { <lucide-icon [img]="CreditCardIcon" [size]="14" class="shrink-0" /> }
+                      @case ('garanties') { <lucide-icon [img]="ShieldIcon" [size]="14" class="shrink-0" /> }
+                      @case ('swot') { <lucide-icon [img]="BarChart3Icon" [size]="14" class="shrink-0" /> }
+                      @case ('proposition') { <lucide-icon [img]="ThumbsUpIcon" [size]="14" class="shrink-0" /> }
+                      @case ('contre-eval') { <lucide-icon [img]="ThumbsDownIcon" [size]="14" class="shrink-0" /> }
+                      @case ('rapport-contre-eval') { <lucide-icon [img]="FileTextIcon" [size]="14" class="shrink-0" /> }
+                      @case ('pre-comite') { <lucide-icon [img]="UsersIcon" [size]="14" class="shrink-0" /> }
+                      @case ('comite') { <lucide-icon [img]="UsersIcon" [size]="14" class="shrink-0" /> }
+                      @case ('decision') { <lucide-icon [img]="CheckCircleIcon" [size]="14" class="shrink-0" /> }
+                      @case ('recap-decisions') { <lucide-icon [img]="ClockIcon" [size]="14" class="shrink-0" /> }
+                      @case ('documents') { <lucide-icon [img]="FileTextIcon" [size]="14" class="shrink-0" /> }
+                      @case ('historique') { <lucide-icon [img]="ClockIcon" [size]="14" class="shrink-0" /> }
+                    }
+                    {{ tab.label }}
+                  </button>
+                }
               }
-            }
-          </div>
-        </div>
-      </app-card-header>
-
-      <app-card-content>
+            </nav>
+          </aside>
+        <div class="min-w-0 p-6 bg-background rounded-xl border border-border">
 
         <!-- ── Synthèse ──────────────────────────────────────────── -->
         @if (activeTab() === 'synthese') {
@@ -261,14 +274,33 @@
               <section>
                 <div class="flex items-center justify-between mb-3">
                   <h3 class="text-sm font-semibold text-foreground">Résumé dossier crédit</h3>
-                  <button
-                    type="button"
-                    (click)="downloadDocument(resumeDocument()!.document!, resumeDocument()!.libelle)"
-                    class="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
-                  >
-                    <lucide-icon [img]="DownloadIcon" [size]="13" />
-                    Télécharger
-                  </button>
+                  <div class="flex items-center gap-2">
+                    @if (canEditResumeDocument()) {
+                      <button
+                        type="button"
+                        (click)="resumeDocReplaceInput.click()"
+                        class="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+                        [disabled]="isUploadingResumeDocument()"
+                      >
+                        @if (isUploadingResumeDocument()) { Modification... } @else { Modifier }
+                      </button>
+                      <input
+                        #resumeDocReplaceInput
+                        type="file"
+                        accept="application/pdf"
+                        class="hidden"
+                        (change)="onResumeDocumentSelected($event, true)"
+                      />
+                    }
+                    <button
+                      type="button"
+                      (click)="downloadDocument(resumeDocument()!.document!, resumeDocument()!.libelle)"
+                      class="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+                    >
+                      <lucide-icon [img]="DownloadIcon" [size]="13" />
+                      Télécharger
+                    </button>
+                  </div>
                 </div>
                 <iframe
                   [src]="safeUrl(resumeDocument()!.document!)"
@@ -278,136 +310,481 @@
                 ></iframe>
               </section>
             } @else {
-              <div class="flex flex-col items-center justify-center gap-3 py-12 text-center">
-                <lucide-icon [img]="FileTextIcon" [size]="36" class="text-muted-foreground/40" />
-                <p class="text-sm text-muted-foreground">Aucun document résumé disponible.</p>
-              </div>
-            }
-
-            <!-- Récapitulatif des décisions -->
-            @if (resume()?.proposition || resume()?.contreEvaluation || resume()?.comites?.length || resume()?.decision) {
-              <section class="border-t border-border pt-6">
-                <h3 class="text-sm font-semibold text-foreground mb-3">Récapitulatif des décisions</h3>
-                <div class="overflow-x-auto">
-                  <table class="w-full text-sm">
-                    <thead>
-                      <tr class="border-b border-border bg-muted/40">
-                        <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Étape</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Montant proposé</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Durée</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground hidden md:table-cell">Décideur</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @if (resume()?.proposition; as p) {
-                        <tr class="border-b border-border">
-                          <td class="px-3 py-2 font-medium text-foreground">Analyste Risque</td>
-                          <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(p.montantPropose) }}</td>
-                          <td class="px-3 py-2 text-right text-foreground">{{ p.duree ?? '—' }} mois</td>
-                          <td class="px-3 py-2 text-muted-foreground hidden md:table-cell">{{ p.user?.nomPrenom ?? '—' }}</td>
-                        </tr>
-                      }
-                      @if (resume()?.contreEvaluation; as ce) {
-                        <tr class="border-b border-border">
-                          <td class="px-3 py-2 font-medium text-foreground">Contre-évaluation</td>
-                          <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(ce.montantPropose) }}</td>
-                          <td class="px-3 py-2 text-right text-foreground">{{ ce.duree ?? '—' }} mois</td>
-                          <td class="px-3 py-2 text-muted-foreground hidden md:table-cell">{{ ce.user?.nomPrenom ?? '—' }}</td>
-                        </tr>
-                      }
-                      @for (pc of resume()?.precomites ?? []; track pc.id) {
-                        <tr class="border-b border-border">
-                          <td class="px-3 py-2 font-medium text-foreground">Pré-comité</td>
-                          <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(pc.montantPropose) }}</td>
-                          <td class="px-3 py-2 text-right text-foreground">{{ pc.duree ?? '—' }} mois</td>
-                          <td class="px-3 py-2 text-muted-foreground hidden md:table-cell">{{ comiteLabel(pc) }}</td>
-                        </tr>
-                      }
-                      @for (c of resume()?.comites ?? []; track c.id) {
-                        <tr class="border-b border-border">
-                          <td class="px-3 py-2 font-medium text-foreground">Comité</td>
-                          <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(c.montantPropose) }}</td>
-                          <td class="px-3 py-2 text-right text-foreground">{{ c.duree ?? '—' }} mois</td>
-                          <td class="px-3 py-2 text-muted-foreground hidden md:table-cell">{{ comiteLabel(c) }}</td>
-                        </tr>
-                      }
-                      @if (resume()?.decision; as d) {
-                        <tr class="bg-green-50 dark:bg-green-950/20">
-                          <td class="px-3 py-2 font-semibold text-green-800 dark:text-green-400">Décision finale</td>
-                          <td class="px-3 py-2 text-right font-semibold text-green-800 dark:text-green-400">{{ formatMontant(d.montantEmprunte) }}</td>
-                          <td class="px-3 py-2 text-right text-green-700 dark:text-green-500">{{ d.duree ?? '—' }} mois</td>
-                          <td class="px-3 py-2 text-green-700 dark:text-green-500 hidden md:table-cell">—</td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
+              @if (canUploadResumeDocument()) {
+                <div class="flex justify-center py-8">
+                  <div
+                    class="w-full max-w-2xl rounded-lg border-2 border-dashed border-destructive/40 bg-destructive/5 p-10 text-center cursor-pointer hover:bg-destructive/10 transition-colors"
+                    (click)="!isUploadingResumeDocument() && resumeDocUploadInput.click()"
+                  >
+                    @if (isUploadingResumeDocument()) {
+                      <p class="text-sm font-medium text-foreground">Chargement en cours...</p>
+                    } @else {
+                      <p class="text-sm font-semibold text-foreground">Cliquer pour charger le résumé</p>
+                    }
+                  </div>
+                  <input
+                    #resumeDocUploadInput
+                    type="file"
+                    accept="application/pdf"
+                    class="hidden"
+                    (change)="onResumeDocumentSelected($event, false)"
+                  />
                 </div>
-              </section>
+              } @else {
+                <div class="flex flex-col items-center justify-center gap-3 py-12 text-center">
+                  <lucide-icon [img]="FileTextIcon" [size]="36" class="text-muted-foreground/40" />
+                  <p class="text-sm text-muted-foreground">Aucun document résumé disponible.</p>
+                </div>
+              }
             }
 
           </div>
         }
 
+        <!-- ── Compte de resultats ───────────────────────────────── -->
+        @if (activeTab() === 'compte-resultats') {
+          @if (compteResultat(); as cr) {
+            @if (cr.activitePrincipal; as principal) {
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="border-b border-border bg-muted/40">
+                      <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Détails</th>
+                      <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">TOTAL</th>
+                      <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Crédit antérieur</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="border-b border-border">
+                      <td class="px-3 py-2">
+                        <p class="font-medium text-foreground">Ventes</p>
+                        <p class="text-xs text-muted-foreground">{{ principal.libelle }} (Activité principale)</p>
+                      </td>
+                      <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(principal.ventes) }}</td>
+                      <td class="px-3 py-2 text-right text-foreground">
+                        @if (isEditingCreditAnterieur('VENTE')) {
+                          <div class="flex justify-end gap-1">
+                            <input
+                              type="number"
+                              [formControl]="creditAnterieurForm.controls.montant"
+                              class="w-28 rounded-md border border-border bg-background px-2 py-1 text-xs"
+                            />
+                            <button
+                              type="button"
+                              (click)="saveCreditAnterieurEdit()"
+                              class="rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                              [disabled]="isSavingCreditAnterieur()"
+                            >
+                              Enr.
+                            </button>
+                            <button
+                              type="button"
+                              (click)="cancelCreditAnterieurEdit()"
+                              class="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted cursor-pointer"
+                            >
+                              X
+                            </button>
+                          </div>
+                        } @else {
+                          <div class="flex items-center justify-end gap-1">
+                            <span>{{ formatMontant(principal.creditAnt?.vente) }}</span>
+                            @if (canEditCreditAnterieur() && principal.id) {
+                              <button
+                                type="button"
+                                (click)="openCreditAnterieurEdit('VENTE', principal.creditAnt?.vente, principal.id)"
+                                class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                              >
+                                <lucide-icon [img]="PencilIcon" [size]="13" />
+                              </button>
+                            }
+                          </div>
+                        }
+                      </td>
+                    </tr>
+                    <tr class="border-b border-border">
+                      <td class="px-3 py-2">
+                        <p class="font-medium text-foreground">Achats</p>
+                        <p class="text-xs text-muted-foreground">{{ principal.libelle }} (Activité principale)</p>
+                      </td>
+                      <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(principal.achats) }}</td>
+                      <td class="px-3 py-2 text-right text-foreground">
+                        @if (isEditingCreditAnterieur('ACHAT')) {
+                          <div class="flex justify-end gap-1">
+                            <input
+                              type="number"
+                              [formControl]="creditAnterieurForm.controls.montant"
+                              class="w-28 rounded-md border border-border bg-background px-2 py-1 text-xs"
+                            />
+                            <button
+                              type="button"
+                              (click)="saveCreditAnterieurEdit()"
+                              class="rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                              [disabled]="isSavingCreditAnterieur()"
+                            >
+                              Enr.
+                            </button>
+                            <button
+                              type="button"
+                              (click)="cancelCreditAnterieurEdit()"
+                              class="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted cursor-pointer"
+                            >
+                              X
+                            </button>
+                          </div>
+                        } @else {
+                          <div class="flex items-center justify-end gap-1">
+                            <span>{{ formatMontant(principal.creditAnt?.achat) }}</span>
+                            @if (canEditCreditAnterieur() && principal.id) {
+                              <button
+                                type="button"
+                                (click)="openCreditAnterieurEdit('ACHAT', principal.creditAnt?.achat, principal.id)"
+                                class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                              >
+                                <lucide-icon [img]="PencilIcon" [size]="13" />
+                              </button>
+                            }
+                          </div>
+                        }
+                      </td>
+                    </tr>
+                    <tr class="border-b border-border bg-muted/20">
+                      <td class="px-3 py-2 font-semibold text-foreground">Marge commerciale</td>
+                      <td class="px-3 py-2 text-right font-semibold text-foreground">{{ formatMontant(principal.margeCom) }}</td>
+                      <td class="px-3 py-2 text-right font-semibold text-foreground">{{ formatMontant(principal.creditAnt?.margeComm) }}</td>
+                    </tr>
+                    <tr class="border-b border-border">
+                      <td class="px-3 py-2">
+                        <p class="font-medium text-foreground">Charges d'exploitation</p>
+                        <p class="text-xs text-muted-foreground">{{ principal.libelle }} (Activité principale)</p>
+                      </td>
+                      <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(principal.chargeExpl) }}</td>
+                      <td class="px-3 py-2 text-right text-foreground">
+                        @if (isEditingCreditAnterieur('CHARGEEXPL')) {
+                          <div class="flex justify-end gap-1">
+                            <input
+                              type="number"
+                              [formControl]="creditAnterieurForm.controls.montant"
+                              class="w-28 rounded-md border border-border bg-background px-2 py-1 text-xs"
+                            />
+                            <button
+                              type="button"
+                              (click)="saveCreditAnterieurEdit()"
+                              class="rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                              [disabled]="isSavingCreditAnterieur()"
+                            >
+                              Enr.
+                            </button>
+                            <button
+                              type="button"
+                              (click)="cancelCreditAnterieurEdit()"
+                              class="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted cursor-pointer"
+                            >
+                              X
+                            </button>
+                          </div>
+                        } @else {
+                          <div class="flex items-center justify-end gap-1">
+                            <span>{{ formatMontant(principal.creditAnt?.chargeExplo) }}</span>
+                            @if (canEditCreditAnterieur() && principal.id) {
+                              <button
+                                type="button"
+                                (click)="openCreditAnterieurEdit('CHARGEEXPL', principal.creditAnt?.chargeExplo, principal.id)"
+                                class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                              >
+                                <lucide-icon [img]="PencilIcon" [size]="13" />
+                              </button>
+                            }
+                          </div>
+                        }
+                      </td>
+                    </tr>
+                    <tr class="border-b border-border bg-muted/20">
+                      <td class="px-3 py-2 font-semibold text-foreground">(1) RESULTAT NET</td>
+                      <td class="px-3 py-2 text-right font-semibold text-foreground">{{ formatMontant(principal.resultNet) }}</td>
+                      <td class="px-3 py-2 text-right font-semibold text-foreground">—</td>
+                    </tr>
+                    @for (autre of cr.autresActivite ?? []; track autre.id ?? $index) {
+                      <tr class="border-b border-border">
+                        <td class="px-3 py-2">
+                          <p class="font-medium text-foreground">{{ $index + 2 }}ème activité</p>
+                          <p class="text-xs text-muted-foreground">{{ autre.libelle }} (Activité secondaire)</p>
+                        </td>
+                        <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(autre.resultNet) }}</td>
+                        <td class="px-3 py-2 text-right text-foreground">—</td>
+                      </tr>
+                    }
+                    <tr class="border-b border-border">
+                      <td class="px-3 py-2 font-medium text-foreground">Autres revenus de la famille</td>
+                      <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(cr.autreRevenuFamille?.total) }}</td>
+                      <td class="px-3 py-2 text-right text-foreground">
+                        @if (isEditingCreditAnterieur('AUTREREVENU')) {
+                          <div class="flex justify-end gap-1">
+                            <input
+                              type="number"
+                              [formControl]="creditAnterieurForm.controls.montant"
+                              class="w-28 rounded-md border border-border bg-background px-2 py-1 text-xs"
+                            />
+                            <button
+                              type="button"
+                              (click)="saveCreditAnterieurEdit()"
+                              class="rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                              [disabled]="isSavingCreditAnterieur()"
+                            >
+                              Enr.
+                            </button>
+                            <button
+                              type="button"
+                              (click)="cancelCreditAnterieurEdit()"
+                              class="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted cursor-pointer"
+                            >
+                              X
+                            </button>
+                          </div>
+                        } @else {
+                          <div class="flex items-center justify-end gap-1">
+                            <span>{{ formatMontant(cr.autreRevenuFamille?.creditAnt) }}</span>
+                            @if (canEditCreditAnterieur()) {
+                              <button
+                                type="button"
+                                (click)="openCreditAnterieurEdit('AUTREREVENU', cr.autreRevenuFamille?.creditAnt)"
+                                class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                              >
+                                <lucide-icon [img]="PencilIcon" [size]="13" />
+                              </button>
+                            }
+                          </div>
+                        }
+                      </td>
+                    </tr>
+                    <tr class="border-b border-border">
+                      <td class="px-3 py-2 font-medium text-foreground">Charges familiales</td>
+                      <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(cr.chargeFamilliale?.total) }}</td>
+                      <td class="px-3 py-2 text-right text-foreground">
+                        @if (isEditingCreditAnterieur('CHARGEFAMIL')) {
+                          <div class="flex justify-end gap-1">
+                            <input
+                              type="number"
+                              [formControl]="creditAnterieurForm.controls.montant"
+                              class="w-28 rounded-md border border-border bg-background px-2 py-1 text-xs"
+                            />
+                            <button
+                              type="button"
+                              (click)="saveCreditAnterieurEdit()"
+                              class="rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                              [disabled]="isSavingCreditAnterieur()"
+                            >
+                              Enr.
+                            </button>
+                            <button
+                              type="button"
+                              (click)="cancelCreditAnterieurEdit()"
+                              class="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted cursor-pointer"
+                            >
+                              X
+                            </button>
+                          </div>
+                        } @else {
+                          <div class="flex items-center justify-end gap-1">
+                            <span>{{ formatMontant(cr.chargeFamilliale?.creditAnt) }}</span>
+                            @if (canEditCreditAnterieur()) {
+                              <button
+                                type="button"
+                                (click)="openCreditAnterieurEdit('CHARGEFAMIL', cr.chargeFamilliale?.creditAnt)"
+                                class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                              >
+                                <lucide-icon [img]="PencilIcon" [size]="13" />
+                              </button>
+                            }
+                          </div>
+                        }
+                      </td>
+                    </tr>
+                    <tr class="border-b border-border bg-muted/20">
+                      <td class="px-3 py-2 font-semibold text-foreground">(2) SOLDE FAMILIAL</td>
+                      <td class="px-3 py-2 text-right font-semibold text-foreground">{{ formatMontant(cr.soldeFamille?.total) }}</td>
+                      <td class="px-3 py-2 text-right font-semibold text-foreground">{{ formatMontant(cr.soldeFamille?.creditAnt) }}</td>
+                    </tr>
+                    <tr class="bg-green-50 dark:bg-green-950/20">
+                      <td class="px-3 py-2 font-semibold text-green-800 dark:text-green-400">(1) + (2) CAPACITE DE REMBOURSEMENT</td>
+                      <td class="px-3 py-2 text-right font-semibold text-green-800 dark:text-green-400">{{ formatMontant(cr.capaciteRemb?.total) }}</td>
+                      <td class="px-3 py-2 text-right font-semibold text-green-800 dark:text-green-400">{{ formatMontant(cr.capaciteRemb?.creditAnt) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <p class="text-sm text-muted-foreground py-8 text-center">Compte de résultats indisponible.</p>
+            }
+          } @else {
+            <p class="text-sm text-muted-foreground py-8 text-center">Compte de résultats indisponible.</p>
+          }
+        }
+
         <!-- ── SWOT ──────────────────────────────────────────────── -->
         @if (activeTab() === 'swot') {
-          @if (swot().forces.length || swot().faiblesses.length || swot().opportunites.length || swot().menaces.length) {
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              @if (swot().forces.length) {
-                <div class="rounded-lg border border-green-200 bg-green-50 p-4">
-                  <h4 class="text-xs font-semibold uppercase text-green-700 mb-2">Forces</h4>
-                  <ul class="space-y-1">
-                    @for (item of swot().forces; track $index) {
-                      <li class="flex items-start gap-2 text-sm text-green-800">
-                        <lucide-icon [img]="CheckCircleIcon" [size]="13" class="mt-0.5 shrink-0 text-green-600" />
-                        {{ item }}
-                      </li>
-                    }
-                  </ul>
+          <div class="flex flex-col gap-4">
+            <section class="rounded-lg border border-border bg-card p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-start gap-3">
+                  <div class="flex h-9 w-9 items-center justify-center rounded-md bg-destructive/10">
+                    <lucide-icon [img]="AlertCircleIcon" [size]="15" class="text-destructive" />
+                  </div>
+                  <div>
+                    <h4 class="leading-none font-medium tracking-tight text-foreground">FORCES</h4>
+                    <p class="mt-1 text-sm text-muted-foreground">Analyse SWOT</p>
+                  </div>
                 </div>
+                @if (canEditSwotAR()) {
+                  <button type="button" (click)="openSwotEditor(1)" class="rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-white hover:bg-destructive/90 transition-colors cursor-pointer">+ Ajouter</button>
+                }
+              </div>
+              @if (swotItems(1).length) {
+                <ul class="mt-4 space-y-1.5 border-t border-border/70 pt-3">
+                  @for (item of swotItems(1); track item.id ?? $index) {
+                    <li class="flex items-center justify-between border border-border p-2 rounded-sm gap-2 text-sm text-foreground">
+                      <span>{{ item.description }}</span>
+                      @if (canEditSwotAR()) {
+                        <button type="button" (click)="openSwotEditEditor(item)" class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+                          <lucide-icon [img]="PencilIcon" [size]="13" />
+                        </button>
+                      }
+                    </li>
+                  }
+                </ul>
               }
-              @if (swot().faiblesses.length) {
-                <div class="rounded-lg border border-red-200 bg-red-50 p-4">
-                  <h4 class="text-xs font-semibold uppercase text-red-700 mb-2">Faiblesses</h4>
-                  <ul class="space-y-1">
-                    @for (item of swot().faiblesses; track $index) {
-                      <li class="flex items-start gap-2 text-sm text-red-800">
-                        <lucide-icon [img]="XCircleIcon" [size]="13" class="mt-0.5 shrink-0 text-red-500" />
-                        {{ item }}
-                      </li>
-                    }
-                  </ul>
+            </section>
+
+            <section class="rounded-lg border border-border bg-card p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-start gap-3">
+                  <div class="flex h-9 w-9 items-center justify-center rounded-md bg-destructive/10">
+                    <lucide-icon [img]="AlertCircleIcon" [size]="15" class="text-destructive" />
+                  </div>
+                  <div>
+                    <h4 class="leading-none font-medium tracking-tight text-foreground">FAIBLESSES</h4>
+                    <p class="mt-1 text-sm text-muted-foreground">Analyse SWOT</p>
+                  </div>
                 </div>
+                @if (canEditSwotAR()) {
+                  <button type="button" (click)="openSwotEditor(2)" class="rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-white hover:bg-destructive/90 transition-colors cursor-pointer">Ajouter</button>
+                }
+              </div>
+              @if (swotItems(2).length) {
+                <ul class="mt-4 space-y-1 border-t border-border/70 pt-3">
+                  @for (item of swotItems(2); track item.id ?? $index) {
+                    <li class="flex items-center justify-between gap-2 text-sm text-foreground">
+                      <span>{{ item.description }}</span>
+                      @if (canEditSwotAR()) {
+                        <button type="button" (click)="openSwotEditEditor(item)" class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+                          <lucide-icon [img]="PencilIcon" [size]="13" />
+                        </button>
+                      }
+                    </li>
+                  }
+                </ul>
               }
-              @if (swot().opportunites.length) {
-                <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                  <h4 class="text-xs font-semibold uppercase text-blue-700 mb-2">Opportunités</h4>
-                  <ul class="space-y-1">
-                    @for (item of swot().opportunites; track $index) {
-                      <li class="flex items-start gap-2 text-sm text-blue-800">
-                        <lucide-icon [img]="TrendingUpIcon" [size]="13" class="mt-0.5 shrink-0 text-blue-500" />
-                        {{ item }}
-                      </li>
-                    }
-                  </ul>
+            </section>
+
+            <section class="rounded-lg border border-border bg-card p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-start gap-3">
+                  <div class="flex h-9 w-9 items-center justify-center rounded-md bg-destructive/10">
+                    <lucide-icon [img]="AlertCircleIcon" [size]="15" class="text-destructive" />
+                  </div>
+                  <div>
+                    <h4 class="leading-none font-medium tracking-tight text-foreground">OPPORTUNITES</h4>
+                    <p class="mt-1 text-sm text-muted-foreground">Analyse SWOT</p>
+                  </div>
                 </div>
+                @if (canEditSwotAR()) {
+                  <button type="button" (click)="openSwotEditor(3)" class="rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-white hover:bg-destructive/90 transition-colors cursor-pointer">Ajouter</button>
+                }
+              </div>
+              @if (swotItems(3).length) {
+                <ul class="mt-4 space-y-1 border-t border-border/70 pt-3">
+                  @for (item of swotItems(3); track item.id ?? $index) {
+                    <li class="flex items-center justify-between gap-2 text-sm text-foreground">
+                      <span>{{ item.description }}</span>
+                      @if (canEditSwotAR()) {
+                        <button type="button" (click)="openSwotEditEditor(item)" class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+                          <lucide-icon [img]="PencilIcon" [size]="13" />
+                        </button>
+                      }
+                    </li>
+                  }
+                </ul>
               }
-              @if (swot().menaces.length) {
-                <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-                  <h4 class="text-xs font-semibold uppercase text-yellow-700 mb-2">Menaces</h4>
-                  <ul class="space-y-1">
-                    @for (item of swot().menaces; track $index) {
-                      <li class="flex items-start gap-2 text-sm text-yellow-800">
-                        <lucide-icon [img]="AlertCircleIcon" [size]="13" class="mt-0.5 shrink-0 text-yellow-600" />
-                        {{ item }}
-                      </li>
-                    }
-                  </ul>
+            </section>
+
+            <section class="rounded-lg border border-border bg-card p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-start gap-3">
+                  <div class="flex h-9 w-9 items-center justify-center rounded-md bg-destructive/10">
+                    <lucide-icon [img]="AlertCircleIcon" [size]="15" class="text-destructive" />
+                  </div>
+                  <div>
+                    <h4 class="leading-none font-medium tracking-tight text-foreground">MENACES</h4>
+                    <p class="mt-1 text-sm text-muted-foreground">Analyse SWOT</p>
+                  </div>
                 </div>
+                @if (canEditSwotAR()) {
+                  <button type="button" (click)="openSwotEditor(4)" class="rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-white hover:bg-destructive/90 transition-colors cursor-pointer">Ajouter</button>
+                }
+              </div>
+              @if (swotItems(4).length) {
+                <ul class="mt-4 space-y-1 border-t border-border/70 pt-3">
+                  @for (item of swotItems(4); track item.id ?? $index) {
+                    <li class="flex items-center justify-between gap-2 text-sm text-foreground">
+                      <span>{{ item.description }}</span>
+                      @if (canEditSwotAR()) {
+                        <button type="button" (click)="openSwotEditEditor(item)" class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer">
+                          <lucide-icon [img]="PencilIcon" [size]="13" />
+                        </button>
+                      }
+                    </li>
+                  }
+                </ul>
               }
-            </div>
-          } @else {
-            <p class="text-sm text-muted-foreground py-8 text-center">Aucune analyse SWOT enregistrée.</p>
-          }
+            </section>
+          </div>
+
+          <app-drawer [open]="swotEditorOpen()" (openChange)="onSwotDrawerOpenChange($event)" panelClass="max-w-lg">
+            <app-drawer-header>
+              <app-drawer-title>{{ swotEditorTitle() }}</app-drawer-title>
+            </app-drawer-header>
+            <app-drawer-content>
+              <form [formGroup]="swotForm" class="flex flex-col gap-4">
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium text-muted-foreground">Description <span class="text-destructive">*</span></label>
+                  <select formControlName="description" class="h-10 w-full rounded-md border border-border bg-background px-3 text-sm">
+                    <option value="">-- Sélectionner --</option>
+                    @for (label of swotDescriptionOptions(); track label) {
+                      <option [value]="label">{{ label }}</option>
+                    }
+                  </select>
+                </div>
+                @if (isSwotDescriptionAutres()) {
+                  <div>
+                    <label class="mb-1.5 block text-sm font-medium text-muted-foreground">Autres <span class="text-destructive">*</span></label>
+                    <input formControlName="libelle" type="text" class="h-10 w-full rounded-md border border-border bg-background px-3 text-sm" />
+                  </div>
+                }
+              </form>
+            </app-drawer-content>
+            <app-drawer-footer>
+              <div class="flex justify-end gap-2">
+                <button type="button" (click)="closeSwotEditor()" class="rounded-md border border-border px-3 py-2 text-xs font-medium hover:bg-muted transition-colors cursor-pointer">Annuler</button>
+                <button
+                  type="button"
+                  (click)="saveSwotFromResume()"
+                  class="rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
+                  [disabled]="isSavingSwot() || !swotForm.valid || (isSwotDescriptionAutres() && !(swotForm.get('libelle')?.value ?? '').trim())"
+                >
+                  @if (isSavingSwot()) { Enregistrement... } @else { Enregistrer }
+                </button>
+              </div>
+            </app-drawer-footer>
+          </app-drawer>
         }
 
         <!-- ── Garanties ──────────────────────────────────────────── -->
@@ -459,18 +836,18 @@
 
             @if (garantiesSousOnglet === 'calcul') {
 
-            <!-- Garanties proposées (résumé simple) -->
-            @if (resume()?.garantieProposes; as g) {
+            <!-- Garanties proposées (parité legacy) -->
+            @if (resume()?.garantieDecision; as g) {
               <section>
                 <h3 class="text-sm font-semibold text-foreground mb-3">Garanties proposées</h3>
                 <div class="flex items-center gap-6 mb-3">
                   <div>
                     <p class="text-xs text-muted-foreground">Montant total des garanties</p>
-                    <p class="text-lg font-bold text-foreground">{{ formatMontant(g.montantTotal) }}</p>
+                    <p class="text-lg font-bold text-foreground">{{ formatMontant(garantieDecisionTotalDisplayLegacy()) }}</p>
                   </div>
                   @if (g.rapportCredit != null) {
                     <div>
-                      <p class="text-xs text-muted-foreground">Rapport crédit / garanties</p>
+                      <p class="text-xs text-muted-foreground">Rapport garanties / crédit</p>
                       <p class="text-lg font-bold text-foreground">{{ g.rapportCredit }}%</p>
                     </div>
                   }
@@ -496,72 +873,7 @@
               </section>
             }
 
-            <!-- Garanties de la décision (données consolidées avec montantDecision, pourcentage, éléments véhicule) -->
-            @if (resume()?.garantieDecision?.garanties?.length) {
-              <section class="border-t border-border pt-6">
-                <h3 class="text-sm font-semibold text-foreground mb-3">Garanties – décision finale</h3>
-                @if (resume()!.garantieDecision!.total != null || resume()!.garantieDecision!.rapportCredit != null) {
-                  <div class="flex items-center gap-6 mb-3">
-                    @if (resume()!.garantieDecision!.total != null) {
-                      <div>
-                        <p class="text-xs text-muted-foreground">Total garanties</p>
-                        <p class="text-lg font-bold text-foreground">{{ formatMontant(resume()!.garantieDecision!.total) }}</p>
-                      </div>
-                    }
-                    @if (resume()!.garantieDecision!.rapportCredit != null) {
-                      <div>
-                        <p class="text-xs text-muted-foreground">Rapport garanties / crédit</p>
-                        <p class="text-lg font-bold text-foreground">{{ resume()!.garantieDecision!.rapportCredit }}%</p>
-                      </div>
-                    }
-                  </div>
-                }
-                <div class="flex flex-col gap-3">
-                  @for (gar of resume()!.garantieDecision!.garanties!; track $index) {
-                    <div class="rounded-lg border border-border bg-card p-4">
-                      <div class="flex flex-wrap items-start justify-between gap-2 mb-2">
-                        <h5 class="text-sm font-semibold text-foreground">{{ gar.libelle }}</h5>
-                        <div class="flex flex-wrap gap-3">
-                          @if (gar.montant != null) {
-                            <div class="text-right">
-                              <p class="text-[10px] text-muted-foreground">Montant proposé</p>
-                              <p class="text-xs font-medium text-foreground">{{ formatMontant(gar.montant) }}</p>
-                            </div>
-                          }
-                          @if (gar.pourcentage != null) {
-                            <div class="text-right">
-                              <p class="text-[10px] text-muted-foreground">Pourcentage</p>
-                              <p class="text-xs font-medium text-amber-600 dark:text-amber-400">{{ gar.pourcentage }}%</p>
-                            </div>
-                          }
-                          @if (gar.montantDecision != null) {
-                            <div class="text-right">
-                              <p class="text-[10px] text-muted-foreground">Montant décision</p>
-                              <p class="text-xs font-semibold text-green-700 dark:text-green-400">{{ formatMontant(gar.montantDecision) }}</p>
-                            </div>
-                          }
-                        </div>
-                      </div>
-                      <!-- Éléments véhicule -->
-                      @if (isVehiculeGarantie(gar) && gar.elements?.length) {
-                        <ul class="mt-2 space-y-1 border-t border-border/40 pt-2">
-                          @for (elem of gar.elements!; track $index) {
-                            <li class="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-foreground">
-                              @if (elem.marque) { <span><strong>Marque :</strong> {{ elem.marque }}</span> }
-                              @if (elem.immatriculation) { <span><strong>Immatr. :</strong> {{ elem.immatriculation }}</span> }
-                              @if (elem.typeVehicule) { <span><strong>Type :</strong> {{ elem.typeVehicule }}</span> }
-                              @if (elem.valeurEstime != null) { <span><strong>Valeur estimée :</strong> {{ formatMontant(elem.valeurEstime) }}</span> }
-                            </li>
-                          }
-                        </ul>
-                      }
-                    </div>
-                  }
-                </div>
-              </section>
-            }
-
-            @if (!resume()?.garantieProposes && !resume()?.garantieDecision?.garanties?.length) {
+            @if (!resume()?.garantieDecision?.garanties?.length) {
               <p class="text-sm text-muted-foreground py-8 text-center">Aucune garantie enregistrée.</p>
             }
 
@@ -572,6 +884,104 @@
 
         <!-- ── Proposition AR ────────────────────────────────────── -->
         @if (activeTab() === 'proposition') {
+          <div class="flex items-center justify-between gap-3 mb-4">
+            <h3 class="text-sm font-semibold text-foreground">PROPOSITION DE L'ANALYSTE RISQUE</h3>
+            @if (canEditPropositionAR()) {
+              <button
+                type="button"
+                (click)="openPropositionEditor()"
+                class="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+              >
+                <lucide-icon [img]="ThumbsUpIcon" [size]="13" />
+                {{ resume()?.proposition ? 'Modifier' : 'Faire une proposition' }}
+              </button>
+            }
+          </div>
+
+          @if (propositionEditorOpen()) {
+            <section class="mb-6 rounded-lg border border-border bg-muted/20 p-4">
+              <form [formGroup]="propositionForm" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Montant proposé (FCFA) *</label>
+                  <input type="number" formControlName="montantPropose" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Hypothèque *</label>
+                  <select formControlName="hypotheque" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+                    <option [ngValue]="1">OUI</option>
+                    <option [ngValue]="2">NON</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Durée (mois) *</label>
+                  <input type="number" formControlName="duree" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Mensualité (FCFA) *</label>
+                  <input type="number" formControlName="mensualite" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Date échéance (jour du mois) *</label>
+                  <input type="number" formControlName="dateEcheanceSouhaite" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Différé *</label>
+                  <select formControlName="periodeGrace" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+                    <option [ngValue]="1">OUI</option>
+                    <option [ngValue]="2">NON</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Nb mois différé *</label>
+                  <input type="number" formControlName="nbreMoisGrace" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Acte notarié *</label>
+                  <select formControlName="acteNotarie" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+                    <option [ngValue]="1">OUI</option>
+                    <option [ngValue]="0">NON</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Assurance multi-risque *</label>
+                  <select formControlName="assurMultiRisk" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+                    <option [ngValue]="1">OUI</option>
+                    <option [ngValue]="0">NON</option>
+                  </select>
+                </div>
+                <div class="sm:col-span-2 lg:col-span-3">
+                  <label class="mb-1 block text-xs text-muted-foreground">Argumentaire *</label>
+                  <textarea formControlName="argumentaire" rows="4" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"></textarea>
+                </div>
+              </form>
+
+              <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3 text-xs">
+                <div class="rounded-md border border-border bg-background px-3 py-2">
+                  <span class="text-muted-foreground">Montant acte notarié:</span>
+                  <span class="ml-2 font-semibold">{{ formatMontant(propositionMontantActeNotarie()) }}</span>
+                </div>
+                <div class="rounded-md border border-border bg-background px-3 py-2">
+                  <span class="text-muted-foreground">Frais dossier:</span>
+                  <span class="ml-2 font-semibold">{{ formatMontant(propositionFraisDossier()) }}</span>
+                </div>
+                <div class="rounded-md border border-border bg-background px-3 py-2">
+                  <span class="text-muted-foreground">Montant emprunté:</span>
+                  <span class="ml-2 font-semibold">{{ formatMontant((propositionForm.get('montantPropose')?.value ?? 0) + propositionFraisDossier()) }}</span>
+                </div>
+              </div>
+
+              <div class="mt-4 flex items-center justify-end gap-2">
+                <button type="button" (click)="recalculatePropositionFrais()" class="rounded-md border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-muted transition-colors cursor-pointer" [disabled]="isCalculatingPropositionFrais()">
+                  @if (isCalculatingPropositionFrais()) { Calcul... } @else { Calculer frais }
+                </button>
+                <button type="button" (click)="closePropositionEditor()" class="rounded-md border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-muted transition-colors cursor-pointer">Annuler</button>
+                <button type="button" (click)="savePropositionARFromResume()" class="rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer" [disabled]="isSavingProposition()">
+                  @if (isSavingProposition()) { Enregistrement... } @else { Enregistrer }
+                </button>
+              </div>
+            </section>
+          }
+
           @if (resume()?.proposition; as p) {
             <div class="flex flex-col gap-6">
 
@@ -585,15 +995,15 @@
                       <p class="text-sm font-medium text-foreground">{{ formatMontant(p.montantPropose) }}</p>
                     </div>
                   }
-                  @if (p.montantEmprunte != null) {
+                  @if (propositionMontantEmprunte(p) != null) {
                     <div>
                       <p class="text-xs text-muted-foreground">Montant emprunté</p>
-                      <p class="text-sm font-medium text-foreground">{{ formatMontant(p.montantEmprunte) }}</p>
+                      <p class="text-sm font-medium text-foreground">{{ formatMontant(propositionMontantEmprunte(p)) }}</p>
                     </div>
                   }
                   @if (p.mensualite != null) {
                     <div>
-                      <p class="text-xs text-muted-foreground">Échéance (mensualité)</p>
+                      <p class="text-xs text-muted-foreground">Échéance</p>
                       <p class="text-sm font-medium text-foreground">{{ formatMontant(p.mensualite) }}</p>
                     </div>
                   }
@@ -662,16 +1072,16 @@
                         <p class="text-sm font-medium text-foreground">{{ p.deposit }}%</p>
                       </div>
                     }
-                    @if (p.deposit != null && p.montantEmprunte != null) {
+                    @if (p.deposit != null && p.montantPropose != null) {
                       <div>
                         <p class="text-xs text-muted-foreground">Total du déposit</p>
-                        <p class="text-sm font-medium text-foreground">{{ formatMontant(calculMontantDeposit(p.deposit, p.montantEmprunte)) }}</p>
+                        <p class="text-sm font-medium text-foreground">{{ formatMontant(calculMontantDeposit(p.deposit, p.montantPropose)) }}</p>
                       </div>
                     }
-                    @if (p.deposit != null && p.montantEmprunte != null && resume()?.garantieProposes?.montantTotal != null) {
+                    @if (p.deposit != null && p.montantPropose != null && resume()?.garantieProposes) {
                       <div>
                         <p class="text-xs text-muted-foreground">Total garanties + Déposit</p>
-                        <p class="text-sm font-medium text-foreground">{{ formatMontant(resume()!.garantieProposes!.montantTotal! + calculMontantDeposit(p.deposit, p.montantEmprunte)) }}</p>
+                        <p class="text-sm font-medium text-foreground">{{ formatMontant(garantieProposeeTotal() + calculMontantDeposit(p.deposit, p.montantPropose)) }}</p>
                       </div>
                     }
                     @if (p.tauxCouverture != null) {
@@ -689,16 +1099,10 @@
                 <section>
                   <h4 class="text-xs font-semibold uppercase text-muted-foreground mb-3">Conditions et modalités</h4>
                   <div class="grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-3">
-                    @if (p.periodeGrace != null) {
+                    @if (p.periodeGrace == 2) {
                       <div>
                         <p class="text-xs text-muted-foreground">Différé</p>
-                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-                          [class.bg-blue-100]="p.periodeGrace == 1"
-                          [class.text-blue-700]="p.periodeGrace == 1"
-                          [class.bg-gray-100]="p.periodeGrace != 1"
-                          [class.text-gray-700]="p.periodeGrace != 1">
-                          {{ p.periodeGrace == 1 ? 'Oui' : 'Non' }}
-                        </span>
+                        <p class="text-sm font-medium text-foreground">Non</p>
                       </div>
                     }
                     @if (p.periodeGrace == 1 && p.nbreMoisGrace != null) {
@@ -744,7 +1148,7 @@
               <!-- Checkliste documents complémentaires -->
               @if (parseCheckliste(p.checkliste).length) {
                 <section>
-                  <h4 class="text-xs font-semibold uppercase text-muted-foreground mb-2">Documents complémentaires requis</h4>
+                  <h4 class="text-xs font-semibold uppercase text-muted-foreground mb-2">Liste des documents complémentaires pour ce dossier</h4>
                   <ul class="space-y-1">
                     @for (doc of parseCheckliste(p.checkliste); track $index) {
                       <li class="flex items-center gap-2 text-sm text-foreground">
@@ -759,7 +1163,7 @@
               <!-- Motivation/Argumentaire -->
               @if (p.argumentaire || p.motivation || p.commentaire) {
                 <section>
-                  <h4 class="text-xs font-semibold uppercase text-muted-foreground mb-2">Motivation / Argumentaire</h4>
+                  <h4 class="text-xs font-semibold uppercase text-muted-foreground mb-2">Commentaire</h4>
                   <div class="text-sm text-foreground leading-relaxed bg-muted/30 rounded-lg p-4" [innerHTML]="p.argumentaire || p.motivation || p.commentaire"></div>
                 </section>
               }
@@ -772,11 +1176,11 @@
                       <lucide-icon [img]="UsersIcon" [size]="20" class="text-primary" />
                     </div>
                     <div>
-                      <p class="text-sm font-medium text-foreground">{{ p.user.nomPrenom }}</p>
+                      <p class="text-sm font-medium text-foreground">{{ comiteActorName(p.user) }}</p>
                       <p class="text-xs text-muted-foreground">
-                        {{ p.user.profil?.libelle || 'Analyste Risque' }}
-                        @if (p.user.agence?.libelle) {
-                          <span> · {{ p.user.agence?.libelle }}</span>
+                        {{ comiteActorProfil(p.user) }}
+                        @if (comiteActorAgence(p.user); as agence) {
+                          <span> · {{ agence }}</span>
                         }
                       </p>
                     </div>
@@ -784,11 +1188,105 @@
                 </section>
               }
             </div>
+          } @else {
+            <p class="text-sm text-muted-foreground py-8 text-center">Aucune proposition AR enregistrée.</p>
           }
         }
 
         <!-- ── Contre-évaluation ──────────────────────────────────── -->
         @if (activeTab() === 'contre-eval') {
+          <div class="mb-4 flex items-center justify-end">
+            @if (canEditContreEvaluation()) {
+              <button
+                type="button"
+                (click)="openContreEvaluationEditor()"
+                class="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+              >
+                <lucide-icon [img]="ThumbsDownIcon" [size]="13" />
+                {{ resume()?.contreEvaluation ? 'Modifier' : 'Faire une contre-évaluation' }}
+              </button>
+            }
+          </div>
+
+          @if (contreEvaluationEditorOpen()) {
+            <section class="mb-6 rounded-lg border border-border bg-muted/20 p-4">
+              <form [formGroup]="contreEvaluationForm" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Montant proposé (FCFA) *</label>
+                  <input type="number" formControlName="montantPropose" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Hypothèque *</label>
+                  <select formControlName="hypotheque" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+                    <option [ngValue]="1">Oui</option>
+                    <option [ngValue]="2">Non</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Durée (mois) *</label>
+                  <input type="number" formControlName="duree" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Mensualité (FCFA) *</label>
+                  <input type="number" formControlName="mensualite" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Date d’échéance souhaitée *</label>
+                  <input type="number" min="1" max="31" formControlName="dateEcheanceSouhaite" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Période de grâce *</label>
+                  <select formControlName="periodeGrace" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+                    <option [ngValue]="1">Oui</option>
+                    <option [ngValue]="2">Non</option>
+                  </select>
+                </div>
+                @if (contreEvaluationForm.get('periodeGrace')?.value === 1) {
+                  <div>
+                    <label class="mb-1 block text-xs text-muted-foreground">Nombre de mois de grâce *</label>
+                    <input type="number" formControlName="nbreMoisGrace" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+                  </div>
+                }
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Acte notarié *</label>
+                  <select formControlName="acteNotarie" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+                    <option [ngValue]="1">Oui</option>
+                    <option [ngValue]="0">Non</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Assurance multi-risques *</label>
+                  <select formControlName="assurMultiRisk" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+                    <option [ngValue]="1">Oui</option>
+                    <option [ngValue]="0">Non</option>
+                  </select>
+                </div>
+                <div class="sm:col-span-2 lg:col-span-3">
+                  <label class="mb-1 block text-xs text-muted-foreground">Argumentaire *</label>
+                  <textarea formControlName="argumentaire" rows="3" class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"></textarea>
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Montant acte notarié (FCFA)</label>
+                  <input type="number" [value]="contreEvaluationMontantActeNotarie()" disabled class="w-full rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs text-muted-foreground">Frais dossier (FCFA)</label>
+                  <input type="number" [value]="contreEvaluationFraisDossier()" disabled class="w-full rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground" />
+                </div>
+              </form>
+
+              <div class="mt-4 flex items-center justify-end gap-2">
+                <button type="button" (click)="recalculateContreEvaluationFrais()" class="rounded-md border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-muted transition-colors cursor-pointer" [disabled]="isCalculatingContreEvaluationFrais()">
+                  @if (isCalculatingContreEvaluationFrais()) { Calcul... } @else { Calculer frais }
+                </button>
+                <button type="button" (click)="closeContreEvaluationEditor()" class="rounded-md border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-muted transition-colors cursor-pointer">Annuler</button>
+                <button type="button" (click)="saveContreEvaluationFromResume()" class="rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer" [disabled]="isSavingContreEvaluation()">
+                  @if (isSavingContreEvaluation()) { Enregistrement... } @else { Enregistrer }
+                </button>
+              </div>
+            </section>
+          }
+
           @if (resume()?.contreEvaluation; as ce) {
             <div class="flex flex-col gap-6">
 
@@ -879,16 +1377,16 @@
                         <p class="text-sm font-medium text-foreground">{{ ce.deposit }}%</p>
                       </div>
                     }
-                    @if (ce.deposit != null && ce.montantEmprunte != null) {
+                    @if (ce.deposit != null && ce.montantPropose != null) {
                       <div>
                         <p class="text-xs text-muted-foreground">Total du déposit</p>
-                        <p class="text-sm font-medium text-foreground">{{ formatMontant(calculMontantDeposit(ce.deposit, ce.montantEmprunte)) }}</p>
+                        <p class="text-sm font-medium text-foreground">{{ formatMontant(calculMontantDeposit(ce.deposit, ce.montantPropose)) }}</p>
                       </div>
                     }
-                    @if (ce.deposit != null && ce.montantEmprunte != null && resume()?.garantieDecision?.total != null) {
+                    @if (ce.deposit != null && ce.montantPropose != null && resume()?.garantieDecision) {
                       <div>
                         <p class="text-xs text-muted-foreground">Total garanties + Déposit</p>
-                        <p class="text-sm font-medium text-foreground">{{ formatMontant(resume()!.garantieDecision!.total! + calculMontantDeposit(ce.deposit, ce.montantEmprunte)) }}</p>
+                        <p class="text-sm font-medium text-foreground">{{ formatMontant(garantieDecisionTotalLegacy() + calculMontantDeposit(ce.deposit, ce.montantPropose)) }}</p>
                       </div>
                     }
                     @if (ce.tauxCouverture != null) {
@@ -1001,6 +1499,8 @@
                 </section>
               }
             </div>
+          } @else {
+            <p class="text-sm text-muted-foreground py-8 text-center">Aucune contre-évaluation enregistrée.</p>
           }
         }
 
@@ -1036,56 +1536,133 @@
           </div>
         }
 
-        <!-- ── Comités ────────────────────────────────────────────── -->
-        @if (activeTab() === 'comites') {
+        <!-- ── Pré-comité ─────────────────────────────────────────── -->
+        @if (activeTab() === 'pre-comite') {
           <div class="flex flex-col gap-6">
-
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="text-sm font-semibold text-foreground">Pré-comité</h3>
+              @if (canCreatePreComiteDecision()) {
+                <button
+                  type="button"
+                  (click)="openPreComiteEditor()"
+                  class="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <lucide-icon [img]="PencilIcon" [size]="13" />
+                  Décision pré-comité
+                </button>
+              }
+            </div>
+            @if (comiteEditorOpen() && comiteEditorMode() === 'pre-comite') {
+              <ng-container *ngTemplateOutlet="comiteDecisionEditor" />
+            }
             @if (resume()?.precomites?.length) {
               <section>
-                <h3 class="text-sm font-semibold text-foreground mb-3">Pré-comité</h3>
-                @for (pc of resume()!.precomites!; track pc.id) {
-                  <ng-container *ngTemplateOutlet="comiteCard; context: { $implicit: pc }" />
+                @for (pc of resume()!.precomites!; track pc.id; let i = $index) {
+                  @if (pc.statut === 1) {
+                    <ng-container
+                      *ngTemplateOutlet="comiteCard; context: { $implicit: pc, mode: 'pre-comite', title: 'Pré-Comité ' + ((resume()?.precomites?.length ?? 0) - i) }"
+                    />
+                  }
                 }
               </section>
+            } @else {
+              <p class="text-sm text-muted-foreground py-8 text-center">
+                Aucune décision pré-comité n'a été enregistrée.
+              </p>
             }
+          </div>
+        }
 
+        <!-- ── Comité ─────────────────────────────────────────────── -->
+        @if (activeTab() === 'comite') {
+          <div class="flex flex-col gap-6">
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="text-sm font-semibold text-foreground">Comité</h3>
+              @if (canCreateComiteDecision()) {
+                <button
+                  type="button"
+                  (click)="openComiteEditor()"
+                  class="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <lucide-icon [img]="PencilIcon" [size]="13" />
+                  Faire le comité
+                </button>
+              }
+            </div>
+            @if (comiteEditorOpen() && comiteEditorMode() === 'comite') {
+              <ng-container *ngTemplateOutlet="comiteDecisionEditor" />
+            }
             @if (resume()?.comites?.length) {
-              <section class="border-t border-border pt-6">
-                <h3 class="text-sm font-semibold text-foreground mb-3">Comité</h3>
-                @for (c of resume()!.comites!; track c.id) {
-                  <ng-container *ngTemplateOutlet="comiteCard; context: { $implicit: c }" />
+              <section>
+                @for (c of resume()!.comites!; track c.id; let i = $index) {
+                  @if (c.statut === 1) {
+                    <ng-container
+                      *ngTemplateOutlet="comiteCard; context: { $implicit: c, mode: 'comite', title: 'Comité ' + ((resume()?.comites?.length ?? 0) - i) }"
+                    />
+                  }
                 }
               </section>
+            } @else {
+              <p class="text-sm text-muted-foreground py-8 text-center">
+                Aucune décision comité n'a été enregistrée.
+              </p>
             }
-
           </div>
         }
 
         <!-- ── Décision finale ────────────────────────────────────── -->
         @if (activeTab() === 'decision') {
-          @if (resume()?.decision; as d) {
-            <div class="flex flex-col gap-6">
+          <div class="flex flex-col gap-6">
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="text-sm font-semibold text-foreground">Décision finale</h3>
+              @if (resume()?.decision && canEditDecisionFinale()) {
+                <button
+                  type="button"
+                  (click)="openDecisionFinaleEditor()"
+                  class="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <lucide-icon [img]="PencilIcon" [size]="13" />
+                  Modifier la décision
+                </button>
+              } @else if (canCreateDecisionFinale()) {
+                <button
+                  type="button"
+                  (click)="openDecisionFinaleEditor()"
+                  class="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <lucide-icon [img]="PencilIcon" [size]="13" />
+                  Prendre la décision finale
+                </button>
+              }
+            </div>
+
+            @if (decisionFinaleEditorOpen()) {
+              <ng-container *ngTemplateOutlet="decisionFinaleEditor" />
+            }
+
+            @if (resume()?.decision; as d) {
 
               <!-- Paramètres financiers principaux -->
               <section>
                 <div class="flex items-center justify-between mb-3">
                   <h4 class="text-xs font-semibold uppercase text-success">✓ Décision approuvée</h4>
                   @if (d.dateDecision) {
-                    <time class="text-xs text-muted-foreground">Décidée le {{ d.dateDecision | date:'dd/MM/yyyy' }}</time>
+                    <time class="text-xs text-muted-foreground">le {{ d.dateDecision | date:'longDate' }}</time>
                   }
                 </div>
                 <div class="rounded-lg border border-green-200 bg-green-50 p-4">
                   <div class="grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-3">
+                    @let montantEmprunte = decisionFinaleMontantEmprunteDisplay(d);
                     @if (d.montantPropose != null) {
                       <div>
                         <p class="text-xs text-green-700/70">Montant proposé</p>
                         <p class="text-sm font-semibold text-green-800">{{ formatMontant(d.montantPropose) }}</p>
                       </div>
                     }
-                    @if (d.montantEmprunte != null) {
+                    @if (montantEmprunte != null) {
                       <div>
                         <p class="text-xs text-green-700/70">Montant emprunté</p>
-                        <p class="text-base font-bold text-green-800">{{ formatMontant(d.montantEmprunte) }}</p>
+                        <p class="text-base font-bold text-green-800">{{ formatMontant(montantEmprunte) }}</p>
                       </div>
                     }
                     @if (d.mensualite != null) {
@@ -1166,16 +1743,16 @@
                         <p class="text-sm font-medium text-foreground">{{ d.deposit }}%</p>
                       </div>
                     }
-                    @if (d.deposit != null && d.montantEmprunte != null) {
+                    @if (d.deposit != null && d.montantPropose != null) {
                       <div>
                         <p class="text-xs text-muted-foreground">Total du déposit</p>
-                        <p class="text-sm font-medium text-foreground">{{ formatMontant(calculMontantDeposit(d.deposit, d.montantEmprunte)) }}</p>
+                        <p class="text-sm font-medium text-foreground">{{ formatMontant(calculMontantDeposit(d.deposit, d.montantPropose)) }}</p>
                       </div>
                     }
-                    @if (d.deposit != null && d.montantEmprunte != null && resume()?.garantieDecision?.total != null) {
+                    @if (d.deposit != null && d.montantPropose != null && resume()?.garantieDecision) {
                       <div>
                         <p class="text-xs text-muted-foreground">Total garanties + Déposit</p>
-                        <p class="text-sm font-medium text-foreground">{{ formatMontant(resume()!.garantieDecision!.total! + calculMontantDeposit(d.deposit, d.montantEmprunte)) }}</p>
+                        <p class="text-sm font-medium text-foreground">{{ formatMontant(garantieDecisionTotalLegacy() + calculMontantDeposit(d.deposit, d.montantPropose)) }}</p>
                       </div>
                     }
                     @if (d.tauxCouverture != null) {
@@ -1184,21 +1761,27 @@
                         <p class="text-sm font-medium text-foreground">{{ d.tauxCouverture }}%</p>
                       </div>
                     }
-                    @if (d.montantCaution != null) {
-                      <div>
-                        <p class="text-xs text-muted-foreground">Montant caution</p>
-                        <p class="text-sm font-medium text-foreground">{{ formatMontant(d.montantCaution) }}</p>
-                      </div>
-                    }
                   </div>
                 </section>
               }
 
               <!-- Conditions et modalités -->
-              @if (d.dateEcheanceSouhaite || d.acteNotarie != null || d.assurMultiRisk != null || d.authGage != null) {
+              @if (d.periodeGrace != null || d.dateEcheanceSouhaite || d.acteNotarie != null || d.assurMultiRisk != null) {
                 <section>
                   <h4 class="text-xs font-semibold uppercase text-muted-foreground mb-3">Conditions et modalités</h4>
                   <div class="grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-3">
+                    @if (d.periodeGrace == 2) {
+                      <div>
+                        <p class="text-xs text-muted-foreground">Différé</p>
+                        <p class="text-sm font-medium text-foreground">Non</p>
+                      </div>
+                    }
+                    @if (d.periodeGrace == 1 && d.nbreMoisGrace != null) {
+                      <div>
+                        <p class="text-xs text-muted-foreground">Mois différés</p>
+                        <p class="text-sm font-medium text-foreground">{{ d.nbreMoisGrace }} mois</p>
+                      </div>
+                    }
                     @if (d.dateEcheanceSouhaite) {
                       <div>
                         <p class="text-xs text-muted-foreground">Date d'échéance</p>
@@ -1229,66 +1812,6 @@
                         </span>
                       </div>
                     }
-                    @if (d.authGage != null) {
-                      <div>
-                        <p class="text-xs text-muted-foreground">Autorisation de gage</p>
-                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-                          [class.bg-blue-100]="d.authGage == 1"
-                          [class.text-blue-700]="d.authGage == 1"
-                          [class.bg-gray-100]="d.authGage != 1"
-                          [class.text-gray-700]="d.authGage != 1">
-                          {{ d.authGage == 1 ? 'Oui' : 'Non' }}
-                        </span>
-                      </div>
-                    }
-                  </div>
-                </section>
-              }
-
-              <!-- Garanties demandées (garantieDecision) -->
-              @if (resume()?.garantieDecision?.garanties?.length) {
-                <section class="border-t border-border pt-6">
-                  <h4 class="text-xs font-semibold uppercase text-muted-foreground mb-3">Garanties demandées</h4>
-                  <div class="flex flex-col gap-3">
-                    @for (gar of resume()!.garantieDecision!.garanties!; track $index) {
-                      <div class="rounded-lg border border-border bg-muted/20 p-3">
-                        <div class="flex flex-wrap items-start justify-between gap-2 mb-1">
-                          <h5 class="text-xs font-semibold text-foreground">{{ gar.libelle }}</h5>
-                          <div class="flex flex-wrap gap-3">
-                            @if (gar.montant != null) {
-                              <div class="text-right">
-                                <p class="text-[10px] text-muted-foreground">Montant proposé</p>
-                                <p class="text-xs font-medium text-primary">{{ formatMontant(gar.montant) }}</p>
-                              </div>
-                            }
-                            @if (gar.pourcentage != null) {
-                              <div class="text-right">
-                                <p class="text-[10px] text-muted-foreground">Pourcentage</p>
-                                <p class="text-xs font-medium text-amber-600 dark:text-amber-400">{{ gar.pourcentage }}%</p>
-                              </div>
-                            }
-                            @if (gar.montantDecision != null) {
-                              <div class="text-right">
-                                <p class="text-[10px] text-muted-foreground">Montant décision</p>
-                                <p class="text-xs font-semibold text-green-700 dark:text-green-400">{{ formatMontant(gar.montantDecision) }}</p>
-                              </div>
-                            }
-                          </div>
-                        </div>
-                        @if (isVehiculeGarantie(gar) && gar.elements?.length) {
-                          <ul class="mt-2 space-y-1 border-t border-border/40 pt-2">
-                            @for (elem of gar.elements!; track $index) {
-                              <li class="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-foreground">
-                                @if (elem.marque) { <span><strong>Marque :</strong> {{ elem.marque }}</span> }
-                                @if (elem.immatriculation) { <span><strong>Immatr. :</strong> {{ elem.immatriculation }}</span> }
-                                @if (elem.typeVehicule) { <span><strong>Type :</strong> {{ elem.typeVehicule }}</span> }
-                                @if (elem.valeurEstime != null) { <span><strong>Valeur estimée :</strong> {{ formatMontant(elem.valeurEstime) }}</span> }
-                              </li>
-                            }
-                          </ul>
-                        }
-                      </div>
-                    }
                   </div>
                 </section>
               }
@@ -1296,7 +1819,7 @@
               <!-- Checkliste documents complémentaires -->
               @if (parseCheckliste(d.checkliste).length) {
                 <section>
-                  <h4 class="text-xs font-semibold uppercase text-muted-foreground mb-2">Documents complémentaires requis</h4>
+                  <h4 class="text-xs font-semibold uppercase text-muted-foreground mb-2">Liste des documents complémentaires pour ce dossier</h4>
                   <ul class="space-y-1">
                     @for (doc of parseCheckliste(d.checkliste); track $index) {
                       <li class="flex items-center gap-2 text-sm text-foreground">
@@ -1311,8 +1834,8 @@
               <!-- Commentaire/Motivation -->
               @if (d.argumentaire || d.motivation || d.commentaire) {
                 <section>
-                  <h4 class="text-xs font-semibold uppercase text-muted-foreground mb-2">Commentaire / Justification</h4>
-                  <div class="text-sm text-foreground leading-relaxed bg-muted/30 rounded-lg p-4" [innerHTML]="d.argumentaire || d.motivation || d.commentaire"></div>
+                  <h4 class="text-xs font-semibold uppercase text-muted-foreground mb-2">Commentaire</h4>
+                  <div class="text-sm text-foreground leading-relaxed bg-muted/30 rounded-lg p-4" [innerHTML]="d.commentaire || d.argumentaire || d.motivation"></div>
                 </section>
               }
 
@@ -1324,55 +1847,174 @@
                       <lucide-icon [img]="UsersIcon" [size]="20" class="text-primary" />
                     </div>
                     <div>
-                      <p class="text-sm font-medium text-foreground">{{ (d.decideur?.nomPrenom || d.user?.nomPrenom) }}</p>
+                      <p class="text-sm font-medium text-foreground">{{ comiteActorName(d.decideur ?? d.user) }}</p>
                       <p class="text-xs text-muted-foreground">
-                        {{ (d.decideur?.profil?.libelle || d.user?.profil?.libelle) || 'Décideur' }}
-                        @if (d.decideur?.agence?.libelle || d.user?.agence?.libelle) {
-                          <span> · {{ (d.decideur?.agence?.libelle || d.user?.agence?.libelle) }}</span>
+                        {{ comiteActorProfil(d.decideur ?? d.user) }}
+                        @if (comiteActorAgence(d.decideur ?? d.user); as agence) {
+                          <span> · {{ agence }}</span>
                         }
                       </p>
                       @if (d.dateDecision) {
-                        <time class="text-xs text-muted-foreground">Décidé le {{ d.dateDecision | date:'dd/MM/yyyy' }}</time>
+                        <time class="text-xs text-muted-foreground">le {{ d.dateDecision | date:'longDate' }}</time>
                       }
                     </div>
                   </div>
                 </section>
               }
+            } @else {
+              <p class="text-sm text-muted-foreground py-8 text-center">
+                Aucune décision finale n'a été enregistrée.
+              </p>
+            }
+          </div>
+        }
+
+        <!-- ── Récapitulatif des décisions ─────────────────────────── -->
+        @if (activeTab() === 'recap-decisions') {
+          <div class="space-y-4">
+            <div class="rounded-lg border border-border bg-card p-4">
+              <h3 class="mb-3 text-sm font-semibold text-foreground">Récapitulatif des décisions</h3>
+              @if (hasDecisionHistory()) {
+                <ng-container *ngTemplateOutlet="decisionHistorySummaryTable" />
+              } @else {
+                <p class="py-8 text-center text-sm text-muted-foreground">Aucune décision enregistrée.</p>
+              }
             </div>
-          }
+          </div>
         }
 
         <!-- ── Documents ─────────────────────────────────────────── -->
         @if (activeTab() === 'documents') {
-          @if (!documents().length) {
-            <div class="flex flex-col items-center gap-3 py-16 text-center">
-              <lucide-icon [img]="FileTextIcon" [size]="36" class="text-muted-foreground/20" />
-              <p class="text-sm text-muted-foreground">Aucun document annexe enregistré.</p>
-            </div>
-          } @else {
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-              @for (doc of documents(); track doc.id) {
-                <div class="group flex flex-col rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all overflow-hidden">
-                  <!-- Icône + libellé -->
-                  <button type="button"
-                    (click)="downloadDocument(doc.document, doc.libelle)"
-                    class="flex flex-col items-center justify-center h-32 p-4 gap-2 bg-gradient-to-br from-primary/5 to-primary/10 border-b border-border w-full text-left">
-                    <lucide-icon [img]="FileTextIcon" [size]="36" class="text-primary/60" />
-                    <p class="text-xs font-semibold text-center text-foreground line-clamp-3">{{ doc.libelle }}</p>
-                  </button>
-                  <!-- Actions -->
-                  <div class="flex items-center justify-end px-3 py-2 bg-muted/20">
-                    <button type="button"
-                      (click)="downloadDocument(doc.document, doc.libelle)"
-                      class="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
-                      title="Télécharger">
-                      <lucide-icon [img]="DownloadIcon" [size]="14" />
-                    </button>
-                  </div>
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-3 rounded-lg border border-border bg-muted/20 p-4">
+              <div class="flex flex-wrap items-end gap-3">
+                <div class="min-w-56 flex-1">
+                  <label class="mb-1 block text-xs text-muted-foreground">Recherche</label>
+                  <input
+                    type="text"
+                    [value]="documentSearch()"
+                    (input)="documentSearch.set($any($event.target).value ?? '')"
+                    placeholder="Rechercher un document..."
+                    class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                  />
                 </div>
-              }
+                @if (canManageDocumentAnnexe()) {
+                  <button
+                    type="button"
+                    (click)="openDocumentDrawer()"
+                    class="rounded-md border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+                  >
+                    Ajouter document
+                  </button>
+                }
+              </div>
             </div>
-          }
+
+            @if (canManageDocumentAnnexe()) {
+              <app-drawer [open]="documentDrawerOpen()" (openChange)="$event ? documentDrawerOpen.set(true) : closeDocumentDrawer()">
+                <app-drawer-header>
+                  <app-drawer-title>Ajouter un document annexe</app-drawer-title>
+                </app-drawer-header>
+                <app-drawer-content>
+                  <div class="space-y-4">
+                    <div>
+                      <label class="mb-1 block text-xs text-muted-foreground">Libellé *</label>
+                      <input
+                        type="text"
+                        [formControl]="documentForm.controls.libelle"
+                        class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label class="mb-1 block text-xs text-muted-foreground">Description</label>
+                      <input
+                        type="text"
+                        [formControl]="documentForm.controls.description"
+                        class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label class="mb-1 block text-xs text-muted-foreground">Fichier PDF *</label>
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        (change)="onDocumentSelected($event)"
+                        class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm file:mr-2 file:border-0 file:bg-transparent"
+                      />
+                    </div>
+                  </div>
+                </app-drawer-content>
+                <app-drawer-footer>
+                  <button
+                    type="button"
+                    (click)="closeDocumentDrawer()"
+                    class="rounded-md border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+                    [disabled]="isUploadingDocument()"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    (click)="uploadDocumentAnnexe()"
+                    class="rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
+                    [disabled]="isUploadingDocument()"
+                  >
+                    @if (isUploadingDocument()) { Chargement... } @else { Ajouter document }
+                  </button>
+                </app-drawer-footer>
+              </app-drawer>
+            }
+
+            @if (!filteredDocuments().length) {
+              <div class="flex flex-col items-center gap-3 py-16 text-center">
+                <lucide-icon [img]="FileTextIcon" [size]="36" class="text-muted-foreground/20" />
+                <p class="text-sm text-muted-foreground">Aucun document annexe enregistré.</p>
+              </div>
+            } @else {
+              <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+                @for (doc of filteredDocuments(); track doc.id) {
+                  <div class="group flex flex-col overflow-hidden rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all">
+                    <button
+                      type="button"
+                      (click)="downloadDocument(doc.document, doc.libelle)"
+                      class="flex h-32 w-full flex-col items-center justify-center gap-2 border-b border-border bg-gradient-to-br from-primary/5 to-primary/10 p-4 text-left"
+                    >
+                      <lucide-icon [img]="FileTextIcon" [size]="36" class="text-primary/60" />
+                      <p class="line-clamp-2 text-center text-xs font-semibold text-foreground">{{ doc.libelle }}</p>
+                      @if (doc.description) {
+                        <p class="line-clamp-1 text-center text-[11px] text-muted-foreground">{{ doc.description }}</p>
+                      }
+                    </button>
+                    <div class="flex items-center justify-end gap-1 bg-muted/20 px-3 py-2">
+                      <button
+                        type="button"
+                        (click)="downloadDocument(doc.document, doc.libelle)"
+                        class="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
+                        title="Télécharger"
+                      >
+                        <lucide-icon [img]="DownloadIcon" [size]="14" />
+                      </button>
+                      @if (canDeleteDocument(doc)) {
+                        <button
+                          type="button"
+                          (click)="deleteDocumentAnnexe(doc)"
+                          class="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
+                          title="Supprimer"
+                          [disabled]="deletingDocumentId() === doc.id"
+                        >
+                          @if (deletingDocumentId() === doc.id) {
+                            <span class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+                          } @else {
+                            <lucide-icon [img]="XCircleIcon" [size]="14" />
+                          }
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
         }
 
         <!-- ── Historique ─────────────────────────────────────────── -->
@@ -1541,30 +2183,535 @@
 
           }
         }
+          </div>
+        </div>
 
-      </app-card-content>
-    </app-card>
+        @if (decisionHistoryTimelineItems().length > 0) {
+          <button
+            type="button"
+            (click)="decisionHistoryDrawerOpen.set(true)"
+            class="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors cursor-pointer"
+          >
+            <lucide-icon [img]="ClockIcon" [size]="16" />
+            @if (decisionHistoryTimelineItems().length > 0) {
+              <span
+                class="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-xs font-bold"
+              >
+                {{ decisionHistoryTimelineItems().length }}
+              </span>
+            }
+          </button>
+
+          <app-drawer [open]="decisionHistoryDrawerOpen()" (openChange)="decisionHistoryDrawerOpen.set($event)">
+            <app-drawer-header>
+              <div class="flex items-center gap-2">
+                <lucide-icon [img]="ClockIcon" [size]="16" class="text-muted-foreground" />
+                <app-drawer-title>Historique des Décisions</app-drawer-title>
+                @if (decisionHistoryTimelineItems().length > 0) {
+                  <span class="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                    {{ decisionHistoryTimelineItems().length }}
+                  </span>
+                }
+              </div>
+            </app-drawer-header>
+            <app-drawer-content>
+              @if (decisionHistoryTimelineItems().length === 0) {
+                <div class="flex flex-col items-center gap-3 py-16 text-center">
+                  <lucide-icon [img]="ClockIcon" [size]="36" class="text-muted-foreground/20" />
+                  <p class="text-sm text-muted-foreground">Aucun historique de décision.</p>
+                </div>
+              } @else {
+                <ul class="relative ml-3 border-l border-border flex flex-col gap-3 py-1">
+                  @for (item of decisionHistoryTimelineItems(); track item.id) {
+                    <li class="relative pl-5">
+                      <span
+                        class="absolute -left-[5px] top-0 h-2.5 w-2.5 rounded-full bg-primary ring-[3px] ring-primary/20"
+                      ></span>
+
+                      <div class="rounded-xl border border-border bg-card p-3.5 shadow-sm">
+                        <div class="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                          <h6
+                            class="inline-flex rounded-md bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-600"
+                          >
+                            {{ item.decision }}
+                          </h6>
+                        </div>
+
+                        @if (item.observation) {
+                          <p class="mb-3 text-sm leading-relaxed text-muted-foreground" [innerHTML]="item.observation"></p>
+                        }
+
+                        <div class="mt-2.5 flex items-center gap-2 border-t border-border pt-2.5">
+                          <app-avatar />
+                          <div class="min-w-0">
+                            <p class="truncate text-xs font-medium leading-tight text-foreground">
+                              {{ item.userName }}
+                            </p>
+                            <p class="truncate text-xs leading-tight text-muted-foreground">
+                              {{ item.userRole }}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div class="mt-2.5 flex items-center justify-between border-t border-border pt-2.5">
+                          @if (item.date) {
+                            <span class="text-xs text-muted-foreground">
+                              Le {{ item.date | date:'longDate' }} à {{ item.date | date:'shortTime':'':'fr' }}
+                            </span>
+                          } @else {
+                            <span class="text-xs text-muted-foreground">—</span>
+                          }
+
+                          @if (item.durationBetweenSteps) {
+                            <span class="rounded-md bg-red-600 px-2 py-0.5 text-[10px] font-semibold text-white shadow">
+                              {{ item.durationBetweenSteps }}
+                            </span>
+                          }
+                        </div>
+                      </div>
+                    </li>
+                  }
+                </ul>
+              }
+            </app-drawer-content>
+          </app-drawer>
+        }
+      <!-- </app-card-content>
+    </app-card> -->
 
   }
 
 </div>
 
+<ng-template #decisionHistorySummaryTable>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-border bg-muted/40">
+          <th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Décision</th>
+          <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Montant proposé</th>
+          <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Montant emprunté</th>
+          <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Échéance</th>
+          <th class="px-3 py-2 text-right text-xs font-medium text-muted-foreground">Durée</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of resume()?.comites ?? []; track c.id; let i = $index) {
+          <tr class="border-b border-border">
+            <td class="px-3 py-2">
+              <p class="font-medium text-foreground">Comité {{ (resume()?.comites?.length ?? 0) - i }}</p>
+              <p class="text-xs text-muted-foreground">{{ decisionActorName(c.user) }}</p>
+              <p class="text-xs text-muted-foreground">{{ decisionActorProfil(c.user) }}</p>
+            </td>
+            <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(c.montantPropose) }}</td>
+            <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(decisionMontantEmprunte(c)) }}</td>
+            <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(c.mensualite) }}</td>
+            <td class="px-3 py-2 text-right text-foreground">{{ c.duree ?? '—' }} mois</td>
+          </tr>
+        }
+        @for (pc of resume()?.precomites ?? []; track pc.id; let i = $index) {
+          <tr class="border-b border-border">
+            <td class="px-3 py-2">
+              <p class="font-medium text-foreground">Pré-Comité {{ (resume()?.precomites?.length ?? 0) - i }}</p>
+              <p class="text-xs text-muted-foreground">{{ decisionActorName(pc.user) }}</p>
+              <p class="text-xs text-muted-foreground">{{ decisionActorProfil(pc.user) }}</p>
+            </td>
+            <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(pc.montantPropose) }}</td>
+            <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(decisionMontantEmprunte(pc)) }}</td>
+            <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(pc.mensualite) }}</td>
+            <td class="px-3 py-2 text-right text-foreground">{{ pc.duree ?? '—' }} mois</td>
+          </tr>
+        }
+        @if (resume()?.contreEvaluation; as ce) {
+          <tr class="border-b border-border">
+            <td class="px-3 py-2">
+              <p class="font-medium text-foreground">Contre - Evaluation</p>
+              <p class="text-xs text-muted-foreground">{{ decisionActorName(ce.user) }}</p>
+              <p class="text-xs text-muted-foreground">{{ decisionActorProfil(ce.user) }}</p>
+            </td>
+            <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(ce.montantPropose) }}</td>
+            <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(decisionMontantEmprunte(ce)) }}</td>
+            <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(ce.mensualite) }}</td>
+            <td class="px-3 py-2 text-right text-foreground">{{ ce.duree ?? '—' }} mois</td>
+          </tr>
+        }
+        @if (resume()?.proposition; as p) {
+          <tr class="border-b border-border">
+            <td class="px-3 py-2">
+              <p class="font-medium text-foreground">Proposition AR</p>
+              <p class="text-xs text-muted-foreground">{{ decisionActorName(p.user) }}</p>
+              <p class="text-xs text-muted-foreground">{{ decisionActorProfil(p.user) }}</p>
+            </td>
+            <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(p.montantPropose) }}</td>
+            <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(decisionMontantEmprunte(p)) }}</td>
+            <td class="px-3 py-2 text-right text-foreground">{{ formatMontant(p.mensualite) }}</td>
+            <td class="px-3 py-2 text-right text-foreground">{{ p.duree ?? '—' }} mois</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</ng-template>
+
+<!-- Template éditeur décision pré-comité / comité -->
+<ng-template #comiteDecisionEditor>
+  <section class="rounded-lg border border-border bg-muted/20 p-4">
+    <form [formGroup]="comiteForm" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div>
+        <label class="mb-1 block text-xs text-muted-foreground">Montant proposé (FCFA) *</label>
+        <input
+          type="number"
+          formControlName="montantPropose"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        />
+      </div>
+      <div>
+        <label class="mb-1 block text-xs text-muted-foreground">Hypothèque *</label>
+        <select
+          formControlName="hypotheque"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        >
+          <option [ngValue]="1">Oui</option>
+          <option [ngValue]="2">Non</option>
+        </select>
+      </div>
+      <div>
+        <label class="mb-1 block text-xs text-muted-foreground">Durée (mois) *</label>
+        <input
+          type="number"
+          formControlName="duree"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        />
+      </div>
+      <div>
+        <label class="mb-1 block text-xs text-muted-foreground">Mensualité (FCFA) *</label>
+        <input
+          type="number"
+          formControlName="mensualite"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        />
+      </div>
+      <div>
+        <label class="mb-1 block text-xs text-muted-foreground"
+          >Date d’échéance souhaitée (jour) *</label
+        >
+        <input
+          type="number"
+          min="1"
+          max="31"
+          formControlName="dateEcheanceSouhaite"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        />
+      </div>
+      <div>
+        <label class="mb-1 block text-xs text-muted-foreground">Période de grâce *</label>
+        <select
+          formControlName="periodeGrace"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        >
+          <option [ngValue]="1">Oui</option>
+          <option [ngValue]="2">Non</option>
+        </select>
+      </div>
+      @if (comiteForm.get('periodeGrace')?.value === 1) {
+        <div>
+          <label class="mb-1 block text-xs text-muted-foreground">Nombre de mois de grâce *</label>
+          <input
+            type="number"
+            formControlName="nbreMoisGrace"
+            class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+          />
+        </div>
+      }
+      <div>
+        <label class="mb-1 block text-xs text-muted-foreground">Acte notarié *</label>
+        <select
+          formControlName="acteNotarie"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        >
+          <option [ngValue]="1">Oui</option>
+          <option [ngValue]="0">Non</option>
+        </select>
+      </div>
+      <div>
+        <label class="mb-1 block text-xs text-muted-foreground">Assurance multi-risques *</label>
+        <select
+          formControlName="assurMultiRisk"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        >
+          <option [ngValue]="1">Oui</option>
+          <option [ngValue]="0">Non</option>
+        </select>
+      </div>
+      <div>
+        <label class="mb-1 block text-xs text-muted-foreground">Déposit (%) *</label>
+        <input
+          type="number"
+          formControlName="deposit"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        />
+      </div>
+      <div class="sm:col-span-2 lg:col-span-3">
+        <label class="mb-1 block text-xs text-muted-foreground">Argumentaire *</label>
+        <textarea
+          formControlName="argumentaire"
+          rows="3"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        ></textarea>
+      </div>
+    </form>
+
+    <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 text-xs">
+      <div class="rounded-md border border-border bg-background px-3 py-2">
+        <span class="text-muted-foreground">Montant acte notarié:</span>
+        <span class="ml-2 font-semibold">{{ formatMontant(comiteMontantActeNotarie()) }}</span>
+      </div>
+      <div class="rounded-md border border-border bg-background px-3 py-2">
+        <span class="text-muted-foreground">Frais dossier:</span>
+        <span class="ml-2 font-semibold">{{ formatMontant(comiteFraisDossier()) }}</span>
+      </div>
+      <div class="rounded-md border border-border bg-background px-3 py-2">
+        <span class="text-muted-foreground">Commission déboursement:</span>
+        <span class="ml-2 font-semibold">{{ formatMontant(comiteCommissionDeboursement()) }}</span>
+      </div>
+      <div class="rounded-md border border-border bg-background px-3 py-2">
+        <span class="text-muted-foreground">Assurance décès invalidité:</span>
+        <span class="ml-2 font-semibold">{{ formatMontant(comiteAssurDecesInvalidite()) }}</span>
+      </div>
+      <div class="rounded-md border border-border bg-background px-3 py-2">
+        <span class="text-muted-foreground">Montant emprunté:</span>
+        <span class="ml-2 font-semibold">{{ formatMontant(comiteMontantEmprunte()) }}</span>
+      </div>
+      <div class="rounded-md border border-border bg-background px-3 py-2">
+        <span class="text-muted-foreground">Total du déposit:</span>
+        <span class="ml-2 font-semibold">{{ formatMontant(calculateComiteMontantDeposit()) }}</span>
+      </div>
+      <div class="rounded-md border border-border bg-background px-3 py-2 sm:col-span-2">
+        <span class="text-muted-foreground">Taux de couverture:</span>
+        <span class="ml-2 font-semibold">{{ calculateComiteTauxCouverture() | number: '1.0-2' }}%</span>
+      </div>
+    </div>
+
+    <div class="mt-4 flex items-center justify-end gap-2">
+      <button
+        type="button"
+        (click)="recalculateComiteFrais()"
+        class="rounded-md border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+        [disabled]="isCalculatingComiteFrais()"
+      >
+        @if (isCalculatingComiteFrais()) { Calcul... } @else { Calculer frais }
+      </button>
+      <button
+        type="button"
+        (click)="closeComiteEditor()"
+        class="rounded-md border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+      >
+        Annuler
+      </button>
+      <button
+        type="button"
+        (click)="saveComiteDecisionFromResume()"
+        class="rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
+        [disabled]="isSavingComite()"
+      >
+        @if (isSavingComite()) { Enregistrement... } @else { Enregistrer }
+      </button>
+    </div>
+  </section>
+</ng-template>
+
+<!-- Template éditeur décision finale -->
+<ng-template #decisionFinaleEditor>
+  <section class="rounded-lg border border-border bg-muted/20 p-4">
+    <form [formGroup]="decisionFinaleForm" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div>
+        <label class="mb-1 block text-xs text-muted-foreground">Montant proposé (FCFA) *</label>
+        <input
+          type="number"
+          formControlName="montantPropose"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        />
+      </div>
+      <div>
+        <label class="mb-1 block text-xs text-muted-foreground">Hypothèque *</label>
+        <select
+          formControlName="hypotheque"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        >
+          <option [ngValue]="1">Oui</option>
+          <option [ngValue]="2">Non</option>
+        </select>
+      </div>
+      <div>
+        <label class="mb-1 block text-xs text-muted-foreground">Durée (mois) *</label>
+        <input
+          type="number"
+          formControlName="duree"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        />
+      </div>
+      <div>
+        <label class="mb-1 block text-xs text-muted-foreground">Mensualité (FCFA) *</label>
+        <input
+          type="number"
+          formControlName="mensualite"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        />
+      </div>
+      <div>
+        <label class="mb-1 block text-xs text-muted-foreground">Date d’échéance souhaitée (jour) *</label>
+        <input
+          type="number"
+          min="1"
+          max="31"
+          formControlName="dateEcheanceSouhaite"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        />
+      </div>
+      <div>
+        <label class="mb-1 block text-xs text-muted-foreground">Période de grâce *</label>
+        <select
+          formControlName="periodeGrace"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        >
+          <option [ngValue]="1">Oui</option>
+          <option [ngValue]="2">Non</option>
+        </select>
+      </div>
+      @if (decisionFinaleForm.get('periodeGrace')?.value === 1) {
+        <div>
+          <label class="mb-1 block text-xs text-muted-foreground">Nombre de mois de grâce *</label>
+          <input
+            type="number"
+            formControlName="nbreMoisGrace"
+            class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+          />
+        </div>
+      }
+      <div>
+        <label class="mb-1 block text-xs text-muted-foreground">Acte notarié *</label>
+        <select
+          formControlName="acteNotarie"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        >
+          <option [ngValue]="1">Oui</option>
+          <option [ngValue]="0">Non</option>
+        </select>
+      </div>
+      <div>
+        <label class="mb-1 block text-xs text-muted-foreground">Assurance multi-risques *</label>
+        <select
+          formControlName="assurMultiRisk"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        >
+          <option [ngValue]="1">Oui</option>
+          <option [ngValue]="0">Non</option>
+        </select>
+      </div>
+      <div>
+        <label class="mb-1 block text-xs text-muted-foreground">Déposit (%) *</label>
+        <input
+          type="number"
+          formControlName="deposit"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        />
+      </div>
+      <div class="sm:col-span-2 lg:col-span-3">
+        <label class="mb-1 block text-xs text-muted-foreground">Commentaire *</label>
+        <textarea
+          formControlName="commentaire"
+          rows="3"
+          class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+        ></textarea>
+      </div>
+    </form>
+
+    <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 text-xs">
+      <div class="rounded-md border border-border bg-background px-3 py-2">
+        <span class="text-muted-foreground">Montant acte notarié:</span>
+        <span class="ml-2 font-semibold">{{ formatMontant(decisionFinaleMontantActeNotarie()) }}</span>
+      </div>
+      <div class="rounded-md border border-border bg-background px-3 py-2">
+        <span class="text-muted-foreground">Frais dossier:</span>
+        <span class="ml-2 font-semibold">{{ formatMontant(decisionFinaleFraisDossier()) }}</span>
+      </div>
+      <div class="rounded-md border border-border bg-background px-3 py-2">
+        <span class="text-muted-foreground">Commission déboursement:</span>
+        <span class="ml-2 font-semibold">{{ formatMontant(decisionFinaleCommissionDeboursement()) }}</span>
+      </div>
+      <div class="rounded-md border border-border bg-background px-3 py-2">
+        <span class="text-muted-foreground">Assurance décès invalidité:</span>
+        <span class="ml-2 font-semibold">{{ formatMontant(decisionFinaleAssurDecesInvalidite()) }}</span>
+      </div>
+      <div class="rounded-md border border-border bg-background px-3 py-2">
+        <span class="text-muted-foreground">Montant emprunté:</span>
+        <span class="ml-2 font-semibold">{{ formatMontant(decisionFinaleMontantEmprunte()) }}</span>
+      </div>
+      <div class="rounded-md border border-border bg-background px-3 py-2">
+        <span class="text-muted-foreground">Total du déposit:</span>
+        <span class="ml-2 font-semibold">{{ formatMontant(calculateDecisionFinaleMontantDeposit()) }}</span>
+      </div>
+      <div class="rounded-md border border-border bg-background px-3 py-2 sm:col-span-2">
+        <span class="text-muted-foreground">Taux de couverture:</span>
+        <span class="ml-2 font-semibold">{{ calculateDecisionFinaleTauxCouverture() | number: '1.0-2' }}%</span>
+      </div>
+    </div>
+
+    <div class="mt-4 flex items-center justify-end gap-2">
+      <button
+        type="button"
+        (click)="recalculateDecisionFinaleFrais()"
+        class="rounded-md border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+        [disabled]="isCalculatingDecisionFinaleFrais()"
+      >
+        @if (isCalculatingDecisionFinaleFrais()) { Calcul... } @else { Calculer frais }
+      </button>
+      <button
+        type="button"
+        (click)="closeDecisionFinaleEditor()"
+        class="rounded-md border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+      >
+        Annuler
+      </button>
+      <button
+        type="button"
+        (click)="saveDecisionFinaleFromResume()"
+        class="rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
+        [disabled]="isSavingDecisionFinale()"
+      >
+        @if (isSavingDecisionFinale()) { Enregistrement... } @else { Enregistrer }
+      </button>
+    </div>
+  </section>
+</ng-template>
+
 <!-- Template réutilisable pour une décision de comité -->
-<ng-template #comiteCard let-c>
+<ng-template #comiteCard let-c let-mode="mode" let-title="title">
   <div class="rounded-lg border border-border bg-card p-5 mb-4">
 
     <!-- Header avec date et statut -->
     <div class="flex items-center justify-between mb-4 pb-3 border-b border-border">
-      <div class="flex items-center gap-2">
-        <p class="text-sm font-semibold text-foreground">{{ comiteLabel(c) }}</p>
-        @if (c.statut === 1) {
-          <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
-            Approuvée
-          </span>
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <p class="text-sm font-semibold text-foreground">{{ title || comiteLabel(c) }}</p>
+          @if (c.statut === 1) {
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
+              Approuvée
+            </span>
+          }
+        </div>
+        @if (canEditDecisionCard(c)) {
+          <button
+            type="button"
+            class="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+            (click)="mode === 'pre-comite' ? openPreComiteEditEditor(c) : openComiteEditEditor(c)"
+          >
+            Modifier
+          </button>
         }
       </div>
       @if (c.dateDemande) {
-        <time class="text-xs text-muted-foreground">{{ c.dateDemande | date:'dd/MM/yyyy HH:mm' }}</time>
+        <time class="text-xs text-muted-foreground">le {{ c.dateDemande | date:'longDate' }}</time>
       }
     </div>
 
@@ -1572,21 +2719,22 @@
     <section class="mb-4">
       <h5 class="text-xs font-semibold uppercase text-muted-foreground mb-2">Paramètres financiers</h5>
       <div class="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
+        @let montantEmprunte = decisionMontantEmprunte(c);
         @if (c.montantPropose != null) {
           <div>
             <p class="text-xs text-muted-foreground">Montant proposé</p>
             <p class="text-sm font-medium text-foreground">{{ formatMontant(c.montantPropose) }}</p>
           </div>
         }
-        @if (c.montantEmprunte != null) {
+        @if (montantEmprunte != null) {
           <div>
             <p class="text-xs text-muted-foreground">Montant emprunté</p>
-            <p class="text-sm font-medium text-foreground">{{ formatMontant(c.montantEmprunte) }}</p>
+            <p class="text-sm font-medium text-foreground">{{ formatMontant(montantEmprunte) }}</p>
           </div>
         }
         @if (c.mensualite != null) {
           <div>
-            <p class="text-xs text-muted-foreground">Mensualité</p>
+            <p class="text-xs text-muted-foreground">Échéance</p>
             <p class="text-sm font-medium text-foreground">{{ formatMontant(c.mensualite) }}</p>
           </div>
         }
@@ -1637,16 +2785,26 @@
       <section class="mb-4">
         <h5 class="text-xs font-semibold uppercase text-muted-foreground mb-2">Garanties</h5>
         <div class="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
-          @if (c.tauxCouverture != null) {
-            <div>
-              <p class="text-xs text-muted-foreground">Taux couverture</p>
-              <p class="text-sm font-medium text-foreground">{{ c.tauxCouverture }}%</p>
-            </div>
-          }
           @if (c.deposit != null) {
             <div>
               <p class="text-xs text-muted-foreground">Déposit</p>
               <p class="text-sm font-medium text-foreground">{{ c.deposit }}%</p>
+            </div>
+          }
+          @if (c.deposit != null && c.montantPropose != null) {
+            <div>
+              <p class="text-xs text-muted-foreground">Total du déposit</p>
+              <p class="text-sm font-medium text-foreground">
+                {{ formatMontant(calculMontantDeposit(c.deposit, c.montantPropose)) }}
+              </p>
+            </div>
+          }
+          @if (c.deposit != null && c.montantPropose != null && resume()?.garantieDecision) {
+            <div>
+              <p class="text-xs text-muted-foreground">Total garanties + Déposit</p>
+              <p class="text-sm font-medium text-foreground">
+                {{ formatMontant(garantieDecisionTotalLegacy() + calculMontantDeposit(c.deposit, c.montantPropose)) }}
+              </p>
             </div>
           }
           @if (c.hypotheque != null) {
@@ -1665,6 +2823,12 @@
             <div>
               <p class="text-xs text-muted-foreground">Caution</p>
               <p class="text-sm font-medium text-foreground">{{ formatMontant(c.montantCaution) }}</p>
+            </div>
+          }
+          @if (c.tauxCouverture != null) {
+            <div>
+              <p class="text-xs text-muted-foreground">Taux couverture</p>
+              <p class="text-sm font-medium text-foreground">{{ c.tauxCouverture }}%</p>
             </div>
           }
         </div>
@@ -1723,6 +2887,23 @@
       </section>
     }
 
+    @let checklist = parseCheckliste(c.checkliste);
+    @if (checklist.length > 0) {
+      <section class="mb-4">
+        <h5 class="text-xs font-semibold uppercase text-muted-foreground mb-2">Documents complémentaires</h5>
+        <div class="rounded-lg border border-border bg-muted/20 p-3">
+          <ul class="flex flex-col gap-1.5">
+            @for (doc of checklist; track doc) {
+              <li class="flex items-center gap-2 text-sm text-foreground">
+                <span class="inline-block h-1.5 w-1.5 rounded-full bg-primary"></span>
+                <span>{{ doc }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      </section>
+    }
+
     <!-- Footer user -->
     @if (c.user) {
       <section class="border-t border-border pt-3 mt-2">
@@ -1731,11 +2912,11 @@
             <lucide-icon [img]="UsersIcon" [size]="16" class="text-primary" />
           </div>
           <div>
-            <p class="text-xs font-medium text-foreground">{{ c.user.nomPrenom }}</p>
+            <p class="text-xs font-medium text-foreground">{{ comiteActorName(c.user) }}</p>
             <p class="text-[10px] text-muted-foreground">
-              {{ c.user.profil?.libelle || c.user.profil?.name || '—' }}
-              @if (c.user.agence?.libelle) {
-                <span> · {{ c.user.agence.libelle }}</span>
+              {{ comiteActorProfil(c.user) }}
+              @if (comiteActorAgence(c.user); as agence) {
+                <span> · {{ agence }}</span>
               }
             </p>
           </div>

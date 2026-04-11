@@ -40,6 +40,7 @@ import {
   CreditTypeCredit,
   CreditZone,
   CreditAnalysteRisque,
+  CreditSuperviseurPmeAffectation,
   AuditLog,
 } from '../../interfaces/credit.interface';
 
@@ -708,9 +709,23 @@ export class CreditService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
+  /** Legacy parity: /getTaxeCrd */
+  calculateFraisDossier(data: Record<string, unknown>) {
+    return this.api
+      .post<Record<string, unknown>>(this.endpoint + '/getTaxeCrd', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
   savePropositionAR(data: Record<string, unknown>) {
     return this.api
       .post<{ status: number; message?: string }>(this.endpoint + '/saveProposition', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  /** Legacy parity: /saveContreEvaluation */
+  saveContreEvaluation(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveContreEvaluation', data)
       .pipe(catchError((err) => throwError(() => err)));
   }
 
@@ -769,9 +784,37 @@ export class CreditService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
+  /** Legacy parity: /savePrecomite */
+  savePreComiteDecision(data: CreditSaveComite) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/savePrecomite', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
   saveDecisionFinale(data: CreditSaveDecisionFinale) {
     return this.api
       .post<{ status: number; message?: string }>(this.endpoint + '/saveCrDecision', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  /** Legacy parity: /saveGarantieDemande */
+  saveGarantieProposee(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveGarantieDemande', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  /** Legacy parity: /saveCrediAntDem */
+  saveCreditAnterieur(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveCrediAntDem', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  /** Legacy parity: /saveCrediAntAct */
+  saveCreditAnterieurActivite(data: Record<string, unknown>) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveCrediAntAct', data)
       .pipe(catchError((err) => throwError(() => err)));
   }
 
@@ -946,11 +989,32 @@ export class CreditService {
       );
   }
 
+  getSuperviseursPmeEtChefAgence() {
+    return this.api
+      .get<{ superviseuPmes: CreditSuperviseurPmeAffectation[] }>('/users/supAndCa')
+      .pipe(
+        map((response) => response.superviseuPmes || []),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
   affecterDemandeAR(data: {
     refDemande: string;
     decision: number;
     zone: number;
     codeAr: string;
+    password: string;
+    observation?: string;
+  }) {
+    return this.api
+      .post<{ status: number; message?: string }>(this.endpoint + '/saveCrdObservation', data)
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  affecterSuperviseurPME(data: {
+    refDemande: string;
+    decision: number;
+    supOpSen: number;
     password: string;
     observation?: string;
   }) {

@@ -138,6 +138,14 @@ const GARANTIE_TYPE_SECTION_TO_ACTIF: Record<number, TypeActif> = {
   6: 'DAT',
 };
 
+// Parité legacy frontEnd: seules ces familles entrent dans les "totaux garanties".
+const LEGACY_TOTAL_GARANTIE_TYPES: readonly TypeActif[] = [
+  'IMMOBILIER',
+  'EQUIPEMENT',
+  'VEHICULE',
+  'BIEN_MOBILIER',
+];
+
 type GarantiesViewId =
   | 'all'
   | 'totaux'
@@ -227,7 +235,7 @@ export class GarantiesSectionComponent implements OnInit {
 
   readonly totalStocksGaranties = computed(() =>
     this.stocks()
-      .filter((item) => item.garantie === 1)
+      .filter((item) => String(item.garantie ?? '') === '1')
       .reduce((s, item) => s + (item.cout ?? 0), 0),
   );
 
@@ -258,20 +266,27 @@ export class GarantiesSectionComponent implements OnInit {
     this.actifs().reduce((s, a) => s + (a.valeurEstimee ?? 0), 0),
   );
 
-  // §7.11 — Garanties fixes (toutes) vs proposées (garantie === 1)
-  readonly totalGarantiesFixes = computed(() =>
-    this.actifs().reduce((s, a) => s + (a.valeurEstimee ?? 0), 0)
-    + this.stocks().reduce((s, st) => s + (st.cout ?? 0), 0),
-  );
+  // Parité legacy: IMMOBILIER + EQUIPEMENT + VEHICULE + BIEN_MOBILIER + STOCK.
+  readonly totalGarantiesFixes = computed(() => {
+    const totalActifsLegacy = this.actifs()
+      .filter((a) => !!a.type && LEGACY_TOTAL_GARANTIE_TYPES.includes(a.type))
+      .reduce((s, a) => s + (a.valeurEstimee ?? 0), 0);
 
-  readonly totalGarantiesProposees = computed(() =>
-    this.actifs()
-      .filter((a) => a.garantie === 1)
-      .reduce((s, a) => s + (a.valeurEstimee ?? 0), 0)
-    + this.stocks()
-      .filter((st) => st.garantie === 1)
-      .reduce((s, st) => s + (st.cout ?? 0), 0),
-  );
+    return totalActifsLegacy + this.totalStocks();
+  });
+
+  readonly totalGarantiesProposees = computed(() => {
+    const totalActifsLegacyProposes = this.actifs()
+      .filter(
+        (a) =>
+          !!a.type &&
+          LEGACY_TOTAL_GARANTIE_TYPES.includes(a.type) &&
+          String(a.garantie ?? '') === '1',
+      )
+      .reduce((s, a) => s + (a.valeurEstimee ?? 0), 0);
+
+    return totalActifsLegacyProposes + this.totalStocksGaranties();
+  });
 
   // Drawer
   actifDrawerOpen = false;

@@ -196,4 +196,34 @@ export class AnalyseCreditFlowService {
       ),
     );
   }
+
+  loadSuperviseursPmeForAffectation() {
+    return this.credit.getSuperviseursPmeEtChefAgence().pipe(
+      map((users) =>
+        users.map((user) => ({
+          ...user,
+          libelle: `${user.nom} ${user.prenom}${user.profil ? ` (${user.profil})` : ''}`,
+        })),
+      ),
+    );
+  }
+
+  affecterSuperviseurPme(
+    refDemande: string,
+    supOpSen: number,
+    password: string,
+    observation: string,
+  ): Observable<CrdObservationResponse> {
+    return this.verifyPasswordThen(password).pipe(
+      switchMap(() =>
+        this.credit.affecterSuperviseurPME({
+          refDemande,
+          decision: 1,
+          supOpSen,
+          password,
+          observation: observation || '',
+        }),
+      ),
+    );
+  }
 }

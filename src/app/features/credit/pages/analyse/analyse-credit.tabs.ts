@@ -42,6 +42,11 @@ export interface GarantiesSection {
 export const GP_ROLES: UserRole[] = [
   UserRole.GestionnairePortefeuilles,
   UserRole.GestionnairePortefeuillesJunior,
+  UserRole.AgentCommercialJunior,
+  UserRole.ChefEquipe,
+  UserRole.DirectriceExploitation,
+  UserRole.ResponsableClientelePME,
+  UserRole.assistanteClientelePME,
 ];
 export const RC_CC_ROLES: UserRole[] = [UserRole.responsableClient, UserRole.conseilClientele];
 export const CA_CAA_ROLES: UserRole[] = [UserRole.ChefAgence, UserRole.ChefAgenceAdjoint];
